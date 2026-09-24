@@ -102,7 +102,7 @@ Damaged buildings can be repaired by labourers (costs 25% of the missing fractio
 
 | Unit | Cost (T/S/I/P) + 1 settler | HP | Armour | Dmg | Range | Cooldown | Speed | Counter |
 |---|---|---|---|---|---|---|---|---|
-| Shieldbearer (defensive) | 5/0/10/5 | 200 | 5 | 10 | 1.8 m | 1.2 s | 3.4 m/s | ×1.75 vs melee |
+| Shieldbearer (defensive) | 5/0/10/5 | 200 | 5 | 10 | 1.8 m | 1.2 s | 3.4 m/s | ×2.0 vs melee |
 | Bladesman (melee) | 0/0/20/5 | 140 | 2 | 16 | 1.6 m | 1.0 s | 4.3 m/s | ×1.75 vs ranged |
 | Fletcher (ranged) | 15/0/0/5 | 90 | 0 | 12 | 15 m | 1.6 s | 3.8 m/s | ×2.0 vs defensive (arcing fire) |
 
