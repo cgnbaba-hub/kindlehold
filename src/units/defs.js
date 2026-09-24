@@ -11,10 +11,10 @@ export const COUNTERS = {
 
 export const UNITS = {
   // Hearthbound
-  shield: { id: 'shield', name: 'Shieldbearer', owner: 'p1', cls: 'defensive', hp: 180, armor: 5, damage: 10, range: 1.8, cooldown: 1.2, speed: 3.4, sight: 12,
+  shield: { id: 'shield', name: 'Shieldbearer', owner: 'p1', cls: 'defensive', hp: 200, armor: 5, damage: 10, range: 1.8, cooldown: 1.2, speed: 3.4, sight: 12,
     cost: { timber: 5, iron: 10, provisions: 5 }, trainTime: 8, desc: 'Sturdy spear-and-shield line. Strong against blades.' },
   blade: { id: 'blade', name: 'Bladesman', owner: 'p1', cls: 'melee', hp: 140, armor: 2, damage: 16, range: 1.6, cooldown: 1.0, speed: 4.3, sight: 12,
-    cost: { iron: 15, provisions: 5 }, trainTime: 8, desc: 'Fast swordsman. Cuts down archers and slingers.' },
+    cost: { iron: 20, provisions: 5 }, trainTime: 8, desc: 'Fast swordsman. Cuts down archers and slingers.' },
   fletcher: { id: 'fletcher', name: 'Fletcher', owner: 'p1', cls: 'ranged', hp: 90, armor: 0, damage: 12, range: 15, cooldown: 1.6, speed: 3.8, sight: 16,
     cost: { timber: 15, provisions: 5 }, trainTime: 8, desc: 'Longbow archer. Arcing shots pierce shield lines.' },
   maren: { id: 'maren', name: 'Maren Ashgrove', title: 'Lantern Warden', owner: 'p1', cls: 'hero', hp: 420, armor: 4, damage: 20, range: 2.2, cooldown: 1.3, speed: 4.2, sight: 14,

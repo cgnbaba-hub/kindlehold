@@ -8,7 +8,7 @@
   },
   "seed": "1337",
   "quality": "high",
-  "startedAt": "2026-09-24T11:08:00.679Z",
+  "startedAt": "2026-09-24T11:49:33.372Z",
   "gates": {
     "loaded": true,
     "noPageErrors": true,
@@ -20,52 +20,52 @@
     "notBlank": true
   },
   "pass": true,
-  "readyMs": 7662,
+  "readyMs": 12945,
   "setup": {
     "sim": {
       "ticks": 40,
-      "ms": 1.1999998092651367
+      "ms": 2.6000003814697266
     },
-    "hash": "18cfb7b2"
+    "hash": "c303b73c"
   },
   "fps": {
-    "frames": 7,
-    "fps": 2.9167881995083134,
+    "frames": 19,
+    "fps": 2.9534749965024645,
     "frameMs": {
-      "mean": 342.8428571428571,
-      "p50": 250,
-      "p95": 950,
-      "p99": 950
+      "mean": 338.5842105263157,
+      "p50": 16.700000000000728,
+      "p95": 16.700000000000728,
+      "p99": 6133.0999999999985
     }
   },
   "stats": {
-    "frames": 16,
-    "fps": 1.1442629443527126,
+    "frames": 29,
+    "fps": 1.5013537903928345,
     "frameMs": {
-      "mean": 873.9250055551529,
-      "p50": 216.6999969482422,
-      "p95": 3933.10009765625,
-      "p99": 6983
+      "mean": 666.0655245945371,
+      "p50": 16.700000762939453,
+      "p95": 6133.10009765625,
+      "p99": 7033.10009765625
     },
     "simMs": {
-      "samples": 45,
-      "mean": 0.11777773963080512,
-      "p95": 0.3000001907348633
+      "samples": 24,
+      "mean": 0.8916667302449545,
+      "p95": 2.6000003814697266
     },
     "renderer": {
-      "drawCalls": 117,
-      "triangles": 1115759,
+      "drawCalls": 118,
+      "triangles": 1110359,
       "points": 900,
       "lines": 0,
-      "textures": 11,
-      "geometries": 63,
-      "programs": 28,
+      "textures": 12,
+      "geometries": 67,
+      "programs": 31,
       "pixelRatio": 1,
       "width": 1920,
       "height": 1080
     },
-    "tick": 12685,
-    "hour": 18.335000000000043
+    "tick": 12664,
+    "hour": 18.314000000000018
   },
   "health": [
     {
@@ -75,7 +75,7 @@
       "status": "ok",
       "errors": 0,
       "lastError": null,
-      "detail": "requests=1230 partial=0"
+      "detail": "requests=1182 partial=0"
     },
     {
       "id": "world-services",
@@ -228,7 +228,7 @@
       "status": "ok",
       "errors": 0,
       "lastError": null,
-      "detail": "15 buildings"
+      "detail": "16 buildings"
     },
     {
       "id": "units-view",
@@ -246,7 +246,7 @@
       "status": "ok",
       "errors": 0,
       "lastError": null,
-      "detail": "65/1500 particles"
+      "detail": "53/1500 particles"
     },
     {
       "id": "input",
@@ -277,8 +277,8 @@
     }
   ],
   "frame": {
-    "mean": 42.588517773437516,
-    "variance": 123.33199865726851
+    "mean": 42.80467128906251,
+    "variance": 126.9756744404508
   },
   "screenshot": "docs/screenshots/round2/sunset-overview.png",
   "diagnostics": {
@@ -291,12 +291,12 @@
     "badResponses": []
   },
   "phaseMs": {
-    "ready": 7662,
-    "setup": 7677,
-    "settled": 11785,
-    "fps": 14215,
-    "snapshot": 137167,
-    "screenshot": 144423
+    "ready": 12945,
+    "setup": 12976,
+    "settled": 13030,
+    "fps": 19515,
+    "snapshot": 219270,
+    "screenshot": 226336
   },
   "failedModules": []
 }

@@ -1,0 +1,19 @@
+{
+  "modules": {
+    "missions": { "status": "iterating", "gameplay": null, "iterations": 1 },
+    "combat": { "status": "iterating", "gameplay": null, "iterations": 1 },
+    "ai": { "status": "iterating", "gameplay": null, "iterations": 1 },
+    "economy": { "status": "iterating", "gameplay": null, "iterations": 1 },
+    "save": { "status": "hardened", "iterations": 1 },
+    "deployment": { "status": "validated-locally", "iterations": 1 }
+  },
+  "history": [
+    { "date": "2026-09-24", "critic": "gameplay-critic", "round": 1, "score": 5.8, "report": "docs/critiques/gameplay-round1.md", "blockers": 4, "verdict": "below 8.5 — builder iteration 1 applied" },
+    { "date": "2026-09-24", "critic": "security-critic", "round": 1, "findings": { "critical": 0, "high": 0, "medium": 3, "low": 5, "info": 6 }, "report": "docs/critiques/security-round1.md", "verdict": "M1–M3, L1–L5 fixed" }
+  ],
+  "iterations": { "gameplay": 1, "visual": 1, "security": 1 },
+  "openBlockers": [],
+  "openPolish": [],
+  "deployment": { "status": "production build + nginx atomic releases/rollback/CSP validated locally in Docker (npm run test:deploy); no public deployment (no domain/DNS authorised)" },
+  "next": "Visual critic on round 2 screenshots; gameplay critic round 2"
+}

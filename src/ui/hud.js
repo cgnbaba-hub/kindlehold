@@ -88,7 +88,26 @@ export function createHud({ root, session, input, settings, actions }) {
   const cmdGrid = h('div.cmd-grid');
   const cmdTitle = h('div.cmd-title');
   const cmdPanel = h('section.commands.panel', { 'aria-label': 'Commands' }, [cmdTitle, cmdGrid]);
-  hud.append(h('div.bottom-bar', {}, [mapPanel, selPanel, cmdPanel]));
+  const groupBar = h('div.group-bar', { 'aria-label': 'Control groups' });
+  hud.append(h('div.bottom-bar', {}, [mapPanel, h('div.sel-col', {}, [groupBar, selPanel]), cmdPanel]));
+  let groupSig = '';
+  function renderGroups() {
+    const w = world();
+    const entries = [];
+    for (let g = 1; g <= 9; g++) {
+      const ids = (w.selection.groups[g] || []).filter((id) => w.entities[id]);
+      if (ids.length) entries.push([g, ids]);
+    }
+    const sig = entries.map(([g, ids]) => `${g}:${ids.length}`).join(',');
+    if (sig === groupSig) return;
+    groupSig = sig;
+    clear(groupBar);
+    for (const [g, ids] of entries) {
+      const b = h('button.group-chip', { type: 'button', 'data-tip': `Group ${g} (press ${g}; Ctrl+${g} to reassign)` }, [h('strong', { text: String(g) }), h('span', { text: `×${ids.length}` })]);
+      b.addEventListener('click', () => input.setSelection(ids));
+      groupBar.append(b);
+    }
+  }
 
   // --- placement / targeting banner, toasts, tooltip ----------------------------------------
   const banner = h('div.banner', { role: 'status', hidden: true });
@@ -163,6 +182,9 @@ export function createHud({ root, session, input, settings, actions }) {
     }
   }
 
+  /** Replace {bindingName} placeholders with the player's current key labels. */
+  function withKeys(text) { const b = bindings(); return text.replace(/\{(\w+)\}/g, (m, k) => (Object.hasOwn(b, k) ? keyLabel(b[k]) : m)); }
+
   // --- objectives -----------------------------------------------------------------------------
   let dirtyObjectives = true;
   function renderObjectives() {
@@ -177,7 +199,7 @@ export function createHud({ root, session, input, settings, actions }) {
         h('div.obj-title', {}, [st.state === 'done' ? icon('check', 'icon icon-xs') : h('span.obj-dot'), h('span', { text: def.title })]),
         h('div.obj-text', { text: def.text }),
       ]);
-      if (st.state === 'active' && settings.tutorialHints && def.hint) li.append(h('div.obj-hint', { text: def.hint }));
+      if (st.state === 'active' && settings.tutorialHints && def.hint) li.append(h('div.obj-hint', { text: withKeys(def.hint) }));
       objList.append(li);
     }
   }
@@ -294,8 +316,9 @@ export function createHud({ root, session, input, settings, actions }) {
   // --- command grid ------------------------------------------------------------------------------
   let cmdMode = 'auto'; // 'auto' | 'build'
   let confirmDemolish = 0;
+  function shortLabel(l) { return l.replace(/^Train /, '').replace("Woodcutter's ", '').replace(' the Hearth', '').replace(' position', '').replace(' construction', '').split(' ').slice(0, 2).join(' '); }
   function cmdButton({ ic, label, key, tip, tipTitle, onClick, disabled = false, cost = null, progress = null, cooldown = null, active = false, highlight = false }) {
-    const b = h(`button.cmd${active ? '.active' : ''}${highlight ? '.pulse' : ''}`, { type: 'button', 'aria-label': label, 'data-tip': tip || label, 'data-tip-title': tipTitle || label, 'aria-disabled': disabled ? 'true' : 'false' }, [icon(ic, 'icon icon-md')]);
+    const b = h(`button.cmd${active ? '.active' : ''}${highlight ? '.pulse' : ''}`, { type: 'button', 'aria-label': label, 'data-tip': tip || label, 'data-tip-title': tipTitle || label, 'aria-disabled': disabled ? 'true' : 'false' }, [icon(ic, 'icon icon-md'), cost ? null : h('span.cmd-label', { text: shortLabel(label) })]);
     if (key) b.append(h('span.cmd-key', { text: keyLabel(key) }));
     if (cost) b.append(costRow(cost));
     if (progress !== null) b.append(h('div.cmd-progress', { style: { height: `${Math.round(progress * 100)}%` } }));
@@ -334,7 +357,7 @@ export function createHud({ root, session, input, settings, actions }) {
     if (units.length) {
       const hero = units.find((u) => u.hero);
       setText(cmdTitle, hero && units.length === 1 ? 'Maren Ashgrove' : 'Orders');
-      cmdGrid.append(cmdButton({ ic: 'move', label: 'Move', tip: 'Right-click on the ground to move. Groups keep formation.', onClick: () => toast('Right-click the ground to move', 'info') }));
+      cmdGrid.append(cmdButton({ ic: 'move', label: 'Move', tip: 'Then left-click a destination (or simply right-click the ground). Groups keep formation.', onClick: () => input.beginTarget('move'), active: input.state.targetKind === 'move' }));
       cmdGrid.append(cmdButton({ ic: 'attackMove', label: 'Attack-move', key: bb.attackMove, tip: 'Move and fight anything met on the way. Then left-click a target point.', onClick: () => input.beginTarget('attackMove'), active: input.state.targetKind === 'attackMove' }));
       cmdGrid.append(cmdButton({ ic: 'patrol', label: 'Patrol', key: bb.patrol, tip: 'Walk back and forth, engaging enemies.', onClick: () => input.beginTarget('patrol'), active: input.state.targetKind === 'patrol' }));
       cmdGrid.append(cmdButton({ ic: 'stop', label: 'Stop', key: bb.stop, tip: 'Stop and guard the current spot.', onClick: () => input.issue({ type: 'stop', ids: units.map((u) => u.id) }) }));
@@ -383,7 +406,7 @@ export function createHud({ root, session, input, settings, actions }) {
         cmdGrid.append(cmdButton({ ic: 'patrol', label: 'Set rally point', tip: 'Right-click the ground while the Barracks is selected.', onClick: () => toast('Right-click the ground to set the rally point', 'info') }));
       }
       if (def.slots) {
-        cmdGrid.append(cmdButton({ ic: one.paused ? 'play' : 'pause', label: one.paused ? 'Resume work' : 'Pause work', tip: one.paused ? 'Let workers return to this building.' : 'Send its workers back to labouring (hauling, building, soldiers). Useful when goods pile up or people are short.', active: !!one.paused, onClick: () => input.issue({ type: 'toggleWork', id: one.id }) }));
+        cmdGrid.append(cmdButton({ ic: one.paused ? 'play' : 'pause', label: one.paused ? 'Resume work' : 'Pause work', tip: one.paused ? 'Let workers return to this building.' : 'Frees its workers for other work: hauling, building, other workplaces or soldier training. Useful when goods pile up or people are short.', active: !!one.paused, onClick: () => input.issue({ type: 'toggleWork', id: one.id }) }));
       }
       const demoArmed = performance.now() - confirmDemolish < 3000;
       cmdGrid.append(cmdButton({ ic: 'demolish', label: demoArmed ? 'Click again to demolish' : 'Demolish', tip: 'Tear down this building (30% refund). Click twice to confirm.', active: demoArmed, onClick: () => {
@@ -417,7 +440,7 @@ export function createHud({ root, session, input, settings, actions }) {
       banner.classList.toggle('bad', !!reason);
     } else if (st.mode === 'target') {
       banner.hidden = false; banner.classList.remove('bad');
-      setText(banner, st.targetKind === 'flare' ? 'Beacon Flare — left-click where the lantern should burst (right-click to cancel)' : `${st.targetKind === 'patrol' ? 'Patrol' : 'Attack-move'} — left-click a destination (right-click to cancel)`);
+      setText(banner, st.targetKind === 'flare' ? 'Beacon Flare — left-click where the lantern should burst (right-click to cancel)' : `${{ patrol: 'Patrol', move: 'Move', attackMove: 'Attack-move' }[st.targetKind] || 'Order'} — left-click a destination (right-click to cancel)`);
     } else banner.hidden = true;
     if (t < 0.2) return;
     t = 0;
@@ -462,6 +485,7 @@ export function createHud({ root, session, input, settings, actions }) {
       setText(cmdTitle, t2.textContent);
     }
     if (dirtyObjectives || w.tick % 100 < 5) { renderObjectives(); dirtyObjectives = false; }
+    renderGroups();
   }
 
   return {

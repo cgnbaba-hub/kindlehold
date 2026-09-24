@@ -25,7 +25,7 @@ export const STALL_TEXT = {
   noSettler: 'Needs an idle settler to train',
 };
 
-const STALL_ALERT = { storageFull: 'is full — more free labourers are needed to carry goods', noDeposit: 'has nothing left to work nearby — build a new one closer to resources', noInput: 'is waiting for provisions', noAccess: 'cannot be reached by its workers' };
+const STALL_ALERT = { noDeposit: 'has nothing left to work nearby — build a new one closer to resources', noInput: 'is waiting for provisions', noAccess: 'cannot be reached by its workers' };
 
 function setStall(world, b, reason) {
   if (b.stall === reason) return;
@@ -36,6 +36,11 @@ function setStall(world, b, reason) {
   if (b.owner === 'p1' && STALL_ALERT[reason] && world.tick - (b.stallAlertTick ?? -1e9) > 1800) {
     b.stallAlertTick = world.tick;
     alert(world, 'warn', `${BUILDINGS[b.type].name} ${STALL_ALERT[reason]}.`, b.x, b.z);
+  }
+  // goods piling up: one combined hint at most every 3 minutes
+  if (b.owner === 'p1' && reason === 'storageFull' && world.tick - (world.stats.lastFullAlert ?? -1e9) > 3600) {
+    world.stats.lastFullAlert = world.tick;
+    alert(world, 'info', `Goods are piling up at the ${BUILDINGS[b.type].name}: labourers are busy. Pause a workplace or build Cottages for more people.`, b.x, b.z);
   }
 }
 

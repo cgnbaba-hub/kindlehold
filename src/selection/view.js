@@ -20,6 +20,14 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   rings.count = 0; rings.frustumCulled = false; rings.renderOrder = 3;
   scene.add(rings);
 
+  // faction discs under every soldier: tells friend from foe inside a melee at a glance
+  const discGeo = new THREE.CircleGeometry(0.62, 20); discGeo.rotateX(-Math.PI / 2);
+  const discMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.45, depthWrite: false, fog: false });
+  const discs = new THREE.InstancedMesh(discGeo, discMat, 400);
+  discs.count = 0; discs.frustumCulled = false; discs.renderOrder = 2;
+  scene.add(discs);
+  const cDiscP = new THREE.Color('#4fb8e0'), cDiscE = new THREE.Color('#e05a3a'), cDiscH = new THREE.Color('#ffd27a');
+
   // health bars: background + fill quads, camera-facing
   const barGeo = new THREE.PlaneGeometry(1, 1);
   const barBgMat = new THREE.MeshBasicMaterial({ color: '#141414', transparent: true, opacity: 0.75, depthTest: false, fog: false });
@@ -165,6 +173,17 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
       }
       const hov = input.state.hoverEntity;
       if (hov && !sel.has(hov.id) && w.entities[hov.id]) addRing(hov, cHover, hov.kind === 'building' ? BUILDINGS[hov.type].radius + 0.6 : 0.65);
+      discs.count = 0;
+      for (const u of all(w, 'unit')) {
+        if (u.downed || discs.count >= 400) continue;
+        const x = u.px + (u.x - u.px) * alpha, z = u.pz + (u.z - u.pz) * alpha;
+        const sc = u.commander ? 1.5 : u.hero ? 1.25 : 1;
+        m4.compose(p.set(x, terrain.height(x, z) + 0.06, z), q.identity(), s.set(sc, 1, sc));
+        discs.setMatrixAt(discs.count, m4);
+        discs.setColorAt(discs.count, u.hero ? cDiscH : u.owner === PLAYER ? cDiscP : cDiscE);
+        discs.count++;
+      }
+      discs.instanceMatrix.needsUpdate = true; if (discs.instanceColor) discs.instanceColor.needsUpdate = true;
       // health bars: selected, damaged units in view, damaged buildings
       for (const u of all(w, 'unit')) {
         if (u.downed) continue;
@@ -244,7 +263,8 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
     },
     getHealthStatus() { return { status: 'ok' }; },
     dispose() {
-      scene.remove(rings, bars, barsBg, ghost, foot, range, aoe, castRange, border, stallMarks);
+      scene.remove(rings, bars, barsBg, ghost, foot, range, aoe, castRange, border, stallMarks, discs);
+      discGeo.dispose(); discMat.dispose();
       markTex.dispose(); markMat.dispose(); stallMarks.geometry.dispose();
       for (const mk of markers) { scene.remove(mk.m); mk.m.material.dispose(); }
       ringGeo.dispose(); ringMat.dispose(); barGeo.dispose(); barBgMat.dispose(); barMat.dispose();

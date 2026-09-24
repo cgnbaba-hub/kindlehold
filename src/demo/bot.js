@@ -71,6 +71,13 @@ export function createBot(sim, { aggressive = true } = {}) {
     if (!p.research && !researchBlocker(world, PLAYER, 'axes') && p.res.timber > 100) { sim.issue({ type: 'research', techId: 'axes' }); return; }
     if (!p.research && !researchBlocker(world, PLAYER, 'charter') && p.res.stone > 100) { sim.issue({ type: 'research', techId: 'charter' }); return; }
     if (p.techs.charter && count('tower') < 1) { place('tower'); return; }
+    // exhausted forests: demolish the idle lodge and build a new one next to standing trees
+    const dead = all(world, 'building').find((b) => b.owner === PLAYER && b.type === 'lodge' && b.state === 'active' && b.stall === 'noDeposit');
+    if (dead && canAfford(world, PLAYER, buildCost(world, PLAYER, 'lodge'))) {
+      let best = null, bd = Infinity;
+      for (const d of all(world, 'deposit')) if (d.type === 'tree' && d.amount > 0) { const dd = Math.hypot(d.x + 46, d.z - 50); if (dd < bd) { bd = dd; best = d; } }
+      if (best && place('lodge', [best.x, best.z])) sim.issue({ type: 'demolish', id: dead.id });
+    }
   }
 
   function militaryStep() {

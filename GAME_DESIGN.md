@@ -25,8 +25,8 @@ pole taller than her head, glowing lantern.
 | 1. Arrival | start | Select Maren, relight the Keep hearth (click Keep → *Rekindle*; costs nothing, teaches selection) |
 | 2. Timber & food | phase 1 done | Build a Woodcutter's Lodge and a Farmstead |
 | 3. Growth | both complete | Build 2 Cottages; reach 12 settlers |
-| 4. Stone & iron | pop ≥ 12 | Build a Quarry and an Iron Mine; stock 30 iron |
-| 5. Arms | 30 iron | Build a Barracks; recruit 6 soldiers |
+| 4. Stone & iron | pop ≥ 12 | Build a Quarry and an Iron Mine; produce 20 iron |
+| 5. Arms | 20 iron produced | Build a Barracks; recruit 6 soldiers |
 | 6. Warning | 6 soldiers or minute 14 | Scouts warn: raid inbound in 2:00. Build a Watchtower (needs March Charter) or position troops |
 | 7. Raid | timer | Survive the raid (wave of 8–14 reavers by difficulty) |
 | 8. Counter-attack | raid repelled | Destroy the Rustfang Warhall at the ford fort (Vharek defends it) |
@@ -129,10 +129,10 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 - **Vharek the Tollbreaker** (commander): 700 HP, cleave 35 dmg, *War Horn* rallies
   nearby reavers (+20% damage, 8 s) once per 40 s. Stays at the Warhall until the
   Warhall is attacked or the final wave.
-- Enemy AI: camp spawns units from the Warhall at a difficulty-scaled rate, sends a
+- Enemy AI: camp musters units from the Warhall at a difficulty-scaled rate out of finite reserves (none while the Warhall is below half health), sends a
   scout toward the player's territory every ~3 min, assembles a raid at a gather point,
-  targets the nearest valuable building (production first, then Keep), retreats when
-  the wave loses 65% of its strength, regroups and returns later.
+  gathers visibly outside the gate for 20 s, targets one of the most valuable buildings (production first, then Keep; seeded variety), retreats when
+  the wave loses 75% of its strength, regroups and returns later.
 
 ## Difficulty
 
@@ -141,6 +141,7 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 | First raid size | 6 | 9 | 13 |
 | Enemy spawn interval | 50 s | 35 s | 24 s |
 | Garrison cap | 8 | 12 | 16 |
+| Fort reserves (total musters) | 22 | 32 | 40 |
 | Raid warning (if not triggered earlier) | 18 min | 14 min | 11 min |
 | Warning → raid delay | 3:00 | 2:00 | 1:30 |
 | Starting resources | ×1.5 | ×1 | ×0.8 |

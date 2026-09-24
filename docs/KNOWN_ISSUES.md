@@ -23,9 +23,9 @@ This list is kept honest and current. "Measured" items cite the report that show
   player can also see.
 - Settlers cannot be ordered directly; they choose work automatically (workplace slots,
   hauling, building, repairing). Priorities cannot be set.
-- Hard difficulty is not beaten by the scripted test bot (it loses at ~15 min); it is intended
-  to need better play than the bot's fixed build order. Human playtesting of Hard has not
-  been done.
+- Hard is won by the scripted bot but slowly (28.8 and 40.8 min on seeds 1337 / 42, above
+  the 15–30 min target); Normal 26.2 min, Story 20.6 min (seed 1337). Human playtesting of any
+  difficulty has not been done.
 - Melee units can visually overlap while fighting in dense clumps (simple separation only).
 
 ## Presentation

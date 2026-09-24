@@ -236,3 +236,9 @@ button { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) { .cmd.pulse, .msg, .alert, .toast, .bd-glow { animation: none !important; } }
 .showcase-tag { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); padding: 6px 14px; display: flex; gap: 10px; font-size: 13px; }
 .showcase-audio { position: absolute; left: 12px; top: 12px; padding: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.cmd-label { font-size: 0.66em; line-height: 1; color: var(--ink-dim); text-align: center; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.sel-col { flex: 1; min-width: 0; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
+.sel-col .selection { max-width: none; margin: 0; }
+.group-bar { display: flex; gap: 5px; min-height: 0; }
+.group-chip { display: inline-flex; gap: 5px; align-items: baseline; padding: 3px 9px; background: var(--panel); border: 1px solid var(--brass-dim); border-radius: 5px; cursor: pointer; font-size: 0.85em; }
+.group-chip strong { color: var(--brass); }

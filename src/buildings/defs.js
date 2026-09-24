@@ -57,7 +57,7 @@ export const BUILDINGS = {
   mine: {
     id: 'mine', name: 'Iron Mine', owner: 'p1', buildable: true,
     desc: 'Built against an iron vein (within 10 m). Miners eat 1 provision per 2 iron.',
-    cost: { timber: 30, stone: 20 }, buildTime: 26, hp: 450, radius: 4, navRadius: 3.2, slots: 1, job: 'miner',
+    cost: { timber: 25, stone: 15 }, buildTime: 22, hp: 450, radius: 4, navRadius: 3.2, slots: 1, job: 'miner',
     deposit: 'iron', depositRange: 10, outCap: 8, inCap: 6, door: [0, 4],
   },
   barracks: {

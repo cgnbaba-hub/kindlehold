@@ -95,7 +95,7 @@ export function createPopulationModule() {
     }
 
     // warn half a minute before a meal the stores cannot cover
-    if (keep && p.nextMealTick - world.tick === 600 && p.res.provisions < p.pop) {
+    if (keep && p.nextMealTick - world.tick === 900 && p.res.provisions < p.pop * 1.5) {
       alert(world, 'warn', `Provisions are running low: ${Math.floor(p.res.provisions)} left for ${p.pop} people at the next meal. Build or staff Farmsteads.`, keep.x, keep.z);
     }
     // meals

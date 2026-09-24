@@ -4,20 +4,20 @@
 // either side); its only non-player advantage is the documented Hard HP bonus and
 // scripted reinforcements that march in from the north-east road during raids.
 import { EV, PLAYER, ENEMY } from '../core/contracts.js';
-import { all, emit, alert } from '../world/world.js';
+import { all, emit, alert, worldRng } from '../world/world.js';
 import { doorOf, BUILDINGS } from '../buildings/defs.js';
 import { spawnUnit, isAlive } from '../units/sim.js';
 import { UNITS } from '../units/defs.js';
 
 export const AI_DIFFICULTY = {
-  story: { firstRaid: 6, growth: 2, spawnInterval: 50, waveInterval: 300, garrisonCap: 8, hpMult: 1, raidDelay: 180 },
-  normal: { firstRaid: 9, growth: 3, spawnInterval: 35, waveInterval: 240, garrisonCap: 12, hpMult: 1, raidDelay: 120 },
-  hard: { firstRaid: 11, growth: 4, spawnInterval: 24, waveInterval: 210, garrisonCap: 16, hpMult: 1.1, raidDelay: 105 },
+  story: { firstRaid: 6, growth: 2, spawnInterval: 50, waveInterval: 300, garrisonCap: 8, hpMult: 1, raidDelay: 180, reserves: 22 },
+  normal: { firstRaid: 9, growth: 3, spawnInterval: 35, waveInterval: 240, garrisonCap: 12, hpMult: 1, raidDelay: 120, reserves: 32 },
+  hard: { firstRaid: 11, growth: 4, spawnInterval: 24, waveInterval: 210, garrisonCap: 16, hpMult: 1.1, raidDelay: 105, reserves: 40 },
 };
 
 const SPAWN_CYCLE = ['reaver', 'reaver', 'slinger', 'brute', 'reaver', 'slinger'];
 const TARGET_PRIORITY = { lodge: 0, farm: 0, quarry: 0, mine: 0, cottage: 1, barracks: 1, tower: 2, keep: 3 };
-const RETREAT_AT = 0.35;
+const RETREAT_AT = 0.25;
 
 export function aiSettings(world) { return Object.hasOwn(AI_DIFFICULTY, world.meta.difficulty) ? AI_DIFFICULTY[world.meta.difficulty] : AI_DIFFICULTY.normal; }
 
@@ -31,15 +31,19 @@ export function spawnEnemy(world, type, x, z) {
   return u;
 }
 
-export function pickRaidTarget(world, fromX, fromZ) {
-  let best = null, bestScore = Infinity;
+export function pickRaidTarget(world, fromX, fromZ, vary = false) {
+  const cands = [];
   for (const b of all(world, 'building')) {
     if (b.owner !== PLAYER || b.state === 'destroyed') continue;
     const pr = TARGET_PRIORITY[b.type] ?? 2;
-    const score = pr * 1000 + Math.hypot(b.x - fromX, b.z - fromZ);
-    if (score < bestScore) { bestScore = score; best = b; }
+    cands.push({ b, score: pr * 1000 + Math.hypot(b.x - fromX, b.z - fromZ) });
   }
-  return best;
+  if (!cands.length) return null;
+  cands.sort((a, c) => a.score - c.score || a.b.id - c.b.id);
+  if (!vary) return cands[0].b;
+  // vary between the few most attractive targets (seeded, deterministic)
+  const top = cands.slice(0, Math.min(3, cands.length));
+  return top[Math.floor(worldRng(world).next() * top.length)].b;
 }
 
 export function createAiModule() {
@@ -101,14 +105,14 @@ export function createAiModule() {
   function launchRaid(world, hall) {
     const ai = world.ai;
     const raid = ai.raidIds.map((id) => world.entities[id]).filter((u) => u && isAlive(u));
-    const target = pickRaidTarget(world, hall.x, hall.z);
+    const target = pickRaidTarget(world, hall.x, hall.z, true);
     if (!target || !raid.length) { ai.state = 'build'; ai.raidIds = []; ai.raidTick = world.tick + 60 * 20; return; }
     ai.raidTarget = target.id;
     ai.state = 'raid';
     ai.raidStartedTick = world.tick;
     orderRaid(world, raid, target);
     emit(world, EV.AI_WAVE, { wave: ai.wave + 1, size: raid.length, target: target.id, x: target.x, z: target.z });
-    alert(world, 'danger', `Rustfang raid! ${raid.length} reavers are marching on your ${BUILDINGS[target.type].name}.`, target.x, target.z);
+    alert(world, 'danger', `Rustfang raid! ${raid.length} raiders are marching on your ${BUILDINGS[target.type].name}.`, target.x, target.z);
   }
 
   function orderRaid(world, raid, target) {
@@ -198,7 +202,8 @@ export function createAiModule() {
       if (world.tick >= ai.nextSpawnTick) {
         ai.nextSpawnTick = world.tick + cfg.spawnInterval * 20;
         const g = garrison(world);
-        if (g.length < cfg.garrisonCap + ai.wave * 2) {
+        // the fort's reserves are finite, and nobody new musters while the Warhall burns
+        if ((ai.spawned || 0) < cfg.reserves && hall.hp > hall.maxHp * 0.5 && g.length < cfg.garrisonCap + ai.wave * 2) {
           const d = doorOf(hall);
           const type = SPAWN_CYCLE[(ai.spawned || 0) % SPAWN_CYCLE.length];
           ai.spawned = (ai.spawned || 0) + 1;

@@ -28,7 +28,7 @@ export const HARROWMERE_SCENARIO = {
     {
       id: 'timber-food', title: 'Timber and bread',
       text: "Build a Woodcutter's Lodge near the western trees and a Farmstead on open ground.",
-      hint: 'Press B or open the Build menu. Green outlines are valid spots; the Lodge needs trees within 28 m.',
+      hint: 'Press {buildMenu} or open the Build menu. Green outlines are valid spots; the Lodge needs trees within 28 m.',
       highlight: 'build', activeWhen: { completed: 'rekindle' },
       completeWhen: { all: [{ built: 'lodge', count: 1 }, { built: 'farm', count: 1 }] },
       onComplete: [{ speaker: 'osric', text: 'Logs and grain moving again. We will need roofs for the newcomers.' }],
@@ -43,10 +43,10 @@ export const HARROWMERE_SCENARIO = {
     },
     {
       id: 'stone-iron', title: 'Stone and iron',
-      text: 'Build a Quarry and an Iron Mine, and produce 30 iron.',
+      text: 'Build a Quarry and an Iron Mine, and produce 20 iron.',
       hint: 'The rock outcrops lie south-east of the Keep; the iron vein is under the western hill. Miners eat provisions.',
       highlight: 'build:mine', activeWhen: { completed: 'growth' },
-      completeWhen: { all: [{ built: 'quarry', count: 1 }, { built: 'mine', count: 1 }, { produced: 'iron', amount: 30 }] },
+      completeWhen: { all: [{ built: 'quarry', count: 1 }, { built: 'mine', count: 1 }, { produced: 'iron', amount: 20 }] },
       onComplete: [{ speaker: 'osric', text: 'Good iron, Warden. Enough for spear-points, if you have hands to hold them.' }],
     },
     {
@@ -59,7 +59,7 @@ export const HARROWMERE_SCENARIO = {
     {
       id: 'survive', title: 'Hold Kindlehold',
       text: 'Survive the Rustfang raid.',
-      hint: 'Group soldiers with Ctrl+1 and right-click raiders to attack. Maren: F = Beacon Flare (blinds a group), G = Kindle the Line (wards allies). The Keep\'s archers help defend it.',
+      hint: 'Group soldiers with Ctrl+1 and right-click raiders to attack. Maren: {abilityFlare} = Beacon Flare (blinds a group), {abilityKindle} = Kindle the Line (wards allies). The Keep\'s archers help defend it.',
       highlight: 'army', activeWhen: { flag: 'raidWarned' },
       completeWhen: { raidsRepelled: 1 },
       onComplete: [

@@ -8,7 +8,7 @@
   },
   "seed": "1337",
   "quality": "high",
-  "startedAt": "2026-09-24T10:59:31.745Z",
+  "startedAt": "2026-09-24T11:41:48.341Z",
   "gates": {
     "loaded": true,
     "noPageErrors": true,
@@ -20,52 +20,52 @@
     "notBlank": true
   },
   "pass": true,
-  "readyMs": 19409,
+  "readyMs": 17566,
   "setup": {
     "sim": {
       "ticks": 40,
-      "ms": 5.299999237060547
+      "ms": 7
     },
-    "hash": "9b8b458e"
+    "hash": "e3c2b2bc"
   },
   "fps": {
-    "frames": 16,
-    "fps": 6.194107854903027,
+    "frames": 18,
+    "fps": 2.571502042915512,
     "frameMs": {
-      "mean": 161.4437499999999,
-      "p50": 66.70000000000073,
-      "p95": 466.7000000000007,
-      "p99": 966.5
+      "mean": 388.87777777777774,
+      "p50": 16.700000000000728,
+      "p95": 650.1000000000022,
+      "p99": 6083.200000000001
     }
   },
   "stats": {
-    "frames": 25,
-    "fps": 1.131271491726582,
+    "frames": 28,
+    "fps": 1.149939824929644,
     "frameMs": {
-      "mean": 883.9611068725586,
-      "p50": 66.69999694824219,
-      "p95": 3899.89990234375,
-      "p99": 12299.427734375
+      "mean": 869.6107207706997,
+      "p50": 16.700000762939453,
+      "p95": 6083.2001953125,
+      "p99": 11033
     },
     "simMs": {
-      "samples": 59,
-      "mean": 0.15762710571289062,
-      "p95": 0.3000001907348633
+      "samples": 30,
+      "mean": 0.5999999682108561,
+      "p95": 2.6999998092651367
     },
     "renderer": {
-      "drawCalls": 117,
-      "triangles": 1115809,
+      "drawCalls": 118,
+      "triangles": 1110365,
       "points": 900,
       "lines": 0,
-      "textures": 11,
-      "geometries": 63,
-      "programs": 28,
+      "textures": 12,
+      "geometries": 67,
+      "programs": 31,
       "pixelRatio": 1,
       "width": 1920,
       "height": 1080
     },
-    "tick": 12699,
-    "hour": 6.449000000000017
+    "tick": 12670,
+    "hour": 6.419000000000007
   },
   "health": [
     {
@@ -75,7 +75,7 @@
       "status": "ok",
       "errors": 0,
       "lastError": null,
-      "detail": "requests=1232 partial=0"
+      "detail": "requests=1182 partial=0"
     },
     {
       "id": "world-services",
@@ -228,7 +228,7 @@
       "status": "ok",
       "errors": 0,
       "lastError": null,
-      "detail": "15 buildings"
+      "detail": "16 buildings"
     },
     {
       "id": "units-view",
@@ -246,7 +246,7 @@
       "status": "ok",
       "errors": 0,
       "lastError": null,
-      "detail": "86/1500 particles"
+      "detail": "56/1500 particles"
     },
     {
       "id": "input",
@@ -277,8 +277,8 @@
     }
   ],
   "frame": {
-    "mean": 46.66509184570307,
-    "variance": 128.79209619338053
+    "mean": 45.72806699218744,
+    "variance": 125.67267904698247
   },
   "screenshot": "docs/screenshots/round2/dawn-overview.png",
   "diagnostics": {
@@ -290,16 +290,16 @@
     "failedRequests": [],
     "badResponses": [],
     "driverNotes": [
-      "[.WebGL-0x3ce40015a000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+      "[.WebGL-0x1340015ee00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
     ]
   },
   "phaseMs": {
-    "ready": 19409,
-    "setup": 19432,
-    "settled": 22659,
-    "fps": 25263,
-    "snapshot": 265678,
-    "screenshot": 275011
+    "ready": 17566,
+    "setup": 17615,
+    "settled": 17735,
+    "fps": 24770,
+    "snapshot": 241124,
+    "screenshot": 247851
   },
   "failedModules": []
 }

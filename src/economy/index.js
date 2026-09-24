@@ -82,8 +82,9 @@ export function createEconomyModule() {
           let out = 0;
           for (const r in b.stock.out) out += b.stock.out[r];
           const avail = out - b.stock.outReserved;
-          if (avail >= 2 || (avail >= 1 && out >= def.outCap - 1)) {
-            consider(150 + d - Math.min(60, avail * 8), { type: 'haul', from: b.id, amt: Math.min(HAUL_LOAD, avail), stage: 'toBuilding' });
+          const food = b.stock.out.provisions > 0 && res.provisions < world.players[owner].pop * 2;
+          if (avail >= 2 || (avail >= 1 && out >= def.outCap - 1) || (food && avail >= 1)) {
+            consider((food ? 40 : 150) + d - Math.min(60, avail * 8), { type: 'haul', from: b.id, amt: Math.min(HAUL_LOAD, avail), stage: 'toBuilding' });
           }
         }
         if (def.inCap) {

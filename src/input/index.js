@@ -121,7 +121,10 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
 
   function beginTarget(kind) {
     const units = selectedUnits();
-    if (kind === 'flare' || kind === 'kindle') {
+    if (kind === 'move') {
+      if (!units.length) return;
+      state.mode = 'target'; state.targetKind = 'move';
+    } else if (kind === 'flare' || kind === 'kindle') {
       const hero = units.find((u) => u.hero) || all(world(), 'unit').find((u) => u.hero && u.owner === PLAYER && !u.downed);
       if (!hero) return;
       if (kind === 'kindle') { issue({ type: 'ability', heroId: hero.id, ability: 'kindle' }); return; }
@@ -153,7 +156,7 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
       const t = pickEntity(x, y);
       if (state.targetKind === 'attackMove' && t && t.owner !== PLAYER && t.owner !== 'none' && t.kind !== 'deposit') issue({ type: 'attack', ids, target: t.id });
       else issue({ type: state.targetKind, ids, x: g.x, z: g.z });
-      if (hooks.onMarker) hooks.onMarker(state.targetKind === 'patrol' ? 'patrol' : 'attack', g.x, g.z);
+      if (hooks.onMarker) hooks.onMarker(state.targetKind === 'attackMove' ? 'attack' : 'move', g.x, g.z);
     }
     cancelMode();
   }

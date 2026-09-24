@@ -10,7 +10,7 @@ import { walkTo, stopWalking } from '../navigation/agent.js';
 
 export const MAX_QUEUE = 5;
 export const LEASH = 22;
-const SEP_RADIUS = 0.75;
+const SEP_RADIUS = 0.85;
 
 export function spawnUnit(world, type, owner, x, z, extra = {}) {
   const def = unitDef(type);
@@ -234,7 +234,13 @@ export function createUnitsModule() {
         if (def.cls === 'ranged' && o.type !== 'hold' && kite(world, u)) return;
         if (reach > def.range * 0.95) {
           if (o.type === 'hold') { u.target = null; u.moving = false; return; }
-          moveToward(world, u, t.x, t.z, t.kind === 'building' ? BUILDINGS[t.type].radius * 0.8 + def.range * 0.6 : def.range * 0.8);
+          if (t.kind === 'building') moveToward(world, u, t.x, t.z, BUILDINGS[t.type].radius * 0.8 + def.range * 0.6);
+          else if (def.cls !== 'ranged' && reach < 6) {
+            // close in on a personal slot around the target so melee fights spread into a ring
+            const a = (u.id * 2.399) % (Math.PI * 2);
+            const r = def.range * 0.75;
+            moveToward(world, u, t.x + Math.sin(a) * r, t.z + Math.cos(a) * r, 0.3);
+          } else moveToward(world, u, t.x, t.z, def.range * 0.8);
         } else {
           u.moving = false; u.path = null;
           u.heading = Math.atan2(t.x - u.x, t.z - u.z);
