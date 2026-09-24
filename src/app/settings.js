@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS = {
   muted: false,
   reducedMotion: false,
   uiScale: 1,
-  edgeScroll: true,
+  edgeScroll: false,
   cameraSpeed: 1,
   tutorialHints: true,
   gameSpeed: 1,

@@ -166,7 +166,7 @@ export function createMenus({ root, settings, onSettingsChange }) {
           table.append(h('div.bind-row', { role: 'listitem' }, [h('span', { text: BINDING_LABELS[action] }), b]));
         }
         body.append(table, menuButton('Reset keys to defaults', () => { settings.bindings = {}; onSettingsChange(settings); render('Controls'); }));
-        body.append(h('p.muted', { text: 'Mouse: left-click select · drag to box-select · right-click move/attack · middle-drag rotate · wheel zoom. Ctrl+1–9 make groups, 1–9 select them.' }));
+        body.append(h('p.muted', { text: 'Mouse: left-click select · left-drag box-select · right-click move/attack · right-drag moves the map · middle-drag rotates · wheel zooms. Ctrl+1–9 make groups, 1–9 select them.' }));
       } else {
         body.append(toggle('Reduced motion', 'reducedMotion', 'Instant camera moves, calmer effects, no pulsing highlights'), slider('Interface size', 'uiScale', 0.8, 1.3, 0.05, (v) => `${Math.round(v * 100)}%`));
       }

@@ -35,7 +35,7 @@ npm run build && npm run preview   # http://127.0.0.1:5181/
 |---|---|
 | Select | Left-click · drag a box for soldiers · Shift adds · double-click selects the same type |
 | Move / attack / rally point | Right-click ground / enemy (context-sensitive) |
-| Pan / rotate / zoom | Arrow keys or screen edge · Q / E or middle-drag · mouse wheel or + / − |
+| Pan / rotate / zoom | **Right-drag the map** · arrow keys · (screen edge, optional) · Q / E or middle-drag · mouse wheel (zooms to the cursor) or + / − |
 | Attack-move · Patrol · Stop · Hold | A · P · S · H (then left-click for A/P) |
 | Maren: Beacon Flare · Kindle the Line | F (then left-click target) · G |
 | Control groups | Ctrl+1–9 to set, 1–9 to select, double-tap to centre |

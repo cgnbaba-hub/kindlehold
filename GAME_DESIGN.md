@@ -149,7 +149,7 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 
 ## Controls (default)
 
-Camera: arrow keys / screen edges pan, Q/E rotate (or middle-drag), mouse wheel or +/− zoom,
+Camera: right-drag grabs and moves the map (a short right-click stays the context order), arrow keys pan, screen-edge scrolling is optional (off by default), Q/E or middle-drag rotate, mouse wheel zooms towards the cursor,
 Space centre on selection, Home centre on Keep. Left-click select, drag box-select,
 Shift adds, double-click selects the same type. Right-click context order (move /
 attack / rally). A = attack-move, P = patrol, S = stop, H = hold. Hero: F = Beacon Flare,

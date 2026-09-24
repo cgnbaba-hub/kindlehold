@@ -203,8 +203,8 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
     state.mouse.x = ev.clientX; state.mouse.y = ev.clientY;
     if (ev.button === 1) { state.down = { x: ev.clientX, y: ev.clientY, button: 1, yaw: cam.state.tyaw, moved: false }; ev.preventDefault(); return; }
     if (ev.button === 2) {
-      if (state.mode !== 'select') { cancelMode(); return; }
-      contextOrder(ev.clientX, ev.clientY);
+      // right button: short click = context order / cancel; drag = grab the map and pull it
+      state.down = { x: ev.clientX, y: ev.clientY, button: 2, moved: false, anchor: pickGround(ev.clientX, ev.clientY) };
       return;
     }
     if (ev.button === 0) {
@@ -225,9 +225,18 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
     const dx = ev.clientX - state.mouse.x, dy = ev.clientY - state.mouse.y;
     state.mouse.x = ev.clientX; state.mouse.y = ev.clientY; state.mouse.inside = true;
     if (state.down && state.down.button === 1) {
-      // middle drag: horizontal rotates, vertical pans forward/back
+      // middle drag: rotate around the view centre
       cam.rotate(-dx * 0.006);
-      cam.pan(0, dy * 0.12);
+      return;
+    }
+    if (state.down && state.down.button === 2) {
+      if (!state.down.moved && Math.hypot(ev.clientX - state.down.x, ev.clientY - state.down.y) > DRAG_PX) state.down.moved = true;
+      if (state.down.moved && state.down.anchor) {
+        // keep the grabbed ground point under the cursor
+        const g = pickGround(ev.clientX, ev.clientY);
+        if (g) cam.panWorld(state.down.anchor.x - g.x, state.down.anchor.z - g.z);
+        canvas.style.cursor = 'grabbing';
+      }
       return;
     }
     if (state.down && state.down.button === 0) {
@@ -240,6 +249,11 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
     if (!state.down) return;
     const d = state.down;
     state.down = null;
+    if (d.button === 2) {
+      canvas.style.cursor = '';
+      if (!d.moved) { if (state.mode !== 'select') cancelMode(); else contextOrder(ev.clientX, ev.clientY); }
+      return;
+    }
     if (d.button === 0) {
       if (d.moved && state.box) boxSelect(state.box.x0, state.box.y0, state.box.x1, state.box.y1, d.shift);
       else clickSelect(ev.clientX, ev.clientY, d.shift, performance.now());
@@ -250,8 +264,14 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
   function onWheel(ev) {
     ev.preventDefault();
     const f = ev.deltaY > 0 ? 1.12 : 1 / 1.12;
+    // zoom towards the point under the cursor (zooming out stays centred)
+    if (f < 1) {
+      const g = pickGround(ev.clientX, ev.clientY);
+      if (g) cam.focus(cam.state.tx + (g.x - cam.state.tx) * (1 - f), cam.state.tz + (g.z - cam.state.tz) * (1 - f));
+    }
     cam.zoomBy(f);
   }
+
 
   function onContext(ev) { ev.preventDefault(); }
 

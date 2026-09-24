@@ -62,7 +62,7 @@ export function createAudio({ bus, world, settings, getListener }) {
     if (!ctx) return;
     const m = settings.muted ? 0 : settings.masterVolume;
     buses.master.gain.value = m;
-    buses.music.gain.value = settings.musicVolume * 0.5;
+    buses.music.gain.value = settings.musicVolume * 1.1;
     buses.ambience.gain.value = settings.ambienceVolume * 0.6;
     buses.effects.gain.value = settings.effectsVolume;
     buses.voice.gain.value = settings.voiceVolume;
@@ -222,7 +222,7 @@ export function createAudio({ bus, world, settings, getListener }) {
     try {
       const pad = ctx.createOscillator(); pad.type = 'triangle'; pad.frequency.value = ROOT_HZ / 2;
       const pad2 = ctx.createOscillator(); pad2.type = 'triangle'; pad2.frequency.value = ROOT_HZ * 0.75; pad2.detune.value = 4;
-      const pg = ctx.createGain(); pg.gain.value = 0.045;
+      const pg = ctx.createGain(); pg.gain.value = 0.07;
       const plp = ctx.createBiquadFilter(); plp.type = 'lowpass'; plp.frequency.value = 600;
       pad.connect(plp); pad2.connect(plp); plp.connect(pg); pg.connect(buses.music);
       pad.start(); pad2.start();
@@ -249,9 +249,9 @@ export function createAudio({ bus, world, settings, getListener }) {
         const idx = (deg + pattern[step % 8]) % 14;
         const oct = idx >= 7 ? 2 : 1;
         const semi = SCALE[idx % 7] + 12 * (oct - 1);
-        pluck(buses.music, { t: music.next, freq: ROOT_HZ * 2 ** (semi / 12), gain: 0.12 + (step % 8 === 0 ? 0.06 : 0), decay: 1.8 });
+        pluck(buses.music, { t: music.next, freq: ROOT_HZ * 2 ** (semi / 12), gain: 0.26 + (step % 8 === 0 ? 0.1 : 0), decay: 1.8 });
       }
-      if (step % 8 === 0) tone(buses.music, { t: music.next, freq: (ROOT_HZ / 2) * 2 ** (SCALE[deg % 7] / 12), dur: beat * 7, gain: 0.05, type: 'sine', attack: 0.4 });
+      if (step % 8 === 0) tone(buses.music, { t: music.next, freq: (ROOT_HZ / 2) * 2 ** (SCALE[deg % 7] / 12), dur: beat * 7, gain: 0.1, type: 'sine', attack: 0.4 });
       if (music.tense > 0.3 && step % 2 === 0) { // war drum
         noise(buses.music, { t: music.next, freq: 120, q: 1, dur: 0.18, gain: 0.35 * music.tense, type: 'lowpass' });
         tone(buses.music, { t: music.next, freq: 70, freqEnd: 45, dur: 0.18, gain: 0.3 * music.tense });

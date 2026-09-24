@@ -68,6 +68,13 @@ export function createRtsCamera({ aspect = 16 / 9, terrain = null } = {}) {
       state.tx = Math.max(-bounds, Math.min(bounds, state.tx));
       state.tz = Math.max(-bounds, Math.min(bounds, state.tz));
     },
+    /** Grab-pan: move the view immediately by a world-space delta (no easing). */
+    panWorld(dx, dz) {
+      const nx = Math.max(-bounds, Math.min(bounds, state.tx + dx)), nz = Math.max(-bounds, Math.min(bounds, state.tz + dz));
+      state.x += nx - state.tx; state.z += nz - state.tz;
+      state.tx = nx; state.tz = nz;
+      apply();
+    },
     rotate(d) { state.tyaw += d; },
     zoomBy(f) { state.tzoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, state.tzoom * f)); },
     update(dt, reducedMotion = false) {
