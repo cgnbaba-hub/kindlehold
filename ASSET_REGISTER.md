@@ -27,14 +27,15 @@ this project, same licence as the project). They are not placeholders unless mar
 |---|---|---|
 | Terrain heightfield & splat map | `src/world/terrain-data.js`, `src/terrain/` | final |
 | Ground textures (grass, dirt, rock, sand albedo/normal) | `src/terrain/textures.js` (canvas, seeded noise) | final |
-| Building meshes (8 player + Warhall + palisade) | `src/buildings/meshes/*.js` | final |
+| Building meshes (8 player + Warhall + palisade) | `src/buildings/meshes.js` | final |
 | Character figures & animation | `src/units/figures.js` | final |
 | Trees, rocks, iron veins, grass | `src/environment/vegetation.js` | final |
 | Sky, water shader | three `Sky` addon (MIT) + `src/environment/water.js` | final |
 | Particles (smoke, dust, sparks, fire, embers) | `src/effects/` sprite textures drawn on canvas | final |
 | UI icons (inline SVG) | `src/ui/icons.js` | final |
-| All audio (ambience, SFX, music, voice cues) | `src/audio/synth.js` WebAudio synthesis | final |
+| All audio (ambience, SFX, music, voice cues) | `src/audio/index.js` WebAudio synthesis | final |
 | Fonts | system font stacks only (no files shipped) | final |
+| `src/ui/assets/menu-backdrop.jpg` (main-menu backdrop) | rendered by the game's own engine with `scripts/assets/render-menu-art.mjs` (project-authored) | final |
 
 Any item that becomes a temporary placeholder is marked `TEMPORARY` here and in
 `docs/STATUS.json` until replaced.

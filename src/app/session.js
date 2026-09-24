@@ -29,7 +29,7 @@ export async function createSession({ container, seed, quality = 'high', verify 
   const water = views.register(createWater({ scene: rc.scene, terrain: sim.terrain }));
   views.register(createVegetation({ scene: rc.scene, terrain: sim.terrain, world, quality: rc.quality }));
   const buildingsView = views.register(createBuildingsView({ scene: rc.scene, terrain: sim.terrain, world, renderer: rc.renderer, sky }));
-  const unitsView = views.register(createUnitsView({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus }));
+  const unitsView = views.register(createUnitsView({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, getZoom: () => rc.rts.state.zoom }));
   const effects = views.register(createEffects({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, quality: rc.quality, camera: rc.camera, reducedMotion: () => !!settings.reducedMotion }));
   buildingsView.cameraTarget = { x: 0, z: 0 };
   const overlay = { placementReason: '' };

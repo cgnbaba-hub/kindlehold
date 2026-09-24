@@ -45,7 +45,8 @@ export function rawHeight(map, x, z) {
   // border mountains keep the play space enclosed
   const edge = Math.max(Math.abs(x), Math.abs(z));
   if (edge > map.borderStart) {
-    const t = (edge - map.borderStart) / (map.half - map.borderStart);
+    // capped so the landscape can continue (as scenery) beyond the playable map
+    const t = Math.min(1.5, (edge - map.borderStart) / (map.half - map.borderStart));
     h += t * t * map.borderHeight * (0.7 + 0.6 * fbm2(x * 0.04, z * 0.04, s + 91, 3));
   }
   // flattened building grounds

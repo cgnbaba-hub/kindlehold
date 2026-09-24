@@ -4,16 +4,16 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 
 const KEYS = [
   // hour, sun colour, sun intensity, hemi sky, hemi ground, hemi intensity, fog colour, exposure
-  [0, '#8fa6d6', 0.32, '#2a3a5c', '#141820', 0.55, '#141c2a', 0.95],
-  [4.5, '#8fa6d6', 0.3, '#2a3a5c', '#141820', 0.5, '#1a2230', 0.95],
-  [5.6, '#ff9a6a', 0.9, '#6f7fa8', '#3a3228', 0.55, '#8a7f86', 0.95],
-  [7, '#ffc58c', 2.3, '#a9c3e2', '#5a5038', 0.75, '#c2c4c0', 0.9],
-  [10, '#fff1dc', 3.1, '#b9d2ee', '#5f5a42', 0.85, '#c9d4dc', 0.85],
-  [14, '#fff3e2', 3.1, '#b9d2ee', '#5f5a42', 0.85, '#c9d4dc', 0.85],
-  [17.2, '#ffcf96', 2.4, '#a8bedc', '#5a4e38', 0.75, '#d0c6b4', 0.9],
-  [18.6, '#ff8a4a', 1.2, '#7c7fa6', '#3a2e26', 0.6, '#a0807a', 0.95],
-  [19.6, '#a7b4e0', 0.35, '#34426a', '#171a22', 0.5, '#2a3040', 0.95],
-  [24, '#8fa6d6', 0.32, '#2a3a5c', '#141820', 0.55, '#141c2a', 0.95],
+  [0, '#9fb4e6', 0.75, '#3a4e78', '#1c2230', 1.15, '#1c2638', 1.15],
+  [4.5, '#9fb4e6', 0.7, '#3a4e78', '#1c2230', 1.10, '#222c40', 1.15],
+  [5.6, '#ffae80', 1.4, '#8894b8', '#4a4034', 1.05, '#a09aa0', 1.0],
+  [7, '#ffd09c', 2.6, '#c6cdd4', '#5f5842', 1.10, '#c8cac4', 0.92],
+  [10, '#fff1dc', 3.1, '#ccd4dc', '#5f5a42', 1.10, '#c9d4dc', 0.85],
+  [14, '#fff3e2', 3.1, '#ccd4dc', '#5f5a42', 1.10, '#c9d4dc', 0.85],
+  [17.2, '#ffd8a4', 2.6, '#c8c8cc', '#5f5440', 1.10, '#d4ccbc', 0.9],
+  [18.6, '#ff9c60', 1.7, '#aaa2b2', '#4a3c30', 1.05, '#b8968a', 1.0],
+  [19.6, '#aebbe6', 0.8, '#40527c', '#1e2230', 1.10, '#303a50', 1.1],
+  [24, '#9fb4e6', 0.75, '#3a4e78', '#1c2230', 1.15, '#1c2638', 1.15],
 ];
 
 const ca = new THREE.Color(), cb = new THREE.Color();
@@ -40,7 +40,7 @@ export function createSkyLight({ scene, renderer, quality }) {
   scene.add(sun);
   scene.add(sun.target);
 
-  const hemi = new THREE.HemisphereLight('#b9d2ee', '#5f5a42', 0.8);
+  const hemi = new THREE.HemisphereLight('#ccd4dc', '#5f5a42', 0.8);
   scene.add(hemi);
 
   scene.fog = new THREE.FogExp2('#c9d4dc', 0.0026);
@@ -83,11 +83,12 @@ export function createSkyLight({ scene, renderer, quality }) {
     const ang = ((hour - 6) / 12) * Math.PI;
     const elev = Math.sin(ang);
     const isDay = elev > -0.05;
-    if (isDay) sunDir.set(Math.cos(ang), Math.max(elev, 0.02) * 0.95, 0.42).normalize();
+    // the light never skims lower than ~18° so low sun does not stripe the map with shadows
+    if (isDay) sunDir.set(Math.cos(ang), Math.max(elev * 0.95, 0.33), 0.42).normalize();
     else {
       // moon: opposite arc
       const mang = ((hour + 6) / 12) * Math.PI;
-      sunDir.set(Math.cos(mang), Math.max(Math.sin(mang), 0.25), 0.3).normalize();
+      sunDir.set(Math.cos(mang), Math.max(Math.sin(mang), 0.5), 0.3).normalize();
     }
     u.sunPosition.value.set(Math.cos(ang), elev, 0.42).normalize();
     nightFactor = Math.min(1, Math.max(0, (-elev + 0.05) / 0.25));

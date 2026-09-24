@@ -24,7 +24,7 @@ function spriteTexture() {
 }
 
 const KINDS = {
-  smoke: { life: 5, size: [0.8, 3.2], color: '#8b8883', alpha: 0.42, rise: 1.1, drag: 0.3, additive: false },
+  smoke: { life: 6, size: [1.1, 4.4], color: '#9a968f', alpha: 0.55, rise: 1.1, drag: 0.3, additive: false },
   darksmoke: { life: 4, size: [1.2, 4.5], color: '#3a3532', alpha: 0.6, rise: 1.6, drag: 0.3, additive: false },
   dust: { life: 1.1, size: [0.4, 1.4], color: '#b39a78', alpha: 0.5, rise: 0.4, drag: 2.5, additive: false },
   chips: { life: 0.7, size: [0.12, 0.08], color: '#c9a978', alpha: 1, rise: -9, drag: 0.5, additive: false },

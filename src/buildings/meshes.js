@@ -8,7 +8,7 @@ import { paint, paintGradient, place, merge, jitterVertices, viewRng, box, cyl, 
 
 const C = {
   lime: '#d6c9ad', limeDark: '#bfb193', timber: '#5f4330', timberDark: '#3f2c20', plank: '#8f6a47', plankLight: '#a88259',
-  thatch: '#a8915a', thatchDark: '#8a7447', slate: '#56606b', slateDark: '#434b54', stone: '#8c8a82', stoneDark: '#6f6d67',
+  thatch: '#a8915a', thatchDark: '#8a7447', slate: '#6b6f73', slateDark: '#56595d', stone: '#8c8a82', stoneDark: '#6f6d67',
   teal: '#2f6f8f', gold: '#d1a54a', rust: '#8c3b2a', soot: '#3a302a', hide: '#7a5a3e', bone: '#d8ccb0', iron: '#4a4a4c', dark: '#1b1714',
   glow: '#ffbf6a',
 };
@@ -123,7 +123,7 @@ const MODELS = {
       body.push(b(0.8, 0.7, 0.5, C.stone, P.stone, { x: Math.sin(a) * 3.45, y: 11.7, z: -2.2 + Math.cos(a) * 3.45, ry: a }));
     }
     // brazier bowl on the tower
-    body.push(paint(place(cyl(0.9, 0.5, 0.6, 10), { z: -2.2, y: 11.9 }), C.iron, 0, null, P.metal));
+    body.push(paint(place(cyl(0.9, 0.5, 0.6, 10), { z: -2.2, y: 11.9 }), '#7a6e62', 0, null, P.metal));
     // hall (front)
     body.push(b(9, 4.6, 6.4, C.lime, P.plaster, { y: 2.6, z: 2.4 }));
     body.push(b(9.2, 1.0, 6.6, C.stone, P.stone, { y: 0.5, z: 2.4 }));
@@ -178,7 +178,7 @@ const MODELS = {
     body.push(b(6, 2.6, 1.8, C.plank, P.planks, { y: 1.6, z: -1.3 }));
     for (const [x, z] of [[-2.9, 2.1], [2.9, 2.1], [-2.9, -2.1], [2.9, -2.1], [0, 2.1]]) body.push(beam(x, 0.3, z, x, 3.1, z, 0.22));
     body.push(beam(-3.1, 3.1, 2.1, 3.1, 3.1, 2.1, 0.22));
-    body.push(roof(5.4, 7.2, 2.1, '#6d5a3c', P.planks, { y: 3.1, ry: Math.PI / 2 }));
+    body.push(roof(5.4, 7.2, 2.1, '#56603c', P.shingles, { y: 3.1, ry: Math.PI / 2 })); // mossy lodge roof
     body.push(...logPile(-1.2, 0.9, 9, rnd, 2.4));
     // chopping stump with axe
     body.push(paint(place(cyl(0.35, 0.4, 0.6, 9), { x: 2.2, y: 0.3, z: 3.4 }), '#6e5037', 0, null, P.planks));
@@ -192,7 +192,7 @@ const MODELS = {
     body.push(b(6.6, 0.25, 6, C.stoneDark, P.stone, { y: 0.12 }));
     // hut
     body.push(b(3, 2.3, 2.6, C.plank, P.planks, { x: -1.6, y: 1.4, z: -1.4 }));
-    body.push(roof(3.6, 3.2, 1.5, '#6d5a3c', P.planks, { x: -1.6, y: 2.55, z: -1.4 }));
+    body.push(roof(3.6, 3.2, 1.5, '#6c7280', P.shingles, { x: -1.6, y: 2.55, z: -1.4 }));
     body.push(...door(0.9, 1.7, -0.08, -1.6));
     // A-frame crane
     body.push(beam(1.2, 0, -0.5, 2.4, 5.2, 0.4, 0.25), beam(3.6, 0, -0.5, 2.4, 5.2, 0.4, 0.25));
@@ -207,7 +207,7 @@ const MODELS = {
     const body = [], glow = [];
     body.push(b(8.8, 0.4, 4.6, C.stoneDark, P.stone, { y: 0.2 }));
     body.push(b(8.6, 2.8, 4.4, C.plankLight, P.planks, { y: 1.8 }));
-    body.push(roof(5.8, 9.8, 2.8, C.thatchDark, P.thatch, { y: 3.2, ry: Math.PI / 2 }));
+    body.push(roof(5.8, 9.8, 2.8, '#8e4a32', P.shingles, { y: 3.2, ry: Math.PI / 2 })); // red clay barn roof
     body.push(b(2.4, 2.3, 0.12, C.timberDark, P.planks, { y: 1.5, z: 2.25 }));
     body.push(b(1.1, 2.1, 0.1, C.plank, P.planks, { x: -1.45, y: 1.45, z: 2.62, ry: -0.9 }));
     body.push(b(1.1, 2.1, 0.1, C.plank, P.planks, { x: 1.45, y: 1.45, z: 2.62, ry: 0.9 }));
@@ -318,9 +318,12 @@ function siteStage(radius, rnd) {
     const a = (i / n) * Math.PI * 2;
     body.push(beam(Math.sin(a) * radius, 0, Math.cos(a) * radius, Math.sin(a) * radius, 0.7, Math.cos(a) * radius, 0.08, '#b8995f'));
   }
-  body.push(paint(place(cyl(0.012, 0.012, radius * 2 * Math.PI, 3), { y: 0.55 }), '#e6dcc0', 0, null, P.plain));
-  body.push(...logPile(-radius * 0.45, radius * 0.25, 5, rnd, 1.8));
-  body.push(...stoneBlocks(radius * 0.4, -radius * 0.3, 4, rnd));
+  body.push(paint(place(new THREE.TorusGeometry(radius, 0.02, 3, 40), { y: 0.55, rx: Math.PI / 2 }), '#e6dcc0', 0, null, P.plain));
+  // trodden, cleared footprint and bigger material stacks
+  body.push(paint(place(cyl(radius * 0.95, radius, 0.06, 24), { y: 0.02 }), '#7a5f44', 0, null, P.plain));
+  body.push(...logPile(-radius * 0.45, radius * 0.25, 9, rnd, 2.4));
+  body.push(...stoneBlocks(radius * 0.4, -radius * 0.3, 8, rnd));
+  body.push(...stoneBlocks(-radius * 0.35, -radius * 0.45, 5, rnd));
   return merge(body);
 }
 

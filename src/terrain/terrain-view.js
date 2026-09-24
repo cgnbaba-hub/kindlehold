@@ -2,7 +2,7 @@
 // rock, riverbank mud), dynamic worn paths from walkers, and ground detail.
 import * as THREE from 'three';
 import { generateGroundTexture, generateMacroTexture } from './textures.js';
-import { distToPolyline } from '../world/terrain-data.js';
+import { distToPolyline, rawHeight } from '../world/terrain-data.js';
 import { all } from '../world/world.js';
 
 function smoothstep(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
@@ -138,18 +138,27 @@ kRough = dot(ww, vec4(0.96, 0.9, 0.78, 0.62));
   mesh.name = 'terrain';
   scene.add(mesh);
 
-  // under-map skirt so edges never show the void
-  const skirtGeo = new THREE.PlaneGeometry(terrain.size * 6, terrain.size * 6);
+  // scenery ring: the valley's hills continue beyond the playable map, so no camera angle
+  // ever shows the edge of the world. Inside the map it sits hidden below the real terrain.
+  const OUTER = terrain.half + 150;
+  const skirtGeo = new THREE.PlaneGeometry(OUTER * 2, OUTER * 2, 150, 150);
   skirtGeo.rotateX(-Math.PI / 2);
-  const skirt = new THREE.Mesh(skirtGeo, new THREE.MeshStandardMaterial({ color: '#4d5a3a', roughness: 1 }));
-  skirt.position.y = 12;
-  skirt.renderOrder = -1;
-  // skirt only visible beyond the map (mountains hide the seam)
-  const skirtHole = terrain.size * 0.5;
-  skirt.material.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vXZ;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvXZ = (modelMatrix * vec4(transformed,1.0)).xz;');
-    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\nvarying vec2 vXZ;`).replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>\nif (max(abs(vXZ.x), abs(vXZ.y)) < ${skirtHole.toFixed(1)} - 2.0) discard;`);
-  };
+  const sp = skirtGeo.attributes.position;
+  const sSplat = new Float32Array(sp.count * 4);
+  for (let i = 0; i < sp.count; i++) {
+    const x = sp.getX(i), z = sp.getZ(i);
+    const inside = Math.max(Math.abs(x), Math.abs(z)) < terrain.half - 3;
+    const h = inside ? terrain.height(x, z) - 2 : rawHeight(terrain.map, x, z);
+    sp.setY(i, h);
+    const sl = Math.min(1, Math.abs(rawHeight(terrain.map, x + 2, z) - rawHeight(terrain.map, x - 2, z)) / 4 + Math.abs(rawHeight(terrain.map, x, z + 2) - rawHeight(terrain.map, x, z - 2)) / 4);
+    const rock = smoothstep(0.6, 1.1, sl * 1.4) * 0.8;
+    sSplat.set([1 - rock, 0, rock, 0], i * 4);
+  }
+  skirtGeo.computeVertexNormals();
+  skirtGeo.setAttribute('splat', new THREE.BufferAttribute(sSplat, 4));
+  const skirt = new THREE.Mesh(skirtGeo, mat);
+  skirt.receiveShadow = true;
+  skirt.name = 'terrain-scenery';
   scene.add(skirt);
 
   let wearTimer = 0;
@@ -187,7 +196,7 @@ kRough = dot(ww, vec4(0.96, 0.9, 0.78, 0.62));
     getHealthStatus() { return { status: 'ok' }; },
     dispose() {
       scene.remove(mesh, skirt);
-      geo.dispose(); mat.dispose(); skirtGeo.dispose(); skirt.material.dispose();
+      geo.dispose(); mat.dispose(); skirtGeo.dispose();
       for (const k in tex) tex[k].dispose();
       wearTex.dispose();
     },

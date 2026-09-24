@@ -61,7 +61,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   const markTex = new THREE.CanvasTexture(markCanvas);
   markTex.colorSpace = THREE.SRGBColorSpace;
   const markMat = new THREE.MeshBasicMaterial({ map: markTex, transparent: true, depthTest: false, fog: false });
-  const stallMarks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.6, 1.6), markMat, 64);
+  const stallMarks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.1, 1.1), markMat, 64);
   stallMarks.count = 0; stallMarks.frustumCulled = false; stallMarks.renderOrder = 11;
   scene.add(stallMarks);
   const STALL_SHOWN = new Set(['noWorker', 'storageFull', 'noDeposit', 'noInput', 'noAccess', 'noSettler']);

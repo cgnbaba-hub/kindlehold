@@ -9,7 +9,7 @@ dist/
 docs/screenshots/**/*.png
 !docs/screenshots/final/*.png
 !docs/screenshots/evidence/*.png
-docs/reports/*.json
+docs/reports/**/*.json
 !docs/reports/final-report.json
 !docs/reports/evidence/*.json
 test-results/

@@ -21,8 +21,10 @@ function menuButton(label, onClick, { primary = false, disabled = false, tip = n
 
 /** Decorative, project-authored title backdrop (pure CSS layers; no image files). */
 function backdrop() {
+  // CSS silhouettes stay underneath as a fallback if the image cannot load
   return h('div.backdrop', { 'aria-hidden': 'true' }, [
     h('div.bd-sky'), h('div.bd-hills.far'), h('div.bd-hills.mid'), h('div.bd-keep'), h('div.bd-glow'), h('div.bd-hills.near'), h('div.bd-mist'),
+    h('div.bd-image'), h('div.bd-shade'),
   ]);
 }
 

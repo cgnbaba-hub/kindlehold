@@ -45,8 +45,8 @@ const GENERATORS = {
     const n = tfbm(u, v, 4, 5, 11);
     const fine = tfbm(u, v, 64, 2, 12);
     const blade = tfbm(u * 1.0, v * 1.0, 128, 1, 13);
-    let c = mix(hex('#4e6a2e'), hex('#7d9446'), n);
-    c = mix(c, hex('#8a9a52'), Math.max(0, fine - 0.55) * 1.4);
+    let c = mix(hex('#546a36'), hex('#7c8e50'), n);
+    c = mix(c, hex('#8e9a60'), Math.max(0, fine - 0.55) * 1.4);
     const k = 0.82 + blade * 0.3;
     c = [c[0] * k, c[1] * k, c[2] * k];
     // dry patches

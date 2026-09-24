@@ -75,6 +75,15 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
   const mat = createStructureMaterial({ roughness: 0.85 }, 'kh-structure');
   const glowMat = new THREE.MeshStandardMaterial({ color: '#40301a', emissive: '#ffbe62', emissiveIntensity: 2.2 });
   const meshes = {};
+  const outlines = {};
+  const outlineMat = new THREE.MeshBasicMaterial({ color: '#16120e', side: THREE.BackSide });
+  outlineMat.onBeforeCompile = (shader) => {
+    shader.uniforms.uOutline = uOutline;
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform float uOutline;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed += normalize(normal) * uOutline;');
+  };
+  outlineMat.customProgramCacheKey = () => 'kh-figure-outline';
+  const uOutline = { value: 0.03 };
   const caps = { leg: 2, arm: 2 };
   for (const k in parts) {
     const n = maxFigures * (caps[k] || 1);
@@ -83,6 +92,12 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     scene.add(m);
     meshes[k] = m;
+    // inverted-hull outline sharing the same instance matrices: crisp silhouettes at RTS zoom
+    const o = new THREE.InstancedMesh(parts[k], outlineMat, n);
+    o.instanceMatrix = m.instanceMatrix;
+    o.count = 0; o.frustumCulled = false; o.castShadow = false;
+    scene.add(o);
+    outlines[k] = o;
   }
   // glowing lantern cores (hero)
   const glowGeo = new THREE.SphereGeometry(0.075, 8, 6);
@@ -144,7 +159,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
       case 'mine': { const c = Math.sin(t * 4); armR = -1.3 + c * 0.35; armL = -1.3 + c * 0.35; legA = c * 0.3; lean = 0.25; break; }
       case 'attack': {
         const c = f.attackPhase;
-        if (f.ranged) { armL = -1.55; armR = -1.5 + c * 0.2; armRz = 0.4 - c * 0.4; torsoTwist = 0.5; }
+        if (f.ranged) { armL = -1.4; armLz = -0.15; armR = -0.95 + c * 0.25; armRz = 0.55 - c * 0.3; torsoTwist = 0.6; }
         else { armR = c < 0.4 ? -2.4 * (c / 0.4) : -2.4 + 3.4 * Math.min(1, (c - 0.4) / 0.2); armL = -0.7; lean = 0.15; torsoTwist = -0.3 * Math.sin(c * Math.PI); }
         break;
       }
@@ -213,6 +228,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     for (const k in meshes) {
       const m = meshes[k];
       m.count = Math.min(counts[k], m.instanceMatrix.count);
+      outlines[k].count = m.count;
       m.instanceMatrix.needsUpdate = true;
       if (m.instanceColor) m.instanceColor.needsUpdate = true;
     }
@@ -221,10 +237,12 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
 
   return {
     begin, draw, end, meshes,
+    setOutline(w) { uOutline.value = w; },
     toolFor: (job) => TOOL[job] || null,
     tunicFor: (id) => SETTLER_TUNICS[id % SETTLER_TUNICS.length],
     dispose() {
-      for (const k in meshes) { scene.remove(meshes[k]); meshes[k].geometry.dispose(); }
+      for (const k in meshes) { scene.remove(meshes[k], outlines[k]); meshes[k].geometry.dispose(); }
+      outlineMat.dispose();
       scene.remove(glow); glowGeo.dispose(); mat.dispose(); glowMat.dispose();
     },
   };

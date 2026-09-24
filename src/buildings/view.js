@@ -37,8 +37,8 @@ function cropGeometry() {
 }
 
 function plotGeometry() {
-  const parts = [paint(place(box(5.2, 0.12, 4.2), { y: 0.02 }), '#5b4431', 0, null, PATTERN.plain)];
-  for (let i = 0; i < 6; i++) parts.push(paint(place(box(5.0, 0.1, 0.22), { y: 0.1, z: -1.7 + i * 0.68 }), '#6e5238', 0, null, PATTERN.plain));
+  const parts = [paint(place(box(5.2, 0.04, 4.2), { y: 0.0 }), '#5b4431', 0, null, PATTERN.plain)];
+  for (let i = 0; i < 6; i++) parts.push(paint(place(box(5.0, 0.05, 0.3), { y: 0.03, z: -1.7 + i * 0.68 }), '#6a4f36', 0, null, PATTERN.plain));
   const posts = [[-2.7, -2.2], [2.7, -2.2], [-2.7, 2.2], [2.7, 2.2]];
   for (const [x, z] of posts) parts.push(paint(place(cyl(0.06, 0.07, 0.9, 5), { x, y: 0.45, z }), '#5f4330', 0, null, PATTERN.planks));
   return merge(parts);
