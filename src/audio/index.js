@@ -14,6 +14,7 @@ const ROOT_HZ = 146.83; // D3
 
 export function createAudio({ bus, world, settings, getListener }) {
   let ctx = null;
+  let meter = null, meterBuf = null;
   let ok = false;
   let failed = null;
   const buses = {};
@@ -29,9 +30,19 @@ export function createAudio({ bus, world, settings, getListener }) {
       if (!AC) throw new Error('Web Audio not supported');
       ctx = new AC();
       const master = ctx.createGain();
+      // safety chain: compressor-limiter, then a hard soft-clip ceiling at about -6 dBFS,
+      // so no synthesis bug can ever reach the speakers at dangerous levels
       const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -14; comp.ratio.value = 4;
-      master.connect(comp); comp.connect(ctx.destination);
+      comp.threshold.value = -18; comp.knee.value = 6; comp.ratio.value = 20; comp.attack.value = 0.002; comp.release.value = 0.15;
+      const ceiling = ctx.createWaveShaper();
+      const curve = new Float32Array(2048);
+      for (let i = 0; i < curve.length; i++) { const x = (i / (curve.length - 1)) * 2 - 1; curve[i] = 0.5 * Math.tanh(x * 2); }
+      ceiling.curve = curve;
+      master.connect(comp); comp.connect(ceiling); ceiling.connect(ctx.destination);
+      // output meter (post-limiter): used by the audio safety check and the debug API
+      meter = ctx.createAnalyser(); meter.fftSize = 2048;
+      ceiling.connect(meter);
+      meterBuf = new Float32Array(meter.fftSize);
       buses.master = master;
       for (const k of ['music', 'ambience', 'effects', 'voice']) { const g = ctx.createGain(); g.connect(master); buses[k] = g; }
       // shared noise buffer
@@ -103,17 +114,12 @@ export function createAudio({ bus, world, settings, getListener }) {
     const g = ctx.createGain(); env(g, t, attack, gain, dur, 0, 0.03);
     o.connect(g); g.connect(dest); o.start(t); o.stop(t + attack + dur + 0.08);
   }
-  /** Karplus-Strong-ish pluck via short noise burst into a feedback delay. */
+  /** Lute-like pluck WITHOUT any feedback loop (cannot become unstable): a bright triangle
+   *  fundamental, a sine octave and a tiny filtered-noise pick, each with its own decay. */
   function pluck(dest, { t = ctx.currentTime, freq = 220, gain = 0.2, decay = 1.6 }) {
-    const delay = ctx.createDelay(0.05); delay.delayTime.value = 1 / freq;
-    const fb = ctx.createGain(); fb.gain.value = 0.985;
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400;
-    const out = ctx.createGain(); env(out, t, 0.002, gain, decay, 0, 0.05);
-    const src = ctx.createBufferSource(); src.buffer = noiseBuf;
-    const burst = ctx.createGain(); burst.gain.setValueAtTime(1, t); burst.gain.setValueAtTime(0, t + 1 / freq * 1.2);
-    src.connect(burst); burst.connect(delay); delay.connect(lp); lp.connect(fb); fb.connect(delay); lp.connect(out); out.connect(dest);
-    src.start(t, rand()); src.stop(t + 0.05);
-    setTimeout(() => { try { fb.disconnect(); delay.disconnect(); } catch { /* ignore */ } }, (decay + 0.3) * 1000);
+    tone(dest, { t, freq, type: 'triangle', dur: decay, gain: gain * 0.8, attack: 0.003 });
+    tone(dest, { t, freq: freq * 2, type: 'sine', dur: decay * 0.5, gain: gain * 0.3, attack: 0.003 });
+    noise(dest, { t, dur: 0.03, type: 'bandpass', freq: Math.min(6000, freq * 6), q: 2, gain: gain * 0.25, attack: 0.001 });
   }
   function placed(x, z, extra = 1) {
     const g = ctx.createGain(); g.gain.value = spatialGain(x, z) * extra;
@@ -281,6 +287,9 @@ export function createAudio({ bus, world, settings, getListener }) {
     id: 'audio',
     kind: 'view',
     unlock,
+    /** Current output peak (0..1+, linear) — for automated loudness checks. */
+    peak() { if (!meter) return 0; meter.getFloatTimeDomainData(meterBuf); let m = 0; for (let i = 0; i < meterBuf.length; i++) m = Math.max(m, Math.abs(meterBuf[i])); return m; },
+    running: () => !!(ctx && ctx.state === 'running'),
     ui: () => { if (ok && ctx.state === 'running') sfx.ui(); },
     applyVolumes,
     render(alpha, frame) {

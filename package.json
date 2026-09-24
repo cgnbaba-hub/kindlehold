@@ -19,7 +19,8 @@
     "test:e2e": "node scripts/verification/e2e.mjs",
     "test:perf": "node scripts/verification/perf.mjs",
     "test:deploy": "bash scripts/deployment/validate-nginx.sh",
-    "check": "npm test && npm run build && npm run verify && npm run test:e2e"
+    "check": "npm test && npm run build && npm run verify && npm run test:e2e",
+    "test:audio": "node scripts/verification/audio-check.mjs"
   },
   "dependencies": {
     "three": "^0.186.0"

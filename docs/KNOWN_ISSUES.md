@@ -47,3 +47,11 @@ This list is kept honest and current. "Measured" items cite the report that show
   difficulty curves.
 - **Startup time:** 36.6 s to a playable frame for a fresh game in headless SwiftShader (budget
   15 s); dominated by shader compilation and CPU texture generation. Not measured on a GPU.
+
+## Fixed after release review
+
+- **2026-09-24: ear-splitting sound on first click (fixed).** The lute "pluck" used a feedback
+  delay loop whose loop gain exceeded 1 (0.985 feedback × lowpass resonance), so every music
+  note grew exponentially. Measured output peak before the fix: 15,613,984 (linear full scale).
+  The pluck is now feedback-free and the output has a limiter plus a hard ceiling (−6 dBFS).
+  Measured peak after the fix: 0.332. Guarded by `npm run test:audio`.
