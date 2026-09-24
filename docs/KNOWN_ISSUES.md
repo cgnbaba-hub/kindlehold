@@ -12,7 +12,7 @@ This list is kept honest and current. "Measured" items cite the report that show
 - Browser verification is slow for the same reason (several minutes per preset).
 - No public deployment was performed: no domain or DNS change was authorised. The
   production build and nginx configuration are validated locally in Docker
-  (`npm run test:deploy`). Remaining manual step: publish a hostname (see DEPLOYMENT.md §6).
+  (`npm run test:deploy`). Deployed publicly at https://kindlehold.js-automata.work (2026-09-24).
 
 ## Gameplay scope (Stage 1)
 

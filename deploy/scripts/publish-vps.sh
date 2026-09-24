@@ -33,6 +33,7 @@ else
 fi
 for _ in $(seq 1 30); do curl -fs "http://127.0.0.1:${PORT}/healthz" >/dev/null && break; sleep 0.5; done
 
+if [[ "${SKIP_TUNNEL:-0}" == "1" ]]; then echo "https://kindlehold.js-automata.work/ (via the permanent Cloudflare hostname)"; exit 0; fi
 if ! pgrep -f "cloudflared tunnel --no-autoupdate --url http://127.0.0.1:${PORT}" >/dev/null; then
   : > "$LOG"
   nohup cloudflared tunnel --no-autoupdate --url "http://127.0.0.1:${PORT}" >"$LOG" 2>&1 </dev/null &

@@ -437,10 +437,9 @@
     }
   },
   "openBlockers": [
-    "Visual gate: overall 7.0 < 8.5 after 4 critic rounds (water depth, melee readability, flare glow clipping, menu key art composition, lime ground in close-ups) — docs/critiques/visual-final.md",
-    "Gameplay gate: overall 6.8 < 8.5 after 3 critic rounds (no blockers left; labour depth 5.5, raids short, difficulty curve flat) — docs/critiques/gameplay-round3.md",
-    "GPU frame rate unmeasured (no GPU on the VPS)",
-    "Public deployment not performed (no domain / DNS authorised)"
+    "Visual gate: overall 7.0 < 8.5 after 4 critic rounds (water depth, melee readability, flare glow clipping, menu key art composition, lime ground in close-ups) \u2014 docs/critiques/visual-final.md",
+    "Gameplay gate: overall 6.8 < 8.5 after 3 critic rounds (no blockers left; labour depth 5.5, raids short, difficulty curve flat) \u2014 docs/critiques/gameplay-round3.md",
+    "GPU frame rate unmeasured (no GPU on the VPS)"
   ],
   "openPolish": [
     "see docs/KNOWN_ISSUES.md"
@@ -465,7 +464,7 @@
         "info": 6
       },
       "report": "docs/critiques/security-round1.md",
-      "verdict": "M1–M3, L1–L5 fixed"
+      "verdict": "M1\u2013M3, L1\u2013L5 fixed"
     },
     {
       "date": "2026-09-24",
@@ -519,8 +518,11 @@
   },
   "assetLicences": "All runtime content is procedural/project-authored; three.js (MIT). check-register: see scripts/assets/check-register.mjs",
   "deployment": {
-    "status": "production build + nginx atomic releases, rollback, headers, CSP browser load validated locally in Docker (npm run test:deploy, commit 2198890); not publicly deployed — no domain provided",
-    "remainingAction": "Add a Cloudflare Tunnel public hostname (or DNS + nginx site) pointing at the nginx container/port, see DEPLOYMENT.md §6"
+    "status": "deployed",
+    "url": "https://kindlehold.js-automata.work",
+    "verifiedAt": "2026-09-24",
+    "evidence": "health-check.sh + csp-smoke.mjs against the public URL passed",
+    "route": "Cloudflare token tunnel public hostname -> localhost:8098 (nginx container kindlehold-web)"
   },
   "nextRecommendedAction": "Visual: water depth colour + terrain-following ability decals + key-art composition; gameplay: labour priorities and longer, multi-phase raids; then re-run critics",
   "stageStatus": "Stage 1 vertical slice functionally complete; quality gates NOT passed (visual 7.0, gameplay 6.8 < 8.5); Stage 2 not started",

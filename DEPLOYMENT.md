@@ -97,6 +97,11 @@ That dashboard step needs the account owner and is the remaining manual action.
 
 ### Published on this VPS (2026-09-24)
 
+**Live: https://kindlehold.js-automata.work** — public hostname on the existing token-based
+Cloudflare tunnel → `http://localhost:8098` (the `kindlehold-web` nginx container). To update
+the game: `SKIP_TUNNEL=1 deploy/scripts/publish-vps.sh` (quick tunnel not needed any more).
+
+
 `deploy/scripts/publish-vps.sh` builds, deploys atomically to `/var/www/kindlehold`, runs the
 repo's nginx config in Docker (`kindlehold-web`, `127.0.0.1:8098`, restart unless-stopped) and
 opens a Cloudflare **quick tunnel**. The public URL is written to `.deploy-local/PUBLIC_URL`.
