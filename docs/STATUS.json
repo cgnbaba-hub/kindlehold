@@ -1,0 +1,23 @@
+{
+  "project": "Kindlehold",
+  "stage": 0,
+  "currentWave": 0,
+  "lastVerifiedCommit": null,
+  "lastVerification": "2026-09-24T09:30:00Z",
+  "environment": {
+    "node": "v26.7.0", "npm": "11.19.0", "git": "2.43.0", "three": "0.186.0", "vite": "8.3.0", "playwright": "1.62.1 (chromium r1234 headless, SwiftShader software GL)",
+    "cpu": "AMD EPYC 9354P, 2 vCPU", "gpu": "none", "claudeCode": "2.1.281",
+    "agents": "Agent tool (subagents) available; builders executed sequentially by the integrator session under the ownership model; critics run as independent read-only subagents (docs/DECISIONS.md D-007)"
+  },
+  "tests": { "unit": { "pass": 14, "fail": 0 }, "integration": { "pass": 0, "fail": 0 }, "simulation": { "pass": 0, "fail": 0 } },
+  "verification": {
+    "stage0": { "run": "stage0", "midday-overview": { "pass": true, "fpsSwiftShader": 9.5, "drawCalls": 3, "triangles": 131084 }, "night-overview": { "pass": false, "reason": "frame nearly black: Stage 0 scene has no night lighting yet (expected, addressed in Wave 1 environment)" } }
+  },
+  "modules": {},
+  "openBlockers": [],
+  "openPolish": [],
+  "criticHistory": [],
+  "assetLicences": "all content procedural/project-authored; no external assets",
+  "deployment": { "status": "not started" },
+  "nextRecommendedAction": "Wave 1: terrain, environment, camera, input, selection, navigation, UI/audio/effects foundations"
+}

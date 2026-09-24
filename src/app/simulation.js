@@ -1,0 +1,72 @@
+// Headless simulation composition (runs in Node and in the browser; no three/DOM).
+import { createEventBus } from '../core/events.js';
+import { createModuleHost } from '../core/module-host.js';
+import { DT } from '../core/contracts.js';
+import { log } from '../core/logger.js';
+import { createWorld, attachBus, worldRng, syncRngState } from '../world/world.js';
+import { createTerrainData } from '../world/terrain-data.js';
+import { HARROWMERE_MAP } from '../world/maps/harrowmere.js';
+import { worldHash } from '../world/hash.js';
+
+const terrainCache = new Map();
+export function terrainFor(map = HARROWMERE_MAP) {
+  let t = terrainCache.get(map.id);
+  if (!t) { t = createTerrainData(map); terrainCache.set(map.id, t); }
+  return t;
+}
+
+/** Sim module factories, in update order. Extended per wave. */
+export const SIM_MODULE_FACTORIES = [];
+
+export function createSimulation({ seed = 1337, difficulty = 'normal', world = null, modules = SIM_MODULE_FACTORIES, onCritical = null, setup = true } = {}) {
+  const bus = createEventBus();
+  const host = createModuleHost({ bus, onCritical, now: () => (sim.world ? sim.world.tick * 50 : 0) });
+  const terrain = terrainFor();
+  const pending = [];
+  const commandLog = [];
+
+  const sim = {
+    bus, host, terrain,
+    world: world || createWorld({ seed, difficulty }),
+    services: { terrain },
+    commandLog,
+    issue(cmd) {
+      if (!cmd || typeof cmd.type !== 'string') return false;
+      pending.push(cmd);
+      return true;
+    },
+    step() {
+      const w = sim.world;
+      w.tick++;
+      if (w.time.running) w.time.hour = (w.time.hour + 24 / w.time.dayLengthTicks) % 24;
+      if (pending.length) {
+        const cmds = pending.splice(0, pending.length);
+        for (const cmd of cmds) {
+          commandLog.push({ tick: w.tick, cmd });
+          bus.emit('command', cmd);
+        }
+      }
+      host.update({ tick: w.tick, dt: DT });
+      syncRngState(w);
+    },
+    run(ticks) { for (let i = 0; i < ticks; i++) sim.step(); },
+    hash() { syncRngState(sim.world); return worldHash(sim.world); },
+    context() {
+      return { world: sim.world, bus, rng: worldRng(sim.world), log, services: sim.services, sim };
+    },
+    /** Replace the world (load). Modules rebuild derived state in deserialize. */
+    replaceWorld(newWorld, moduleData = {}) {
+      sim.world = newWorld;
+      attachBus(newWorld, bus);
+      host.deserializeAll(moduleData);
+      bus.emit('world:loaded', {});
+    },
+  };
+
+  attachBus(sim.world, bus);
+  for (const factory of modules) host.register(factory());
+  host.initAll(sim.context());
+  if (setup && !world) bus.emit('world:setup', {});
+  host.startAll();
+  return sim;
+}

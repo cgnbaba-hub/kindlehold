@@ -1,0 +1,21 @@
+{
+  "run": "stage0",
+  "finishedAt": "2026-09-24T09:02:27.353Z",
+  "pass": false,
+  "results": [
+    {
+      "preset": "midday-overview",
+      "pass": true,
+      "fps": 9.47401663216253,
+      "drawCalls": 3,
+      "triangles": 131084
+    },
+    {
+      "preset": "night-overview",
+      "pass": false,
+      "fps": 12.397718819737165,
+      "drawCalls": 2,
+      "triangles": 131072
+    }
+  ]
+}
