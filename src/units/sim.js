@@ -278,7 +278,7 @@ export function createUnitsModule() {
     let dx = 0, dz = 0;
     for (const e of threatBuf) { const d = Math.hypot(u.x - e.x, u.z - e.z) || 0.1; dx += (u.x - e.x) / d; dz += (u.z - e.z) / d; }
     const len = Math.hypot(dx, dz) || 1;
-    const step = unitSpeed(world, u) * 0.7 * DT; // backpedalling is slower than running
+    const step = unitSpeed(world, u) * 0.78 * DT; // backpedalling: slower than melee runners, about as fast as shield lines
     const nx = u.x + (dx / len) * step, nz = u.z + (dz / len) * step;
     if (!ctx.services.nav.walkable(nx, nz)) return false;
     u.x = nx; u.z = nz; u.moving = true; u.path = null;

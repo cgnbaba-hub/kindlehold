@@ -10,9 +10,9 @@ import { ABILITIES } from '../../src/heroes/index.js';
 import { researchBlocker } from '../../src/technology/index.js';
 
 test('damage formula applies counters and percentage armour', () => {
-  assert.equal(computeDamage({ base: 16, attackerCls: 'melee', defenderCls: 'ranged', armor: 0 }), 24);
+  assert.equal(computeDamage({ base: 16, attackerCls: 'melee', defenderCls: 'ranged', armor: 0 }), 28);
   assert.equal(computeDamage({ base: 16, attackerCls: 'melee', defenderCls: 'defensive', armor: 5 }), 12);
-  assert.equal(computeDamage({ base: 10, attackerCls: 'defensive', defenderCls: 'melee', armor: 2 }), 14);
+  assert.equal(computeDamage({ base: 10, attackerCls: 'defensive', defenderCls: 'melee', armor: 2 }), 16);
   assert.equal(computeDamage({ base: 12, attackerCls: 'ranged', defenderCls: 'defensive', armor: 4 }), 19);
   assert.equal(computeDamage({ base: 1, attackerCls: 'melee', defenderCls: 'melee', armor: 20 }), 1, 'minimum 1');
   assert.equal(computeDamage({ base: 100, attackerCls: 'melee', defenderCls: 'melee', armor: 100 }), 25, 'armour caps at 75%');

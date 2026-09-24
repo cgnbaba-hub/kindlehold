@@ -184,7 +184,7 @@ export function createMenus({ root, settings, onSettingsChange }) {
   function howTo({ onBack }) {
     const rows = [
       ['rekindle', 'Rekindle the Keep', 'Select the Keep and light its hearth. Settlers only come home to a burning hearth.'],
-      ['lodge', 'Build an economy', 'Press B. Lodges need trees, Quarries rock, Mines an iron vein. Labourers carry materials and build.'],
+      ['lodge', 'Build an economy', 'Open the Build menu (B by default). Lodges need trees, Quarries rock, Mines an iron vein. Labourers carry materials and build.'],
       ['pop', 'People are everything', 'Cottages house five. New settlers need free housing and provisions. Every workplace and soldier uses one person.'],
       ['provisions', 'Feed them', 'Everyone eats every 90 s. Hunger lowers stability, and low stability slows all work.'],
       ['alertWarn', 'Read the warnings', 'Selected buildings tell you exactly why they stall: no worker, storage full, no input, nothing in range.'],

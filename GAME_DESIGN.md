@@ -102,11 +102,11 @@ Damaged buildings can be repaired by labourers (costs 25% of the missing fractio
 
 | Unit | Cost (T/S/I/P) + 1 settler | HP | Armour | Dmg | Range | Cooldown | Speed | Counter |
 |---|---|---|---|---|---|---|---|---|
-| Shieldbearer (defensive) | 5/0/10/5 | 180 | 5 | 11 | 1.8 m | 1.2 s | 3.4 m/s | ×1.5 vs Blade |
-| Bladesman (melee) | 0/0/15/5 | 140 | 2 | 16 | 1.6 m | 1.0 s | 4.0 m/s | ×1.5 vs ranged |
-| Fletcher (ranged) | 15/0/0/5 | 90 | 0 | 12 | 15 m | 1.6 s | 3.8 m/s | ×1.5 vs Shield (arcing fire) |
+| Shieldbearer (defensive) | 5/0/10/5 | 200 | 5 | 10 | 1.8 m | 1.2 s | 3.4 m/s | ×1.75 vs melee |
+| Bladesman (melee) | 0/0/20/5 | 140 | 2 | 16 | 1.6 m | 1.0 s | 4.3 m/s | ×1.75 vs ranged |
+| Fletcher (ranged) | 15/0/0/5 | 90 | 0 | 12 | 15 m | 1.6 s | 3.8 m/s | ×2.0 vs defensive (arcing fire) |
 
-Damage = max(1, dmg × counter × techBonus − armour). Units auto-acquire targets
+Damage = max(1, dmg × counter × techBonus × (1 − 5% per armour point, max 75%)). Ranged units step back (at 78% speed) from melee attackers within 3.4 m, so they escape nothing faster than a shield line but can be run down by blades and reavers. Counters are regression-tested at 6v6 and 10v10. Units auto-acquire targets
 within 12 m (ranged 16 m) unless given a plain move order.
 
 Commands: move, attack, attack-move, patrol, stop, hold, context right-click;
@@ -138,7 +138,7 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 
 | | Story | Normal | Hard |
 |---|---|---|---|
-| First raid size | 6 | 9 | 13 |
+| First raid size | 6 | 9 | 11 |
 | Enemy spawn interval | 50 s | 35 s | 24 s |
 | Garrison cap | 8 | 12 | 16 |
 | Fort reserves (total musters) | 22 | 32 | 40 |

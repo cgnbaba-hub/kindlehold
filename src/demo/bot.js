@@ -75,7 +75,8 @@ export function createBot(sim, { aggressive = true } = {}) {
     const dead = all(world, 'building').find((b) => b.owner === PLAYER && b.type === 'lodge' && b.state === 'active' && b.stall === 'noDeposit');
     if (dead && canAfford(world, PLAYER, buildCost(world, PLAYER, 'lodge'))) {
       let best = null, bd = Infinity;
-      for (const d of all(world, 'deposit')) if (d.type === 'tree' && d.amount > 0) { const dd = Math.hypot(d.x + 46, d.z - 50); if (dd < bd) { bd = dd; best = d; } }
+      const trees = all(world, 'deposit').filter((d) => d.type === 'tree' && d.amount > 0);
+      for (const d of trees) { if (trees.filter((o) => Math.hypot(o.x - d.x, o.z - d.z) < 18).length < 8) continue; const dd = Math.hypot(d.x + 46, d.z - 50); if (dd < bd) { bd = dd; best = d; } }
       if (best && place('lodge', [best.x, best.z])) sim.issue({ type: 'demolish', id: dead.id });
     }
   }

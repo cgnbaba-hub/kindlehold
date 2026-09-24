@@ -22,7 +22,7 @@ export const STALL_TEXT = {
   storageFull: 'Storage full — labourers must carry goods to the Keep',
   noInput: 'Waiting for provisions to be delivered',
   noAccess: 'Workers cannot reach the site',
-  noSettler: 'Needs an idle settler to train',
+  noSettler: 'Needs an idle settler to train — all settlers are working: pause a workplace or build Cottages',
 };
 
 const STALL_ALERT = { noDeposit: 'has nothing left to work nearby — build a new one closer to resources', noInput: 'is waiting for provisions', noAccess: 'cannot be reached by its workers' };
@@ -102,7 +102,12 @@ export function createProductionModule() {
             return;
           }
           const d = findDeposit(world, b, depType, def.depositRange, s.id);
-          if (!d) { setStall(world, b, 'noDeposit'); s.task = { stage: 'wait', timer: 4 }; return; }
+          if (!d) {
+            const anyLeft = all(world, 'deposit').some((x) => x.type === depType && x.amount > 0 && Math.hypot(x.x - b.x, x.z - b.z) <= def.depositRange);
+            if (!anyLeft) setStall(world, b, 'noDeposit');
+            s.task = { stage: 'wait', timer: 4 };
+            return;
+          }
           d.reservedBy = s.id;
           t.deposit = d.id;
           // stand on the side of the deposit facing the workplace

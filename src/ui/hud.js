@@ -14,6 +14,7 @@ import { canAfford } from '../economy/stock.js';
 import { ABILITIES } from '../heroes/index.js';
 import { STALL_TEXT, WORK } from '../production/index.js';
 import { scenarioOf } from '../missions/index.js';
+import { aiSettings } from '../ai/index.js';
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions' };
@@ -472,7 +473,12 @@ export function createHud({ root, session, input, settings, actions }) {
     if (w.ai.raidTick != null && w.ai.state === 'build' && w.mission.flags.raidWarned) {
       raidTimer.hidden = false; setText(raidTimer, `Rustfang raid in ${fmtTime((w.ai.raidTick - w.tick) / 20)}`);
     } else if (w.ai.state === 'raid') { raidTimer.hidden = false; setText(raidTimer, 'Raid in progress!'); }
-    else raidTimer.hidden = true;
+    else if (w.ai.wave >= 1) {
+      const cfg = aiSettings(w);
+      const left = Math.max(0, cfg.reserves - (w.ai.spawned || 0));
+      raidTimer.hidden = false;
+      setText(raidTimer, left > 0 ? `Scouts: the Rustfang can still muster about ${left} more warriors` : 'Scouts: the Rustfang reserves are exhausted — strike now!');
+    } else raidTimer.hidden = true;
     // selection/commands refresh when content changes or twice per second
     const key = `${w.selection.ids.join(',')}|${cmdMode}|${st.mode}|${st.targetKind}`;
     if (key !== lastSelKey) { lastSelKey = key; dirtySel = true; forceCmd = true; }

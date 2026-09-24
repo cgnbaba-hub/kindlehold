@@ -47,7 +47,7 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
         const a = rng.range(0, Math.PI * 2), r = rng.range(0, cl.spread);
         const x = cl.x + Math.cos(a) * r, z = cl.z + Math.sin(a) * r;
         if (!clearOf(x, z, 5) || terrain.waterDepth(x, z) > 0) continue;
-        spawn(world, { kind: 'deposit', type: 'rock', x, z, amount: 40, maxAmount: 40, variant: rng.int(0, 2), rot: rng.range(0, Math.PI * 2), reservedBy: null });
+        spawn(world, { kind: 'deposit', type: 'rock', x, z, amount: 60, maxAmount: 60, variant: rng.int(0, 2), rot: rng.range(0, Math.PI * 2), reservedBy: null });
         placed.push({ x, z });
         break;
       }

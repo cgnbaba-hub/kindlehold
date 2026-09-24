@@ -4,9 +4,9 @@ export const UNIT_CLASSES = ['melee', 'ranged', 'defensive', 'hero', 'commander'
 
 /** attacker class -> defender class -> multiplier */
 export const COUNTERS = {
-  melee: { ranged: 1.5 },
+  melee: { ranged: 1.75 },
   ranged: { defensive: 2.0 },
-  defensive: { melee: 1.5 },
+  defensive: { melee: 1.75 },
 };
 
 export const UNITS = {

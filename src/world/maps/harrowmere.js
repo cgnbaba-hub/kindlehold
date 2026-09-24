@@ -57,6 +57,7 @@ export const HARROWMERE_MAP = Object.freeze({
   rocks: [
     { x: -20, z: 76, count: 4, spread: 7 },
     { x: -26, z: 88, count: 2, spread: 4 },
+    { x: -70, z: 18, count: 3, spread: 5 },
     { x: 6, z: -30, count: 3, spread: 6 },
   ],
   ironVeins: [{ x: -80, z: 70 }],

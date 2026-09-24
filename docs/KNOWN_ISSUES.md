@@ -23,9 +23,12 @@ This list is kept honest and current. "Measured" items cite the report that show
   player can also see.
 - Settlers cannot be ordered directly; they choose work automatically (workplace slots,
   hauling, building, repairing). Priorities cannot be set.
-- Hard is won by the scripted bot but slowly (28.8 and 40.8 min on seeds 1337 / 42, above
-  the 15–30 min target); Normal 26.2 min, Story 20.6 min (seed 1337). Human playtesting of any
-  difficulty has not been done.
+- Measured match lengths (scripted bot, seeds 1337/7/42/99): Story 21.8–26.9 min,
+  Normal 23.9–30.2 min, Hard 28.6–32.9 min (Hard slightly above the 15–30 min target).
+  The difficulties feel similar in length; Hard's challenge comes from larger waves.
+  Human playtesting of any difficulty has not been done.
+- The counter triangle holds from 6v6 to 12v12 in the duel harness; at 12v12 Fletchers vs
+  Reavers can run to the 120 s limit (Reavers ahead) instead of a clean wipe.
 - Melee units can visually overlap while fighting in dense clumps (simple separation only).
 
 ## Presentation
