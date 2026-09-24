@@ -17,7 +17,8 @@ function walk(dir) {
 }
 const SRC = walk(path.join(ROOT, 'src'));
 const SIM_DIRS = ['core', 'world', 'navigation', 'economy', 'population', 'construction', 'production', 'technology', 'heroes', 'combat', 'ai', 'missions', 'save'];
-const SIM_FILES = [...SIM_DIRS.flatMap((d) => walk(path.join(ROOT, 'src', d))), path.join(ROOT, 'src/app/simulation.js'), ...walk(path.join(ROOT, 'src/units')).filter((f) => f.includes('sim')), ...walk(path.join(ROOT, 'src/buildings')).filter((f) => f.endsWith('defs.js'))];
+// src/save/storage.js is the browser storage adapter (view side) and is excluded on purpose
+const SIM_FILES = [...SIM_DIRS.flatMap((d) => walk(path.join(ROOT, 'src', d))).filter((f) => !f.endsWith(path.join('save', 'storage.js'))), path.join(ROOT, 'src/app/simulation.js'), ...walk(path.join(ROOT, 'src/units')).filter((f) => f.includes('sim')), ...walk(path.join(ROOT, 'src/buildings')).filter((f) => f.endsWith('defs.js'))];
 const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 test('Math.random is not used anywhere in src/', () => {

@@ -1,0 +1,52 @@
+{
+  "preset": "settlement-closeup",
+  "url": "http://127.0.0.1:5180/?verify=1&seed=1337&quality=high&demo=midgame&ui=0",
+  "run": "wave1a",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "seed": "1337",
+  "quality": "high",
+  "startedAt": "2026-09-24T09:38:36.157Z",
+  "gates": {
+    "loaded": false,
+    "noPageErrors": true,
+    "noConsoleErrors": true,
+    "noFailedRequests": true,
+    "noFailedModules": true,
+    "drawCallsWithinBudget": false,
+    "trianglesWithinBudget": false,
+    "notBlank": false
+  },
+  "pass": false,
+  "readyMs": 9341,
+  "setup": {
+    "sim": {
+      "ticks": 60,
+      "ms": 6.300000190734863
+    },
+    "hash": "84a4c669"
+  },
+  "fps": {
+    "frames": 21,
+    "fps": 5.727533069684985,
+    "frameMs": {
+      "mean": 174.5952380952381,
+      "p50": 16.69999999999891,
+      "p95": 16.80000000000109,
+      "p99": 3333.1000000000004
+    }
+  },
+  "error": "page.evaluate: Target page, context or browser has been closed\n    at /root/kindlehold/scripts/verification/verify.mjs:62:31",
+  "diagnostics": {
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead."
+    ],
+    "pageErrors": [],
+    "failedRequests": [],
+    "badResponses": []
+  },
+  "failedModules": []
+}

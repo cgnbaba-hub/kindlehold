@@ -1,0 +1,21 @@
+{
+  "run": "wave1a",
+  "finishedAt": "2026-09-24T09:40:38.230Z",
+  "pass": false,
+  "results": [
+    {
+      "preset": "midday-overview",
+      "pass": true,
+      "fps": 5.089603814524121,
+      "drawCalls": 23,
+      "triangles": 933907
+    },
+    {
+      "preset": "settlement-closeup",
+      "pass": false,
+      "fps": 5.727533069684985,
+      "drawCalls": "-",
+      "triangles": "-"
+    }
+  ]
+}

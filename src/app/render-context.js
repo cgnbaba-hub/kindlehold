@@ -14,7 +14,7 @@ export function createRenderContext({ container, terrain, quality = 'high', veri
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.pixelRatio));
   renderer.setSize(container.clientWidth || window.innerWidth, container.clientHeight || window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.AgXToneMapping;
+  renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = q.shadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -71,14 +71,15 @@ export function createRenderContext({ container, terrain, quality = 'high', veri
     sampleFrame() {
       const gl = renderer.getContext();
       const w = gl.drawingBufferWidth, h = gl.drawingBufferHeight;
-      const n = 64;
-      const px = new Uint8Array(4);
-      let sum = 0, sum2 = 0;
       renderer.render(scene, rts.camera);
+      const buf = new Uint8Array(w * h * 4);
+      gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
+      const n = 64;
+      let sum = 0, sum2 = 0;
       for (let j = 0; j < n; j++) {
         for (let i = 0; i < n; i++) {
-          gl.readPixels(Math.floor((i + 0.5) * w / n), Math.floor((j + 0.5) * h / n), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
-          const l = 0.2126 * px[0] + 0.7152 * px[1] + 0.0722 * px[2];
+          const k = (Math.floor((j + 0.5) * h / n) * w + Math.floor((i + 0.5) * w / n)) * 4;
+          const l = 0.2126 * buf[k] + 0.7152 * buf[k + 1] + 0.0722 * buf[k + 2];
           sum += l; sum2 += l * l;
         }
       }

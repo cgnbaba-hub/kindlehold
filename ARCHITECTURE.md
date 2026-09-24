@@ -41,6 +41,7 @@ Rules:
 |---|---|---|---|
 | `src/core` | integrator | shared | RNG, event bus, fixed loop, module host, logger, commands, validation, contracts |
 | `src/world` | integrator | sim | World model factory, entity store, spatial index, terrain heightfield sampling, territory |
+| `src/render` | integrator | view (shared) | Shared view helpers: procedural geometry kit, structure material (imported by buildings, environment, units) |
 | `src/app` | integrator | composition | Bootstrap, routing (`?showcase=`), error overlay, verification hooks |
 | `src/terrain` | terrain-builder | view | Terrain mesh, splat materials, worn paths, territory border |
 | `src/environment` | environment-builder | view | Sky, sun/moon, day-night, fog, water, vegetation rendering, night lights |

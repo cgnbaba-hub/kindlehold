@@ -43,7 +43,7 @@ export function createSkyLight({ scene, renderer, quality }) {
   const hemi = new THREE.HemisphereLight('#b9d2ee', '#5f5a42', 0.8);
   scene.add(hemi);
 
-  scene.fog = new THREE.FogExp2('#c9d4dc', 0.0042);
+  scene.fog = new THREE.FogExp2('#c9d4dc', 0.0026);
 
   // stars (fixed seeded pattern, only visible at night)
   const starGeo = new THREE.BufferGeometry();

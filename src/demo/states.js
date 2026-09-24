@@ -1,0 +1,72 @@
+// Deterministic demo states for verification presets and showcases. Each state is
+// produced by playing the real simulation through the command API (bot) and, for
+// isolated combat views, by spawning units through the same helpers the game uses.
+import { createBot, findSpot } from './bot.js';
+import { spawnUnit } from '../units/sim.js';
+import { spawnEnemy } from '../ai/index.js';
+import { all } from '../world/world.js';
+
+function playTo(sim, bot, tick) { while (sim.world.tick < tick && !sim.world.mission.result) { bot.step(); sim.step(); } }
+
+function quietEnemy(sim) {
+  sim.world.ai.nextScoutTick = 1e9;
+  sim.world.mission.raidWarningTick = Math.max(sim.world.mission.raidWarningTick, sim.world.tick + 20 * 60 * 30);
+}
+
+export const DEMO_STATES = {
+  /** a thriving settlement around minute 10 */
+  midgame(sim) {
+    const bot = createBot(sim);
+    playTo(sim, bot, 10.5 * 1200);
+    quietEnemy(sim);
+  },
+  /** several buildings under construction at different stages */
+  construction(sim) {
+    const bot = createBot(sim);
+    playTo(sim, bot, 5 * 1200);
+    quietEnemy(sim);
+    const res = sim.world.players.p1.res;
+    Object.assign(res, { timber: res.timber + 200, stone: res.stone + 200, iron: res.iron + 40 });
+    for (const [type, x, z] of [['barracks', -30, 38], ['cottage', -36, 30], ['cottage', -24, 44]]) {
+      const s = findSpot(sim.world, sim.services, type, x, z, 20);
+      if (s) sim.issue({ type: 'place', buildingType: type, x: s.x, z: s.z, rot: 2.3 });
+    }
+  },
+  /** two squads clash in front of the settlement */
+  battle(sim) {
+    const bot = createBot(sim);
+    playTo(sim, bot, 6 * 1200);
+    quietEnemy(sim);
+    const ids = [];
+    const types = ['shield', 'shield', 'shield', 'blade', 'blade', 'blade', 'fletcher', 'fletcher', 'fletcher', 'fletcher'];
+    types.forEach((t, i) => { const u = spawnUnit(sim.world, t, 'p1', -34 + (i % 5) * 1.8, 32 - Math.floor(i / 5) * 2.2); if (u) ids.push(u.id); });
+    const hero = all(sim.world, 'unit').find((u) => u.hero);
+    if (hero) { hero.x = hero.px = -28; hero.z = hero.pz = 30; ids.push(hero.id); }
+    const foes = ['reaver', 'reaver', 'reaver', 'brute', 'brute', 'slinger', 'slinger', 'reaver', 'reaver'];
+    foes.forEach((t, i) => { const u = spawnEnemy(sim.world, t, -18 + (i % 5) * 1.8, 16 - Math.floor(i / 5) * 2); if (u) u.order = { type: 'attackMove', x: -30, z: 30, ax: u.x, az: u.z }; });
+    sim.issue({ type: 'attackMove', ids, x: -22, z: 20 });
+  },
+  /** Maren casting Beacon Flare into a group of reavers */
+  hero(sim) {
+    DEMO_STATES.battle(sim);
+    for (let i = 0; i < 60; i++) sim.step();
+    const hero = all(sim.world, 'unit').find((u) => u.hero);
+    const foes = all(sim.world, 'unit').filter((u) => u.owner === 'p2' && Math.hypot(u.x + 25, u.z - 25) < 20);
+    if (hero && foes.length) {
+      let cx = 0, cz = 0; foes.forEach((f) => { cx += f.x; cz += f.z; });
+      sim.issue({ type: 'ability', heroId: hero.id, ability: 'flare', x: cx / foes.length, z: cz / foes.length });
+    }
+  },
+  /** the first Rustfang raid hitting the settlement */
+  raid(sim) {
+    const bot = createBot(sim);
+    playTo(sim, bot, 16.4 * 1200);
+  },
+};
+
+export function applyDemoState(sim, name) {
+  const fn = DEMO_STATES[name];
+  if (!fn) return false;
+  fn(sim);
+  return true;
+}

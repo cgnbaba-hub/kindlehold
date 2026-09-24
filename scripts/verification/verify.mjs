@@ -27,7 +27,10 @@ if (wanted && presets.length !== wanted.length) {
 const shotDir = ensureDir(inRepo('docs', 'screenshots', run));
 const reportDir = ensureDir(inRepo('docs', 'reports', run));
 
-const server = await ensureServer(args.url || 'http://127.0.0.1:5180/');
+// --prod: verify the production build via `vite preview` (no HMR reloads while files change)
+const server = args.prod
+  ? await ensureServer(args.url || 'http://127.0.0.1:5181/', { command: ['npx', 'vite', 'preview', '--host', '127.0.0.1', '--port', '5181', '--strictPort'], build: true })
+  : await ensureServer(args.url || 'http://127.0.0.1:5180/');
 const browser = await launch();
 const results = [];
 let failed = false;
@@ -57,15 +60,20 @@ try {
       }, preset);
       // let the renderer settle for a few frames (interpolation, particles)
       await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
-      report.fps = await sampleFps(page, preset.perf ? 5000 : 2000);
+      report.fps = args.nofps ? null : await sampleFps(page, preset.perf ? 5000 : 2000);
+      // freeze the loop and render exactly one frame for a deterministic, fast screenshot
       const snap = await page.evaluate(() => {
         const g = window.__GAME__;
+        g.freeze(true);
         g.setCameraPreset(g.session.lastPreset || 'settlement');
-        return { stats: g.getStats(), health: g.getHealth(), frame: g.sampleFrame() };
+        g.renderNow();
+        const frame = g.sampleFrame();
+        g.renderNow();
+        return { stats: g.getStats(), health: g.getHealth(), frame };
       });
       Object.assign(report, snap);
       const shot = path.join(shotDir, `${preset.name}.png`);
-      await page.screenshot({ path: shot, type: 'png' });
+      await page.screenshot({ path: shot, type: 'png', timeout: 120000 });
       report.screenshot = path.relative(inRepo(), shot);
     } catch (err) {
       report.error = String(err && (err.stack || err.message));

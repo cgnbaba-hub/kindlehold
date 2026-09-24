@@ -1,0 +1,243 @@
+{
+  "preset": "midday-overview",
+  "url": "http://127.0.0.1:5180/?verify=1&seed=1337&quality=high&demo=midgame&ui=0",
+  "run": "wave1a",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "seed": "1337",
+  "quality": "high",
+  "startedAt": "2026-09-24T09:35:37.214Z",
+  "gates": {
+    "loaded": true,
+    "noPageErrors": true,
+    "noConsoleErrors": true,
+    "noFailedRequests": true,
+    "noFailedModules": true,
+    "drawCallsWithinBudget": true,
+    "trianglesWithinBudget": true,
+    "notBlank": true
+  },
+  "pass": true,
+  "readyMs": 10214,
+  "setup": {
+    "sim": {
+      "ticks": 40,
+      "ms": 3.1999998092651367
+    },
+    "hash": "db42c00d"
+  },
+  "fps": {
+    "frames": 19,
+    "fps": 5.089603814524121,
+    "frameMs": {
+      "mean": 196.47894736842107,
+      "p50": 16.69999999999891,
+      "p95": 16.799999999999272,
+      "p99": 3433.199999999999
+    }
+  },
+  "stats": {
+    "frames": 29,
+    "fps": 2.219467077377803,
+    "frameMs": {
+      "mean": 450.5586094034129,
+      "p50": 16.700000762939453,
+      "p95": 3433.199951171875,
+      "p99": 6099.7998046875
+    },
+    "simMs": {
+      "samples": 23,
+      "mean": 0.7739130932351818,
+      "p95": 2.6000003814697266
+    },
+    "renderer": {
+      "drawCalls": 23,
+      "triangles": 933907,
+      "points": 900,
+      "lines": 0,
+      "textures": 9,
+      "geometries": 13,
+      "programs": 14,
+      "pixelRatio": 1,
+      "width": 1920,
+      "height": 1080
+    },
+    "tick": 63,
+    "hour": 12.012999999999993
+  },
+  "health": [
+    {
+      "id": "navigation",
+      "kind": "sim",
+      "critical": true,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": "requests=16 partial=0"
+    },
+    {
+      "id": "world-services",
+      "kind": "sim",
+      "critical": true,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "missions",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "ai",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "technology",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "construction",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "population",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "economy",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "production",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "units",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "heroes",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "combat",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "renderer",
+      "kind": "view",
+      "critical": true,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "environment-sky",
+      "kind": "view",
+      "critical": false,
+      "status": "registered",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "terrain-view",
+      "kind": "view",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "environment-water",
+      "kind": "view",
+      "critical": false,
+      "status": "registered",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "environment-vegetation",
+      "kind": "view",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    }
+  ],
+  "frame": {
+    "mean": 140.1567581054691,
+    "variance": 352.438145653643
+  },
+  "screenshot": "docs/screenshots/wave1a/midday-overview.png",
+  "diagnostics": {
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead."
+    ],
+    "pageErrors": [],
+    "failedRequests": [],
+    "badResponses": [],
+    "driverNotes": [
+      "[.WebGL-0x1cc00bb0800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    ]
+  },
+  "failedModules": []
+}

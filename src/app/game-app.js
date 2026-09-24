@@ -1,29 +1,175 @@
-// Application flow: in verify mode starts a session directly; otherwise shows the menu.
+// Application flow: main menu -> loading -> game session (HUD, input, audio) ->
+// pause/save/load -> victory/defeat -> menu. Verification mode (?verify=1) starts a
+// session directly with a deterministic demo state and exposes window.__GAME__.
 import { createSession } from './session.js';
 import { installVerifyApi, markReady } from '../debug/verify-api.js';
-import { showErrorOverlay } from './error-overlay.js';
+import { showErrorOverlay, hideErrorOverlay } from './error-overlay.js';
+import { loadSettings, saveSettings, prefersReducedMotion } from './settings.js';
+import { createMenus } from '../ui/menus.js';
+import { createHud } from '../ui/hud.js';
+import { saveToSlot, loadFromSlot, latestSave, hasAnySave } from '../save/storage.js';
+import { EV } from '../core/contracts.js';
+import { log } from '../core/logger.js';
 
 export async function startApp(params) {
   const container = document.getElementById('app');
   const boot = document.getElementById('boot-screen');
-  const seed = params.get('seed') || '1337';
-  const quality = params.get('quality') || 'high';
   const verify = params.get('verify') === '1';
-  const session = await createSession({
-    container, seed, quality, verify,
-    onCritical: (id, err) => showErrorOverlay({
-      title: 'The game stopped unexpectedly',
-      message: `A core system (${id}) failed. You can reload, or return to the menu.`,
-      detail: err && (err.stack || err.message),
-    }),
-  });
-  if (verify || import.meta.env.DEV) installVerifyApi(session);
-  const preset = params.get('camera');
-  if (preset) session.setCameraPreset(preset);
-  const hour = params.get('hour');
-  if (hour !== null) session.setTimeOfDay(Number(hour));
-  session.start();
+  const debugApi = params.get('debug') === '1'; // exposes window.__GAME__ for e2e tests
+  const settings = loadSettings();
+  if (prefersReducedMotion() && !localStorageHas('kindlehold.settings.v1')) settings.reducedMotion = true;
+  const uiRoot = document.createElement('div');
+  uiRoot.className = 'ui-root';
+  container.append(uiRoot);
+  applyUiSettings();
+
+  let session = null;
+  let hud = null;
+  let menus = null;
+  let paused = false;
+  let ended = false;
+
+  function localStorageHas(k) { try { return window.localStorage.getItem(k) !== null; } catch { return false; } }
+  function applyUiSettings() {
+    document.documentElement.style.setProperty('--ui-scale', String(settings.uiScale));
+    document.documentElement.classList.toggle('reduced-motion', !!settings.reducedMotion);
+  }
+  function onSettingsChange(s) {
+    Object.assign(settings, s);
+    saveSettings(settings);
+    applyUiSettings();
+    if (session) { session.audio.applyVolumes(); if (!paused) session.loop.setSpeed(settings.gameSpeed); }
+  }
+
+  menus = createMenus({ root: uiRoot, settings, onSettingsChange });
+
+  function endSession() {
+    if (hud) { hud.dispose(); hud = null; }
+    if (session) { session.dispose(); session = null; }
+    paused = false; ended = false;
+  }
+
+  function showMain() {
+    endSession();
+    menus.mainMenu({
+      onNew: (difficulty) => startGame({ difficulty }),
+      onContinue: () => { const s = latestSave(); if (s) startGame({ slot: s.slot }); },
+      onLoad: (slot) => startGame({ slot }),
+      canContinue: hasAnySave(),
+    });
+  }
+
+  async function startGame({ difficulty = settings.difficulty, slot = null, seed = null, demo = null } = {}) {
+    endSession();
+    menus.loading(slot ? 'Unpacking your saved settlement…' : 'Rekindling the hearth…');
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
+    let loaded = null;
+    if (slot) {
+      try { loaded = loadFromSlot(slot).world; }
+      catch (err) {
+        log.warn('save', `load failed: ${err.message}`);
+        menus.close();
+        showErrorOverlay({ title: 'Could not load that save', message: err.message, actions: [{ label: 'Back to menu', primary: true, run: () => { hideErrorOverlay(); showMain(); } }] });
+        return;
+      }
+    }
+    try {
+      session = await createSession({
+        container, seed: seed || (loaded ? loaded.meta.seed : String(Date.now() % 100000)), quality: params.get('quality') || settings.quality, verify, settings,
+        difficulty: loaded ? loaded.meta.difficulty : difficulty, world: loaded, demo,
+        onCritical: (id, err) => showErrorOverlay({
+          title: 'The game stopped unexpectedly',
+          message: `A core system (${id}) failed. Your last save is safe.`,
+          detail: err && (err.stack || err.message),
+          actions: [
+            { label: 'Load last save', primary: true, run: () => { hideErrorOverlay(); const s = latestSave(); if (s) startGame({ slot: s.slot }); else showMain(); } },
+            { label: 'Main menu', run: () => { hideErrorOverlay(); showMain(); } },
+          ],
+        }),
+        hooks: {
+          blocked: () => menus.open,
+          onPause: () => togglePause(),
+          onBuildMenu: () => hud && hud.openBuildMenu(),
+          onSelection: () => { if (hud) hud.selectionChanged(); if (session) session.audio.ui(); },
+          onMarker: (k, x, z) => session && session.marker(k, x, z),
+          onToast: (t) => hud && hud.toast(t),
+          onQuickSave: () => doSave('quick'),
+          onQuickLoad: () => startGame({ slot: 'quick' }),
+          onSpeed: (d) => { const sp = [0.5, 1, 2]; const i = Math.max(0, Math.min(2, sp.indexOf(session.loop.getSpeed()) + d)); session.loop.setSpeed(sp[i]); },
+          onFrame: (dt) => { if (hud) hud.update(dt); autosave(dt); },
+        },
+      });
+    } catch (err) {
+      log.error('app', `session failed: ${err.message}`, err);
+      menus.close();
+      showErrorOverlay({ title: 'Kindlehold could not start the game', message: 'Something went wrong while building the world.', detail: err.stack || err.message, actions: [{ label: 'Main menu', primary: true, run: () => { hideErrorOverlay(); showMain(); } }] });
+      return;
+    }
+    session.loop.setSpeed(settings.gameSpeed);
+    hud = createHud({ root: uiRoot, session, input: session.input, settings, actions: {
+      pause: () => togglePause(),
+      cycleSpeed: () => { const sp = [0.5, 1, 2]; const i = (sp.indexOf(session.loop.getSpeed()) + 1) % 3; session.loop.setSpeed(sp[i]); },
+    } });
+    session.sim.bus.on(EV.MISSION_ENDED, ({ result }) => {
+      if (ended) return;
+      ended = true;
+      setTimeout(() => {
+        if (!session) return;
+        session.loop.pause();
+        menus.endScreen({ result, world: session.world, onMenu: showMain, onRestart: () => startGame({ difficulty: session ? session.world.meta.difficulty : difficulty }) });
+      }, 2500);
+    });
+    if (verify || debugApi || import.meta.env.DEV) installVerifyApi(Object.assign(session, { save: (s) => doSave(s || 'quick'), load: (s) => startGame({ slot: s || 'quick' }) }));
+    menus.close();
+    session.start();
+    await session.firstFrame;
+    markReady();
+  }
+
+  let autosaveTimer = 0;
+  function autosave(dt) {
+    if (!session || paused || ended || verify) return;
+    autosaveTimer += dt;
+    if (autosaveTimer > 120) { autosaveTimer = 0; doSave('auto', true); }
+  }
+
+  function doSave(slot, quiet = false) {
+    if (!session) return false;
+    try {
+      session.world.camera = session.rc.rts.serialize();
+      saveToSlot(session.world, slot, `Kindlehold — ${session.world.meta.difficulty}`);
+      if (!quiet && hud) hud.toast(slot === 'quick' ? 'Quick-saved' : 'Game saved', 'success');
+      return true;
+    } catch (err) {
+      if (hud) hud.toast(`Save failed: ${err.message}`, 'warn');
+      return false;
+    }
+  }
+
+  function togglePause() {
+    if (!session || ended) return;
+    if (paused) {
+      paused = false; menus.close(); session.loop.resume(); session.audio.resume(); return;
+    }
+    paused = true;
+    session.loop.pause();
+    menus.pauseMenu({
+      onResume: () => togglePause(),
+      onSave: (slot) => { doSave(slot); togglePause(); },
+      onLoad: (slot) => startGame({ slot }),
+      onQuit: () => showMain(),
+      onRestart: () => startGame({ difficulty: session.world.meta.difficulty }),
+    });
+  }
+
   if (boot) boot.remove();
-  await session.firstFrame;
+  if (verify) {
+    // deterministic verification session (no menu)
+    await startGame({ seed: params.get('seed') || '1337', demo: params.get('demo') || null, difficulty: params.get('difficulty') || 'normal' });
+    if (params.get('ui') !== '1' && hud) hud.el.hidden = true; // world-only screenshots
+    return;
+  }
+  if (params.get('start') === '1') { await startGame({}); return; }
+  showMain();
   markReady();
 }

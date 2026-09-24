@@ -1,5 +1,5 @@
 // Start or connect to the Vite dev server (or any URL) for browser verification.
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import { ROOT } from './paths.mjs';
 
 async function reachable(url) {
@@ -9,7 +9,8 @@ async function reachable(url) {
   } catch { return false; }
 }
 
-export async function ensureServer(url = 'http://127.0.0.1:5180/', { command = ['npx', 'vite', '--host', '127.0.0.1', '--port', '5180', '--strictPort'] } = {}) {
+export async function ensureServer(url = 'http://127.0.0.1:5180/', { command = ['npx', 'vite', '--host', '127.0.0.1', '--port', '5180', '--strictPort'], build = false } = {}) {
+  if (build) execSync('npx vite build', { cwd: ROOT, stdio: 'ignore' });
   if (await reachable(url)) return { url, stop: async () => {}, started: false };
   const child = spawn(command[0], command.slice(1), { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, BROWSER: 'none' } });
   let output = '';
