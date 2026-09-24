@@ -196,6 +196,7 @@ export function createMenus({ root, settings, onSettingsChange }) {
     return show(screen('sub-menu', [backdrop(), h('div.menu-card.wide', {}, [
       h('h2', { text: 'How to play' }),
       h('ul.howto', {}, rows.map(([ic, t, d]) => h('li', {}, [icon(ic, 'icon icon-md'), h('div', {}, [h('strong', { text: t }), h('p', { text: d })])]))),
+      menuButton('Replay the interactive tutorial next game', () => { settings.tutorialDone = false; onSettingsChange(settings); onBack(); }),
       menuButton('Back', onBack, { primary: true }),
     ])], { onEsc: onBack }));
   }

@@ -7,6 +7,13 @@ hearth-keep in the Harrowmere valley. Maren Ashgrove, the Lantern Warden, leads 
 Across the river, the Rustfang toll-raiders of Vharek the Tollbreaker hold the old ford
 fort and will not share the valley.
 
+## Controls at a glance
+
+* **Move the map:** hold the RIGHT mouse button and drag (or use the arrow keys).
+* **Zoom:** mouse wheel — zooms towards the cursor. **Rotate:** middle mouse button or Q / E.
+* **Select:** left-click; left-drag a box around soldiers. **Command:** short right-click.
+* A guided tutorial starts with your first new game; replay it from *How to Play*.
+
 ## Your first ten minutes
 
 1. **Rekindle the hearth.** Left-click the round stone Keep, then press *Rekindle the

@@ -84,7 +84,7 @@ export function createSkyLight({ scene, renderer, quality }) {
     const elev = Math.sin(ang);
     const isDay = elev > -0.05;
     // the light never skims lower than ~18° so low sun does not stripe the map with shadows
-    if (isDay) sunDir.set(Math.cos(ang), Math.max(elev * 0.95, 0.33), 0.42).normalize();
+    if (isDay) sunDir.set(Math.cos(ang), Math.max(elev * 0.95, 0.42), 0.42).normalize();
     else {
       // moon: opposite arc
       const mang = ((hour + 6) / 12) * Math.PI;

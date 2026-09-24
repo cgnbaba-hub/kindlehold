@@ -11,6 +11,7 @@ import { walkTo, stopWalking } from '../navigation/agent.js';
 export const MAX_QUEUE = 5;
 export const LEASH = 22;
 const SEP_RADIUS = 0.9;
+const FOE_MIN_DIST = 1.1;
 
 export function spawnUnit(world, type, owner, x, z, extra = {}) {
   const def = unitDef(type);
@@ -291,13 +292,14 @@ export function createUnitsModule() {
     if (!spatial) return;
     for (const u of all(world, 'unit')) {
       if (u.downed) continue;
-      spatial.query(u.x, u.z, SEP_RADIUS * 2, buf, (e) => e.kind === 'unit' && e !== u && !e.downed && e.owner === u.owner); // allies spread; foes may close to weapon reach
+      // allies keep a full body width apart; foes only a minimum distance (1.1 m, inside weapon reach)
+      spatial.query(u.x, u.z, SEP_RADIUS * 2, buf, (e) => e.kind === 'unit' && e !== u && !e.downed);
       let px = 0, pz = 0;
       for (const o of buf) {
         let dx = u.x - o.x, dz = u.z - o.z;
         let d = Math.hypot(dx, dz);
         if (d < 1e-4) { dx = ((u.id * 7) % 11) - 5; dz = ((u.id * 13) % 11) - 5; d = Math.hypot(dx, dz) || 1; }
-        const overlap = SEP_RADIUS * 2 - d;
+        const overlap = (o.owner === u.owner ? SEP_RADIUS * 2 : FOE_MIN_DIST) - d;
         if (overlap > 0) { px += (dx / d) * overlap * 0.35; pz += (dz / d) * overlap * 0.35; }
       }
       if (px || pz) {

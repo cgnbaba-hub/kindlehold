@@ -22,7 +22,7 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
     let r = 96 * splat[k] + 140 * splat[k + 1] + 128 * splat[k + 2] + 120 * splat[k + 3];
     let g = 128 * splat[k] + 110 * splat[k + 1] + 126 * splat[k + 2] + 112 * splat[k + 3];
     let b = 64 * splat[k] + 80 * splat[k + 1] + 120 * splat[k + 2] + 90 * splat[k + 3];
-    const shade = 0.75 + Math.min(0.5, hgt / 40);
+    const shade = 0.92 + Math.min(0.25, hgt / 60);
     r *= shade; g *= shade; b *= shade;
     if (hgt < terrain.waterLevel - 0.05) { r = 40; g = 90; b = 108; }
     const o = (j * SIZE + i) * 4;

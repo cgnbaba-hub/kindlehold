@@ -262,7 +262,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
       }
     },
     /** Night dims the unlit border so it never outshines the scene. */
-    setNight(n) { borderMat.opacity = 0.32 * (1 - 0.75 * n); },
+    setNight(n) { borderMat.opacity = 0.22 * (1 - 0.7 * n); },
     /** Photo mode (key art, trailers): hide all overlays drawn by this module. */
     setVisible(v) { for (const o of [rings, bars, barsBg, border, stallMarks, discs, ghost, foot, range, aoe, castRange]) o.visible = v && o !== ghost && o !== foot && o !== range && o !== aoe && o !== castRange ? true : v ? o.visible : false; },
     getHealthStatus() { return { status: 'ok' }; },

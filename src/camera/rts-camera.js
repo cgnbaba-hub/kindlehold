@@ -28,7 +28,15 @@ export function createRtsCamera({ aspect = 16 / 9, terrain = null } = {}) {
     return 0.62 + t * 0.4; // radians from horizontal: ~35° close, ~59° far
   }
 
+  let override = null;
   function apply() {
+    if (override) {
+      camera.position.set(...override.pos);
+      tmp.set(...override.target);
+      camera.lookAt(tmp);
+      camera.updateMatrixWorld();
+      return;
+    }
     const pitch = pitchFor(state.zoom);
     const gy = terrain ? Math.max(terrain.height(state.x, state.z), 0) : 0;
     const horiz = Math.cos(pitch) * state.zoom;
@@ -75,6 +83,8 @@ export function createRtsCamera({ aspect = 16 / 9, terrain = null } = {}) {
       state.tx = nx; state.tz = nz;
       apply();
     },
+    /** Photo mode: free camera position/target (key art, trailers); null restores the RTS rig. */
+    setOverride(o) { override = o; apply(); },
     rotate(d) { state.tyaw += d; },
     zoomBy(f) { state.tzoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, state.tzoom * f)); },
     update(dt, reducedMotion = false) {

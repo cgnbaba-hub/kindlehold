@@ -256,14 +256,31 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
       for (let i = rings.length - 1; i >= 0; i--) {
         const r = rings[i];
         if (!r.mesh) {
-          r.mesh = new THREE.Mesh(r.disc ? discGeo : ringGeo, new THREE.MeshBasicMaterial({ color: r.color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-          r.mesh.position.set(r.x, heightAt(r.x, r.z) + 0.25, r.z);
+          // geometry baked in world space, draped over the terrain so slopes never clip it
+          const g = (r.disc ? discGeo : ringGeo).clone();
+          const gp = g.attributes.position;
+          for (let k = 0; k < gp.count; k++) {
+            const wx = r.x + gp.getX(k) * r.r, wz = r.z + gp.getZ(k) * r.r;
+            gp.setXYZ(k, gp.getX(k) * r.r, heightAt(wx, wz) + 0.2, gp.getZ(k) * r.r);
+          }
+          r.base = (r.disc ? discGeo : ringGeo).attributes.position.array;
+          r.mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: r.color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+          r.mesh.position.set(r.x, 0, r.z);
           scene.add(r.mesh); ringMeshes.push(r.mesh);
         }
         r.t += frame.dt;
         const k = r.t / r.dur;
-        if (k >= 1) { scene.remove(r.mesh); r.mesh.material.dispose(); rings.splice(i, 1); continue; }
-        r.mesh.scale.setScalar(r.disc ? r.r : r.r * (0.3 + 0.7 * Math.sqrt(k)));
+        if (k >= 1) { scene.remove(r.mesh); r.mesh.material.dispose(); r.mesh.geometry.dispose(); rings.splice(i, 1); continue; }
+        if (!r.disc) {
+          // expanding ring: re-drape every frame at the current radius
+          const sc = (0.3 + 0.7 * Math.sqrt(k)) * r.r;
+          const gp = r.mesh.geometry.attributes.position;
+          for (let q = 0; q < gp.count; q++) {
+            const lx = r.base[q * 3] * sc, lz = r.base[q * 3 + 2] * sc;
+            gp.setXYZ(q, lx, heightAt(r.x + lx, r.z + lz) + 0.2, lz);
+          }
+          gp.needsUpdate = true;
+        }
         r.mesh.material.opacity = r.disc ? 0.45 * (1 - k) : 1 - k;
       }
     },

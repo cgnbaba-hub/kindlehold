@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS = {
   edgeScroll: false,
   cameraSpeed: 1,
   tutorialHints: true,
+  tutorialDone: false,
   gameSpeed: 1,
   difficulty: 'normal',
   bindings: {},

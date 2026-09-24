@@ -7,6 +7,7 @@ import { showErrorOverlay, hideErrorOverlay } from './error-overlay.js';
 import { loadSettings, saveSettings, prefersReducedMotion } from './settings.js';
 import { createMenus } from '../ui/menus.js';
 import { createHud } from '../ui/hud.js';
+import { createTutorial } from '../ui/tutorial.js';
 import { saveToSlot, loadFromSlot, latestSave, hasAnySave } from '../save/storage.js';
 import { EV } from '../core/contracts.js';
 import { log } from '../core/logger.js';
@@ -26,6 +27,7 @@ export async function startApp(params) {
 
   let session = null;
   let hud = null;
+  let tutorial = null;
   let menus = null;
   let paused = false;
   let ended = false;
@@ -45,6 +47,7 @@ export async function startApp(params) {
   menus = createMenus({ root: uiRoot, settings, onSettingsChange });
 
   function endSession() {
+    if (tutorial) { tutorial.dispose(); tutorial = null; }
     if (hud) { hud.dispose(); hud = null; }
     if (session) { session.dispose(); session = null; }
     paused = false; ended = false;
@@ -97,7 +100,7 @@ export async function startApp(params) {
           onQuickSave: () => doSave('quick'),
           onQuickLoad: () => startGame({ slot: 'quick' }),
           onSpeed: (d) => { const sp = [0.5, 1, 2]; const i = Math.max(0, Math.min(2, sp.indexOf(session.loop.getSpeed()) + d)); session.loop.setSpeed(sp[i]); },
-          onFrame: (dt) => { if (hud) hud.update(dt); autosave(dt); },
+          onFrame: (dt) => { if (hud) hud.update(dt); if (tutorial) tutorial.update(dt); autosave(dt); },
           onUiFailure: (err) => showErrorOverlay({ title: 'The interface stopped responding', message: 'The game is still running. Save and reload, or return to the menu.', detail: err && (err.stack || err.message), actions: [{ label: 'Save and reload', primary: true, run: () => { doSave('quick', true); location.reload(); } }, { label: 'Main menu', run: () => { hideErrorOverlay(); showMain(); } }] }),
         },
       });
@@ -112,6 +115,9 @@ export async function startApp(params) {
       pause: () => togglePause(),
       cycleSpeed: () => { const sp = [0.5, 1, 2]; const i = (sp.indexOf(session.loop.getSpeed()) + 1) % 3; session.loop.setSpeed(sp[i]); },
     } });
+    if (!verify && !slot && !settings.tutorialDone) {
+      tutorial = createTutorial({ root: uiRoot, session, settings, onFinish: () => { saveSettings(settings); tutorial = null; } });
+    }
     session.sim.bus.on(EV.MISSION_ENDED, ({ result }) => {
       if (ended) return;
       ended = true;

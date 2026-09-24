@@ -60,7 +60,7 @@ function rockGeo(rnd, colorA, colorB, iron = false) {
 function grassClump(rnd) {
   const pos = [];
   const col = [];
-  const base = new THREE.Color('#6d8a42'), tip = new THREE.Color('#b9c878');
+  const base = new THREE.Color('#5d7a3c'), tip = new THREE.Color('#9fae68');
   for (let i = 0; i < 7; i++) {
     const a = rnd() * Math.PI * 2, r = rnd() * 0.25;
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
