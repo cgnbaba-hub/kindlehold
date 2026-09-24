@@ -1,0 +1,87 @@
+# Kindlehold — nginx site for a static Vite build with atomic releases.
+# Install: copy to /etc/nginx/sites-available/kindlehold.conf, adjust server_name and
+# paths, symlink into sites-enabled, `nginx -t && systemctl reload nginx`.
+# TLS: obtain certificates with certbot (see DEPLOYMENT.md); certificates are never stored here.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name game.example.com;
+    # Redirect to HTTPS once certificates exist (certbot --nginx adds this automatically)
+    # return 301 https://$host$request_uri;
+
+    # "current" is a symlink to releases/<id>; switching it is the atomic deploy step.
+    root /var/www/kindlehold/current;
+    index index.html;
+
+    charset utf-8;
+    server_tokens off;
+
+    # MIME types (mime.types from the nginx package plus modern formats)
+    include /etc/nginx/mime.types;
+    types {
+        application/javascript mjs;
+        image/avif avif;
+        image/webp webp;
+        image/ktx2 ktx2;
+        model/gltf-binary glb;
+        model/gltf+json gltf;
+        application/wasm wasm;
+    }
+
+    gzip on;
+    gzip_vary on;
+    gzip_comp_level 6;
+    gzip_min_length 512;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml model/gltf+json;
+    # brotli on;  # uncomment if ngx_brotli is installed
+    # brotli_types text/plain text/css application/javascript application/json image/svg+xml;
+
+    # Security headers suitable for a static WebGL game
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'" always;
+    # add_header Strict-Transport-Security "max-age=31536000" always;  # enable only after HTTPS works
+
+    # Hashed build assets: cache for a year, immutable
+    location ^~ /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    # Source maps are never shipped; refuse just in case
+    location ~* \.map$ { return 404; }
+
+    # Hidden files (.git, .env) are never served
+    location ~ /\. { deny all; return 404; }
+
+    # index.html: always revalidate. nginx does not inherit add_header into a location
+    # that sets its own, so the security headers are repeated here.
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+        add_header Cross-Origin-Opener-Policy "same-origin" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'" always;
+    }
+
+    # The game uses query parameters, not client-side path routing; unknown paths fall
+    # back to index.html so that reloading a deep link (e.g. /play) still loads the game.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location = /healthz {
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    access_log /var/log/nginx/kindlehold.access.log;
+    error_log /var/log/nginx/kindlehold.error.log warn;
+}
