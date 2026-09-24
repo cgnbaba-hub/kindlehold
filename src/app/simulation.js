@@ -7,6 +7,18 @@ import { createWorld, attachBus, worldRng, syncRngState } from '../world/world.j
 import { createTerrainData } from '../world/terrain-data.js';
 import { HARROWMERE_MAP } from '../world/maps/harrowmere.js';
 import { worldHash } from '../world/hash.js';
+import { createNavigationModule } from '../navigation/index.js';
+import { createWorldServicesModule } from '../world/services-module.js';
+import { createMissionsModule } from '../missions/index.js';
+import { createAiModule } from '../ai/index.js';
+import { createTechnologyModule } from '../technology/index.js';
+import { createConstructionModule } from '../construction/index.js';
+import { createPopulationModule } from '../population/index.js';
+import { createEconomyModule } from '../economy/index.js';
+import { createProductionModule } from '../production/index.js';
+import { createUnitsModule } from '../units/sim.js';
+import { createHeroesModule } from '../heroes/index.js';
+import { createCombatModule } from '../combat/index.js';
 
 const terrainCache = new Map();
 export function terrainFor(map = HARROWMERE_MAP) {
@@ -15,8 +27,21 @@ export function terrainFor(map = HARROWMERE_MAP) {
   return t;
 }
 
-/** Sim module factories, in update order. Extended per wave. */
-export const SIM_MODULE_FACTORIES = [];
+/** Sim module factories, in update order (ARCHITECTURE.md §6). */
+export const SIM_MODULE_FACTORIES = [
+  createNavigationModule,
+  createWorldServicesModule,
+  createMissionsModule,
+  createAiModule,
+  createTechnologyModule,
+  createConstructionModule,
+  createPopulationModule,
+  createEconomyModule,
+  createProductionModule,
+  createUnitsModule,
+  createHeroesModule,
+  createCombatModule,
+];
 
 export function createSimulation({ seed = 1337, difficulty = 'normal', world = null, modules = SIM_MODULE_FACTORIES, onCritical = null, setup = true } = {}) {
   const bus = createEventBus();
@@ -52,10 +77,16 @@ export function createSimulation({ seed = 1337, difficulty = 'normal', world = n
     run(ticks) { for (let i = 0; i < ticks; i++) sim.step(); },
     hash() { syncRngState(sim.world); return worldHash(sim.world); },
     context() {
-      return { world: sim.world, bus, rng: worldRng(sim.world), log, services: sim.services, sim };
+      // getters: modules always see the current world, also after a load replaced it
+      return {
+        get world() { return sim.world; },
+        get rng() { return worldRng(sim.world); },
+        bus, log, services: sim.services, sim,
+      };
     },
     /** Replace the world (load). Modules rebuild derived state in deserialize. */
     replaceWorld(newWorld, moduleData = {}) {
+      pending.length = 0;
       sim.world = newWorld;
       attachBus(newWorld, bus);
       host.deserializeAll(moduleData);

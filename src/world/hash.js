@@ -15,7 +15,8 @@ function canonical(value) {
     return JSON.stringify(value);
   }
   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
-  const keys = Object.keys(value).sort();
+  // keys holding undefined are not persisted by JSON, so they are not part of the state
+  const keys = Object.keys(value).filter((k) => value[k] !== undefined).sort();
   return '{' + keys.map((k) => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';
 }
 

@@ -1,0 +1,238 @@
+// Construction: placement validity, sites, progress, completion, cancel/refund,
+// demolition and repair bookkeeping. Labourers perform the physical work (economy).
+import { EV, PLAYER } from '../core/contracts.js';
+import { spawn, remove, all, emit, alert } from '../world/world.js';
+import { BUILDINGS, buildingDef } from '../buildings/defs.js';
+import { territorySources, territoryOwner } from '../world/territory.js';
+import { pay, refund } from '../economy/stock.js';
+import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
+
+export const MAX_BUILDERS = 3;
+export const CANCEL_REFUND_STARTED = 0.5;
+export const DEMOLISH_REFUND = 0.3;
+
+/** Effective cost (tech discounts applied). */
+export function buildCost(world, owner, type) {
+  const def = buildingDef(type);
+  const cost = { ...def.cost };
+  if (type === 'cottage' && hasTech(world, owner, 'bracing')) cost.timber = Math.max(0, cost.timber - TECH_EFFECTS.cottageTimberDiscount);
+  return cost;
+}
+
+/**
+ * Placement validity shared by the simulation and the UI preview.
+ * @returns {{ok:boolean, reason?:string, deposit?:number}}
+ */
+export function checkPlacement(world, services, owner, type, x, z) {
+  const def = BUILDINGS[type];
+  if (!def) return { ok: false, reason: 'Unknown building' };
+  if (!def.buildable && owner === PLAYER) return { ok: false, reason: 'Cannot be built' };
+  if (def.requiresTech && !hasTech(world, owner, def.requiresTech)) return { ok: false, reason: 'Requires the March Charter' };
+  const t = services.terrain;
+  if (!t.inBounds(x, z, def.radius + 6)) return { ok: false, reason: 'Too close to the edge of the map' };
+  // terrain: samples across the footprint
+  let minH = Infinity, maxH = -Infinity;
+  for (let a = 0; a < 8; a++) {
+    const ang = (a / 8) * Math.PI * 2;
+    for (const rr of [0, def.radius * 0.6, def.radius]) {
+      const sx = x + Math.cos(ang) * rr, sz = z + Math.sin(ang) * rr;
+      if (t.waterDepth(sx, sz) > 0.01) return { ok: false, reason: 'Cannot build on water' };
+      const h = t.height(sx, sz);
+      minH = Math.min(minH, h); maxH = Math.max(maxH, h);
+    }
+  }
+  if ((maxH - minH) / (def.radius * 2) > 0.35) return { ok: false, reason: 'Ground is too steep' };
+  if (services.nav && services.nav.grid().isStaticBlocked(x, z)) return { ok: false, reason: 'Ground is impassable' };
+  // territory
+  const src = territorySources(world);
+  if (territoryOwner(world, x, z, src) !== owner) return { ok: false, reason: 'Outside your territory' };
+  // collisions with buildings and deposits
+  for (const b of all(world, 'building')) {
+    if (b.state === 'destroyed') continue;
+    const r = BUILDINGS[b.type].radius + def.radius + 1.2;
+    if ((b.x - x) ** 2 + (b.z - z) ** 2 < r * r) return { ok: false, reason: `Too close to ${BUILDINGS[b.type].name}` };
+  }
+  let depositId = null;
+  let nearest = Infinity;
+  for (const d of all(world, 'deposit')) {
+    if (d.amount <= 0) continue;
+    const dd = Math.hypot(d.x - x, d.z - z);
+    const clear = def.radius + (d.type === 'tree' ? 0.8 : d.type === 'rock' ? 2.6 : 2.2);
+    if (dd < clear) return { ok: false, reason: d.type === 'tree' ? 'Trees are in the way' : 'Rocks are in the way' };
+    if (def.deposit && d.type === def.deposit && dd <= def.depositRange && dd < nearest) { nearest = dd; depositId = d.id; }
+  }
+  if (def.deposit && depositId == null) {
+    const what = { tree: 'trees', rock: 'a rock outcrop', iron: 'an iron vein' }[def.deposit];
+    return { ok: false, reason: `Needs ${what} within ${def.depositRange} m` };
+  }
+  // hostile units nearby
+  for (const u of all(world, 'unit')) {
+    if (u.owner !== owner && u.owner !== 'none' && !u.downed && (u.x - x) ** 2 + (u.z - z) ** 2 < 36) return { ok: false, reason: 'Enemies are too close' };
+  }
+  return { ok: true, deposit: depositId };
+}
+
+export function createBuildingEntity(world, { type, owner, x, z, rot = 0, state = 'site' }) {
+  const def = buildingDef(type);
+  const cost = state === 'site' ? buildCost(world, owner, type) : {};
+  return spawn(world, {
+    kind: 'building', type, owner, x, z, rot,
+    state, // 'site' | 'active' | 'destroyed'
+    hp: state === 'site' ? Math.round(def.hp * 0.2) : def.hp, maxHp: def.hp,
+    build: state === 'site' ? { progress: 0, required: cost, supplied: {}, incoming: {}, builders: [] } : null,
+    workers: [],
+    stock: { out: {}, in: {}, outReserved: 0, inIncoming: 0 },
+    stall: null,
+    lit: type !== 'keep',
+    queue: [],
+    plots: null,
+    lastHitTick: -9999,
+    destroyedTick: null,
+    cooldown: 0,
+  });
+}
+
+function supplyFraction(b) {
+  const req = b.build.required;
+  let need = 0, have = 0;
+  for (const r in req) { need += req[r]; have += Math.min(req[r], b.build.supplied[r] || 0); }
+  return need === 0 ? 1 : have / need;
+}
+
+export function siteNeeds(b) {
+  const out = {};
+  const req = b.build.required;
+  for (const r in req) {
+    const missing = req[r] - (b.build.supplied[r] || 0) - (b.build.incoming[r] || 0);
+    if (missing > 0) out[r] = missing;
+  }
+  return out;
+}
+
+/** Called by a builder each tick of work. */
+export function applyBuildWork(world, b, amountSeconds) {
+  if (b.state !== 'site') return;
+  const def = BUILDINGS[b.type];
+  const speed = hasTech(world, b.owner, 'bracing') ? TECH_EFFECTS.buildSpeed : 1;
+  const cap = supplyFraction(b);
+  const before = b.build.progress;
+  b.build.progress = Math.min(cap, b.build.progress + (amountSeconds * speed) / def.buildTime);
+  b.hp = Math.max(b.hp, Math.round(def.hp * (0.2 + 0.8 * b.build.progress)));
+  if (Math.floor(before * 10) !== Math.floor(b.build.progress * 10)) emit(world, EV.CONSTRUCTION_PROGRESS, { id: b.id, progress: b.build.progress });
+  if (b.build.progress >= 1) completeBuilding(world, b);
+}
+
+export function completeBuilding(world, b) {
+  const def = BUILDINGS[b.type];
+  b.state = 'active';
+  b.hp = def.hp;
+  b.build = null;
+  if (b.type === 'farm') {
+    b.plots = [];
+    const n = 6;
+    for (let i = 0; i < n; i++) {
+      const ang = (b.rot || 0) + Math.PI / n + (i / n) * Math.PI * 2;
+      b.plots.push({ x: b.x + Math.sin(ang) * 9.5, z: b.z + Math.cos(ang) * 9.5, growth: 0, state: 'fallow' });
+    }
+  }
+  if (b.owner === PLAYER) world.stats.buildingsBuilt++;
+  emit(world, EV.BUILDING_COMPLETED, { id: b.id, type: b.type, owner: b.owner });
+}
+
+export function releaseWorkers(world, b) {
+  for (const wid of b.workers) {
+    const s = world.entities[wid];
+    if (s) { s.job = null; s.workplace = null; s.task = null; s.carry = null; }
+  }
+  b.workers = [];
+}
+
+export function clearFootprint(world, b) {
+  emit(world, 'building:footprint-cleared', { id: b.id, x: b.x, z: b.z, type: b.type });
+}
+
+/** Building reached 0 HP. */
+export function destroyBuilding(world, b, byOwner = null) {
+  if (b.state === 'destroyed') return;
+  releaseWorkers(world, b);
+  b.state = 'destroyed';
+  b.hp = 0;
+  b.destroyedTick = world.tick;
+  b.queue = [];
+  clearFootprint(world, b);
+  const p = world.players[b.owner];
+  if (p && p.burnPenalty !== undefined) p.burnPenalty = Math.min(40, p.burnPenalty + 12);
+  emit(world, EV.BUILDING_DESTROYED, { id: b.id, type: b.type, owner: b.owner, x: b.x, z: b.z, by: byOwner });
+  if (b.owner === PLAYER) alert(world, 'danger', `${BUILDINGS[b.type].name} was destroyed!`, b.x, b.z);
+}
+
+export function createConstructionModule() {
+  let ctx = null;
+  const unsub = [];
+
+  function reject(reason, cmd) { emit(ctx.world, EV.COMMAND_REJECTED, { type: cmd.type, reason }); }
+
+  function onCommand(cmd) {
+    const world = ctx.world;
+    const owner = cmd.owner || PLAYER;
+    if (cmd.type === 'place') {
+      const def = BUILDINGS[cmd.buildingType];
+      if (!def) return reject('Unknown building', cmd);
+      const x = Number(cmd.x), z = Number(cmd.z);
+      if (!Number.isFinite(x) || !Number.isFinite(z)) return reject('Invalid position', cmd);
+      const chk = checkPlacement(world, ctx.services, owner, def.id, x, z);
+      if (!chk.ok) return reject(chk.reason, cmd);
+      const cost = buildCost(world, owner, def.id);
+      if (!pay(world, owner, cost, `build ${def.id}`)) return reject('Not enough resources', cmd);
+      const rot = Number.isFinite(Number(cmd.rot)) ? Number(cmd.rot) : 0;
+      const b = createBuildingEntity(world, { type: def.id, owner, x, z, rot });
+      if (!b) { refund(world, owner, cost); return reject('Too many entities', cmd); }
+      emit(world, EV.BUILDING_PLACED, { id: b.id, type: b.type, owner });
+    } else if (cmd.type === 'cancel') {
+      const b = world.entities[cmd.id];
+      if (!b || b.kind !== 'building' || b.owner !== owner || b.state !== 'site') return reject('Nothing to cancel', cmd);
+      // undelivered goods return fully; delivered goods at 50% once work has started
+      const started = b.build.progress > 0;
+      const refundCost = {};
+      for (const r in b.build.required) {
+        const supplied = b.build.supplied[r] || 0;
+        const undelivered = b.build.required[r] - supplied;
+        refundCost[r] = undelivered + (started ? Math.floor(supplied * CANCEL_REFUND_STARTED) : supplied);
+      }
+      refund(world, owner, refundCost, 1, 'cancel');
+      clearFootprint(world, b);
+      remove(world, b.id, 'cancelled');
+    } else if (cmd.type === 'demolish') {
+      const b = world.entities[cmd.id];
+      if (!b || b.kind !== 'building' || b.owner !== owner || b.state !== 'active' || b.type === 'keep') return reject('Cannot demolish this', cmd);
+      releaseWorkers(world, b);
+      refund(world, owner, buildCost(world, owner, b.type), DEMOLISH_REFUND, 'demolish');
+      clearFootprint(world, b);
+      emit(world, 'building:demolished', { id: b.id, type: b.type, x: b.x, z: b.z });
+      remove(world, b.id, 'demolished');
+    } else if (cmd.type === 'rekindle') {
+      const keep = all(world, 'building').find((b) => b.type === 'keep' && b.owner === owner);
+      if (!keep || keep.lit) return;
+      keep.lit = true;
+      world.mission.flags.keepLit = true;
+      emit(world, 'keep:rekindled', { id: keep.id });
+    }
+  }
+
+  return {
+    id: 'construction',
+    kind: 'sim',
+    init(c) {
+      ctx = c;
+      unsub.push(c.bus.on('command', onCommand));
+    },
+    update() {
+      const world = ctx.world;
+      // rubble clean-up 30 s after destruction
+      for (const b of all(world, 'building')) {
+        if (b.state === 'destroyed' && world.tick - b.destroyedTick > 600) remove(world, b.id, 'rubble-cleared');
+      }
+    },
+    dispose() { unsub.forEach((u) => u()); unsub.length = 0; },
+  };
+}
