@@ -116,13 +116,13 @@ float mx = max(max(hb.x, hb.y), max(hb.z, hb.w));
 vec4 ww = max(hb - (mx - 0.28), 0.0);
 ww /= (ww.x + ww.y + ww.z + ww.w + 1e-4);
 vec3 ground = cG.rgb * ww.x + cD.rgb * ww.y + cR.rgb * ww.z + cM.rgb * ww.w;
-kHgt = dot(ww, vec4(cG.a, cD.a, cR.a * 1.8, cM.a));
 // gentle desaturation towards the art-direction sage palette
 float gl = dot(ground, vec3(0.299, 0.587, 0.114));
-ground = mix(vec3(gl), ground, 0.8) * vec3(1.02, 1.0, 0.97);
+ground = mix(vec3(gl), ground, 0.66) * vec3(0.98, 1.0, 0.92);
 // macro variation: large meadow patches (dry/lush), medium mottling, per-material tint
 vec4 mac = texture2D(tMacro, wp * 0.0042);
 vec4 mac2 = texture2D(tMacro, wp * 0.021 + vec2(0.4, 0.1));
+kHgt = dot(ww, vec4(cG.a * 0.3, cD.a * 0.6, cR.a * 1.8, cM.a * 0.4)) + mac2.r * 2.0; // relief from rock and low-frequency swells, not per-pixel grass grain
 vec3 lush = vec3(0.66, 0.86, 0.62), dry = vec3(1.2, 1.08, 0.72);
 vec3 grassTint = mix(lush, dry, smoothstep(0.3, 0.75, mac.r)) * (0.8 + mac2.g * 0.38);
 // clover-dark mottling at medium scale
@@ -142,7 +142,7 @@ kRough = dot(ww, vec4(0.96, 0.9, 0.78, 0.62));
   vec3 r1 = cross(dpdy, normal), r2 = cross(normal, dpdx);
   float det = dot(dpdx, r1);
   vec3 grad = sign(det) * (dhx * r1 + dhy * r2);
-  normal = normalize(abs(det) * normal - grad * 0.3);
+  normal = normalize(abs(det) * normal - grad * 0.12);
 }`);
   };
   mat.customProgramCacheKey = () => 'kh-terrain-v2';

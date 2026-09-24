@@ -94,6 +94,10 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
   for (const m of [arrows, stones]) { m.count = 0; m.frustumCulled = false; scene.add(m); }
   const rings = [];
   const ringGeo = new THREE.RingGeometry(0.92, 1, 48); ringGeo.rotateX(-Math.PI / 2);
+  const discGeo = new THREE.CircleGeometry(1, 48); discGeo.rotateX(-Math.PI / 2);
+  const flash = new THREE.PointLight('#ffcf80', 0, 22, 1.5);
+  scene.add(flash);
+  let flashT = 0;
 
   const unsub = [];
   const heightAt = (x, z) => terrain.height(x, z);
@@ -125,6 +129,8 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
       emit('flare', d.x, y + 1.2, d.z, 14, d.radius * 1.2, [0, 0.6, 0], 2);
       emit('ember', d.x, y + 1, d.z, 30, d.radius * 1.4, [0, 2.5, 0], 2.5);
       rings.push({ x: d.x, z: d.z, r: d.radius, t: 0, dur: 0.8, color: '#ffd27a' });
+      rings.push({ x: d.x, z: d.z, r: d.radius * 1.1, t: 0, dur: 1.4, color: '#ffb35c', disc: true });
+      flash.position.set(d.x, y + 3, d.z); flashT = 0.9;
     } else if (d.ability === 'kindle') {
       emit('ward', d.x, y + 0.6, d.z, 40, d.radius * 1.6, [0, 1.2, 0], 1.2);
       rings.push({ x: d.x, z: d.z, r: d.radius, t: 0, dur: 1.2, color: '#8fd0ff' });
@@ -245,19 +251,20 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
       }
       arrows.count = na; stones.count = ns;
       arrows.instanceMatrix.needsUpdate = true; stones.instanceMatrix.needsUpdate = true;
+      if (flashT > 0) { flashT = Math.max(0, flashT - frame.dt); flash.intensity = 180 * flashT; } else flash.intensity = 0;
       // expanding ability rings
       for (let i = rings.length - 1; i >= 0; i--) {
         const r = rings[i];
         if (!r.mesh) {
-          r.mesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: r.color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+          r.mesh = new THREE.Mesh(r.disc ? discGeo : ringGeo, new THREE.MeshBasicMaterial({ color: r.color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
           r.mesh.position.set(r.x, heightAt(r.x, r.z) + 0.25, r.z);
           scene.add(r.mesh); ringMeshes.push(r.mesh);
         }
         r.t += frame.dt;
         const k = r.t / r.dur;
         if (k >= 1) { scene.remove(r.mesh); r.mesh.material.dispose(); rings.splice(i, 1); continue; }
-        r.mesh.scale.setScalar(r.r * (0.3 + 0.7 * Math.sqrt(k)));
-        r.mesh.material.opacity = 1 - k;
+        r.mesh.scale.setScalar(r.disc ? r.r : r.r * (0.3 + 0.7 * Math.sqrt(k)));
+        r.mesh.material.opacity = r.disc ? 0.45 * (1 - k) : 1 - k;
       }
     },
     particleCount: () => alive,
@@ -267,7 +274,7 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
       for (const L of Object.values(layers)) { scene.remove(L.mesh); L.mesh.geometry.dispose(); L.mat.dispose(); }
       scene.remove(arrows, stones); arrowGeo.dispose(); stoneGeo.dispose(); shotMat.dispose();
       for (const r of rings) if (r.mesh) { scene.remove(r.mesh); r.mesh.material.dispose(); }
-      ringGeo.dispose(); tex.dispose(); geo.dispose();
+      ringGeo.dispose(); discGeo.dispose(); scene.remove(flash); tex.dispose(); geo.dispose();
     },
   };
 }

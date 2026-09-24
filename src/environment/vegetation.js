@@ -288,7 +288,7 @@ export function createVegetation({ scene, terrain, world, quality }) {
         const idx = mesh.count++;
         m4.compose(p.set(d.x, y - 0.15, d.z), q.setFromEuler(e.set(0, d.rot, 0)), s.setScalar(d.scale || 1));
         mesh.setMatrixAt(idx, m4);
-        col.setScalar(0.9 + ((d.id * 37) % 20) / 100);
+        { const k = ((d.id * 37) % 100) / 100, j = ((d.id * 61) % 100) / 100; col.setRGB(0.82 + k * 0.3 + j * 0.08, 0.86 + k * 0.24, 0.8 + k * 0.2 - j * 0.1); }
         mesh.setColorAt(idx, col);
         if (d.reservedBy) animTrees.push({ d, mesh, index: idx, shake: true });
       } else {

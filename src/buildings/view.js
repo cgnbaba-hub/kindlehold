@@ -167,16 +167,46 @@ export function createBuildingsView({ scene, terrain, world, renderer, sky }) {
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), e = new THREE.Euler();
   const col = new THREE.Color(), green = new THREE.Color('#5f8a34'), gold = new THREE.Color('#d9b653'), seed = new THREE.Color('#6d5a3e');
 
+  // fields are individual terrain-following meshes (plots never move once a farm stands)
+  const plotMeshes = new Map();
+  const _d = new THREE.Color('#4e3a28'), _l = new THREE.Color('#6e5439'), _c = new THREE.Color();
+  function fieldMesh(pl, ang) {
+    const g = new THREE.PlaneGeometry(5.4, 4.4, 12, 22);
+    g.rotateX(-Math.PI / 2);
+    const pos = g.attributes.position;
+    const col = new Float32Array(pos.count * 3);
+    const c = Math.cos(ang), sn = Math.sin(ang);
+    for (let i = 0; i < pos.count; i++) {
+      const lx = pos.getX(i), lz = pos.getZ(i);
+      const ridge = 0.5 + 0.5 * Math.cos(lz * Math.PI * 2 / 0.73);
+      const edge = Math.min(2.7 - Math.abs(lx), 2.2 - Math.abs(lz));
+      const wx = pl.x + lx * c + lz * sn, wz = pl.z - lx * sn + lz * c;
+      pos.setXYZ(i, wx, terrain.height(wx, wz) + 0.04 + ridge * 0.06 * Math.min(1, edge * 3), wz);
+      _c.copy(_d).lerp(_l, ridge);
+      col[i * 3] = _c.r; col[i * 3 + 1] = _c.g; col[i * 3 + 2] = _c.b;
+    }
+    g.computeVertexNormals();
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.setAttribute('pattern', new THREE.BufferAttribute(new Float32Array(pos.count).fill(PATTERN.plain), 1));
+    const m = new THREE.Mesh(g, mat);
+    m.receiveShadow = true;
+    scene.add(m);
+    return m;
+  }
+
   function updatePlots() {
     let pc = 0, cc = 0;
+    const live = new Set();
     for (const b of all(world(), 'building')) {
       if (b.type !== 'farm' || b.state !== 'active' || !b.plots) continue;
       for (const pl of b.plots) {
         if (pc >= MAX_PLOTS) break;
         const y = terrain.height(pl.x, pl.z);
         const ang = Math.atan2(pl.x - b.x, pl.z - b.z);
-        m4.compose(p.set(pl.x, y, pl.z), q.setFromEuler(e.set(0, ang, 0)), s.set(1, 1, 1));
-        plots.setMatrixAt(pc++, m4);
+        const key = `${b.id}:${b.plots.indexOf(pl)}`;
+        live.add(key);
+        if (!plotMeshes.has(key)) plotMeshes.set(key, fieldMesh(pl, ang));
+        pc++;
         if (pl.state === 'fallow') continue;
         const g = pl.state === 'ripe' ? 1 : pl.growth;
         col.copy(green).lerp(gold, Math.max(0, (g - 0.55) / 0.45));
@@ -186,14 +216,16 @@ export function createBuildingsView({ scene, terrain, world, renderer, sky }) {
           const c = Math.cos(ang), sn = Math.sin(ang);
           const wx = pl.x + lx * c + lz * sn, wz = pl.z - lx * sn + lz * c;
           const h = 0.15 + g * 1.0;
-          m4.compose(p.set(wx, y, wz), q.setFromEuler(e.set(0, i * 1.3, 0)), s.set(0.9 + g * 0.4, h, 0.9 + g * 0.4));
+          m4.compose(p.set(wx, terrain.height(wx, wz) + 0.05, wz), q.setFromEuler(e.set(0, i * 1.3, 0)), s.set(0.9 + g * 0.4, h, 0.9 + g * 0.4));
           crops.setMatrixAt(cc, m4);
           crops.setColorAt(cc, col);
           cc++;
         }
       }
     }
-    plots.count = pc; crops.count = cc;
+    for (const [k, m] of plotMeshes) if (!live.has(k)) { scene.remove(m); m.geometry.dispose(); plotMeshes.delete(k); }
+    plots.count = 0; crops.count = cc;
+    void pc;
     plots.instanceMatrix.needsUpdate = true; crops.instanceMatrix.needsUpdate = true;
     if (crops.instanceColor) crops.instanceColor.needsUpdate = true;
   }

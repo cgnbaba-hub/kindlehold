@@ -65,7 +65,7 @@ export function createWater({ scene, terrain }) {
   geo.computeVertexNormals();
 
   const normalTex = makeNormalTexture();
-  const mat = new THREE.MeshStandardMaterial({ color: '#2d6470', roughness: 0.12, metalness: 0.0, transparent: true, depthWrite: false });
+  const mat = new THREE.MeshStandardMaterial({ color: '#2d6470', roughness: 0.22, metalness: 0.0, transparent: true, depthWrite: false });
   const uniforms = { uTime: { value: 0 }, tNormal: { value: normalTex }, uSky: { value: new THREE.Color('#9fb8cc') }, uNight: { value: 0 } };
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
@@ -78,9 +78,9 @@ uniform float uTime; uniform sampler2D tNormal; uniform vec3 uSky; uniform float
 varying float vDepth; varying vec3 vWPos;`)
       .replace('#include <color_fragment>', `#include <color_fragment>
 float d = clamp(vDepth, 0.0, 2.5);
-vec3 shallow = vec3(0.2, 0.36, 0.3);
-vec3 deep = vec3(0.02, 0.08, 0.11);
-diffuseColor.rgb = mix(shallow, deep, smoothstep(0.0, 1.8, d));
+vec3 shallow = vec3(0.34, 0.44, 0.33);
+vec3 deep = vec3(0.015, 0.06, 0.09);
+diffuseColor.rgb = mix(shallow, deep, smoothstep(0.05, 1.3, d));
 float foam = (1.0 - smoothstep(0.0, 0.6, d)) * (0.55 + 0.45 * sin(uTime * 1.3 + vWPos.x * 0.8 + vWPos.z * 0.6));
 diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.9, 0.88), foam * 0.7);
 float shore = smoothstep(-0.02, 0.18, vDepth);

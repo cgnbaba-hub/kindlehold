@@ -8,7 +8,7 @@ import { paint, paintGradient, place, merge, jitterVertices, viewRng, box, cyl, 
 
 const C = {
   lime: '#d6c9ad', limeDark: '#bfb193', timber: '#5f4330', timberDark: '#3f2c20', plank: '#8f6a47', plankLight: '#a88259',
-  thatch: '#a8915a', thatchDark: '#8a7447', slate: '#77726b', slateDark: '#5f5b55', stone: '#8c8a82', stoneDark: '#6f6d67',
+  thatch: '#a8915a', thatchDark: '#8a7447', slate: '#5b646e', slateDark: '#4a525b', stone: '#8c8a82', stoneDark: '#6f6d67',
   teal: '#2f6f8f', gold: '#d1a54a', rust: '#8c3b2a', soot: '#3a302a', hide: '#7a5a3e', bone: '#d8ccb0', iron: '#4a4a4c', dark: '#1b1714',
   glow: '#ffbf6a',
 };
@@ -320,7 +320,6 @@ function siteStage(radius, rnd) {
   }
   body.push(paint(place(new THREE.TorusGeometry(radius, 0.02, 3, 40), { y: 0.55, rx: Math.PI / 2 }), '#e6dcc0', 0, null, P.plain));
   // trodden, cleared footprint and bigger material stacks
-  body.push(paint(place(cyl(radius * 0.95, radius, 0.5, 24), { y: 0.0 }), '#7a5f44', 0, null, P.plain));
   body.push(...logPile(-radius * 0.45, radius * 0.25, 9, rnd, 2.4));
   body.push(...stoneBlocks(radius * 0.4, -radius * 0.3, 8, rnd));
   body.push(...stoneBlocks(-radius * 0.35, -radius * 0.45, 5, rnd));

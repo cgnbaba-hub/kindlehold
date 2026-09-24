@@ -58,6 +58,7 @@ export async function createSession({ container, seed, quality = 'high', verify 
       rc.rts.update(frameDt);
       sky.setHour(sim.world.time.hour);
       water.setSky(rc.scene.fog.color, sky.nightFactor);
+      selectionView.setNight(sky.nightFactor);
       const st = rc.rts.state;
       sky.fitShadow(st.x, st.z, Math.min(120, 30 + st.zoom * 0.8));
       buildingsView.cameraTarget.x = st.x; buildingsView.cameraTarget.z = st.z;

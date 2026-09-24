@@ -267,7 +267,7 @@ export function createEconomyModule() {
           else if (!s.task) {
             const door = doorOf(keep);
             const ang = (s.id * 1.7 + Math.floor(world.tick / 400)) % (Math.PI * 2);
-            s.task = { type: 'idle', until: world.tick + 80, spot: [door.x + Math.sin(ang) * 5, door.z + 3 + Math.cos(ang) * 3] };
+            s.task = { type: 'idle', until: world.tick + 80, spot: [door.x + Math.sin(ang) * (5 + (s.id % 4) * 2), door.z + 4 + Math.cos(ang) * (4 + (s.id % 3) * 2)] };
           }
         }
         if (s.task) stepLabourer(world, s, keep);

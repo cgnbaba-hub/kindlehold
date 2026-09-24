@@ -255,8 +255,8 @@ button { font: inherit; color: inherit; }
 }
 
 /* rendered title backdrop (the game's own engine, see scripts/assets/render-menu-art.mjs) */
-.bd-image { position: absolute; inset: 0; background: url('./assets/menu-backdrop.jpg') center / cover no-repeat; filter: saturate(1.05) brightness(0.9); }
-.bd-shade { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, rgba(10,12,14,0.25) 0%, rgba(10,12,14,0.7) 75%), linear-gradient(180deg, rgba(10,12,14,0.35), rgba(10,12,14,0.1) 40%, rgba(10,12,14,0.6)); }
+.bd-image { position: absolute; inset: 0; background: url('./assets/menu-backdrop.jpg') center / cover no-repeat; filter: saturate(1.05); }
+.bd-shade { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, rgba(10,12,14,0.15) 0%, rgba(10,12,14,0.55) 80%), linear-gradient(180deg, rgba(10,12,14,0.35), rgba(10,12,14,0.1) 40%, rgba(10,12,14,0.6)); }
 .reduced-motion .bd-image { animation: none; }
 @keyframes bdDrift { from { transform: scale(1.04) translate(0, 0); } to { transform: scale(1.1) translate(-1.5%, -1%); } }
 .bd-image { animation: bdDrift 40s ease-in-out infinite alternate; }
