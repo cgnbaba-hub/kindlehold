@@ -48,7 +48,7 @@ try {
   });
 
   await test('new-game-tutorial-flow', async (page) => {
-    await page.goto(url('?debug=1'), { waitUntil: 'load' });
+    await page.goto(url('?debug=1&quality=low'), { waitUntil: 'load' });
     await page.getByRole('button', { name: 'New Game' }).click();
     await page.getByRole('radio', { name: /Normal/ }).click();
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
@@ -68,17 +68,19 @@ try {
     await page.getByRole('button', { name: "Woodcutter's Lodge" }).click();
     const spot = await game(page, () => {
       const g = window.__GAME__;
-      g.setCameraPreset('settlement');
-      return g.project(-64, 40, null);
+      const s = g.findSpot('lodge', -64, 40);
+      g.session.rc.rts.jumpTo(s.x, s.z, 0.6, 50);
+      g.renderNow();
+      return g.project(s.x, s.z, null);
     });
     await page.mouse.move(spot.x, spot.y);
     await page.waitForTimeout(400);
     await page.mouse.click(spot.x, spot.y);
-    await page.waitForFunction(() => window.__GAME__.find('building', 'lodge').length === 1, null, { timeout: 15000 });
+    await page.waitForFunction(() => window.__GAME__.find('building', 'lodge').length === 1, null, { timeout: 60000 });
   });
 
   await test('save-load-roundtrip', async (page) => {
-    await page.goto(url('?debug=1&start=1'), { waitUntil: 'load' });
+    await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
     await game(page, () => { const g = window.__GAME__; g.issue({ type: 'rekindle' }); g.runTicks(400); });
     const before = await game(page, () => ({ tick: window.__GAME__.world().tick, hash: window.__GAME__.getWorldHash(), n: Object.keys(window.__GAME__.world().entities).length }));
@@ -94,7 +96,7 @@ try {
   });
 
   await test('pause-settings-persist', async (page) => {
-    await page.goto(url('?debug=1&start=1'), { waitUntil: 'load' });
+    await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
     await page.locator('.game-canvas').click({ position: { x: 800, y: 300 } });
     await page.keyboard.press('Escape');
@@ -110,13 +112,17 @@ try {
     await page.locator('#set-reducedMotion').check();
     await page.getByRole('button', { name: 'Done' }).click();
     await page.getByRole('button', { name: 'Resume' }).click();
-    await page.reload({ waitUntil: 'load' });
+    await page.goto(url('?debug=1'), { waitUntil: 'load', timeout: 120000 });
+    await page.waitForSelector('.main-menu', { timeout: 120000 });
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.getByRole('tab', { name: 'Audio' }).click();
+    assert(Math.abs(Number(await page.locator('#set-musicVolume').inputValue()) - 0.2) < 1e-6, 'settings screen shows persisted value after reload');
     const s = await page.evaluate(() => JSON.parse(localStorage.getItem('kindlehold.settings.v1')));
     assert(Math.abs(s.musicVolume - 0.2) < 1e-6 && s.reducedMotion === true, 'settings persisted');
   });
 
   await test('error-screen-on-critical-failure', async (page) => {
-    await page.goto(url('?debug=1&start=1'), { waitUntil: 'load' });
+    await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
     await game(page, () => window.__GAME__.forceCriticalFailure());
     await page.waitForSelector('#error-overlay', { timeout: 10000 });
@@ -132,19 +138,18 @@ try {
   }, { init: () => { const orig = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function (t, ...a) { if (t === 'webgl2') return null; return orig.call(this, t, ...a); }; } });
 
   await test('audio-unavailable-degrades-gracefully', async (page) => {
-    await page.goto(url('?debug=1&start=1'), { waitUntil: 'load' });
+    await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
     await page.locator('.game-canvas').click({ position: { x: 800, y: 300 } });
     await page.waitForTimeout(300);
     const h = await game(page, () => window.__GAME__.getHealth().find((m) => m.id === 'audio'));
     assert(h && h.status === 'degraded', `audio health is ${h && h.status}`);
     const t1 = await game(page, () => window.__GAME__.world().tick);
-    await page.waitForTimeout(800);
-    assert(await game(page, () => window.__GAME__.world().tick) > t1, 'game keeps running without audio');
+    await page.waitForFunction((t) => window.__GAME__.world().tick > t + 5, t1, { timeout: 60000 });
   }, { init: () => { delete window.AudioContext; delete window.webkitAudioContext; } });
 
   await test('victory-screen', async (page) => {
-    await page.goto(url('?debug=1&start=1'), { waitUntil: 'load' });
+    await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
     await game(page, () => { const g = window.__GAME__; const id = g.find('building', 'warhall')[0]; const b = g.world().entities[id]; b.hp = 0; b.state = 'destroyed'; g.runTicks(15); });
     await page.waitForSelector('.end.victory', { timeout: 15000 });
@@ -152,7 +157,7 @@ try {
   });
 
   await test('ui-1280x720-no-overlap', async (page) => {
-    await page.goto(url('?debug=1&start=1'), { waitUntil: 'load' });
+    await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
     await page.waitForTimeout(600);
     const boxes = await page.evaluate(() => ['.ribbon', '.topbar', '.objectives', '.minimap', '.selection', '.commands'].map((s) => { const r = document.querySelector(s).getBoundingClientRect(); return { s, l: r.left, t: r.top, r: r.right, b: r.bottom }; }));

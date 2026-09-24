@@ -1,0 +1,90 @@
+{
+  "run": "e2e-20260924-101050",
+  "finishedAt": "2026-09-24T10:19:56.178Z",
+  "pass": true,
+  "results": [
+    {
+      "name": "main-menu",
+      "pass": true,
+      "ms": 3419,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "new-game-tutorial-flow",
+      "pass": true,
+      "ms": 83252,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "save-load-roundtrip",
+      "pass": true,
+      "ms": 37619,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "pause-settings-persist",
+      "pass": true,
+      "ms": 84715,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "error-screen-on-critical-failure",
+      "pass": true,
+      "ms": 36416,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [
+        "[test-critical-1790244927431] update failed: forced failure for testing Error: forced failure for testing\n    at Object.update (http://127.0.0.1:5181/assets/hud-hXyK1pMr.js:169:46365)\n    at s (http://127.0.0.1:5181/assets/hud-hXyK1pMr.js:1:2080)\n    at Object.update (http://127.0.0.1:5181/assets/hud-hXyK1pMr.js:1:2596)\n    at Object.step (http://127.0.0.1:5181/assets/hud-hXyK1pMr.js:1:78526)\n    at Object.step (http://127.0.0.1:5181/assets/hud-hXyK1pMr.js:169:43990)\n    at Object.advance (http://127.0.0.1:5181/assets/hud-hXyK1pMr.js:1:616)\n    at N (http://127.0.0.1:5181/assets/hud-hXyK1pMr.js:169:44437)"
+      ],
+      "failedRequests": []
+    },
+    {
+      "name": "no-webgl-fallback",
+      "pass": true,
+      "ms": 610,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "audio-unavailable-degrades-gracefully",
+      "pass": true,
+      "ms": 55245,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "victory-screen",
+      "pass": true,
+      "ms": 55906,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "ui-1280x720-no-overlap",
+      "pass": true,
+      "ms": 41222,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  ]
+}

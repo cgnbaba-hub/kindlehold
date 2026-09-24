@@ -60,13 +60,13 @@ function rockGeo(rnd, colorA, colorB, iron = false) {
 function grassClump(rnd) {
   const pos = [];
   const col = [];
-  const base = new THREE.Color('#5a7236'), tip = new THREE.Color('#a8ba68');
+  const base = new THREE.Color('#6d8a42'), tip = new THREE.Color('#b9c878');
   for (let i = 0; i < 7; i++) {
     const a = rnd() * Math.PI * 2, r = rnd() * 0.25;
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
-    const h = 0.35 + rnd() * 0.35;
+    const h = 0.22 + rnd() * 0.25;
     const lean = (rnd() - 0.5) * 0.25;
-    const w = 0.05;
+    const w = 0.06;
     const dx = Math.cos(a + 1.57) * w, dz = Math.sin(a + 1.57) * w;
     pos.push(x - dx, 0, z - dz, x + dx, 0, z + dz, x + lean, h, z + lean * 0.5);
     pos.push(x + dx, 0, z + dz, x - dx, 0, z - dz, x + lean, h, z + lean * 0.5);

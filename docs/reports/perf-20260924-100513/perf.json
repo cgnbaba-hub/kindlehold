@@ -1,0 +1,31 @@
+{
+  "run": "perf-20260924-100513",
+  "at": "2026-09-24T10:05:16.021Z",
+  "budget": {
+    "simMeanMs": 4,
+    "simP95Ms": 8,
+    "drawCalls": 1500,
+    "triangles": 1500000,
+    "textures": 96,
+    "geometries": 400,
+    "heapMB": 250,
+    "readyMs": 15000
+  },
+  "sim": {
+    "entities": 348,
+    "ticks": 1200,
+    "meanMs": 0.19402856333332807,
+    "p95Ms": 0.32507799999984854,
+    "maxMs": 8.815764999999828,
+    "pathRequests": 6695
+  },
+  "browser": null,
+  "gates": {
+    "simMean": true,
+    "simP95": true
+  },
+  "pass": true,
+  "environment": {
+    "note": "Headless Chromium with SwiftShader (CPU rendering) on a 2-vCPU VPS without GPU. FPS/frame times are NOT representative of GPU hardware and are informational only."
+  }
+}

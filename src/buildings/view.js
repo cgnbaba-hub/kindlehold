@@ -10,14 +10,30 @@ import { paint, place, merge, box, cyl, viewRng } from '../render/geometry-kit.j
 const LIGHTS = 6;
 
 function cropGeometry() {
+  // a tuft of thin stalks with grain heads (double-sided triangles, up-facing normals)
   const rnd = viewRng(99);
-  const parts = [];
-  for (let i = 0; i < 5; i++) {
-    const g = new THREE.ConeGeometry(0.09, 0.9, 4);
-    place(g, { x: (rnd() - 0.5) * 0.35, y: 0.45, z: (rnd() - 0.5) * 0.35, rx: (rnd() - 0.5) * 0.3, rz: (rnd() - 0.5) * 0.3 });
-    parts.push(paint(g, '#ffffff', 0, null, PATTERN.plain));
+  const pos = [];
+  for (let i = 0; i < 9; i++) {
+    const a = rnd() * Math.PI * 2, r = rnd() * 0.22;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    const h = 0.75 + rnd() * 0.3, w = 0.035;
+    const lean = (rnd() - 0.5) * 0.18;
+    const dx = Math.cos(a + 1.57) * w, dz = Math.sin(a + 1.57) * w;
+    const tx = x + lean, tz = z + lean * 0.4;
+    pos.push(x - dx, 0, z - dz, x + dx, 0, z + dz, tx, h, tz, x + dx, 0, z + dz, x - dx, 0, z - dz, tx, h, tz);
+    // grain head: small diamond
+    const hy = h * 0.82;
+    pos.push(tx - 0.04, hy, tz, tx + 0.04, hy, tz, tx, h + 0.12, tz, tx + 0.04, hy, tz, tx - 0.04, hy, tz, tx, h + 0.12, tz);
   }
-  return merge(parts);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const n = pos.length / 3;
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(new Float32Array(n * 3).map((_, i) => (i % 3 === 1 ? 1 : 0)), 3));
+  const col = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { const y = pos[i * 3 + 1]; const k = 0.7 + Math.min(1, y) * 0.3; col[i * 3] = k; col[i * 3 + 1] = k; col[i * 3 + 2] = k; }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('pattern', new THREE.BufferAttribute(new Float32Array(n).fill(PATTERN.plain), 1));
+  return g;
 }
 
 function plotGeometry() {
@@ -133,7 +149,7 @@ export function createBuildingsView({ scene, terrain, world, renderer, sky }) {
           const c = Math.cos(ang), sn = Math.sin(ang);
           const wx = pl.x + lx * c + lz * sn, wz = pl.z - lx * sn + lz * c;
           const h = 0.15 + g * 1.0;
-          m4.compose(p.set(wx, y, wz), q.setFromEuler(e.set(0, i * 1.3, 0)), s.set(0.8 + g * 0.5, h, 0.8 + g * 0.5));
+          m4.compose(p.set(wx, y, wz), q.setFromEuler(e.set(0, i * 1.3, 0)), s.set(0.9 + g * 0.4, h, 0.9 + g * 0.4));
           crops.setMatrixAt(cc, m4);
           crops.setColorAt(cc, col);
           cc++;

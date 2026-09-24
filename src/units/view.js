@@ -50,7 +50,7 @@ export function createUnitsView({ scene, terrain, world, bus }) {
         const x = s.px + (s.x - s.px) * alpha, z = s.pz + (s.z - s.pz) * alpha;
         f.x = x; f.z = z; f.y = terrain.height(x, z);
         f.heading = smoothHeading(s, frame.dt);
-        f.style = 'settler'; f.scale = 1; f.tunic = figs.tunicFor(s.id); f.capColor = null;
+        f.style = 'settler'; f.scale = 1.25; f.tunic = figs.tunicFor(s.id); f.capColor = null;
         f.anim = s.anim || 'idle'; f.t = tickTime + s.id * 0.37; f.phase = s.id;
         f.tool = s.job ? figs.toolFor(s.job) : (s.anim === 'hammer' ? 'hammer' : null);
         f.carry = s.carry ? s.carry.res : null;
@@ -62,7 +62,7 @@ export function createUnitsView({ scene, terrain, world, bus }) {
         const x = u.px + (u.x - u.px) * alpha, z = u.pz + (u.z - u.pz) * alpha;
         f.x = x; f.z = z; f.y = terrain.height(x, z);
         f.heading = smoothHeading(u, frame.dt);
-        f.style = u.type; f.scale = 1; f.tunic = null; f.tool = null; f.carry = null; f.lean = 0;
+        f.style = u.type; f.scale = 1.3; f.tunic = null; f.tool = null; f.carry = null; f.lean = 0;
         f.t = tickTime + u.id * 0.29; f.phase = u.id;
         f.kneel = !!u.downed; f.fallen = 0;
         f.ranged = def.cls === 'ranged';

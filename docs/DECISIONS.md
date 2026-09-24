@@ -39,3 +39,24 @@ Format: `D-### (date) — decision. Why. Consequence.`
   comparable quality at lower cost.
 - **D-011** — World ids are integers from a monotonic counter in the world object;
   iteration uses sorted id arrays for determinism.
+- **D-012** — Visual verification and e2e tests run against the **production build via
+  `vite preview`** by default (`--prod`). The dev server's HMR reloaded pages mid-capture
+  while files were being edited, which made runs hang; dev-server mode stays available.
+- **D-013** — Screenshots are taken from a frozen, single rendered frame
+  (`__GAME__.freeze(true)` + `renderNow()`): SwiftShader renders at a few FPS, and a frozen
+  frame makes captures deterministic. FPS sampling happens before freezing.
+- **D-014** — Camera pans with arrow keys / screen edges / middle-drag instead of WASD,
+  because A and S are the RTS unit orders (attack-move, stop). Hero abilities are on F / G.
+  All keys are rebindable.
+- **D-015** — Building costs are paid when a site is placed (clear "not enough resources"
+  feedback at the moment of decision); labourers then physically carry the goods from the
+  Keep. Cancel refunds undelivered goods in full.
+- **D-016** — `?debug=1` exposes `window.__GAME__` in normal game flow for e2e tests. It
+  only drives the local single-player simulation; there is no server state to protect.
+- **D-017** — The settlement keeps `2 + floor(workplaces / 2)` settlers free as labourers
+  when assigning jobs. Measured with the scripted bot: without it, hauling starved and
+  every workplace stalled on "storage full" by minute 6.
+- **D-018** — Balance values were tuned with measured bot playthroughs
+  (`scripts/bot-run.mjs`): Normal seed 1337 → victory at 21.3 min, seeds 7 / 42 → 23.6 /
+  28.9 min, Story → 18.4 min, Hard → the scripted bot loses at 15.0 min (Hard is meant to
+  require better play than the bot's fixed build order).

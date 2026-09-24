@@ -44,7 +44,7 @@ Later waves (every ~4 min after the first raid) keep pressure on until victory.
 | Iron | Iron Mine on an iron vein (≤ 10 m); consumes 1 Provision per 2 Iron | Weapons, research |
 | Provisions | Farmstead fields | Settlers eat; mines consume; recruitment |
 
-Starting stock (Normal): Timber 60, Stone 40, Iron 0, Provisions 30.
+Starting stock (Normal): Timber 80, Stone 60, Iron 0, Provisions 40 (Story ×1.5, Hard ×0.8).
 
 ## Production chain (the complete chain)
 
@@ -60,7 +60,7 @@ cart out of the adit with sparks, labourers carry ingots to the keep.
 - Keep houses 6, each Cottage +5, March Charter +6. Population cap shown as `pop / cap`.
 - A new settler walks in from the valley road every 16 s (Normal) when housing is
   free, Provisions ≥ 4 and stability ≥ 30. Arrival costs 2 Provisions.
-- Every settler and soldier eats 1 Provision per 60 s from the Keep store.
+- Every settler and soldier eats 1 Provision per 90 s from the Keep store.
   Hunger (store empty at meal time) → stability −8 per missed meal.
 - **Stability** 0–100: +food satisfied, +housing headroom, −hunger, −buildings burnt,
   −overcrowding. Work speed multiplier `0.6 + 0.4 × stability/100`. Below 30 no one
@@ -84,8 +84,9 @@ cart out of the adit with sparks, labourers carry ingots to the keep.
 | Watchtower | 20/40/5/0 | 24 | — | 600 | Needs March Charter; shoots 16 m; territory 20 m |
 
 Placement rules: inside own territory, slope ≤ 0.35, no water, no overlap with other
-footprints or deposits, not within 6 m of enemy units. Cancel refunds 100% before
-construction starts, 50% of remaining after. Demolition refunds 30% of cost.
+footprints or deposits, not within 6 m of enemy units. Construction costs are paid when the
+site is placed; labourers then carry the goods from the Keep. Cancelling refunds all
+undelivered goods, and delivered goods fully before work starts or at 50% after. Demolition refunds 30% of cost.
 Damaged buildings can be repaired by labourers (costs 25% of the missing fraction).
 
 ## Technology (researched at the Keep, one at a time)
@@ -138,18 +139,22 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 | | Story | Normal | Hard |
 |---|---|---|---|
 | First raid size | 6 | 9 | 13 |
-| Enemy spawn interval | 40 s | 28 s | 20 s |
+| Enemy spawn interval | 50 s | 35 s | 24 s |
+| Garrison cap | 8 | 12 | 16 |
+| Raid warning (if not triggered earlier) | 18 min | 14 min | 11 min |
+| Warning → raid delay | 3:00 | 2:00 | 1:30 |
 | Starting resources | ×1.5 | ×1 | ×0.8 |
 | AI advantage | none | none | +10% enemy HP (documented, exposed in menu) |
 
 ## Controls (default)
 
-Camera: WASD / arrows / screen edges pan, Q/E rotate (when nothing with abilities is
-selected, otherwise Alt+Q/E), mouse wheel zoom, middle-drag rotate, Space centre on
-selection, Home centre on Keep. Left-click select, drag box-select, Shift add,
-double-click select same type. Right-click context order. A = attack-move, P = patrol,
-S = stop, H = hold. Hero: Q / W abilities. B opens build menu. F10/Esc pause menu.
-F5 quick-save, F9 quick-load. Rebindable in Settings → Controls.
+Camera: arrow keys / screen edges pan, Q/E rotate (or middle-drag), mouse wheel or +/− zoom,
+Space centre on selection, Home centre on Keep. Left-click select, drag box-select,
+Shift adds, double-click selects the same type. Right-click context order (move /
+attack / rally). A = attack-move, P = patrol, S = stop, H = hold. Hero: F = Beacon Flare,
+G = Kindle the Line. B build menu. Esc pause menu. F5 quick-save, F9 quick-load.
+[ / ] game speed. Ctrl+1–9 set control groups. All keys are rebindable in Settings →
+Controls. (WASD is not used for panning because A/S are unit orders.)
 
 ## Out of scope for Stage 1
 

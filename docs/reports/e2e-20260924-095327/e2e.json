@@ -1,0 +1,95 @@
+{
+  "run": "e2e-20260924-095327",
+  "finishedAt": "2026-09-24T10:10:27.576Z",
+  "pass": false,
+  "results": [
+    {
+      "name": "main-menu",
+      "pass": true,
+      "ms": 3077,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "new-game-tutorial-flow",
+      "pass": false,
+      "ms": 131824,
+      "error": "page.waitForFunction: Timeout 15000ms exceeded.\n    at /root/kindlehold/scripts/verification/e2e.mjs:77:16\n    at async test (/root/kindlehold/scripts/verification/e2e.mjs:25:9)\n    at async file:///root/kindlehold/scripts/verification/e2e.mjs:50:3",
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "save-load-roundtrip",
+      "pass": true,
+      "ms": 75029,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "pause-settings-persist",
+      "pass": false,
+      "ms": 176839,
+      "error": "page.reload: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n\n    at /root/kindlehold/scripts/verification/e2e.mjs:113:16\n    at async test (/root/kindlehold/scripts/verification/e2e.mjs:25:9)\n    at async file:///root/kindlehold/scripts/verification/e2e.mjs:96:3",
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": [
+        {
+          "url": "http://127.0.0.1:5181/?debug=1&start=1",
+          "error": "net::ERR_ABORTED"
+        }
+      ]
+    },
+    {
+      "name": "error-screen-on-critical-failure",
+      "pass": true,
+      "ms": 67148,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [
+        "[test-critical-1790244153034] update failed: forced failure for testing Error: forced failure for testing\n    at Object.update (http://127.0.0.1:5181/assets/hud-DAL67DSS.js:169:46304)\n    at s (http://127.0.0.1:5181/assets/hud-DAL67DSS.js:1:2080)\n    at Object.update (http://127.0.0.1:5181/assets/hud-DAL67DSS.js:1:2596)\n    at Object.step (http://127.0.0.1:5181/assets/hud-DAL67DSS.js:1:78526)\n    at Object.step (http://127.0.0.1:5181/assets/hud-DAL67DSS.js:169:43990)\n    at Object.advance (http://127.0.0.1:5181/assets/hud-DAL67DSS.js:1:616)\n    at N (http://127.0.0.1:5181/assets/hud-DAL67DSS.js:169:44437)"
+      ],
+      "failedRequests": []
+    },
+    {
+      "name": "no-webgl-fallback",
+      "pass": true,
+      "ms": 309,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "audio-unavailable-degrades-gracefully",
+      "pass": false,
+      "ms": 71270,
+      "error": "Error: game keeps running without audio\n    at assert (file:///root/kindlehold/scripts/verification/e2e.mjs:33:42)\n    at test.init (file:///root/kindlehold/scripts/verification/e2e.mjs:143:5)\n    at async test (file:///root/kindlehold/scripts/verification/e2e.mjs:25:9)\n    at async file:///root/kindlehold/scripts/verification/e2e.mjs:134:3",
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "victory-screen",
+      "pass": true,
+      "ms": 73038,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    },
+    {
+      "name": "ui-1280x720-no-overlap",
+      "pass": true,
+      "ms": 69845,
+      "error": null,
+      "pageErrors": [],
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import { createBot, findSpot } from './bot.js';
 import { spawnUnit } from '../units/sim.js';
 import { spawnEnemy } from '../ai/index.js';
 import { all } from '../world/world.js';
+import { createBuildingEntity } from '../construction/index.js';
 
 function playTo(sim, bot, tick) { while (sim.world.tick < tick && !sim.world.mission.result) { bot.step(); sim.step(); } }
 
@@ -62,6 +63,34 @@ export const DEMO_STATES = {
     const bot = createBot(sim);
     playTo(sim, bot, 16.4 * 1200);
   },
+};
+
+/** Showcase: every building type, finished, plus construction stages and rubble. */
+DEMO_STATES.buildingLineup = (sim) => {
+  quietEnemy(sim);
+  const w = sim.world;
+  const row = [['cottage', 0], ['lodge', 10], ['quarry', 21], ['farm', 33], ['mine', 46], ['barracks', 60], ['tower', 72], ['warhall', 86], ['reavertower', 100]];
+  for (const [type, dx] of row) createBuildingEntity(w, { type, owner: type === 'warhall' || type === 'reavertower' ? 'p2' : 'p1', x: -20 + dx, z: 62, rot: 0.2, state: 'active' });
+  const stages = [0.05, 0.35, 0.7];
+  stages.forEach((p, i) => { const b = createBuildingEntity(w, { type: 'cottage', owner: 'p1', x: -10 + i * 12, z: 80, rot: 0.2 }); b.build.progress = p; b.build.supplied = { ...b.build.required }; });
+  const r = createBuildingEntity(w, { type: 'barracks', owner: 'p1', x: 34, z: 82, rot: 0.2, state: 'active' });
+  r.state = 'destroyed'; r.hp = 0; r.destroyedTick = w.tick + 1e6;
+  const f = all(w, 'building').find((b) => b.type === 'farm' && b.x > -30);
+  if (f) { f.plots = [0, 1, 2, 3, 4, 5].map((i) => ({ x: f.x + Math.sin(i + 0.5) * 9.5, z: f.z + Math.cos(i + 0.5) * 9.5, growth: i / 5, state: i === 5 ? 'ripe' : 'growing' })); }
+  w.players.p1.techs.charter = true;
+  sim.issue({ type: 'rekindle' });
+};
+
+/** Showcase: every unit type standing in a row. */
+DEMO_STATES.unitLineup = (sim) => {
+  quietEnemy(sim);
+  const types = ['shield', 'blade', 'fletcher', 'maren', 'reaver', 'slinger', 'brute', 'vharek'];
+  for (const u of all(sim.world, 'unit').slice()) if (u.owner === 'p2') u.order = { type: 'hold', ax: u.x, az: u.z };
+  types.forEach((t, i) => {
+    if (t === 'maren') { const h = all(sim.world, 'unit').find((u) => u.hero); if (h) { h.x = h.px = -40 + i * 2.6; h.z = h.pz = 36; h.heading = 0.4; } return; }
+    const u = (t === 'shield' || t === 'blade' || t === 'fletcher') ? spawnUnit(sim.world, t, 'p1', -40 + i * 2.6, 36) : spawnEnemy(sim.world, t, -40 + i * 2.6, 36);
+    if (u) { u.order = { type: 'hold', ax: u.x, az: u.z }; u.heading = 0.4; }
+  });
 };
 
 export function applyDemoState(sim, name) {

@@ -227,3 +227,5 @@ button { font: inherit; color: inherit; }
 .reduced-motion .msg, .reduced-motion .alert, .reduced-motion .toast { animation: none; }
 .reduced-motion .bd-glow { animation: none; }
 @media (prefers-reduced-motion: reduce) { .cmd.pulse, .msg, .alert, .toast, .bd-glow { animation: none !important; } }
+.showcase-tag { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); padding: 6px 14px; display: flex; gap: 10px; font-size: 13px; }
+.showcase-audio { position: absolute; left: 12px; top: 12px; padding: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
