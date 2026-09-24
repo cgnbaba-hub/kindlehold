@@ -1,7 +1,7 @@
 // Terrain rendering: heightfield mesh, height-blended splat material (grass, dirt/road,
 // rock, riverbank mud), dynamic worn paths from walkers, and ground detail.
 import * as THREE from 'three';
-import { generateGroundTexture } from './textures.js';
+import { generateGroundTexture, generateMacroTexture } from './textures.js';
 import { distToPolyline } from '../world/terrain-data.js';
 import { all } from '../world/world.js';
 
@@ -19,9 +19,9 @@ export function computeSplat(terrain) {
       const x = -terrain.half + i * terrain.step;
       const h = terrain.heights[j * n + i];
       const slope = terrain.slope(x, z);
-      const nearWater = h < 2.2;
-      let rock = (nearWater ? smoothstep(0.9, 1.4, slope) : smoothstep(0.5, 0.95, slope)) + smoothstep(14, 22, h) * 0.8;
-      let mud = 1 - smoothstep(0.35, 1.3, h);
+      const nearWater = h < 2.2 || distToPolyline(x, z, map.river.points) < map.river.bankWidth + 5;
+      let rock = (nearWater ? 0 : smoothstep(0.55, 1.0, slope)) + smoothstep(14, 22, h) * 0.8;
+      let mud = (1 - smoothstep(0.35, 1.3, h)) + (nearWater ? smoothstep(0.35, 0.9, slope) * 0.8 : 0);
       let dirt = 0;
       for (const rd of map.roads) {
         const d = distToPolyline(x, z, rd.points);
@@ -51,6 +51,7 @@ export function createTerrainView({ scene, terrain, quality, world }) {
     dirt: generateGroundTexture('dirt', texSize),
     rock: generateGroundTexture('rock', texSize),
     mud: generateGroundTexture('mud', texSize),
+    macro: generateMacroTexture(256),
   };
   const wearData = new Uint8Array(WEAR_RES * WEAR_RES);
   const wearTex = new THREE.DataTexture(wearData, WEAR_RES, WEAR_RES, THREE.RedFormat);
@@ -81,7 +82,7 @@ export function createTerrainView({ scene, terrain, quality, world }) {
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, metalness: 0 });
   const uniforms = {
     tGrass: { value: tex.grass }, tDirt: { value: tex.dirt }, tRock: { value: tex.rock }, tMud: { value: tex.mud },
-    tWear: { value: wearTex }, uHalf: { value: terrain.half }, uSize: { value: terrain.size },
+    tWear: { value: wearTex }, tMacro: { value: tex.macro }, uHalf: { value: terrain.half }, uSize: { value: terrain.size },
   };
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
@@ -90,7 +91,7 @@ export function createTerrainView({ scene, terrain, quality, world }) {
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvSplat = splat;\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
-uniform sampler2D tGrass; uniform sampler2D tDirt; uniform sampler2D tRock; uniform sampler2D tMud; uniform sampler2D tWear;
+uniform sampler2D tGrass; uniform sampler2D tDirt; uniform sampler2D tRock; uniform sampler2D tMud; uniform sampler2D tWear; uniform sampler2D tMacro;
 uniform float uHalf; uniform float uSize;
 varying vec4 vSplat; varying vec3 vWPos;
 vec4 sampleAT(sampler2D t, vec2 p) {
@@ -114,9 +115,15 @@ float mx = max(max(hb.x, hb.y), max(hb.z, hb.w));
 vec4 ww = max(hb - (mx - 0.28), 0.0);
 ww /= (ww.x + ww.y + ww.z + ww.w + 1e-4);
 vec3 ground = cG.rgb * ww.x + cD.rgb * ww.y + cR.rgb * ww.z + cM.rgb * ww.w;
-// macro variation
-float macro = texture2D(tGrass, wp * 0.0061).g;
-ground *= 0.86 + macro * 0.32;
+// macro variation: large meadow patches (dry/lush), medium mottling, per-material tint
+vec4 mac = texture2D(tMacro, wp * 0.0042);
+vec4 mac2 = texture2D(tMacro, wp * 0.021 + vec2(0.4, 0.1));
+vec3 lush = vec3(0.66, 0.86, 0.62), dry = vec3(1.2, 1.08, 0.72);
+vec3 grassTint = mix(lush, dry, smoothstep(0.3, 0.75, mac.r)) * (0.8 + mac2.g * 0.38);
+// clover-dark mottling at medium scale
+grassTint *= mix(0.86, 1.04, smoothstep(0.35, 0.6, mac2.r));
+ground *= mix(vec3(1.0), grassTint, ww.x);
+ground *= 0.9 + mac.b * 0.2;
 // wet bank darkening near the water line
 ground *= mix(0.72, 1.0, smoothstep(-0.2, 0.6, vWPos.y));
 diffuseColor.rgb *= ground;

@@ -24,7 +24,18 @@ function beam(x1, y1, z1, x2, y2, z2, t, color = C.timber) {
   g.translate((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
   return paint(g, color, 0, null, P.planks);
 }
-function roof(w, d, h, color, pattern, at) { return paintGradient(place(gable(w, d, h), at), color, pattern === P.thatch ? C.thatch : color, pattern); }
+/** Gable roof with ridge beam and barge boards (trim reads well from the RTS camera). */
+function roof(w, d, h, color, pattern, at) {
+  const trim = pattern === P.thatch ? '#6e5a36' : C.timberDark;
+  const parts = [paintGradient(gable(w, d, h), color, pattern === P.thatch ? C.thatch : color, pattern)];
+  parts.push(b(0.24, 0.24, d + 0.12, trim, P.planks, { y: h + 0.02 }));
+  const hw = w / 2, hd = d / 2;
+  for (const z of [hd + 0.04, -hd - 0.04]) {
+    parts.push(beam(-hw - 0.05, -0.05, z, 0, h + 0.05, z, 0.16, trim));
+    parts.push(beam(hw + 0.05, -0.05, z, 0, h + 0.05, z, 0.16, trim));
+  }
+  return place(merge(parts), at);
+}
 function win(w, h, at) { return place(new THREE.PlaneGeometry(w, h), at); }
 
 /** Half-timbered wall frame for a box of w×h×d sitting at y0 (beams on the long faces). */
@@ -152,6 +163,10 @@ const MODELS = {
       glow.push(win(0.55, 0.55, { x, y: 1.9, z: 2.11 }));
     }
     glow.push(place(win(0.5, 0.5, { y: 1.9, z: 0 }), { x: 2.52, ry: Math.PI / 2 }));
+    for (const sx of [0.88, 1.92]) body.push(b(0.24, 0.72, 0.06, '#3f6b7a', P.planks, { x: sx, y: 1.9, z: 2.12 }));
+    body.push(b(0.9, 0.18, 0.22, '#6e5037', P.planks, { x: 1.4, y: 1.42, z: 2.2 }));
+    for (let i = 0; i < 4; i++) body.push(paint(place(ico(0.07, 0), { x: 1.1 + i * 0.2, y: 1.56, z: 2.22 }), i % 2 ? '#d86a8a' : '#e8d05a', 0, null, P.plain));
+    body.push(...logPile(-3.15, 0.2, 4, rnd, 1.4));
     body.push(b(0.8, 0.5, 0.5, '#6e5037', P.planks, { x: -2.1, y: 0.25, z: 2.4 }));
     body.push(...barrel(2.2, 2.4));
     return { body, glow, height: 6.6 };

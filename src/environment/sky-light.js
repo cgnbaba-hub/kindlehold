@@ -21,7 +21,7 @@ function lerpColor(out, a, b, t) { ca.set(a); cb.set(b); out.copy(ca).lerp(cb, t
 
 export function createSkyLight({ scene, renderer, quality }) {
   const sky = new Sky();
-  sky.scale.setScalar(4000);
+  sky.scale.setScalar(1200); // inside the camera far plane
   const u = sky.material.uniforms;
   u.turbidity.value = 4.5;
   u.rayleigh.value = 1.6;
@@ -52,9 +52,9 @@ export function createSkyLight({ scene, renderer, quality }) {
   const rnd = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
   for (let i = 0; i < 900; i++) {
     const th = rnd() * Math.PI * 2, ph = Math.acos(rnd() * 0.95);
-    starPos[i * 3] = Math.sin(ph) * Math.cos(th) * 1800;
-    starPos[i * 3 + 1] = Math.cos(ph) * 1800;
-    starPos[i * 3 + 2] = Math.sin(ph) * Math.sin(th) * 1800;
+    starPos[i * 3] = Math.sin(ph) * Math.cos(th) * 1100;
+    starPos[i * 3 + 1] = Math.cos(ph) * 1100;
+    starPos[i * 3 + 2] = Math.sin(ph) * Math.sin(th) * 1100;
   }
   starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
   const starMat = new THREE.PointsMaterial({ color: '#dfe6ff', size: 2.2, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false });
@@ -102,7 +102,8 @@ export function createSkyLight({ scene, renderer, quality }) {
     sky.visible = nightFactor < 0.98;
     u.rayleigh.value = 1.6 - nightFactor * 1.2;
     // night background colour when sky dome is faded
-    scene.background = nightFactor > 0.98 ? lerpColor(col2, '#0b1120', '#0b1120', 0) : null;
+    // clear colour = fog colour, so anything beyond geometry blends into the haze
+    scene.background = col2.copy(scene.fog.color);
     col.copy(scene.fog.color);
   }
 

@@ -1,0 +1,91 @@
+{
+  "run": "round1",
+  "finishedAt": "2026-09-24T10:59:08.807Z",
+  "pass": true,
+  "results": [
+    {
+      "preset": "dawn-overview",
+      "pass": true,
+      "fps": 3.022791850553171,
+      "drawCalls": 115,
+      "triangles": 1044811
+    },
+    {
+      "preset": "midday-overview",
+      "pass": true,
+      "fps": 2.9922673512134437,
+      "drawCalls": 115,
+      "triangles": 1044805
+    },
+    {
+      "preset": "sunset-overview",
+      "pass": true,
+      "fps": 3.0812642913902994,
+      "drawCalls": 115,
+      "triangles": 1044811
+    },
+    {
+      "preset": "night-overview",
+      "pass": true,
+      "fps": 2.857271756620599,
+      "drawCalls": 107,
+      "triangles": 1042689
+    },
+    {
+      "preset": "settlement-closeup",
+      "pass": true,
+      "fps": 3.238783581071867,
+      "drawCalls": 103,
+      "triangles": 1047185
+    },
+    {
+      "preset": "production-closeup",
+      "pass": true,
+      "fps": 3.647571629187867,
+      "drawCalls": 101,
+      "triangles": 1046067
+    },
+    {
+      "preset": "construction-closeup",
+      "pass": true,
+      "fps": 3.166825007917062,
+      "drawCalls": 88,
+      "triangles": 1036367
+    },
+    {
+      "preset": "combat-overview",
+      "pass": true,
+      "fps": 3.238783581071867,
+      "drawCalls": 100,
+      "triangles": 1058701
+    },
+    {
+      "preset": "hero-ability",
+      "pass": true,
+      "fps": 3.3334444481482723,
+      "drawCalls": 103,
+      "triangles": 1059887
+    },
+    {
+      "preset": "enemy-raid",
+      "pass": true,
+      "fps": 3.582175096718727,
+      "drawCalls": 112,
+      "triangles": 1046501
+    },
+    {
+      "preset": "ui-1920",
+      "pass": true,
+      "fps": 2.3530103826583133,
+      "drawCalls": 108,
+      "triangles": 1047373
+    },
+    {
+      "preset": "ui-1280",
+      "pass": true,
+      "fps": 4.5802225988183025,
+      "drawCalls": 108,
+      "triangles": 1047389
+    }
+  ]
+}

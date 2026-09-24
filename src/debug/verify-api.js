@@ -15,6 +15,22 @@ export function installVerifyApi(session) {
     sampleFrame: () => session.sampleFrame(),
     renderNow: () => session.renderNow(),
     freeze: (on) => session.freeze(on),
+    advanceFrames: (n, dt) => session.advanceFrames(n, dt),
+    /** Named pre-capture actions for verification presets. */
+    action(name) {
+      const w = session.world;
+      if (name === 'flare') {
+        const hero = Object.values(w.entities).find((e) => e.hero);
+        const foes = Object.values(w.entities).filter((e) => e.kind === 'unit' && e.owner === 'p2' && hero && Math.hypot(e.x - hero.x, e.z - hero.z) < 14);
+        if (!hero || !foes.length) return false;
+        let x = 0, z = 0; foes.forEach((f) => { x += f.x; z += f.z; });
+        hero.abilityCd = {};
+        session.issue({ type: 'ability', heroId: hero.id, ability: 'flare', x: x / foes.length, z: z / foes.length });
+        session.advanceFrames(9, 1 / 30);
+        return true;
+      }
+      return false;
+    },
     issue: (cmd) => session.issue(cmd),
     save: (slot) => session.save && session.save(slot),
     load: (slot) => session.load && session.load(slot),

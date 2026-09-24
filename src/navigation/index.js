@@ -28,6 +28,17 @@ export function createNavigationModule() {
     init(c) {
       ctx = c;
       nav = createNavGrid(c.services.terrain); // one grid per simulation (dynamic blocks are per world)
+      const map = c.services.terrain.map;
+      if (map.palisade) {
+        // the ford-fort palisade is impassable except at its gate (facing the player's side)
+        const camp = map.enemyCamp, start = map.playerStart;
+        const gate = Math.atan2(start.x - camp.x, start.z - camp.z);
+        for (let a = 0; a < Math.PI * 2; a += map.palisade.step) {
+          let da = a - gate; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
+          if (Math.abs(da) < map.palisade.gateHalfAngle + 0.05) continue;
+          nav.blockStatic(camp.x + Math.sin(a) * map.palisade.r, camp.z + Math.cos(a) * map.palisade.r, 0.9);
+        }
+      }
       c.services.nav = mod;
       unsub.push(c.bus.on(EV.BUILDING_PLACED, ({ id }) => {
         const b = ctx.world.entities[id];

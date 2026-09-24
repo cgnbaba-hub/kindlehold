@@ -45,10 +45,12 @@ try {
     const url = new URL(`?${q}`, server.url).toString();
     const report = { preset: preset.name, url, run, viewport: vp, seed, quality, startedAt: new Date().toISOString(), gates: {}, pass: false };
     const t0 = Date.now();
+    const phase = {};
+    const mark = (k) => { phase[k] = Date.now() - t0; };
     try {
       await page.goto(url, { waitUntil: 'load', timeout: 60000 });
       await waitReady(page, 120000);
-      report.readyMs = Date.now() - t0;
+      report.readyMs = Date.now() - t0; mark('ready');
       report.setup = await page.evaluate(async (p) => {
         const g = window.__GAME__;
         g.setCameraPreset(p.camera);
@@ -58,13 +60,18 @@ try {
         g.setCameraPreset(p.camera);
         return { sim, hash: g.getWorldHash() };
       }, preset);
+      mark('setup');
       // let the renderer settle for a few frames (interpolation, particles)
       await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
+      mark('settled');
       report.fps = args.nofps ? null : await sampleFps(page, preset.perf ? 5000 : 2000);
+      mark('fps');
+      if (preset.action) await page.evaluate((a) => { window.__PRESET_ACTION__ = a; }, preset.action);
       // freeze the loop and render exactly one frame for a deterministic, fast screenshot
       const snap = await page.evaluate(() => {
         const g = window.__GAME__;
         g.freeze(true);
+        if (window.__PRESET_ACTION__) g.action(window.__PRESET_ACTION__);
         g.setCameraPreset(g.session.lastPreset || 'settlement');
         g.renderNow();
         const frame = g.sampleFrame();
@@ -72,14 +79,17 @@ try {
         return { stats: g.getStats(), health: g.getHealth(), frame };
       });
       Object.assign(report, snap);
+      mark('snapshot');
       const shot = path.join(shotDir, `${preset.name}.png`);
       await page.screenshot({ path: shot, type: 'png', timeout: 120000 });
       report.screenshot = path.relative(inRepo(), shot);
+      mark('screenshot');
     } catch (err) {
       report.error = String(err && (err.stack || err.message));
       try { await page.screenshot({ path: path.join(shotDir, `${preset.name}-error.png`) }); } catch { /* ignore */ }
     }
     report.diagnostics = diag;
+    report.phaseMs = phase;
     const r = report.stats && report.stats.renderer;
     const failedModules = (report.health || []).filter((h) => h.status === 'failed').map((h) => h.id);
     report.gates = {

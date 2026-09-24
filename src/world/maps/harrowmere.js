@@ -62,6 +62,7 @@ export const HARROWMERE_MAP = Object.freeze({
   ironVeins: [{ x: -80, z: 70 }],
   playerStart: { x: -46, z: 50 },
   enemyCamp: { x: 72, z: -70 },
+  palisade: { r: 25, gateHalfAngle: 0.16, step: 0.034 },
   settlerEntry: { x: -96, z: 96 },
   reinforcementEntry: { x: 100, z: -100 },
 });

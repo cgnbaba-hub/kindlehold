@@ -5,7 +5,7 @@ export const CAMERA_PRESETS = {
   'overview': { x: -10, z: 10, yaw: 0.55, zoom: 150 },
   'settlement': { x: -44, z: 50, yaw: 0.6, zoom: 60 },
   'settlement-close': { x: -44, z: 48, yaw: 0.9, zoom: 34 },
-  'production': { x: -62, z: 46, yaw: 0.35, zoom: 38 },
+  'production': { x: -46, z: 66, yaw: 0.3, zoom: 46 },
   'construction': { x: -30, z: 40, yaw: 1.1, zoom: 30 },
   'combat': { x: -24, z: 24, yaw: 0.2, zoom: 52 },
   'hero': { x: -30, z: 30, yaw: 0.8, zoom: 30 },
@@ -18,7 +18,7 @@ export const CAMERA_PRESETS = {
 const MIN_ZOOM = 16, MAX_ZOOM = 170;
 
 export function createRtsCamera({ aspect = 16 / 9, terrain = null } = {}) {
-  const camera = new THREE.PerspectiveCamera(40, aspect, 0.5, 900);
+  const camera = new THREE.PerspectiveCamera(40, aspect, 0.5, 1600);
   const state = { x: 0, z: 0, yaw: 0.6, zoom: 60, tx: 0, tz: 0, tyaw: 0.6, tzoom: 60 };
   const bounds = terrain ? terrain.half - 12 : 200;
   const tmp = new THREE.Vector3();

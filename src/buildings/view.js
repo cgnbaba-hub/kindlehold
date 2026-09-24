@@ -63,6 +63,31 @@ export function createBuildingsView({ scene, terrain, world, renderer, sky }) {
   crops.castShadow = true; crops.count = 0; crops.frustumCulled = false;
   scene.add(plots, crops);
 
+  // Rustfang ford-fort palisade (decorative ring of sharpened stakes with a gate gap)
+  const palisade = (() => {
+    const camp = terrain.map.enemyCamp, start = terrain.map.playerStart;
+    const gate = Math.atan2(start.x - camp.x, start.z - camp.z);
+    const parts = [];
+    const r = terrain.map.palisade.r;
+    const rnd = viewRng(4242);
+    for (let a = 0; a < Math.PI * 2; a += terrain.map.palisade.step) {
+      let da = a - gate; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
+      if (Math.abs(da) < terrain.map.palisade.gateHalfAngle) continue;
+      const x = camp.x + Math.sin(a) * r, z = camp.z + Math.cos(a) * r;
+      const h = 2.6 + rnd() * 0.7;
+      const y = terrain.height(x, z) - 0.3;
+      parts.push(paint(place(cyl(0.17, 0.2, h, 6), { x, y: y + h / 2, z, rx: (rnd() - 0.5) * 0.08, rz: (rnd() - 0.5) * 0.08 }), rnd() > 0.5 ? '#5b4331' : '#4d3828', 0, null, PATTERN.planks));
+      parts.push(paint(place(new THREE.ConeGeometry(0.17, 0.5, 6), { x, y: y + h + 0.25, z }), '#6b5540', 0, null, PATTERN.planks));
+    }
+    // gate towers' cross beam
+    const gx = camp.x + Math.sin(gate) * r, gz = camp.z + Math.cos(gate) * r;
+    parts.push(paint(place(box(0.3, 0.3, 7.5), { x: gx, y: terrain.height(gx, gz) + 3.6, z: gz, ry: gate + Math.PI / 2 }), '#3f2c20', 0, null, PATTERN.planks));
+    const mesh = new THREE.Mesh(merge(parts), mat);
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    scene.add(mesh);
+    return mesh;
+  })();
+
   const lights = [];
   for (let i = 0; i < LIGHTS; i++) {
     const l = new THREE.PointLight('#ffae5a', 0, 18, 1.6);
@@ -223,7 +248,8 @@ export function createBuildingsView({ scene, terrain, world, renderer, sky }) {
     cameraTarget: null,
     getHealthStatus() { return { status: 'ok', detail: `${records.size} buildings` }; },
     dispose() {
-      scene.remove(group, plots, crops);
+      scene.remove(group, plots, crops, palisade);
+      palisade.geometry.dispose();
       for (const l of lights) scene.remove(l);
       for (const r of records.values()) r.siteMat.dispose();
       records.clear();

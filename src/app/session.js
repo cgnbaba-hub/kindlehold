@@ -94,6 +94,8 @@ export async function createSession({ container, seed, quality = 'high', verify 
       return { ticks: count, ms: performance.now() - t0 };
     },
     renderNow() { loop.advance(0); return rc.info(); },
+    /** Verification: advance n frames of fixed real time (simulation + effects), deterministic. */
+    advanceFrames(n = 1, dt = 1 / 30) { for (let i = 0; i < n; i++) loop.advance(dt); return rc.info(); },
     /** Verification: stop the continuous loop (screenshots then use renderNow). */
     freeze(on = true) { frozen = !!on; if (on) loop.advance(0); return frozen; },
     getStats() { return { ...stats.summary(), renderer: rc.info(), tick: sim.world.tick, hour: sim.world.time.hour }; },

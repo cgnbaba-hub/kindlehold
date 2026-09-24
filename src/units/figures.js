@@ -11,22 +11,25 @@ const B = (w, h, d, c, pat, at) => paint(place(box(w, h, d), at), c, 0, null, pa
 /** Part geometries (local to their pivot). Colours here are multiplied by instance colour. */
 function buildParts() {
   return {
-    leg: g([B(0.16, 0.5, 0.18, '#ffffff', P.cloth, { y: -0.25 }), B(0.17, 0.36, 0.2, '#b8b0a6', P.cloth, { y: -0.68 }), B(0.18, 0.1, 0.28, '#4a3526', P.plain, { y: -0.87, z: 0.04 })]),
+    leg: g([paint(place(cyl(0.085, 0.075, 0.5, 7), { y: -0.25 }), '#ffffff', 0, null, P.cloth), paint(place(cyl(0.08, 0.07, 0.36, 7), { y: -0.66 }), '#b8b0a6', 0, null, P.cloth), B(0.16, 0.1, 0.27, '#4a3526', P.plain, { y: -0.87, z: 0.04 })]),
     torso: g([
-      paintGradient(place(cyl(0.2, 0.25, 0.62, 8), { y: 0.31 }), '#e8e8e8', '#ffffff', P.cloth),
-      B(0.52, 0.07, 0.38, '#5a4030', P.plain, { y: 0.06 }),
-      paint(place(cyl(0.23, 0.23, 0.12, 8), { y: 0.62 }), '#f4f4f4', 0, null, P.cloth),
+      paintGradient(place(cyl(0.21, 0.24, 0.62, 10), { y: 0.31 }), '#e8e8e8', '#ffffff', P.cloth),
+      paint(place(cyl(0.255, 0.22, 0.2, 10), { y: -0.02 }), '#f0f0f0', 0, null, P.cloth),
+      B(0.5, 0.07, 0.4, '#5a4030', P.plain, { y: 0.1 }),
+      paint(place(sphere(0.1, 8, 6), { x: 0.25, y: 0.58 }), '#f4f4f4', 0, null, P.cloth),
+      paint(place(sphere(0.1, 8, 6), { x: -0.25, y: 0.58 }), '#f4f4f4', 0, null, P.cloth),
+      paint(place(cyl(0.07, 0.08, 0.1, 8), { y: 0.66 }), '#e2b894', 0, null, P.plain),
     ]),
     coat: g([
       paintGradient(place(cyl(0.2, 0.36, 1.05, 10), { y: 0.0 }), '#dedede', '#ffffff', P.cloth),
       B(0.46, 0.07, 0.36, '#5a4030', P.plain, { y: 0.1 }),
     ]),
-    head: g([paint(place(sphere(0.135, 10, 8), { y: 0.14 }), '#e2b894', 0, null, P.plain), B(0.2, 0.06, 0.1, '#6a4b33', P.plain, { y: 0.24, z: -0.06 })]),
+    head: g([paint(place(sphere(0.155, 12, 9), { y: 0.16 }), '#e2b894', 0, null, P.plain), paint(place(sphere(0.158, 12, 6, 0, Math.PI * 2, 0, Math.PI * 0.45), { y: 0.17, z: -0.01 }), '#6a4b33', 0, null, P.plain), B(0.05, 0.05, 0.05, '#d4a884', P.plain, { y: 0.14, z: 0.15 })]),
     hood: g([paintGradient(place(cone(0.2, 0.42, 9), { y: 0.3, rx: -0.12 }), '#cfcfcf', '#ffffff', P.cloth), paint(place(sphere(0.155, 10, 6), { y: 0.16, z: -0.03 }), '#ffffff', 0, null, P.cloth)]),
     cap: g([paint(place(sphere(0.15, 10, 5), { y: 0.2, sy: 0.6 }), '#ffffff', 0, null, P.cloth)]),
     helm: g([paint(place(sphere(0.16, 10, 6), { y: 0.19, sy: 0.9 }), '#b9bcc0', 0, null, P.metal), B(0.035, 0.18, 0.05, '#9a9da2', P.metal, { y: 0.14, z: 0.15 }), paint(place(cyl(0.18, 0.18, 0.04, 10), { y: 0.12 }), '#8f9296', 0, null, P.metal)]),
     hornhelm: g([paint(place(sphere(0.18, 10, 6), { y: 0.19 }), '#6a625a', 0, null, P.metal), paint(place(cone(0.05, 0.36, 6), { x: 0.2, y: 0.36, rz: -0.7 }), '#d8ccb0', 0, null, P.plain), paint(place(cone(0.05, 0.36, 6), { x: -0.2, y: 0.36, rz: 0.7 }), '#d8ccb0', 0, null, P.plain)]),
-    arm: g([B(0.12, 0.34, 0.13, '#ffffff', P.cloth, { y: -0.17 }), B(0.11, 0.3, 0.12, '#e2b894', P.plain, { y: -0.47 })]),
+    arm: g([paint(place(cyl(0.065, 0.06, 0.34, 7), { y: -0.17 }), '#ffffff', 0, null, P.cloth), paint(place(cyl(0.055, 0.05, 0.28, 7), { y: -0.46 }), '#e2b894', 0, null, P.plain), paint(place(sphere(0.06, 6, 5), { y: -0.62 }), '#d4a884', 0, null, P.plain)]),
     // right-hand items: pivot at the hand, pointing along -Y when the arm hangs
     axe: g([paint(place(cyl(0.025, 0.03, 0.8, 5), { y: -0.2 }), '#6b4a2f', 0, null, P.planks), B(0.05, 0.16, 0.2, '#9fa3a8', P.metal, { y: -0.52, z: 0.09 })]),
     pick: g([paint(place(cyl(0.025, 0.03, 0.8, 5), { y: -0.2 }), '#6b4a2f', 0, null, P.planks), B(0.05, 0.06, 0.5, '#8c8f93', P.metal, { y: -0.58 })]),
@@ -177,7 +180,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     if (right && !(f.carry && f.anim !== 'hammer')) {
       out.multiplyMatrices(armRM, local(0, -0.62, 0.02, right === 'bow' ? 0 : (right === 'spear' || right === 'pole' ? 1.6 : 0), 0, 0));
       if (right === 'axe' || right === 'pick' || right === 'hammer' || right === 'sword' || right === 'greataxe' || right === 'sickle') out.multiplyMatrices(armRM, local(0, -0.6, 0.05, Math.PI * 0.5 + handItemA));
-      put(right, out, f.bladeTint && right === 'sword' ? f.bladeTint : null);
+      put(right, out, f.bladeTint && (right === 'sword' || right === 'axe' || right === 'spear') ? f.bladeTint : null);
     }
     // left hand item
     const left = st.left;

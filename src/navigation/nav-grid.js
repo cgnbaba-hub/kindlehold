@@ -185,6 +185,7 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
     isStaticBlocked: (x, z) => staticBlocked[cellOf(z) * w + cellOf(x)] === 1,
     findPath,
     lineWalkable,
+    blockStatic(x, z, r) { forCircle(x, z, r, (k) => { staticBlocked[k] = 1; }); },
     block(x, z, r) { forCircle(x, z, r, (k) => { blockCount[k]++; }); },
     unblock(x, z, r) { forCircle(x, z, r, (k) => { if (blockCount[k] > 0) blockCount[k]--; }); },
     clearDynamic() { blockCount.fill(0); },

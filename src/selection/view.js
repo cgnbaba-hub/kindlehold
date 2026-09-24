@@ -48,7 +48,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   const markerGeo = new THREE.RingGeometry(0.5, 0.75, 24).rotateX(-Math.PI / 2);
 
   // territory border (rebuilt when buildings change)
-  const borderMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.8, depthWrite: false, fog: true });
+  const borderMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.55, depthWrite: false, fog: true });
   const border = new THREE.Mesh(new THREE.BufferGeometry(), borderMat);
   border.renderOrder = 1;
   scene.add(border);
@@ -57,7 +57,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   function rebuildBorder() {
     const src = territorySources(world());
     const pos = [], col = [];
-    const cP = new THREE.Color('#5fb3d6'), cE = new THREE.Color('#d8674a');
+    const cP = new THREE.Color('#8fc6dc'), cE = new THREE.Color('#d88a6a');
     for (const s of src) {
       const n = Math.max(48, Math.round(s.r * 3));
       const c = s.owner === PLAYER ? cP : cE;
@@ -72,7 +72,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
         if (prev && dash) {
           const [px, pz] = prev;
           const nx = -(z - pz), nz = x - px, len = Math.hypot(nx, nz) || 1;
-          const w = 0.22;
+          const w = 0.14;
           const ox = (nx / len) * w, oz = (nz / len) * w;
           const y1 = terrain.height(px, pz) + 0.25, y2 = terrain.height(x, z) + 0.25;
           pos.push(px - ox, y1, pz - oz, px + ox, y1, pz + oz, x + ox, y2, z + oz, px - ox, y1, pz - oz, x + ox, y2, z + oz, x - ox, y2, z - oz);
@@ -106,13 +106,13 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   function addBar(ent, x, z, h, frac, color) {
     if (bars.count >= MAX_BARS) return;
     const y = terrain.height(x, z) + h;
-    const w = ent.kind === 'building' ? 3 : 1.1;
-    m4.compose(p.set(x, y, z), camera.quaternion, s.set(w + 0.08, 0.2, 1));
+    const w = ent.kind === 'building' ? 3.2 : 1.5;
+    m4.compose(p.set(x, y, z), camera.quaternion, s.set(w + 0.1, 0.28, 1));
     barsBg.setMatrixAt(barsBg.count++, m4);
     // fill anchored left: shift along camera right
     p.set(x, y, z);
     p.addScaledVector(right, -(w * (1 - frac)) / 2);
-    m4.compose(p, camera.quaternion, s.set(Math.max(0.001, w * frac), 0.13, 1));
+    m4.compose(p, camera.quaternion, s.set(Math.max(0.001, w * frac), 0.18, 1));
     bars.setMatrixAt(bars.count, m4);
     bars.setColorAt(bars.count, color);
     bars.count++;
@@ -159,7 +159,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
         const frac = Math.max(0, u.hp / u.maxHp);
         col.setRGB(1 - frac, 0.25 + frac * 0.6, 0.2);
         if (u.owner !== PLAYER) col.setRGB(0.85, 0.3 + frac * 0.3, 0.2);
-        addBar(u, x, z, u.commander ? 2.9 : 2.3, frac, col);
+        addBar(u, x, z, u.commander ? 3.7 : 2.9, frac, col);
         if (u.ward > 0 && u.wardUntil > w.tick) { tmpEnt.x = x; tmpEnt.z = z; addRing(tmpEnt, cWard, 0.9); }
       }
       for (const b of all(w, 'building')) {

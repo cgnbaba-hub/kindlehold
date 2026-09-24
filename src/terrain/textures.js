@@ -118,3 +118,21 @@ export function generateGroundTexture(kind, size = 512) {
   tex.needsUpdate = true;
   return tex;
 }
+
+/** Low-frequency tileable noise (RGB = three independent fields) for macro variation. */
+export function generateMacroTexture(size = 256) {
+  const data = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const u = x / size, v = y / size;
+    const i = (y * size + x) * 4;
+    data[i] = Math.round(tfbm(u, v, 3, 4, 51) * 255);
+    data[i + 1] = Math.round(tfbm(u, v, 5, 4, 52) * 255);
+    data[i + 2] = Math.round(tfbm(u, v, 2, 3, 53) * 255);
+    data[i + 3] = 255;
+  }
+  const tex = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearMipmapLinearFilter; tex.generateMipmaps = true;
+  tex.needsUpdate = true;
+  return tex;
+}

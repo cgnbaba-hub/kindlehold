@@ -35,7 +35,7 @@ function makeNormalTexture(size = 256) {
 }
 
 export function createWater({ scene, terrain }) {
-  const seg = 160;
+  const seg = 256;
   const geo = new THREE.PlaneGeometry(terrain.size, terrain.size, seg, seg);
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
@@ -72,7 +72,8 @@ vec3 deep = vec3(0.035, 0.12, 0.15);
 diffuseColor.rgb = mix(shallow, deep, smoothstep(0.0, 1.8, d));
 float foam = (1.0 - smoothstep(0.0, 0.22, d)) * (0.55 + 0.45 * sin(uTime * 1.3 + vWPos.x * 0.8 + vWPos.z * 0.6));
 diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.82, 0.80), foam * 0.55);
-diffuseColor.a = mix(0.25, 0.9, smoothstep(0.0, 0.9, d)) + foam * 0.3;`)
+float shore = smoothstep(-0.02, 0.18, vDepth);
+diffuseColor.a = (mix(0.35, 0.92, smoothstep(0.0, 0.9, d)) + foam * 0.3) * shore;`)
       .replace('#include <normal_fragment_maps>', `
 vec2 flow = vec2(0.035, 0.012);
 vec3 n1 = texture2D(tNormal, vWPos.xz * 0.045 + flow * uTime).xyz * 2.0 - 1.0;

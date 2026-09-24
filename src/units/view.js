@@ -54,7 +54,8 @@ export function createUnitsView({ scene, terrain, world, bus }) {
         f.anim = s.anim || 'idle'; f.t = tickTime + s.id * 0.37; f.phase = s.id;
         f.tool = s.job ? figs.toolFor(s.job) : (s.anim === 'hammer' ? 'hammer' : null);
         f.carry = s.carry ? s.carry.res : null;
-        f.fallen = 0; f.kneel = false; f.lean = 0; f.attackPhase = 0; f.ranged = false; f.bladeTint = null;
+        f.fallen = 0; f.kneel = false; f.lean = 0; f.attackPhase = 0; f.ranged = false;
+        f.bladeTint = s.job === 'forester' && w.players.p1 && w.players.p1.techs.axes ? '#fff0c0' : null;
         figs.draw(f);
       }
       for (const u of all(w, 'unit')) {

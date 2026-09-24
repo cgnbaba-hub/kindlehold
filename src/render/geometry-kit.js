@@ -86,7 +86,7 @@ export const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 export const cyl = (rt, rb, h, seg = 8) => new THREE.CylinderGeometry(rt, rb, h, seg);
 export const cone = (r, h, seg = 8) => new THREE.ConeGeometry(r, h, seg);
 export const ico = (r, detail = 0) => new THREE.IcosahedronGeometry(r, detail);
-export const sphere = (r, w = 8, h = 6) => new THREE.SphereGeometry(r, w, h);
+export const sphere = (r, w = 8, h = 6, ...rest) => new THREE.SphereGeometry(r, w, h, ...rest);
 
 /** Gable roof prism: width (x), depth (z), ridge height; eaves overhang included by caller. */
 export function gable(w, d, h) {

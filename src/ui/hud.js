@@ -184,6 +184,7 @@ export function createHud({ root, session, input, settings, actions }) {
 
   // --- selection panel ---------------------------------------------------------------------------
   let dirtySel = true;
+  let forceCmd = true;
   let lastSelKey = '';
   const sel = () => world().selection.ids.map((id) => world().entities[id]).filter(Boolean);
 
@@ -191,9 +192,8 @@ export function createHud({ root, session, input, settings, actions }) {
     return h('div.hp', { role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': Math.round(frac * 100), 'aria-label': label }, [h('div.hp-fill', { style: { width: `${Math.max(0, Math.min(1, frac)) * 100}%` } })]);
   }
 
-  function renderSelection() {
+  function renderSelection(selPanel) {
     const items = sel();
-    clear(selPanel);
     if (!items.length) {
       const w = world();
       const p = w.players[PLAYER];
@@ -305,11 +305,10 @@ export function createHud({ root, session, input, settings, actions }) {
     return b;
   }
 
-  function renderCommands() {
+  function renderCommands(cmdGrid, cmdTitle) {
     const w = world();
     const p = w.players[PLAYER];
     const items = sel();
-    clear(cmdGrid);
     const bb = bindings();
     const one = items.length === 1 ? items[0] : null;
     const units = items.filter((e) => e.kind === 'unit' && e.owner === PLAYER && !e.downed);
@@ -449,8 +448,16 @@ export function createHud({ root, session, input, settings, actions }) {
     else raidTimer.hidden = true;
     // selection/commands refresh when content changes or twice per second
     const key = `${w.selection.ids.join(',')}|${cmdMode}|${st.mode}|${st.targetKind}`;
-    if (key !== lastSelKey) { lastSelKey = key; dirtySel = true; }
-    if (dirtySel || slow > 0.5) { slow = 0; dirtySel = false; renderSelection(); renderCommands(); }
+    if (key !== lastSelKey) { lastSelKey = key; dirtySel = true; forceCmd = true; }
+    if (dirtySel || slow > 0.5) {
+      slow = 0; dirtySel = false;
+      // build off-DOM and swap only when the markup changed, so clicks are never lost
+      const s2 = h('div'); renderSelection(s2);
+      if (s2.innerHTML !== selPanel.innerHTML) { clear(selPanel); while (s2.firstChild) selPanel.append(s2.firstChild); }
+      const g2 = h('div'), t2 = h('div'); renderCommands(g2, t2);
+      if (g2.innerHTML !== cmdGrid.innerHTML || forceCmd) { forceCmd = false; clear(cmdGrid); while (g2.firstChild) cmdGrid.append(g2.firstChild); }
+      setText(cmdTitle, t2.textContent);
+    }
     if (dirtyObjectives || w.tick % 100 < 5) { renderObjectives(); dirtyObjectives = false; }
   }
 

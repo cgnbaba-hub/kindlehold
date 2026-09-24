@@ -198,17 +198,24 @@ button { font: inherit; color: inherit; }
 .loading .menu-card { text-align: center; }
 .loading .boot-bar { margin: 16px auto 0; }
 
-/* project-authored CSS title backdrop */
-.backdrop { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
-.bd-sky { position: absolute; inset: 0; background: linear-gradient(180deg, #1c2536 0%, #3b3f58 35%, #b86a4a 62%, #e9a061 72%, #2a2622 100%); }
-.bd-hills { position: absolute; left: -10%; right: -10%; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
-.bd-hills.far { bottom: 22%; height: 30%; background: #4a4458; filter: blur(1px); transform: scaleX(1.4); }
-.bd-hills.mid { bottom: 10%; height: 26%; background: #2d3530; left: -30%; right: 20%; }
-.bd-hills.near { bottom: -12%; height: 30%; background: #151a17; left: 10%; right: -40%; }
-.bd-keep { position: absolute; left: 22%; bottom: 25%; width: 38px; height: 90px; background: #151816; box-shadow: 34px 38px 0 -6px #151816, 60px 44px 0 -10px #151816; }
+/* project-authored CSS title backdrop (no image files) */
+.backdrop { position: absolute; inset: 0; overflow: hidden; z-index: 0; background: #151a17; }
+.bd-sky { position: absolute; inset: 0; background:
+  radial-gradient(1.5px 1.5px at 12% 14%, rgba(255,255,255,0.8), transparent 60%), radial-gradient(1px 1px at 28% 8%, rgba(255,255,255,0.7), transparent 60%),
+  radial-gradient(1.2px 1.2px at 47% 18%, rgba(255,255,255,0.6), transparent 60%), radial-gradient(1px 1px at 66% 6%, rgba(255,255,255,0.8), transparent 60%),
+  radial-gradient(1.4px 1.4px at 83% 15%, rgba(255,255,255,0.7), transparent 60%), radial-gradient(1px 1px at 92% 26%, rgba(255,255,255,0.5), transparent 60%),
+  radial-gradient(ellipse 60% 30% at 70% 62%, rgba(255,168,90,0.55), transparent 70%),
+  linear-gradient(180deg, #141a2a 0%, #2b3150 32%, #6a4f62 50%, #c9784c 62%, #e8a462 68%, #3a2e28 80%, #151a17 100%); }
+.bd-hills { position: absolute; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+.bd-hills.far { left: -20%; right: -20%; bottom: 20%; height: 24%; background: linear-gradient(180deg, #4d4660, #3a3a4c); }
+.bd-hills.mid { left: -35%; right: 25%; bottom: 8%; height: 30%; background: linear-gradient(180deg, #2f3a33, #222a25);
+  box-shadow: 70vw 4vh 0 -2vh #26302a; }
+.bd-hills.near { left: -10%; right: -10%; bottom: -14%; height: 28%; background: #121614; }
+.bd-keep { position: absolute; left: 22%; bottom: 29%; width: 38px; height: 90px; background: #151816; box-shadow: 34px 38px 0 -6px #151816, 60px 44px 0 -10px #151816, 84px 52px 0 -14px #1a1e1b; }
 .bd-keep::before { content: ''; position: absolute; left: -4px; top: -10px; width: 46px; height: 12px; background: repeating-linear-gradient(90deg, #151816 0 8px, transparent 8px 12px); }
-.bd-glow { position: absolute; left: calc(22% + 6px); bottom: calc(25% + 96px); width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle, #ffd59a 0%, #ff9a3c 35%, rgba(255,120,40,0) 70%); box-shadow: 0 0 60px 30px rgba(255,150,60,0.35); animation: flicker 2.6s ease-in-out infinite; }
-.bd-mist { position: absolute; left: 0; right: 0; bottom: 0; height: 40%; background: linear-gradient(180deg, rgba(20,24,28,0), rgba(20,24,28,0.85)); }
+.bd-keep::after { content: ''; position: absolute; left: 50px; top: 54px; width: 5px; height: 6px; background: #ffb35c; box-shadow: 24px 6px 0 #ffb35c, 0 0 10px 2px rgba(255,170,80,0.6); }
+.bd-glow { position: absolute; left: calc(22% + 6px); bottom: calc(29% + 96px); width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle, #ffd59a 0%, #ff9a3c 35%, rgba(255,120,40,0) 70%); box-shadow: 0 0 60px 30px rgba(255,150,60,0.35); animation: flicker 2.6s ease-in-out infinite; }
+.bd-mist { position: absolute; left: 0; right: 0; bottom: 0; height: 45%; background: linear-gradient(180deg, rgba(20,24,28,0), rgba(16,19,22,0.9)); }
 @keyframes flicker { 0%, 100% { opacity: 0.9; transform: scale(1); } 40% { opacity: 1; transform: scale(1.08); } 70% { opacity: 0.8; transform: scale(0.96); } }
 
 /* ------------------------------------------------------------------ small screens (1280x720) */

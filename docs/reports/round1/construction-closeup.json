@@ -1,0 +1,294 @@
+{
+  "preset": "construction-closeup",
+  "url": "http://127.0.0.1:5181/?verify=1&seed=1337&quality=high&demo=construction&ui=0",
+  "run": "round1",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "seed": "1337",
+  "quality": "high",
+  "startedAt": "2026-09-24T10:41:35.958Z",
+  "gates": {
+    "loaded": true,
+    "noPageErrors": true,
+    "noConsoleErrors": true,
+    "noFailedRequests": true,
+    "noFailedModules": true,
+    "drawCallsWithinBudget": true,
+    "trianglesWithinBudget": true,
+    "notBlank": true
+  },
+  "pass": true,
+  "readyMs": 12448,
+  "setup": {
+    "sim": {
+      "ticks": 200,
+      "ms": 5.800000190734863
+    },
+    "hash": "241e3760"
+  },
+  "fps": {
+    "frames": 19,
+    "fps": 3.166825007917062,
+    "frameMs": {
+      "mean": 315.77368421052637,
+      "p50": 16.69999999999891,
+      "p95": 16.700000000000728,
+      "p99": 5699.800000000001
+    }
+  },
+  "stats": {
+    "frames": 29,
+    "fps": 1.583323785751282,
+    "frameMs": {
+      "mean": 631.5827558451685,
+      "p50": 16.700000762939453,
+      "p95": 5699.7998046875,
+      "p99": 7149.7001953125
+    },
+    "simMs": {
+      "samples": 23,
+      "mean": 0.5130435694818911,
+      "p95": 3.200000762939453
+    },
+    "renderer": {
+      "drawCalls": 88,
+      "triangles": 1036367,
+      "points": 900,
+      "lines": 0,
+      "textures": 11,
+      "geometries": 60,
+      "programs": 28,
+      "pixelRatio": 1,
+      "width": 1920,
+      "height": 1080
+    },
+    "tick": 6223,
+    "hour": 15.011999999999993
+  },
+  "health": [
+    {
+      "id": "navigation",
+      "kind": "sim",
+      "critical": true,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": "requests=604 partial=0"
+    },
+    {
+      "id": "world-services",
+      "kind": "sim",
+      "critical": true,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "missions",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "ai",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "technology",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "construction",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "population",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "economy",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "production",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "units",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "heroes",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "combat",
+      "kind": "sim",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "renderer",
+      "kind": "view",
+      "critical": true,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "environment-sky",
+      "kind": "view",
+      "critical": false,
+      "status": "registered",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "terrain-view",
+      "kind": "view",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "environment-water",
+      "kind": "view",
+      "critical": false,
+      "status": "registered",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "environment-vegetation",
+      "kind": "view",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "buildings-view",
+      "kind": "view",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": "12 buildings"
+    },
+    {
+      "id": "units-view",
+      "kind": "view",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "effects",
+      "kind": "view",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": "150/1500 particles"
+    },
+    {
+      "id": "input",
+      "kind": "view",
+      "critical": false,
+      "status": "registered",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "selection-view",
+      "kind": "view",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": null
+    },
+    {
+      "id": "audio",
+      "kind": "view",
+      "critical": false,
+      "status": "ok",
+      "errors": 0,
+      "lastError": null,
+      "detail": "waiting for first input"
+    }
+  ],
+  "frame": {
+    "mean": 65.19463510742169,
+    "variance": 783.8485013881054
+  },
+  "screenshot": "docs/screenshots/round1/construction-closeup.png",
+  "diagnostics": {
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead."
+    ],
+    "pageErrors": [],
+    "failedRequests": [],
+    "badResponses": []
+  },
+  "failedModules": []
+}
