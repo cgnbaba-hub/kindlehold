@@ -50,6 +50,8 @@ gz="$(curl -fsS -H 'Accept-Encoding: gzip' -o /dev/null -D - "${BASE}$(grep -oE 
 grep -qi '^content-encoding: gzip' <<< "$gz" || fail "gzip not applied to JS"
 [[ "$(curl -fsS "${BASE}RELEASE")" == "$SECOND" ]] || fail "current does not serve the second release"
 
+node scripts/deployment/csp-smoke.mjs "$BASE" || fail "game does not load under the nginx CSP"
+
 # latent-leak checks: plant a source map and a dotfile inside the served assets folder
 REL="$WWW/releases/$SECOND/assets"
 echo '{}' > "$REL/planted.js.map"; echo 'secret' > "$REL/.planted"
@@ -67,4 +69,4 @@ DEPLOY_ROOT="$WWW" deploy/scripts/rollback.sh --local >/dev/null
 [[ "$(curl -fsS "${BASE}RELEASE")" == "$SECOND" ]] || fail "roll-forward did not switch back"
 
 docker rm -f "$NAME" >/dev/null
-echo "DEPLOY-VALIDATE OK: atomic releases ($FIRST, $SECOND), rollback, headers, gzip, MIME, caching, nested-path reload, no source maps"
+echo "DEPLOY-VALIDATE OK: atomic releases ($FIRST, $SECOND), rollback, headers, gzip, MIME, caching, nested-path reload, no source maps, CSP browser load"
