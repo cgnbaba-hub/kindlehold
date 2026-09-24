@@ -6,21 +6,26 @@ import { rawHeight } from '../world/terrain-data.js';
 function makeNormalTexture(size = 256) {
   // tileable height from summed periodic sines + hash noise, converted to a normal map
   const h = new Float32Array(size * size);
+  // tileable value-noise fbm (no axis-aligned sine patterns that read as a grid)
+  const P = 8;
+  const pn = (x, y, period, seed) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const m = (a) => ((a % period) + period) % period;
+    const a = hash2(m(xi), m(yi), seed), b = hash2(m(xi + 1), m(yi), seed), c = hash2(m(xi), m(yi + 1), seed), d = hash2(m(xi + 1), m(yi + 1), seed);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
   for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
     const u = x / size, v = y / size;
-    let s = 0;
-    s += Math.sin((u * 3 + v * 2) * Math.PI * 2) * 0.5;
-    s += Math.sin((u * -5 + v * 4) * Math.PI * 2 + 1.3) * 0.3;
-    s += Math.sin((u * 9 + v * -7) * Math.PI * 2 + 0.4) * 0.15;
-    s += Math.sin((u * 14 + v * 11) * Math.PI * 2 + 2.1) * 0.08;
-    s += (hash2(x, y, 7) - 0.5) * 0.02;
+    let s = 0, amp = 0.5, f = P;
+    for (let o = 0; o < 4; o++) { s += pn(u * f, v * f, f, 11 + o) * amp; amp *= 0.5; f *= 2; }
     h[y * size + x] = s;
   }
   const data = new Uint8Array(size * size * 4);
   for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
     const l = h[y * size + ((x - 1 + size) % size)], r = h[y * size + ((x + 1) % size)];
     const d = h[((y - 1 + size) % size) * size + x], u = h[((y + 1) % size) * size + x];
-    const nx = (l - r) * 2.2, ny = (d - u) * 2.2, nz = 1;
+    const nx = (l - r) * 6, ny = (d - u) * 6, nz = 1;
     const len = Math.hypot(nx, ny, nz);
     const i = (y * size + x) * 4;
     data[i] = Math.round((nx / len * 0.5 + 0.5) * 255);
