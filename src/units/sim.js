@@ -10,7 +10,7 @@ import { walkTo, stopWalking } from '../navigation/agent.js';
 
 export const MAX_QUEUE = 5;
 export const LEASH = 22;
-const SEP_RADIUS = 1.0;
+const SEP_RADIUS = 0.9;
 
 export function spawnUnit(world, type, owner, x, z, extra = {}) {
   const def = unitDef(type);
@@ -235,10 +235,10 @@ export function createUnitsModule() {
         if (reach > def.range * 0.95) {
           if (o.type === 'hold') { u.target = null; u.moving = false; return; }
           if (t.kind === 'building') moveToward(world, u, t.x, t.z, BUILDINGS[t.type].radius * 0.8 + def.range * 0.6);
-          else if (def.cls !== 'ranged' && reach < 6) {
+          else if (def.cls !== 'ranged' && reach < 6 && UNITS[t.type] && UNITS[t.type].cls !== 'ranged' && !t.moving) {
             // close in on a personal slot around the target so melee fights spread into a ring
             const a = (u.id * 2.399) % (Math.PI * 2);
-            const r = Math.max(1.2, def.range * 0.8);
+            const r = def.range * 0.75;
             moveToward(world, u, t.x + Math.sin(a) * r, t.z + Math.cos(a) * r, 0.3);
           } else moveToward(world, u, t.x, t.z, def.range * 0.8);
         } else {
@@ -291,7 +291,7 @@ export function createUnitsModule() {
     if (!spatial) return;
     for (const u of all(world, 'unit')) {
       if (u.downed) continue;
-      spatial.query(u.x, u.z, SEP_RADIUS * 2, buf, (e) => e.kind === 'unit' && e !== u && !e.downed);
+      spatial.query(u.x, u.z, SEP_RADIUS * 2, buf, (e) => e.kind === 'unit' && e !== u && !e.downed && e.owner === u.owner); // allies spread; foes may close to weapon reach
       let px = 0, pz = 0;
       for (const o of buf) {
         let dx = u.x - o.x, dz = u.z - o.z;
