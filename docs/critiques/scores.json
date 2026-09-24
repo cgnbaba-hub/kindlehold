@@ -1,19 +1,37 @@
 {
   "modules": {
-    "missions": { "status": "iterating", "gameplay": null, "iterations": 1 },
-    "combat": { "status": "iterating", "gameplay": null, "iterations": 1 },
-    "ai": { "status": "iterating", "gameplay": null, "iterations": 1 },
-    "economy": { "status": "iterating", "gameplay": null, "iterations": 1 },
-    "save": { "status": "hardened", "iterations": 1 },
+    "terrain": { "status": "blocked-below-gate", "visual": 6.8, "iterations": 4 },
+    "environment": { "status": "blocked-below-gate", "visual": 6.7, "iterations": 4, "polish": ["water depth gradient not visible", "red specular glints at dawn/sunset"] },
+    "buildings": { "status": "blocked-below-gate", "visual": 7.3, "iterations": 4 },
+    "units": { "status": "blocked-below-gate", "visual": 6.2, "gameplay": 7.0, "iterations": 4, "polish": ["melee still clumps", "settler queue at the keep door during raids"] },
+    "effects": { "status": "blocked-below-gate", "visual": 6.0, "iterations": 4, "polish": ["flare ground glow is a flat disc clipped by slopes"] },
+    "ui": { "status": "blocked-below-gate", "visual": 7.4, "iterations": 4 },
+    "missions": { "status": "blocked-below-gate", "gameplay": 7.0, "iterations": 3 },
+    "combat": { "status": "blocked-below-gate", "gameplay": 6.5, "iterations": 3 },
+    "ai": { "status": "blocked-below-gate", "gameplay": 7.0, "iterations": 3 },
+    "economy": { "status": "blocked-below-gate", "gameplay": 6.5, "iterations": 3 },
+    "population": { "status": "blocked-below-gate", "gameplay": 5.5, "iterations": 3 },
+    "save": { "status": "pass-functional", "iterations": 1 },
     "deployment": { "status": "validated-locally", "iterations": 1 }
   },
   "history": [
-    { "date": "2026-09-24", "critic": "gameplay-critic", "round": 1, "score": 5.8, "report": "docs/critiques/gameplay-round1.md", "blockers": 4, "verdict": "below 8.5 — builder iteration 1 applied" },
-    { "date": "2026-09-24", "critic": "security-critic", "round": 1, "findings": { "critical": 0, "high": 0, "medium": 3, "low": 5, "info": 6 }, "report": "docs/critiques/security-round1.md", "verdict": "M1–M3, L1–L5 fixed" }
+    { "date": "2026-09-24", "critic": "gameplay-critic", "round": 1, "score": 5.8, "report": "docs/critiques/gameplay-round1.md" },
+    { "date": "2026-09-24", "critic": "security-critic", "round": 1, "findings": { "critical": 0, "high": 0, "medium": 3, "low": 5, "info": 6 }, "report": "docs/critiques/security-round1.md", "verdict": "M1–M3, L1–L5 fixed" },
+    { "date": "2026-09-24", "critic": "gameplay-critic", "round": 2, "score": 6.4, "report": "docs/critiques/gameplay-round2.md" },
+    { "date": "2026-09-24", "critic": "visual-critic", "round": 2, "score": 5.7, "report": "docs/critiques/visual-round2.md" },
+    { "date": "2026-09-24", "critic": "visual-critic", "round": 3, "score": 6.2, "report": "docs/critiques/visual-round3.md" },
+    { "date": "2026-09-24", "critic": "visual-critic", "round": 4, "score": 6.6, "report": "docs/critiques/visual-round4.md" },
+    { "date": "2026-09-24", "critic": "gameplay-critic", "round": 3, "score": 6.8, "report": "docs/critiques/gameplay-round3.md", "verdict": "no blockers; below 8.5" },
+    { "date": "2026-09-24", "critic": "visual-critic", "round": "final", "score": 7.0, "report": "docs/critiques/visual-final.md", "verdict": "8.5 gate FAILED after the 4th round" }
   ],
-  "iterations": { "gameplay": 1, "visual": 1, "security": 1 },
-  "openBlockers": [],
-  "openPolish": [],
-  "deployment": { "status": "production build + nginx atomic releases/rollback/CSP validated locally in Docker (npm run test:deploy); no public deployment (no domain/DNS authorised)" },
-  "next": "Visual critic on round 2 screenshots; gameplay critic round 2"
+  "iterations": { "gameplay": 3, "visual": 4, "security": 1 },
+  "openBlockers": [
+    "Visual gate: overall 7.0 < 8.5 after 4 critic rounds (water depth, melee readability, flare glow clipping, menu key art composition, lime ground in close-ups) — docs/critiques/visual-final.md",
+    "Gameplay gate: overall 6.8 < 8.5 after 3 critic rounds (no blockers left; labour depth 5.5, raids short, difficulty curve flat) — docs/critiques/gameplay-round3.md",
+    "GPU frame rate unmeasured (no GPU on the VPS)",
+    "Public deployment not performed (no domain / DNS authorised)"
+  ],
+  "openPolish": ["see docs/KNOWN_ISSUES.md"],
+  "deployment": { "status": "production build + nginx atomic releases, rollback, headers, CSP browser load validated locally in Docker (npm run test:deploy, commit 2198890); not publicly deployed — no domain provided", "remainingAction": "Add a Cloudflare Tunnel public hostname (or DNS + nginx site) pointing at the nginx container/port, see DEPLOYMENT.md §6" },
+  "next": "Visual: water depth colour + terrain-following ability decals + key-art composition; gameplay: labour priorities and longer, multi-phase raids; then re-run critics"
 }

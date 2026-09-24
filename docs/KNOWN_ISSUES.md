@@ -37,3 +37,13 @@ This list is kept honest and current. "Measured" items cite the report that show
   (figures are segmented and posed procedurally).
 - Unit "voice" acknowledgements are wordless synthesized syllables, not recorded speech.
 - Music is generative (procedural lute-like plucks and pads), not a composed score.
+
+## Quality gates (final)
+
+- **Visual 7.0 / 10 and gameplay 6.8 / 10 — below the 8.5 gate** after the maximum critic
+  rounds (see docs/FINAL_REVIEW.md, docs/critiques/). Open visual items: river depth colour and
+  dawn/dusk glints, melee clumping, Beacon Flare glow clipped on slopes, key-art composition,
+  grass tint in close-ups. Open gameplay items: shallow labour decisions, short raids, similar
+  difficulty curves.
+- **Startup time:** 36.6 s to a playable frame for a fresh game in headless SwiftShader (budget
+  15 s); dominated by shader compilation and CPU texture generation. Not measured on a GPU.

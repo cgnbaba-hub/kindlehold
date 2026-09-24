@@ -1,23 +1,533 @@
 {
   "project": "Kindlehold",
-  "stage": 0,
-  "currentWave": 0,
-  "lastVerifiedCommit": null,
-  "lastVerification": "2026-09-24T09:30:00Z",
+  "stage": 1,
+  "currentWave": 5,
+  "lastVerifiedCommit": "2198890",
+  "lastVerification": "2026-09-24T15:56:30.650Z",
   "environment": {
-    "node": "v26.7.0", "npm": "11.19.0", "git": "2.43.0", "three": "0.186.0", "vite": "8.3.0", "playwright": "1.62.1 (chromium r1234 headless, SwiftShader software GL)",
-    "cpu": "AMD EPYC 9354P, 2 vCPU", "gpu": "none", "claudeCode": "2.1.281",
+    "node": "v26.7.0",
+    "npm": "11.19.0",
+    "git": "2.43.0",
+    "three": "0.186.0",
+    "vite": "8.3.0",
+    "playwright": "1.62.1 (chromium r1234 headless, SwiftShader software GL)",
+    "cpu": "AMD EPYC 9354P, 2 vCPU",
+    "gpu": "none",
+    "claudeCode": "2.1.281",
     "agents": "Agent tool (subagents) available; builders executed sequentially by the integrator session under the ownership model; critics run as independent read-only subagents (docs/DECISIONS.md D-007)"
   },
-  "tests": { "unit": { "pass": 14, "fail": 0 }, "integration": { "pass": 0, "fail": 0 }, "simulation": { "pass": 0, "fail": 0 } },
-  "verification": {
-    "stage0": { "run": "stage0", "midday-overview": { "pass": true, "fpsSwiftShader": 9.5, "drawCalls": 3, "triangles": 131084 }, "night-overview": { "pass": false, "reason": "frame nearly black: Stage 0 scene has no night lighting yet (expected, addressed in Wave 1 environment)" } }
+  "tests": {
+    "total": 72,
+    "pass": 72,
+    "fail": 0,
+    "ranAt": "2026-09-24T15:56:30.637Z"
   },
-  "modules": {},
-  "openBlockers": [],
-  "openPolish": [],
-  "criticHistory": [],
-  "assetLicences": "all content procedural/project-authored; no external assets",
-  "deployment": { "status": "not started" },
-  "nextRecommendedAction": "Wave 1: terrain, environment, camera, input, selection, navigation, UI/audio/effects foundations"
+  "verification": {
+    "run": "final",
+    "pass": true,
+    "presets": [
+      {
+        "preset": "dawn-overview",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 148,
+        "triangles": 1200083
+      },
+      {
+        "preset": "midday-overview",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 148,
+        "triangles": 1200061
+      },
+      {
+        "preset": "sunset-overview",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 148,
+        "triangles": 1200057
+      },
+      {
+        "preset": "night-overview",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 136,
+        "triangles": 1184077
+      },
+      {
+        "preset": "settlement-closeup",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 125,
+        "triangles": 1178959
+      },
+      {
+        "preset": "production-closeup",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 140,
+        "triangles": 1187345
+      },
+      {
+        "preset": "construction-closeup",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 107,
+        "triangles": 1146515
+      },
+      {
+        "preset": "combat-overview",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 119,
+        "triangles": 1220553
+      },
+      {
+        "preset": "hero-ability",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 127,
+        "triangles": 1228003
+      },
+      {
+        "preset": "enemy-raid",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 138,
+        "triangles": 1229579
+      },
+      {
+        "preset": "ui-1920",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 137,
+        "triangles": 1184187
+      },
+      {
+        "preset": "ui-1280",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 137,
+        "triangles": 1184095
+      }
+    ]
+  },
+  "e2e": {
+    "run": "e2e-20260924-151208",
+    "pass": true,
+    "passed": 9,
+    "total": 9
+  },
+  "performance": {
+    "run": "perf-20260924-154421",
+    "pass": true,
+    "gates": {
+      "simMean": true,
+      "simP95": true,
+      "drawCalls": true,
+      "triangles": true,
+      "textures": true,
+      "geometries": true,
+      "heap": true,
+      "noErrors": true
+    },
+    "simMsPerTickMean": 0.16888148333333808,
+    "simMsPerTickP95": 0.32605100000000675,
+    "simEntities": 342,
+    "browser": {
+      "drawCalls": 140,
+      "triangles": 1245203,
+      "textures": 12,
+      "geometries": 73,
+      "heapMB": 35.572052001953125,
+      "fpsSwiftShader": 1.6788933902697176,
+      "frameMsP95SwiftShader": 1383.199999999997,
+      "readyMs": 46445
+    },
+    "gpuFps": null,
+    "gpuFpsNote": "Not measurable: the VPS has no GPU (SwiftShader only). See PERFORMANCE_BUDGET.md.",
+    "timeToReadyFreshGameMs": {
+      "value": 36564,
+      "quality": "high",
+      "renderer": "SwiftShader",
+      "budgetMs": 15000,
+      "pass": false
+    }
+  },
+  "consoleErrorCount": 0,
+  "failedRequestCount": 0,
+  "modules": {
+    "core": {
+      "owner": "integrator",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "world": {
+      "owner": "integrator",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "app": {
+      "owner": "integrator",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "camera": {
+      "owner": "integrator",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "input": {
+      "owner": "integrator",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "render": {
+      "owner": "integrator",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "terrain": {
+      "owner": "terrain-builder",
+      "status": "blocked-below-gate",
+      "visualScore": 6.8,
+      "gameplayScore": null,
+      "iterations": 4,
+      "blockers": [],
+      "polish": []
+    },
+    "environment": {
+      "owner": "environment-builder",
+      "status": "blocked-below-gate",
+      "visualScore": 6.7,
+      "gameplayScore": null,
+      "iterations": 4,
+      "blockers": [],
+      "polish": [
+        "water depth gradient not visible",
+        "red specular glints at dawn/sunset"
+      ]
+    },
+    "navigation": {
+      "owner": "navigation-builder",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "economy": {
+      "owner": "economy-builder",
+      "status": "blocked-below-gate",
+      "visualScore": null,
+      "gameplayScore": 6.5,
+      "iterations": 3,
+      "blockers": [],
+      "polish": []
+    },
+    "production": {
+      "owner": "economy-builder",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "technology": {
+      "owner": "economy-builder",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "population": {
+      "owner": "population-builder",
+      "status": "blocked-below-gate",
+      "visualScore": null,
+      "gameplayScore": 5.5,
+      "iterations": 3,
+      "blockers": [],
+      "polish": []
+    },
+    "buildings": {
+      "owner": "building-builder",
+      "status": "blocked-below-gate",
+      "visualScore": 7.3,
+      "gameplayScore": null,
+      "iterations": 4,
+      "blockers": [],
+      "polish": []
+    },
+    "construction": {
+      "owner": "building-builder",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "units": {
+      "owner": "unit-builder",
+      "status": "blocked-below-gate",
+      "visualScore": 6.2,
+      "gameplayScore": 7,
+      "iterations": 4,
+      "blockers": [],
+      "polish": [
+        "melee still clumps",
+        "settler queue at the keep door during raids"
+      ]
+    },
+    "selection": {
+      "owner": "unit-builder",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "heroes": {
+      "owner": "hero-builder",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "combat": {
+      "owner": "combat-builder",
+      "status": "blocked-below-gate",
+      "visualScore": null,
+      "gameplayScore": 6.5,
+      "iterations": 3,
+      "blockers": [],
+      "polish": []
+    },
+    "ai": {
+      "owner": "ai-builder",
+      "status": "blocked-below-gate",
+      "visualScore": null,
+      "gameplayScore": 7,
+      "iterations": 3,
+      "blockers": [],
+      "polish": []
+    },
+    "missions": {
+      "owner": "mission-builder",
+      "status": "blocked-below-gate",
+      "visualScore": null,
+      "gameplayScore": 7,
+      "iterations": 3,
+      "blockers": [],
+      "polish": []
+    },
+    "ui": {
+      "owner": "ui-builder",
+      "status": "blocked-below-gate",
+      "visualScore": 7.4,
+      "gameplayScore": null,
+      "iterations": 4,
+      "blockers": [],
+      "polish": []
+    },
+    "audio": {
+      "owner": "audio-builder",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "effects": {
+      "owner": "effects-builder",
+      "status": "blocked-below-gate",
+      "visualScore": 6,
+      "gameplayScore": null,
+      "iterations": 4,
+      "blockers": [],
+      "polish": [
+        "flare ground glow is a flat disc clipped by slopes"
+      ]
+    },
+    "save": {
+      "owner": "save-builder",
+      "status": "pass-functional",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 1,
+      "blockers": [],
+      "polish": []
+    },
+    "telemetry": {
+      "owner": "verification-builder",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "debug": {
+      "owner": "verification-builder",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "showcase": {
+      "owner": "integrator",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "demo": {
+      "owner": "mission-builder",
+      "status": "implemented",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 0,
+      "blockers": [],
+      "polish": []
+    },
+    "deployment": {
+      "owner": "deployment-builder",
+      "status": "validated-locally",
+      "visualScore": null,
+      "gameplayScore": null,
+      "iterations": 1,
+      "blockers": [],
+      "polish": []
+    }
+  },
+  "openBlockers": [
+    "Visual gate: overall 7.0 < 8.5 after 4 critic rounds (water depth, melee readability, flare glow clipping, menu key art composition, lime ground in close-ups) — docs/critiques/visual-final.md",
+    "Gameplay gate: overall 6.8 < 8.5 after 3 critic rounds (no blockers left; labour depth 5.5, raids short, difficulty curve flat) — docs/critiques/gameplay-round3.md",
+    "GPU frame rate unmeasured (no GPU on the VPS)",
+    "Public deployment not performed (no domain / DNS authorised)"
+  ],
+  "openPolish": [
+    "see docs/KNOWN_ISSUES.md"
+  ],
+  "criticHistory": [
+    {
+      "date": "2026-09-24",
+      "critic": "gameplay-critic",
+      "round": 1,
+      "score": 5.8,
+      "report": "docs/critiques/gameplay-round1.md"
+    },
+    {
+      "date": "2026-09-24",
+      "critic": "security-critic",
+      "round": 1,
+      "findings": {
+        "critical": 0,
+        "high": 0,
+        "medium": 3,
+        "low": 5,
+        "info": 6
+      },
+      "report": "docs/critiques/security-round1.md",
+      "verdict": "M1–M3, L1–L5 fixed"
+    },
+    {
+      "date": "2026-09-24",
+      "critic": "gameplay-critic",
+      "round": 2,
+      "score": 6.4,
+      "report": "docs/critiques/gameplay-round2.md"
+    },
+    {
+      "date": "2026-09-24",
+      "critic": "visual-critic",
+      "round": 2,
+      "score": 5.7,
+      "report": "docs/critiques/visual-round2.md"
+    },
+    {
+      "date": "2026-09-24",
+      "critic": "visual-critic",
+      "round": 3,
+      "score": 6.2,
+      "report": "docs/critiques/visual-round3.md"
+    },
+    {
+      "date": "2026-09-24",
+      "critic": "visual-critic",
+      "round": 4,
+      "score": 6.6,
+      "report": "docs/critiques/visual-round4.md"
+    },
+    {
+      "date": "2026-09-24",
+      "critic": "gameplay-critic",
+      "round": 3,
+      "score": 6.8,
+      "report": "docs/critiques/gameplay-round3.md",
+      "verdict": "no blockers; below 8.5"
+    },
+    {
+      "date": "2026-09-24",
+      "critic": "visual-critic",
+      "round": "final",
+      "score": 7,
+      "report": "docs/critiques/visual-final.md",
+      "verdict": "8.5 gate FAILED after the 4th round"
+    }
+  ],
+  "builderIterations": {
+    "gameplay": 3,
+    "visual": 4,
+    "security": 1
+  },
+  "assetLicences": "All runtime content is procedural/project-authored; three.js (MIT). check-register: see scripts/assets/check-register.mjs",
+  "deployment": {
+    "status": "production build + nginx atomic releases, rollback, headers, CSP browser load validated locally in Docker (npm run test:deploy, commit 2198890); not publicly deployed — no domain provided",
+    "remainingAction": "Add a Cloudflare Tunnel public hostname (or DNS + nginx site) pointing at the nginx container/port, see DEPLOYMENT.md §6"
+  },
+  "nextRecommendedAction": "Visual: water depth colour + terrain-following ability decals + key-art composition; gameplay: labour priorities and longer, multi-phase raids; then re-run critics",
+  "stageStatus": "Stage 1 vertical slice functionally complete; quality gates NOT passed (visual 7.0, gameplay 6.8 < 8.5); Stage 2 not started",
+  "scores": {
+    "visual": 7,
+    "gameplay": 6.8,
+    "gate": 8.5,
+    "pass": false
+  }
 }

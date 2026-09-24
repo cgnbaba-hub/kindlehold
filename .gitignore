@@ -7,7 +7,7 @@ dist/
 !.env.example
 # generated verification output (only curated evidence is committed via git add -f)
 docs/screenshots/**/*.png
-!docs/screenshots/final/*.png
+!docs/screenshots/final/*.jpg
 !docs/screenshots/evidence/*.png
 docs/reports/**/*.json
 !docs/reports/final-report.json

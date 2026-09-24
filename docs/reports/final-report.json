@@ -1,0 +1,166 @@
+{
+  "project": "Kindlehold",
+  "at": "2026-09-24T15:56:30.742Z",
+  "commit": "2198890",
+  "stage": 1,
+  "verdict": "functionally complete; quality gates not passed",
+  "tests": {
+    "total": 72,
+    "pass": 72,
+    "fail": 0,
+    "ranAt": "2026-09-24T15:56:30.637Z"
+  },
+  "verification": {
+    "run": "final",
+    "pass": true,
+    "presets": [
+      {
+        "preset": "dawn-overview",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 148,
+        "triangles": 1200083
+      },
+      {
+        "preset": "midday-overview",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 148,
+        "triangles": 1200061
+      },
+      {
+        "preset": "sunset-overview",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 148,
+        "triangles": 1200057
+      },
+      {
+        "preset": "night-overview",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 136,
+        "triangles": 1184077
+      },
+      {
+        "preset": "settlement-closeup",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 125,
+        "triangles": 1178959
+      },
+      {
+        "preset": "production-closeup",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 140,
+        "triangles": 1187345
+      },
+      {
+        "preset": "construction-closeup",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 107,
+        "triangles": 1146515
+      },
+      {
+        "preset": "combat-overview",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 119,
+        "triangles": 1220553
+      },
+      {
+        "preset": "hero-ability",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 127,
+        "triangles": 1228003
+      },
+      {
+        "preset": "enemy-raid",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 138,
+        "triangles": 1229579
+      },
+      {
+        "preset": "ui-1920",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 137,
+        "triangles": 1184187
+      },
+      {
+        "preset": "ui-1280",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 137,
+        "triangles": 1184095
+      }
+    ]
+  },
+  "e2e": {
+    "run": "e2e-20260924-151208",
+    "pass": true,
+    "passed": 9,
+    "total": 9
+  },
+  "performance": {
+    "run": "perf-20260924-154421",
+    "pass": true,
+    "gates": {
+      "simMean": true,
+      "simP95": true,
+      "drawCalls": true,
+      "triangles": true,
+      "textures": true,
+      "geometries": true,
+      "heap": true,
+      "noErrors": true
+    },
+    "simMsPerTickMean": 0.16888148333333808,
+    "simMsPerTickP95": 0.32605100000000675,
+    "simEntities": 342,
+    "browser": {
+      "drawCalls": 140,
+      "triangles": 1245203,
+      "textures": 12,
+      "geometries": 73,
+      "heapMB": 35.572052001953125,
+      "fpsSwiftShader": 1.6788933902697176,
+      "frameMsP95SwiftShader": 1383.199999999997,
+      "readyMs": 46445
+    },
+    "gpuFps": null,
+    "gpuFpsNote": "Not measurable: the VPS has no GPU (SwiftShader only). See PERFORMANCE_BUDGET.md.",
+    "timeToReadyFreshGameMs": {
+      "value": 36564,
+      "quality": "high",
+      "renderer": "SwiftShader",
+      "budgetMs": 15000,
+      "pass": false
+    }
+  },
+  "scores": {
+    "visual": 7,
+    "gameplay": 6.8,
+    "gate": 8.5,
+    "pass": false
+  },
+  "openBlockers": [
+    "Visual gate: overall 7.0 < 8.5 after 4 critic rounds (water depth, melee readability, flare glow clipping, menu key art composition, lime ground in close-ups) — docs/critiques/visual-final.md",
+    "Gameplay gate: overall 6.8 < 8.5 after 3 critic rounds (no blockers left; labour depth 5.5, raids short, difficulty curve flat) — docs/critiques/gameplay-round3.md",
+    "GPU frame rate unmeasured (no GPU on the VPS)",
+    "Public deployment not performed (no domain / DNS authorised)"
+  ],
+  "deployment": {
+    "status": "production build + nginx atomic releases, rollback, headers, CSP browser load validated locally in Docker (npm run test:deploy, commit 2198890); not publicly deployed — no domain provided",
+    "remainingAction": "Add a Cloudflare Tunnel public hostname (or DNS + nginx site) pointing at the nginx container/port, see DEPLOYMENT.md §6"
+  },
+  "critiques": [
+    "docs/critiques/visual-final.md",
+    "docs/critiques/gameplay-round3.md",
+    "docs/critiques/security-round1.md"
+  ]
+}

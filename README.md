@@ -3,6 +3,10 @@
 *The Rekindling of Harrowmere* — an original browser-based 3D medieval settlement-building
 and real-time strategy game (Stage 1 vertical slice). Three.js + Vite + plain ES modules.
 
+**Status:** playable, complete scenario, 72 tests / 12 screenshot presets / 9 e2e flows green;
+independent critic scores visual 7.0 and gameplay 6.8 — below the project's 8.5 quality gate.
+Details: [docs/FINAL_REVIEW.md](docs/FINAL_REVIEW.md).
+
 Rekindle a burnt hearth-keep, rebuild a working economy (timber, stone, iron,
 provisions), house and feed your people, research, train soldiers, lead the Lantern
 Warden Maren Ashgrove, survive the Rustfang raid and break Vharek's toll fort.
