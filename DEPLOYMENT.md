@@ -95,6 +95,16 @@ publish Kindlehold here, run the nginx config in a container bound to
 public hostname for `http://localhost:<port>` in the Cloudflare Zero Trust dashboard.
 That dashboard step needs the account owner and is the remaining manual action.
 
+### Published on this VPS (2026-09-24)
+
+`deploy/scripts/publish-vps.sh` builds, deploys atomically to `/var/www/kindlehold`, runs the
+repo's nginx config in Docker (`kindlehold-web`, `127.0.0.1:8098`, restart unless-stopped) and
+opens a Cloudflare **quick tunnel**. The public URL is written to `.deploy-local/PUBLIC_URL`.
+Quick-tunnel URLs change when the tunnel process restarts (e.g. after a reboot): re-run the
+script. For a permanent address, add a public hostname for `http://localhost:8098` to the
+existing Cloudflare tunnel in the Zero Trust dashboard (needs a domain in the account).
+Updates: `deploy/scripts/publish-vps.sh` (rebuilds and switches releases atomically).
+
 ## 7. Subsequent deployments
 
 ```bash
