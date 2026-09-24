@@ -9,7 +9,7 @@ export const QUALITY = {
 };
 
 export function createRenderContext({ container, terrain, quality = 'high', verify = false }) {
-  const q = QUALITY[quality] || QUALITY.high;
+  const q = Object.hasOwn(QUALITY, quality) ? QUALITY[quality] : QUALITY.high;
   const renderer = new THREE.WebGLRenderer({ antialias: q.antialias, powerPreference: 'high-performance', preserveDrawingBuffer: verify });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.pixelRatio));
   renderer.setSize(container.clientWidth || window.innerWidth, container.clientHeight || window.innerHeight);

@@ -10,9 +10,9 @@ import { stopWalking } from '../navigation/agent.js';
 
 
 export const ABILITIES = {
-  flare: { id: 'flare', name: 'Beacon Flare', key: 'Q', cooldown: 30, range: 14, radius: 6, damage: 40, dazzle: 5, target: 'ground',
+  flare: { id: 'flare', name: 'Beacon Flare', binding: 'abilityFlare', cooldown: 30, range: 14, radius: 6, damage: 40, dazzle: 5, target: 'ground',
     desc: 'The lantern bursts: 40 damage to enemies in a 6 m circle, and they attack 60% slower for 5 s.' },
-  kindle: { id: 'kindle', name: 'Kindle the Line', key: 'W', cooldown: 45, range: 0, radius: 9, ward: 60, duration: 8, haste: 0.2, target: 'self',
+  kindle: { id: 'kindle', name: 'Kindle the Line', binding: 'abilityKindle', cooldown: 45, range: 0, radius: 9, ward: 60, duration: 8, haste: 0.2, target: 'self',
     desc: 'Allies within 9 m gain a 60-point ward for 8 s and move 20% faster.' },
 };
 export const HORN = { cooldown: 40, radius: 10, duration: 8 };

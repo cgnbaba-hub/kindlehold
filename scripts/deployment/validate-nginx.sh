@@ -50,6 +50,17 @@ gz="$(curl -fsS -H 'Accept-Encoding: gzip' -o /dev/null -D - "${BASE}$(grep -oE 
 grep -qi '^content-encoding: gzip' <<< "$gz" || fail "gzip not applied to JS"
 [[ "$(curl -fsS "${BASE}RELEASE")" == "$SECOND" ]] || fail "current does not serve the second release"
 
+# latent-leak checks: plant a source map and a dotfile inside the served assets folder
+REL="$WWW/releases/$SECOND/assets"
+echo '{}' > "$REL/planted.js.map"; echo 'secret' > "$REL/.planted"
+code="$(curl -s -o /dev/null -w '%{http_code}' "${BASE}assets/planted.js.map")"; [[ "$code" == 404 ]] || fail "source map under /assets/ served ($code)"
+code="$(curl -s -o /dev/null -w '%{http_code}' "${BASE}assets/.planted")"; [[ "$code" == 404 ]] || fail "dotfile under /assets/ served ($code)"
+rm -f "$REL/planted.js.map" "$REL/.planted"
+ahdr="$(curl -fsSI "${BASE}$(grep -oE 'assets/[^"]+\.js' <<< "$nested" | head -n1)" | tr -d '\r')"
+grep -qi '^x-frame-options: SAMEORIGIN' <<< "$ahdr" || fail "security headers missing on /assets/"
+# deploy script refuses injection attempts in DEPLOY_ROOT
+if DEPLOY_ROOT="/tmp/x'; echo INJECTED; '" deploy/scripts/deploy.sh --local >/dev/null 2>&1; then fail "deploy.sh accepted a malicious DEPLOY_ROOT"; fi
+
 DEPLOY_ROOT="$WWW" deploy/scripts/rollback.sh --local >/dev/null
 [[ "$(curl -fsS "${BASE}RELEASE")" == "$FIRST" ]] || fail "rollback did not switch to the first release"
 DEPLOY_ROOT="$WWW" deploy/scripts/rollback.sh --local >/dev/null

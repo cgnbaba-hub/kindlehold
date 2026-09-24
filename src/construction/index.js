@@ -85,6 +85,7 @@ export function createBuildingEntity(world, { type, owner, x, z, rot = 0, state 
     stall: null,
     lit: type !== 'keep',
     queue: [],
+    paused: false,
     plots: null,
     lastHitTick: -9999,
     destroyedTick: null,
@@ -210,6 +211,12 @@ export function createConstructionModule() {
       clearFootprint(world, b);
       emit(world, 'building:demolished', { id: b.id, type: b.type, x: b.x, z: b.z });
       remove(world, b.id, 'demolished');
+    } else if (cmd.type === 'toggleWork') {
+      const b = world.entities[cmd.id];
+      if (!b || b.kind !== 'building' || b.owner !== owner || b.state !== 'active' || !BUILDINGS[b.type].slots) return reject('This building has no workers', cmd);
+      b.paused = !b.paused;
+      if (b.paused) { releaseWorkers(world, b); b.stall = 'paused'; } else if (b.stall === 'paused') b.stall = null;
+      emit(world, 'building:paused', { id: b.id, paused: b.paused });
     } else if (cmd.type === 'rekindle') {
       const keep = all(world, 'building').find((b) => b.type === 'keep' && b.owner === owner);
       if (!keep || keep.lit) return;

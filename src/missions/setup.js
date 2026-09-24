@@ -13,7 +13,7 @@ const DIFF_RES = { story: 1.5, normal: 1, hard: 0.8 };
 export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   const map = terrain.map;
   const rng = worldRng(world);
-  const mult = DIFF_RES[world.meta.difficulty] || 1;
+  const mult = Object.hasOwn(DIFF_RES, world.meta.difficulty) ? DIFF_RES[world.meta.difficulty] : 1;
   const res = {};
   for (const r in scenario.startResources) res[r] = Math.round(scenario.startResources[r] * mult);
   addPlayer(world, { id: PLAYER, name: 'Hearthbound', faction: 'hearthbound', color: '#2f6f8f', res, stability: 55 });

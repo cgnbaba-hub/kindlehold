@@ -61,7 +61,7 @@ const SETTLER_TUNICS = ['#8a6f4e', '#6f7b5a', '#9b7c52', '#5f6f7a', '#7a5f4e', '
 export const STYLE = {
   settler: { torso: null, head: 'cap', skin: '#e2b894', legs: '#5b4b3c' },
   shield: { torso: '#2f6f8f', head: 'helm', right: 'spear', left: 'shieldKite', leftColor: '#2f6f8f', legs: '#4d4338' },
-  blade: { torso: '#3d7f99', head: 'helm', right: 'sword', left: 'shieldRound', leftColor: '#7a5a3a', legs: '#4d4338' },
+  blade: { torso: '#5d93ab', coat: true, head: 'helm', right: 'sword', left: null, legs: '#4d4338' },
   fletcher: { torso: '#4f6f4a', head: 'hood', headColor: '#3f5a3c', right: null, left: 'bow', legs: '#4d4338' },
   maren: { torso: '#384a5c', coat: true, head: 'hood', headColor: '#2c3a48', right: 'pole', left: null, legs: '#3a3028', lantern: true },
   reaver: { torso: '#8c3b2a', head: 'cap', headColor: '#3a302a', right: 'axe', left: null, legs: '#3a302a' },

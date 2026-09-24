@@ -12,14 +12,14 @@ import { UNITS } from '../units/defs.js';
 export const AI_DIFFICULTY = {
   story: { firstRaid: 6, growth: 2, spawnInterval: 50, waveInterval: 300, garrisonCap: 8, hpMult: 1, raidDelay: 180 },
   normal: { firstRaid: 9, growth: 3, spawnInterval: 35, waveInterval: 240, garrisonCap: 12, hpMult: 1, raidDelay: 120 },
-  hard: { firstRaid: 13, growth: 4, spawnInterval: 24, waveInterval: 200, garrisonCap: 16, hpMult: 1.1, raidDelay: 90 },
+  hard: { firstRaid: 11, growth: 4, spawnInterval: 24, waveInterval: 210, garrisonCap: 16, hpMult: 1.1, raidDelay: 105 },
 };
 
 const SPAWN_CYCLE = ['reaver', 'reaver', 'slinger', 'brute', 'reaver', 'slinger'];
 const TARGET_PRIORITY = { lodge: 0, farm: 0, quarry: 0, mine: 0, cottage: 1, barracks: 1, tower: 2, keep: 3 };
 const RETREAT_AT = 0.35;
 
-export function aiSettings(world) { return AI_DIFFICULTY[world.meta.difficulty] || AI_DIFFICULTY.normal; }
+export function aiSettings(world) { return Object.hasOwn(AI_DIFFICULTY, world.meta.difficulty) ? AI_DIFFICULTY[world.meta.difficulty] : AI_DIFFICULTY.normal; }
 
 export function warhallOf(world) { return all(world, 'building').find((b) => b.type === 'warhall' && b.owner === ENEMY && b.state !== 'destroyed') || null; }
 
@@ -61,25 +61,51 @@ export function createAiModule() {
     return all(world, 'unit').filter((u) => u.owner === ENEMY && !u.commander && !world.ai.raidIds.includes(u.id) && u.id !== world.ai.scoutId);
   }
 
+  /** Raids are formed only from the camp garrison (no units appear from nowhere), so
+   *  harassing the camp really does shrink the next raid. Too small a garrison delays it. */
   function startRaid(world, hall) {
     const cfg = aiSettings(world);
     const ai = world.ai;
     const size = cfg.firstRaid + ai.wave * cfg.growth;
-    const pool = garrison(world);
-    const raid = pool.slice(0, size);
-    const entry = world.enemyEntry || { x: 100, z: -100 };
-    for (let i = raid.length; i < size; i++) {
-      const u = spawnEnemy(world, SPAWN_CYCLE[(i + ai.wave) % SPAWN_CYCLE.length], entry.x + (i % 4) * 1.5, entry.z + Math.floor(i / 4) * 1.5);
-      if (u) raid.push(u);
+    const pool = garrison(world).filter((u) => !u.downed);
+    if (pool.length < Math.ceil(size * 0.6) && (ai.postponed || 0) < 2) {
+      ai.postponed = (ai.postponed || 0) + 1;
+      ai.raidTick = world.tick + 45 * 20;
+      ai.nextSpawnTick = Math.min(ai.nextSpawnTick, world.tick + 5 * 20);
+      emit(world, 'ai:raid-delayed', { garrison: pool.length, wanted: size });
+      return;
     }
-    const target = pickRaidTarget(world, hall ? hall.x : entry.x, hall ? hall.z : entry.z);
-    if (!target) return;
+    const raid = pool.slice(0, size);
+    if (!raid.length) { ai.raidTick = world.tick + 60 * 20; return; }
+    ai.postponed = 0;
+    // gather outside the gate for 20 s, visibly, before marching
+    const keep = all(world, 'building').find((b) => b.type === 'keep' && b.owner === PLAYER);
+    const dirX = keep ? keep.x - hall.x : -1, dirZ = keep ? keep.z - hall.z : 1;
+    const len = Math.hypot(dirX, dirZ) || 1;
+    const gx = hall.x + (dirX / len) * 34, gz = hall.z + (dirZ / len) * 34;
+    raid.forEach((u, i) => {
+      const ang = (i / raid.length) * Math.PI * 2;
+      u.order = { type: 'move', x: gx + Math.sin(ang) * 3, z: gz + Math.cos(ang) * 3, ax: gx, az: gz };
+      u.target = null; u.path = null; u.dest = null;
+    });
     ai.raidIds = raid.map((u) => u.id);
     ai.raidStartStrength = raid.reduce((s, u) => s + u.hp, 0);
+    ai.state = 'gather';
+    ai.gatherUntil = world.tick + 20 * 20;
+    ai.gatherPoint = [gx, gz];
+    ai.raidTick = null;
+    alert(world, 'danger', `${raid.length} Rustfang raiders are gathering at the ford fort!`, gx, gz);
+    emit(world, 'ai:gather', { size: raid.length, x: gx, z: gz });
+  }
+
+  function launchRaid(world, hall) {
+    const ai = world.ai;
+    const raid = ai.raidIds.map((id) => world.entities[id]).filter((u) => u && isAlive(u));
+    const target = pickRaidTarget(world, hall.x, hall.z);
+    if (!target || !raid.length) { ai.state = 'build'; ai.raidIds = []; ai.raidTick = world.tick + 60 * 20; return; }
     ai.raidTarget = target.id;
     ai.state = 'raid';
     ai.raidStartedTick = world.tick;
-    ai.raidTick = null;
     orderRaid(world, raid, target);
     emit(world, EV.AI_WAVE, { wave: ai.wave + 1, size: raid.length, target: target.id, x: target.x, z: target.z });
     alert(world, 'danger', `Rustfang raid! ${raid.length} reavers are marching on your ${BUILDINGS[target.type].name}.`, target.x, target.z);
@@ -89,7 +115,7 @@ export function createAiModule() {
     const d = doorOf(target);
     raid.forEach((u, i) => {
       const ang = (i / Math.max(1, raid.length)) * Math.PI * 2;
-      u.order = { type: 'attackMove', x: d.x + Math.sin(ang) * 3, z: d.z + Math.cos(ang) * 3, ax: u.x, az: u.z };
+      u.order = { type: 'attackMove', x: d.x + Math.sin(ang) * 3, z: d.z + Math.cos(ang) * 3, ax: u.x, az: u.z, targetBuilding: target.id };
       u.target = null;
       u.path = null; u.dest = null;
     });
@@ -119,7 +145,7 @@ export function createAiModule() {
         if (target) { ai.raidTarget = target.id; orderRaid(world, raid, target); }
       } else {
         // re-issue for units that arrived and went idle
-        for (const u of raid) if (u.order.type === 'idle' && u.target == null) { const d = doorOf(target); u.order = { type: 'attackMove', x: d.x, z: d.z, ax: u.x, az: u.z }; }
+        for (const u of raid) if (u.order.type === 'idle' && u.target == null) { const d = doorOf(target); u.order = { type: 'attackMove', x: d.x, z: d.z, ax: u.x, az: u.z, targetBuilding: target.id }; u.target = target.id; }
       }
     } else if (ai.state === 'retreat') {
       const home = raid.every((u) => u.order.type !== 'move') || world.tick - ai.retreatTick > 90 * 20;
@@ -215,7 +241,9 @@ export function createAiModule() {
       }
       // raids
       if (ai.state === 'build' && ai.raidTick != null && world.tick >= ai.raidTick) startRaid(world, hall);
+      if (ai.state === 'gather' && world.tick >= ai.gatherUntil) launchRaid(world, hall);
       if ((ai.state === 'raid' || ai.state === 'retreat') && world.tick % 10 === 0) updateRaid(world, hall);
+      if (ai.state === 'gather') { ai.raidIds = ai.raidIds.filter((id) => world.entities[id] && isAlive(world.entities[id])); if (!ai.raidIds.length) { ai.state = 'build'; ai.raidTick = world.tick + 60 * 20; } }
       if (world.tick % 20 === 7) updateDefence(world, hall);
     },
   };

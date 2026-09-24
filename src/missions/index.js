@@ -8,7 +8,7 @@ import { aiSettings } from '../ai/index.js';
 
 export const SCENARIOS = { harrowmere: HARROWMERE_SCENARIO };
 
-export function scenarioOf(world) { return SCENARIOS[world.mission.scenarioId || world.meta.scenarioId] || HARROWMERE_SCENARIO; }
+export function scenarioOf(world) { const id = world.mission.scenarioId || world.meta.scenarioId; return Object.hasOwn(SCENARIOS, id) ? SCENARIOS[id] : HARROWMERE_SCENARIO; }
 
 export function createMissionsModule() {
   let ctx = null;

@@ -41,7 +41,7 @@ test('malicious and broken saves are rejected with readable errors', () => {
     [JSON.stringify({ ...good, schemaVersion: 99 }), /newer version/],
     [JSON.stringify({ ...good, world: { ...good.world, tick: -5 } }), /tick/],
     [JSON.stringify({ ...good, world: { ...good.world, entities: { 1: { id: 1, kind: 'dragon', x: 0, z: 0, owner: 'p1' } } } }), /kind/],
-    [JSON.stringify({ ...good, world: { ...good.world, entities: { 5: { id: 6, kind: 'unit', x: 0, z: 0, owner: 'p1' } } } }), /does not match/],
+    (() => { const u = Object.values(good.world.entities).find((e) => e.kind === 'unit'); return [JSON.stringify({ ...good, world: { ...good.world, entities: { 5: { ...u, id: 6 } } } }), /does not match/]; })(),
     ['x'.repeat(3 * 1024 * 1024), /too large/],
   ];
   for (const [text, re] of cases) assert.throws(() => deserializeWorld(text), re);
@@ -51,10 +51,33 @@ test('malicious and broken saves are rejected with readable errors', () => {
   assert.equal(({}).polluted, undefined);
 });
 
+test('saves that would break modules after loading are rejected up front', () => {
+  const sim = newSim();
+  const good = JSON.parse(serializeWorld(sim.world));
+  const b = Object.values(good.world.entities).find((e) => e.kind === 'building');
+  const cases = [
+    [{ ...good, world: { ...good.world, players: {} } }, /players/],
+    [{ ...good, world: { ...good.world, entities: { ...good.world.entities, [b.id]: { ...b, type: 'dragonlair' } } } }, /type/],
+    [{ ...good, world: { ...good.world, mission: { ...good.world.mission, objectives: [{ id: 'nope', state: 'done' }] } } }, /objective/],
+    [{ ...good, world: { ...good.world, combat: undefined } }, /combat/],
+    [{ ...good, world: { ...good.world, nextId: 2e9 } }, /nextId/],
+    [{ ...good, world: { ...good.world, entities: { ...good.world.entities, [b.id]: { ...b, x: 1e9 } } } }, /x/],
+  ];
+  for (const [doc, re] of cases) assert.throws(() => deserializeWorld(JSON.stringify(doc)), re);
+});
+
 test('non-finite numbers and oversized strings are rejected', () => {
   const sim = newSim();
   const doc = JSON.parse(serializeWorld(sim.world));
   doc.label = 'x';
   doc.world.meta.title = 'y'.repeat(5000);
   assert.throws(() => deserializeWorld(JSON.stringify(doc)), /string too long/);
+});
+
+test('load smoke test accepts real saves', async () => {
+  const { smokeTestWorld } = await import('../../src/app/load-check.js');
+  const sim = newSim({ seed: 4 });
+  createBot(sim).play(1200);
+  const { world } = deserializeWorld(serializeWorld(sim.world));
+  assert.equal(smokeTestWorld(world), true);
 });

@@ -1,7 +1,7 @@
 // Production: workers at workplaces run visible work cycles against deposits,
 // fields or inputs, carry goods back, and report precise stall reasons.
 import { EV, DT } from '../core/contracts.js';
-import { all, emit, remove } from '../world/world.js';
+import { all, emit, remove, alert } from '../world/world.js';
 import { BUILDINGS, doorOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { stabilityFactor } from '../population/index.js';
@@ -11,11 +11,12 @@ import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
 export const WORK = {
   forester: { res: 'timber', perTrip: 3, work: 5.0, strike: 0.7, anim: 'chop' },
   quarrier: { res: 'stone', perTrip: 3, work: 6.0, strike: 0.8, anim: 'pick' },
-  farmer: { res: 'provisions', perTrip: 3, sow: 2.5, harvest: 3.0, grow: 30, anim: 'farm' },
+  farmer: { res: 'provisions', perTrip: 4, sow: 2.5, harvest: 3.0, grow: 30, anim: 'farm' },
   miner: { res: 'iron', perCycle: 2, work: 8.0, provisionsPerCycle: 1, anim: 'mine' },
 };
 
 export const STALL_TEXT = {
+  paused: 'Work paused — its workers help as labourers',
   noWorker: 'No worker — needs an idle settler (build Cottages for more people)',
   noDeposit: 'Nothing left to work within range',
   storageFull: 'Storage full — labourers must carry goods to the Keep',
@@ -24,10 +25,18 @@ export const STALL_TEXT = {
   noSettler: 'Needs an idle settler to train',
 };
 
+const STALL_ALERT = { storageFull: 'is full — more free labourers are needed to carry goods', noDeposit: 'has nothing left to work nearby — build a new one closer to resources', noInput: 'is waiting for provisions', noAccess: 'cannot be reached by its workers' };
+
 function setStall(world, b, reason) {
   if (b.stall === reason) return;
   b.stall = reason;
-  if (reason) emit(world, EV.PRODUCTION_STALLED, { id: b.id, reason });
+  if (!reason) return;
+  emit(world, EV.PRODUCTION_STALLED, { id: b.id, reason });
+  // tell the player (at most once per building per 90 s), with a jump-to location
+  if (b.owner === 'p1' && STALL_ALERT[reason] && world.tick - (b.stallAlertTick ?? -1e9) > 1800) {
+    b.stallAlertTick = world.tick;
+    alert(world, 'warn', `${BUILDINGS[b.type].name} ${STALL_ALERT[reason]}.`, b.x, b.z);
+  }
 }
 
 function outCount(b) { let n = 0; for (const r in b.stock.out) n += b.stock.out[r]; return n; }

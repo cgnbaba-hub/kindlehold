@@ -160,3 +160,36 @@ test('entity iteration and all() stay consistent after removals', () => {
   const trees = all(sim.world, 'deposit').filter((d) => d.type === 'tree');
   assert.ok(trees.length > 250);
 });
+
+test('pausing a workplace releases its workers; resuming re-staffs it', () => {
+  const sim = newSim();
+  sim.issue({ type: 'rekindle' });
+  const lodge = place(sim, 'lodge', -66, 40);
+  runUntil(sim, () => lodge.state === 'active' && lodge.workers.length > 0, 20 * 150);
+  assert.ok(lodge.workers.length > 0);
+  const ids = lodge.workers.slice();
+  sim.issue({ type: 'toggleWork', id: lodge.id });
+  sim.step();
+  assert.equal(lodge.paused, true);
+  assert.equal(lodge.workers.length, 0);
+  for (const id of ids) assert.equal(sim.world.entities[id].job, null, 'worker became a labourer');
+  for (let i = 0; i < 60; i++) sim.step();
+  assert.equal(lodge.workers.length, 0, 'no re-assignment while paused');
+  sim.issue({ type: 'toggleWork', id: lodge.id });
+  runUntil(sim, () => lodge.workers.length > 0, 200);
+  assert.ok(lodge.workers.length > 0, 'resumed');
+});
+
+test('stalled workplaces raise a player alert (debounced)', () => {
+  const sim = newSim();
+  sim.issue({ type: 'rekindle' });
+  const alerts = [];
+  sim.bus.on('alert', (a) => alerts.push(a.text));
+  grant(sim, { timber: 200, stone: 200 });
+  const mine = place(sim, 'mine', -73, 62);
+  runUntil(sim, () => mine.state === 'active', 20 * 150);
+  sim.world.players.p1.res.provisions = 0;
+  mine.stock.in.provisions = 0;
+  runUntil(sim, () => mine.stall === 'noInput', 20 * 60);
+  assert.ok(alerts.some((t) => /Iron Mine is waiting for provisions/.test(t)), alerts.join(' | '));
+});

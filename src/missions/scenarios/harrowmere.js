@@ -6,7 +6,7 @@ export const HARROWMERE_SCENARIO = {
   title: 'The Rekindling of Harrowmere',
   blurb: 'Seven winters after the Long Frost, the Hearthbound return to the burnt keep of Kindlehold. The Rustfang toll-raiders who hold the ford will not welcome them.',
   startResources: { timber: 80, stone: 60, iron: 0, provisions: 40 },
-  raidWarningAt: { story: 18 * 60, normal: 14 * 60, hard: 11 * 60 }, // seconds, if not triggered earlier
+  raidWarningAt: { story: 18 * 60, normal: 14 * 60, hard: 13 * 60 }, // seconds, if not triggered earlier
   speakers: {
     maren: { name: 'Maren Ashgrove', role: 'Lantern Warden' },
     osric: { name: 'Osric Tallow', role: 'Reeve of Kindlehold' },
@@ -59,7 +59,7 @@ export const HARROWMERE_SCENARIO = {
     {
       id: 'survive', title: 'Hold Kindlehold',
       text: 'Survive the Rustfang raid.',
-      hint: 'Group soldiers with Ctrl+1. Right-click enemies to attack. Maren: Q = Beacon Flare, W = Kindle the Line.',
+      hint: 'Group soldiers with Ctrl+1 and right-click raiders to attack. Maren: F = Beacon Flare (blinds a group), G = Kindle the Line (wards allies). The Keep\'s archers help defend it.',
       highlight: 'army', activeWhen: { flag: 'raidWarned' },
       completeWhen: { raidsRepelled: 1 },
       onComplete: [

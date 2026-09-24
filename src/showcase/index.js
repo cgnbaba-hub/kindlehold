@@ -17,7 +17,7 @@ const SHOWCASES = {
 export function listShowcases() { return Object.keys(SHOWCASES); }
 
 export async function runShowcase(id, params) {
-  const loader = SHOWCASES[id];
+  const loader = Object.hasOwn(SHOWCASES, id) ? SHOWCASES[id] : null;
   if (!loader) throw new Error(`Unknown showcase "${id}". Available: ${listShowcases().join(', ')}`);
   const mod = await loader();
   const { startShowcase } = await import('./runner.js');

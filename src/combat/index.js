@@ -11,7 +11,8 @@ import { destroyBuilding } from '../construction/index.js';
 export const PROJECTILE_SPEED = 26; // m/s
 export const HEARTHLIGHT_RADIUS = 10;
 export const HEARTHLIGHT_REDUCTION = 0.1;
-export const RANGED_VS_BUILDING = 0.35;
+export const RANGED_VS_BUILDING = 0.25;
+export const MELEE_VS_BUILDING = 0.5;
 
 function classOf(e) {
   if (e.kind === 'unit') return UNITS[e.type].cls;
@@ -20,9 +21,15 @@ function classOf(e) {
 }
 
 /** Pure damage formula (exported for tests). */
+export const ARMOR_PER_POINT = 0.05; // each armour point blocks 5% of incoming damage
+
+export function counterOf(attackerCls, defenderCls) {
+  return (COUNTERS[attackerCls] && COUNTERS[attackerCls][defenderCls]) || 1;
+}
+
 export function computeDamage({ base, attackerCls, defenderCls, armor = 0, damageMult = 1 }) {
-  const counter = (COUNTERS[attackerCls] && COUNTERS[attackerCls][defenderCls]) || 1;
-  return Math.max(1, Math.round(base * counter * damageMult - armor));
+  const counter = counterOf(attackerCls, defenderCls);
+  return Math.max(1, Math.round(base * counter * damageMult * (1 - Math.min(0.75, armor * ARMOR_PER_POINT))));
 }
 
 function heroAuraProtects(world, target) {
@@ -49,6 +56,10 @@ export function dealDamage(world, attacker, target, amount, kind = 'melee') {
   }
   if (target.kind === 'building') {
     if (target.state === 'site') dmg *= 1.2;
+    const bdef = BUILDINGS[target.type];
+    if (kind === 'melee' || kind === 'strong') dmg *= MELEE_VS_BUILDING;
+    if (bdef.damageTaken) dmg *= bdef.damageTaken;
+    dmg = Math.max(1, Math.round(dmg));
     target.lastHitTick = world.tick;
     if (target.owner === PLAYER && (!target.lastAlertTick || world.tick - target.lastAlertTick > 400)) {
       target.lastAlertTick = world.tick;
@@ -102,7 +113,11 @@ export function createCombatModule() {
       let score = d;
       if (e.kind === 'unit') score += 0;
       else if (e.kind === 'settler') score += 8;
-      else score += e.state === 'site' ? 12 : 18;
+      else {
+        // raiders marching on a target building do not stop at every wall they pass
+        if (u.order.targetBuilding && e.id !== u.order.targetBuilding && d > 2.5) continue;
+        score += e.state === 'site' ? 12 : 18;
+      }
       if (score < bestScore) { bestScore = score; best = e; }
     }
     return best;
@@ -124,15 +139,16 @@ export function createCombatModule() {
     const tcls = classOf(t);
     const armor = t.kind === 'unit' ? UNITS[t.type].armor : 0;
     let dmg = computeDamage({ base, attackerCls: def.cls, defenderCls: tcls, armor, damageMult: damageMult(world, u) });
+    const strong = counterOf(def.cls, tcls) > 1;
     if (def.cls === 'ranged') {
       if (t.kind === 'building') dmg = Math.max(1, Math.round(dmg * RANGED_VS_BUILDING));
       const dist = Math.hypot(t.x - u.x, t.z - u.z);
       const flight = Math.max(2, Math.round((dist / PROJECTILE_SPEED) * 20));
-      world.combat.pending.push({ from: u.id, owner: u.owner, target: t.id, damage: dmg, arrive: world.tick + flight, kind: u.owner === PLAYER ? 'arrow' : 'stone' });
+      world.combat.pending.push({ from: u.id, owner: u.owner, target: t.id, damage: dmg, arrive: world.tick + flight, kind: u.owner === PLAYER ? 'arrow' : 'stone', strong });
       emit(world, EV.COMBAT_SHOT, { from: u.id, to: t.id, fx: u.x, fz: u.z, tx: t.x, tz: t.z, flightTicks: flight, kind: u.owner === PLAYER ? 'arrow' : 'stone' });
     } else {
       emit(world, 'combat:swing', { id: u.id, target: t.id });
-      dealDamage(world, u, t, dmg, 'melee');
+      dealDamage(world, u, t, dmg, strong ? 'strong' : 'melee');
     }
   }
 
@@ -151,7 +167,7 @@ export function createCombatModule() {
           if (p.arrive <= world.tick) {
             const t = world.entities[p.target];
             const src = world.entities[p.from] || { id: p.from, owner: p.owner };
-            if (t && isAlive(t)) dealDamage(world, src, t, p.damage, p.kind);
+            if (t && isAlive(t)) dealDamage(world, src, t, p.damage, p.strong ? 'strong' : p.kind);
           } else pend[w++] = p;
         }
         pend.length = w;
@@ -175,7 +191,7 @@ export function createCombatModule() {
       // towers
       for (const b of all(world, 'building')) {
         const def = BUILDINGS[b.type];
-        if (!def.attack || b.state !== 'active') continue;
+        if (!def.attack || b.state !== 'active' || (def.attack.requiresLit && !b.lit)) continue;
         if (b.cooldown > 0) { b.cooldown--; continue; }
         if ((world.tick + b.id) % 4 !== 0) continue;
         ctx.services.spatial.query(b.x, b.z, def.attack.range, buf, (e) => e.kind === 'unit' && hostileTo(b.owner)(e));
@@ -186,7 +202,7 @@ export function createCombatModule() {
         const dist = Math.sqrt(bestD);
         const flight = Math.max(2, Math.round((dist / PROJECTILE_SPEED) * 20));
         const armor = UNITS[best.type].armor;
-        const dmg = Math.max(1, def.attack.damage - Math.floor(armor / 2));
+        const dmg = Math.max(1, Math.round(def.attack.damage * (1 - armor * 0.05)));
         world.combat.pending.push({ from: b.id, owner: b.owner, target: best.id, damage: dmg, arrive: world.tick + flight, kind: b.owner === PLAYER ? 'arrow' : 'stone' });
         emit(world, EV.COMBAT_SHOT, { from: b.id, to: best.id, fx: b.x, fz: b.z, fy: 7, tx: best.x, tz: best.z, flightTicks: flight, kind: b.owner === PLAYER ? 'arrow' : 'stone' });
       }

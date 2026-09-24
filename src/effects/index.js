@@ -113,7 +113,11 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
   unsub.push(bus.on(EV.COMBAT_HIT, (d) => {
     const y = heightAt(d.x, d.z);
     if (d.targetKind === 'building') { emit('dust', d.x, y + 1.5, d.z, 3, 2, [0, 0.8, 0], 1); emit('chips', d.x, y + 2, d.z, 3, 1.5, [0, 3, 0], 3); }
-    else { emit(d.kind === 'flare' ? 'glint' : 'sparks', d.x, y + 1.2, d.z, 4, 0.3, [0, 1.6, 0], 2.5); emit('blood', d.x, y + 1.1, d.z, 2, 0.2, [0, 1.5, 0], 1.6); }
+    else {
+      emit(d.kind === 'flare' ? 'glint' : 'sparks', d.x, y + 1.2, d.z, 4, 0.3, [0, 1.6, 0], 2.5);
+      emit('blood', d.x, y + 1.1, d.z, 2, 0.2, [0, 1.5, 0], 1.6);
+      if (d.kind === 'strong') emit('glint', d.x, y + 1.5, d.z, 5, 0.4, [0, 2.2, 0], 1.8); // counter hit: bright gold burst
+    }
   }));
   unsub.push(bus.on(EV.HERO_ABILITY, (d) => {
     const y = heightAt(d.x, d.z);

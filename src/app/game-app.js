@@ -10,6 +10,7 @@ import { createHud } from '../ui/hud.js';
 import { saveToSlot, loadFromSlot, latestSave, hasAnySave } from '../save/storage.js';
 import { EV } from '../core/contracts.js';
 import { log } from '../core/logger.js';
+import { smokeTestWorld } from './load-check.js';
 
 export async function startApp(params) {
   const container = document.getElementById('app');
@@ -65,7 +66,7 @@ export async function startApp(params) {
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
     let loaded = null;
     if (slot) {
-      try { loaded = loadFromSlot(slot).world; }
+      try { loaded = loadFromSlot(slot).world; smokeTestWorld(loaded); }
       catch (err) {
         log.warn('save', `load failed: ${err.message}`);
         menus.close();
@@ -75,7 +76,7 @@ export async function startApp(params) {
     }
     try {
       session = await createSession({
-        container, seed: seed || (loaded ? loaded.meta.seed : String(Date.now() % 100000)), quality: params.get('quality') || settings.quality, verify, settings,
+        container, seed: seed || (loaded ? loaded.meta.seed : String(Date.now() % 100000)), quality: ['low', 'medium', 'high'].includes(params.get('quality')) ? params.get('quality') : settings.quality, verify, settings,
         difficulty: loaded ? loaded.meta.difficulty : difficulty, world: loaded, demo,
         onCritical: (id, err) => showErrorOverlay({
           title: 'The game stopped unexpectedly',
@@ -97,6 +98,7 @@ export async function startApp(params) {
           onQuickLoad: () => startGame({ slot: 'quick' }),
           onSpeed: (d) => { const sp = [0.5, 1, 2]; const i = Math.max(0, Math.min(2, sp.indexOf(session.loop.getSpeed()) + d)); session.loop.setSpeed(sp[i]); },
           onFrame: (dt) => { if (hud) hud.update(dt); autosave(dt); },
+          onUiFailure: (err) => showErrorOverlay({ title: 'The interface stopped responding', message: 'The game is still running. Save and reload, or return to the menu.', detail: err && (err.stack || err.message), actions: [{ label: 'Save and reload', primary: true, run: () => { doSave('quick', true); location.reload(); } }, { label: 'Main menu', run: () => { hideErrorOverlay(); showMain(); } }] }),
         },
       });
     } catch (err) {
@@ -165,7 +167,8 @@ export async function startApp(params) {
   if (boot) boot.remove();
   if (verify) {
     // deterministic verification session (no menu)
-    await startGame({ seed: params.get('seed') || '1337', demo: params.get('demo') || null, difficulty: params.get('difficulty') || 'normal' });
+    const diff = ['story', 'normal', 'hard'].includes(params.get('difficulty')) ? params.get('difficulty') : 'normal';
+    await startGame({ seed: params.get('seed') || '1337', demo: params.get('demo') || null, difficulty: diff });
     if (params.get('ui') !== '1' && hud) hud.el.hidden = true; // world-only screenshots
     return;
   }

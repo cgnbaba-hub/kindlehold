@@ -94,7 +94,7 @@ DEMO_STATES.unitLineup = (sim) => {
 };
 
 export function applyDemoState(sim, name) {
-  const fn = DEMO_STATES[name];
+  const fn = Object.hasOwn(DEMO_STATES, name) ? DEMO_STATES[name] : null;
   if (!fn) return false;
   fn(sim);
   return true;

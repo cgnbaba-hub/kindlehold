@@ -382,6 +382,9 @@ export function createHud({ root, session, input, settings, actions }) {
         }
         cmdGrid.append(cmdButton({ ic: 'patrol', label: 'Set rally point', tip: 'Right-click the ground while the Barracks is selected.', onClick: () => toast('Right-click the ground to set the rally point', 'info') }));
       }
+      if (def.slots) {
+        cmdGrid.append(cmdButton({ ic: one.paused ? 'play' : 'pause', label: one.paused ? 'Resume work' : 'Pause work', tip: one.paused ? 'Let workers return to this building.' : 'Send its workers back to labouring (hauling, building, soldiers). Useful when goods pile up or people are short.', active: !!one.paused, onClick: () => input.issue({ type: 'toggleWork', id: one.id }) }));
+      }
       const demoArmed = performance.now() - confirmDemolish < 3000;
       cmdGrid.append(cmdButton({ ic: 'demolish', label: demoArmed ? 'Click again to demolish' : 'Demolish', tip: 'Tear down this building (30% refund). Click twice to confirm.', active: demoArmed, onClick: () => {
         if (performance.now() - confirmDemolish < 3000) { input.issue({ type: 'demolish', id: one.id }); input.setSelection([]); confirmDemolish = 0; }

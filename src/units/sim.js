@@ -230,6 +230,8 @@ export function createUnitsModule() {
         u.returning = true;
       } else {
         const reach = reachDistance(u, t);
+        // ranged units step back from melee attackers (they can outpace slow shield lines)
+        if (def.cls === 'ranged' && o.type !== 'hold' && kite(world, u)) return;
         if (reach > def.range * 0.95) {
           if (o.type === 'hold') { u.target = null; u.moving = false; return; }
           moveToward(world, u, t.x, t.z, t.kind === 'building' ? BUILDINGS[t.type].radius * 0.8 + def.range * 0.6 : def.range * 0.8);
@@ -259,6 +261,22 @@ export function createUnitsModule() {
       default:
         u.moving = false;
     }
+  }
+
+  const threatBuf = [];
+  function kite(world, u) {
+    const spatial = ctx.services.spatial;
+    if (!spatial) return false;
+    spatial.query(u.x, u.z, 3.4, threatBuf, (e) => e.kind === 'unit' && e.owner !== u.owner && !e.downed && UNITS[e.type].cls !== 'ranged');
+    if (!threatBuf.length) return false;
+    let dx = 0, dz = 0;
+    for (const e of threatBuf) { const d = Math.hypot(u.x - e.x, u.z - e.z) || 0.1; dx += (u.x - e.x) / d; dz += (u.z - e.z) / d; }
+    const len = Math.hypot(dx, dz) || 1;
+    const step = unitSpeed(world, u) * 0.7 * DT; // backpedalling is slower than running
+    const nx = u.x + (dx / len) * step, nz = u.z + (dz / len) * step;
+    if (!ctx.services.nav.walkable(nx, nz)) return false;
+    u.x = nx; u.z = nz; u.moving = true; u.path = null;
+    return true;
   }
 
   function separate(world) {

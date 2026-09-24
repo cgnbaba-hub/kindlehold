@@ -94,6 +94,10 @@ export function createPopulationModule() {
       }
     }
 
+    // warn half a minute before a meal the stores cannot cover
+    if (keep && p.nextMealTick - world.tick === 600 && p.res.provisions < p.pop) {
+      alert(world, 'warn', `Provisions are running low: ${Math.floor(p.res.provisions)} left for ${p.pop} people at the next meal. Build or staff Farmsteads.`, keep.x, keep.z);
+    }
     // meals
     if (world.tick >= p.nextMealTick) {
       p.nextMealTick = world.tick + MEAL_INTERVAL;
@@ -141,7 +145,7 @@ export function createPopulationModule() {
     for (const b of all(world, 'building')) {
       if (b.owner !== owner || b.state !== 'active') continue;
       const def = BUILDINGS[b.type];
-      if (!def.slots) continue;
+      if (!def.slots || b.paused) continue;
       // drop workers that no longer exist
       b.workers = b.workers.filter((id) => world.entities[id] && world.entities[id].workplace === b.id);
       while (b.workers.length < def.slots) {

@@ -43,6 +43,21 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   const aoe = new THREE.Mesh(new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2), aoeMat); aoe.visible = false; aoe.renderOrder = 4; scene.add(aoe);
   const castRange = new THREE.Mesh(new THREE.RingGeometry(0.985, 1, 72).rotateX(-Math.PI / 2), rangeMat.clone()); castRange.visible = false; scene.add(castRange);
 
+  // stall markers: an amber "!" floating over buildings that stopped working
+  const markCanvas = document.createElement('canvas');
+  markCanvas.width = markCanvas.height = 64;
+  const mctx = markCanvas.getContext('2d');
+  mctx.fillStyle = '#e0a83a'; mctx.beginPath(); mctx.arc(32, 32, 28, 0, Math.PI * 2); mctx.fill();
+  mctx.lineWidth = 4; mctx.strokeStyle = '#3a2a10'; mctx.stroke();
+  mctx.fillStyle = '#1a1208'; mctx.fillRect(28, 13, 8, 26); mctx.fillRect(28, 44, 8, 8);
+  const markTex = new THREE.CanvasTexture(markCanvas);
+  markTex.colorSpace = THREE.SRGBColorSpace;
+  const markMat = new THREE.MeshBasicMaterial({ map: markTex, transparent: true, depthTest: false, fog: false });
+  const stallMarks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.6, 1.6), markMat, 64);
+  stallMarks.count = 0; stallMarks.frustumCulled = false; stallMarks.renderOrder = 11;
+  scene.add(stallMarks);
+  const STALL_SHOWN = new Set(['noWorker', 'storageFull', 'noDeposit', 'noInput', 'noAccess', 'noSettler']);
+
   // command markers
   const markers = [];
   const markerGeo = new THREE.RingGeometry(0.5, 0.75, 24).rotateX(-Math.PI / 2);
@@ -172,6 +187,16 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
       }
       for (const m of [rings, bars, barsBg]) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
 
+      // stall markers
+      stallMarks.count = 0;
+      const bob = Math.sin(frame.time * 3) * 0.15;
+      for (const b of all(w, 'building')) {
+        if (b.owner !== PLAYER || b.state !== 'active' || !STALL_SHOWN.has(b.stall) || stallMarks.count >= 64) continue;
+        m4.compose(p.set(b.x, terrain.height(b.x, b.z) + BUILDINGS[b.type].radius * 1.1 + 4.5 + bob, b.z), camera.quaternion, s.set(1, 1, 1));
+        stallMarks.setMatrixAt(stallMarks.count++, m4);
+      }
+      stallMarks.instanceMatrix.needsUpdate = true;
+
       // placement ghost
       const st = input.state;
       const g = st.hoverGround;
@@ -219,7 +244,8 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
     },
     getHealthStatus() { return { status: 'ok' }; },
     dispose() {
-      scene.remove(rings, bars, barsBg, ghost, foot, range, aoe, castRange, border);
+      scene.remove(rings, bars, barsBg, ghost, foot, range, aoe, castRange, border, stallMarks);
+      markTex.dispose(); markMat.dispose(); stallMarks.geometry.dispose();
       for (const mk of markers) { scene.remove(mk.m); mk.m.material.dispose(); }
       ringGeo.dispose(); ringMat.dispose(); barGeo.dispose(); barBgMat.dispose(); barMat.dispose();
       ghostMat.dispose(); footGeo.dispose(); footMat.dispose(); rangeMat.dispose(); aoeMat.dispose(); markerGeo.dispose();

@@ -28,7 +28,8 @@ export const BUILDINGS = {
   keep: {
     id: 'keep', name: 'Kindlehold Keep', owner: 'p1', buildable: false,
     desc: 'The hearth-keep. Stores all goods, houses settlers, researches improvements.',
-    cost: {}, buildTime: 0, hp: 1600, radius: 7.5, navRadius: 6.5, housing: 6, territory: 34, door: [0, 7.8],
+    cost: {}, buildTime: 0, hp: 2200, radius: 7.5, navRadius: 6.5, housing: 6, territory: 34, door: [0, 7.8],
+    attack: { damage: 9, range: 15, cooldown: 1.8, requiresLit: true }, damageTaken: 0.7,
   },
   cottage: {
     id: 'cottage', name: 'Cottage', owner: 'p1', buildable: true,

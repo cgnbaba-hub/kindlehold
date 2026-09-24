@@ -46,6 +46,7 @@ export async function createSession({ container, seed, quality = 'high', verify 
   let resolveFirst;
   const firstFrame = new Promise((r) => { resolveFirst = r; });
   let frames = 0;
+  let hudErrors = 0;
 
   const loop = createFixedLoop({
     step() {
@@ -61,7 +62,13 @@ export async function createSession({ container, seed, quality = 'high', verify 
       sky.fitShadow(st.x, st.z, Math.min(120, 30 + st.zoom * 0.8));
       buildingsView.cameraTarget.x = st.x; buildingsView.cameraTarget.z = st.z;
       views.render(alpha, { dt: frameDt, time: sim.world.tick / 20 });
-      if (hooks.onFrame) hooks.onFrame(frameDt);
+      if (hooks.onFrame) {
+        try { hooks.onFrame(frameDt); } catch (err) {
+          hudErrors++;
+          log.error('ui', `HUD update failed: ${err && err.message}`, err);
+          if (hudErrors === 3 && hooks.onUiFailure) hooks.onUiFailure(err);
+        }
+      }
       rc.draw();
     },
   });
@@ -69,14 +76,14 @@ export async function createSession({ container, seed, quality = 'high', verify 
   let frozen = false;
   function frame(now) {
     if (!running) return;
-    if (frozen) { last = now; requestAnimationFrame(frame); return; }
+    requestAnimationFrame(frame); // schedule first: one throwing frame can never stop the game
+    if (frozen) { last = now; return; }
     const dt = last ? (now - last) / 1000 : 0;
     last = now;
     stats.pushFrame(dt * 1000 || 16.7);
     loop.advance(dt);
     frames++;
     if (frames === 2) resolveFirst();
-    requestAnimationFrame(frame);
   }
 
   const session = {
