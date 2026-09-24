@@ -77,7 +77,7 @@ vec3 khPattern(float pat, vec3 wp, vec3 n) {
     khRough = 0.9;
     return vec3(0.72 + m * 0.5);
   }
-  if (pat < 8.5) { khRough = 0.38; khMetal = 0.85; return vec3(0.9 + grain * 0.15); }
+  if (pat < 8.5) { khRough = 0.42; khMetal = 0.3; return vec3(1.0 + grain * 0.15); } // no env map: keep metals mostly dielectric so they are not black
   // rock
   float r = khNoise(p * 1.3) * 0.5 + khNoise(p * 4.0) * 0.3 + khNoise(p * 12.0) * 0.2;
   khRough = 0.88;

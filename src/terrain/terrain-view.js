@@ -98,7 +98,8 @@ vec4 sampleAT(sampler2D t, vec2 p) {
   // two scales to hide tiling
   return mix(texture2D(t, p * 0.19), texture2D(t, p * 0.043 + vec2(0.31, 0.77)), 0.38);
 }
-float kRough = 0.92;`)
+float kRough = 0.92;
+float kHgt = 0.0;`)
       .replace('#include <map_fragment>', `
 vec2 wp = vWPos.xz;
 vec4 cG = sampleAT(tGrass, wp);
@@ -115,6 +116,10 @@ float mx = max(max(hb.x, hb.y), max(hb.z, hb.w));
 vec4 ww = max(hb - (mx - 0.28), 0.0);
 ww /= (ww.x + ww.y + ww.z + ww.w + 1e-4);
 vec3 ground = cG.rgb * ww.x + cD.rgb * ww.y + cR.rgb * ww.z + cM.rgb * ww.w;
+kHgt = dot(ww, vec4(cG.a, cD.a, cR.a * 1.8, cM.a));
+// gentle desaturation towards the art-direction sage palette
+float gl = dot(ground, vec3(0.299, 0.587, 0.114));
+ground = mix(vec3(gl), ground, 0.8) * vec3(1.02, 1.0, 0.97);
 // macro variation: large meadow patches (dry/lush), medium mottling, per-material tint
 vec4 mac = texture2D(tMacro, wp * 0.0042);
 vec4 mac2 = texture2D(tMacro, wp * 0.021 + vec2(0.4, 0.1));
@@ -129,9 +134,18 @@ ground *= mix(0.72, 1.0, smoothstep(-0.2, 0.6, vWPos.y));
 diffuseColor.rgb *= ground;
 kRough = dot(ww, vec4(0.96, 0.9, 0.78, 0.62));
 `)
-      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = kRough;');
+      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = kRough;')
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+{ // procedural bump from the blended texture heights: pebbles, cracks and tufts catch the light
+  vec3 dpdx = dFdx(-vViewPosition), dpdy = dFdy(-vViewPosition);
+  float dhx = dFdx(kHgt), dhy = dFdy(kHgt);
+  vec3 r1 = cross(dpdy, normal), r2 = cross(normal, dpdx);
+  float det = dot(dpdx, r1);
+  vec3 grad = sign(det) * (dhx * r1 + dhy * r2);
+  normal = normalize(abs(det) * normal - grad * 0.3);
+}`);
   };
-  mat.customProgramCacheKey = () => 'kh-terrain-v1';
+  mat.customProgramCacheKey = () => 'kh-terrain-v2';
 
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;

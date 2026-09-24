@@ -37,11 +37,23 @@ function cropGeometry() {
 }
 
 function plotGeometry() {
-  const parts = [paint(place(box(5.2, 0.04, 4.2), { y: 0.0 }), '#5b4431', 0, null, PATTERN.plain)];
-  for (let i = 0; i < 6; i++) parts.push(paint(place(box(5.0, 0.05, 0.3), { y: 0.03, z: -1.7 + i * 0.68 }), '#6a4f36', 0, null, PATTERN.plain));
-  const posts = [[-2.7, -2.2], [2.7, -2.2], [-2.7, 2.2], [2.7, 2.2]];
-  for (const [x, z] of posts) parts.push(paint(place(cyl(0.06, 0.07, 0.9, 5), { x, y: 0.45, z }), '#5f4330', 0, null, PATTERN.planks));
-  return merge(parts);
+  // tilled soil: soft furrow ridges as one low surface (reads as a field, not planks)
+  const g = new THREE.PlaneGeometry(5.4, 4.4, 1, 24);
+  g.rotateX(-Math.PI / 2);
+  const pos = g.attributes.position;
+  const col = new Float32Array(pos.count * 3);
+  const dark = new THREE.Color('#4e3a28'), light = new THREE.Color('#6e5439'), c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    const z = pos.getZ(i);
+    const ridge = 0.5 + 0.5 * Math.cos(z * Math.PI * 2 / 0.73);
+    pos.setY(i, 0.06 + ridge * 0.07);
+    c.copy(dark).lerp(light, ridge);
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  g.computeVertexNormals();
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setAttribute('pattern', new THREE.BufferAttribute(new Float32Array(pos.count).fill(PATTERN.plain), 1));
+  return g;
 }
 
 export function createBuildingsView({ scene, terrain, world, renderer, sky }) {

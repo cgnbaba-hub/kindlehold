@@ -71,7 +71,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   const markerGeo = new THREE.RingGeometry(0.5, 0.75, 24).rotateX(-Math.PI / 2);
 
   // territory border (rebuilt when buildings change)
-  const borderMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.55, depthWrite: false, fog: true });
+  const borderMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.32, depthWrite: false, fog: true });
   const border = new THREE.Mesh(new THREE.BufferGeometry(), borderMat);
   border.renderOrder = 1;
   scene.add(border);
@@ -130,7 +130,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
     if (bars.count >= MAX_BARS) return;
     const y = terrain.height(x, z) + h;
     const w = ent.kind === 'building' ? 3.2 : 1.5;
-    m4.compose(p.set(x, y, z), camera.quaternion, s.set(w + 0.1, 0.28, 1));
+    m4.compose(p.set(x, y, z), camera.quaternion, s.set(w + 0.18, 0.34, 1));
     barsBg.setMatrixAt(barsBg.count++, m4);
     // fill anchored left: shift along camera right
     p.set(x, y, z);
@@ -188,7 +188,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
       for (const u of all(w, 'unit')) {
         if (u.downed) continue;
         const dmg = u.hp < u.maxHp;
-        if (!sel.has(u.id) && !dmg) continue;
+        if (!sel.has(u.id) && !(u.hp < u.maxHp * 0.7)) continue; // avoid bar ladders in melee
         const x = u.px + (u.x - u.px) * alpha, z = u.pz + (u.z - u.pz) * alpha;
         const frac = Math.max(0, u.hp / u.maxHp);
         col.setRGB(1 - frac, 0.25 + frac * 0.6, 0.2);
@@ -261,6 +261,8 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
         if (mk.t > 0.8) { scene.remove(mk.m); mk.m.material.dispose(); markers.splice(i, 1); }
       }
     },
+    /** Photo mode (key art, trailers): hide all overlays drawn by this module. */
+    setVisible(v) { for (const o of [rings, bars, barsBg, border, stallMarks, discs, ghost, foot, range, aoe, castRange]) o.visible = v && o !== ghost && o !== foot && o !== range && o !== aoe && o !== castRange ? true : v ? o.visible : false; },
     getHealthStatus() { return { status: 'ok' }; },
     dispose() {
       scene.remove(rings, bars, barsBg, ghost, foot, range, aoe, castRange, border, stallMarks, discs);

@@ -316,7 +316,8 @@ export function createHud({ root, session, input, settings, actions }) {
   // --- command grid ------------------------------------------------------------------------------
   let cmdMode = 'auto'; // 'auto' | 'build'
   let confirmDemolish = 0;
-  function shortLabel(l) { return l.replace(/^Train /, '').replace("Woodcutter's ", '').replace(' the Hearth', '').replace(' position', '').replace(' construction', '').split(' ').slice(0, 2).join(' '); }
+  const SHORT = { 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
+  function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
   function cmdButton({ ic, label, key, tip, tipTitle, onClick, disabled = false, cost = null, progress = null, cooldown = null, active = false, highlight = false }) {
     const b = h(`button.cmd${active ? '.active' : ''}${highlight ? '.pulse' : ''}`, { type: 'button', 'aria-label': label, 'data-tip': tip || label, 'data-tip-title': tipTitle || label, 'aria-disabled': disabled ? 'true' : 'false' }, [icon(ic, 'icon icon-md'), cost ? null : h('span.cmd-label', { text: shortLabel(label) })]);
     if (key) b.append(h('span.cmd-key', { text: keyLabel(key) }));
@@ -442,7 +443,7 @@ export function createHud({ root, session, input, settings, actions }) {
       banner.hidden = false; banner.classList.remove('bad');
       setText(banner, st.targetKind === 'flare' ? 'Beacon Flare — left-click where the lantern should burst (right-click to cancel)' : `${{ patrol: 'Patrol', move: 'Move', attackMove: 'Attack-move' }[st.targetKind] || 'Order'} — left-click a destination (right-click to cancel)`);
     } else banner.hidden = true;
-    if (t < 0.2) return;
+    if (t < 0.2 && dt !== 0) return; // dt 0 = explicit redraw (e.g. frozen frame): refresh now
     t = 0;
     // resources + rates over the last minute
     while (resHistory.length && w.tick - resHistory[0].tick > 1200) resHistory.shift();

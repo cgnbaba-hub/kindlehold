@@ -12,9 +12,10 @@ try {
   await page.evaluate(() => {
     const g = window.__GAME__;
     g.freeze(true);
-    g.session.rc.rts.jumpTo(-40, 44, 0.75, 42);
+    g.session.selectionView.setVisible(false);
+    g.session.rc.rts.jumpTo(-30, 44, 0.95, 48);
     g.world().selection.ids = [];
-    g.setTimeOfDay(17.4);
+    g.setTimeOfDay(16.9);
     g.renderNow(); g.renderNow();
   });
   await page.screenshot({ path: inRepo('src', 'ui', 'assets', 'menu-backdrop.jpg'), type: 'jpeg', quality: 80, timeout: 300000 });

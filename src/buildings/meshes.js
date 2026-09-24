@@ -8,7 +8,7 @@ import { paint, paintGradient, place, merge, jitterVertices, viewRng, box, cyl, 
 
 const C = {
   lime: '#d6c9ad', limeDark: '#bfb193', timber: '#5f4330', timberDark: '#3f2c20', plank: '#8f6a47', plankLight: '#a88259',
-  thatch: '#a8915a', thatchDark: '#8a7447', slate: '#6b6f73', slateDark: '#56595d', stone: '#8c8a82', stoneDark: '#6f6d67',
+  thatch: '#a8915a', thatchDark: '#8a7447', slate: '#77726b', slateDark: '#5f5b55', stone: '#8c8a82', stoneDark: '#6f6d67',
   teal: '#2f6f8f', gold: '#d1a54a', rust: '#8c3b2a', soot: '#3a302a', hide: '#7a5a3e', bone: '#d8ccb0', iron: '#4a4a4c', dark: '#1b1714',
   glow: '#ffbf6a',
 };
@@ -192,7 +192,7 @@ const MODELS = {
     body.push(b(6.6, 0.25, 6, C.stoneDark, P.stone, { y: 0.12 }));
     // hut
     body.push(b(3, 2.3, 2.6, C.plank, P.planks, { x: -1.6, y: 1.4, z: -1.4 }));
-    body.push(roof(3.6, 3.2, 1.5, '#6c7280', P.shingles, { x: -1.6, y: 2.55, z: -1.4 }));
+    body.push(roof(3.6, 3.2, 1.5, '#7a746c', P.shingles, { x: -1.6, y: 2.55, z: -1.4 }));
     body.push(...door(0.9, 1.7, -0.08, -1.6));
     // A-frame crane
     body.push(beam(1.2, 0, -0.5, 2.4, 5.2, 0.4, 0.25), beam(3.6, 0, -0.5, 2.4, 5.2, 0.4, 0.25));
@@ -320,7 +320,7 @@ function siteStage(radius, rnd) {
   }
   body.push(paint(place(new THREE.TorusGeometry(radius, 0.02, 3, 40), { y: 0.55, rx: Math.PI / 2 }), '#e6dcc0', 0, null, P.plain));
   // trodden, cleared footprint and bigger material stacks
-  body.push(paint(place(cyl(radius * 0.95, radius, 0.06, 24), { y: 0.02 }), '#7a5f44', 0, null, P.plain));
+  body.push(paint(place(cyl(radius * 0.95, radius, 0.5, 24), { y: 0.0 }), '#7a5f44', 0, null, P.plain));
   body.push(...logPile(-radius * 0.45, radius * 0.25, 9, rnd, 2.4));
   body.push(...stoneBlocks(radius * 0.4, -radius * 0.3, 8, rnd));
   body.push(...stoneBlocks(-radius * 0.35, -radius * 0.45, 5, rnd));

@@ -5,7 +5,7 @@ import { BUILDINGS } from '../buildings/defs.js';
 import { computeSplat } from '../terrain/terrain-view.js';
 import { h } from './dom.js';
 
-const SIZE = 196;
+const SIZE = 256; // drawn at native resolution, scaled down by CSS
 
 export function createMinimap({ terrain, world, rts, onMoveOrder }) {
   const canvas = h('canvas.minimap-canvas', { width: SIZE, height: SIZE, 'aria-label': 'Minimap. Click to move the camera, right-click to send selected units.' });

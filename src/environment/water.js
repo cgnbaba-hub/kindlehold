@@ -81,8 +81,8 @@ float d = clamp(vDepth, 0.0, 2.5);
 vec3 shallow = vec3(0.2, 0.36, 0.3);
 vec3 deep = vec3(0.02, 0.08, 0.11);
 diffuseColor.rgb = mix(shallow, deep, smoothstep(0.0, 1.8, d));
-float foam = (1.0 - smoothstep(0.0, 0.35, d)) * (0.55 + 0.45 * sin(uTime * 1.3 + vWPos.x * 0.8 + vWPos.z * 0.6));
-diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.82, 0.80), foam * 0.55);
+float foam = (1.0 - smoothstep(0.0, 0.6, d)) * (0.55 + 0.45 * sin(uTime * 1.3 + vWPos.x * 0.8 + vWPos.z * 0.6));
+diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.9, 0.88), foam * 0.7);
 float shore = smoothstep(-0.02, 0.18, vDepth);
 diffuseColor.a = (mix(0.35, 0.92, smoothstep(0.0, 0.9, d)) + foam * 0.3) * shore;`)
       .replace('#include <normal_fragment_maps>', `

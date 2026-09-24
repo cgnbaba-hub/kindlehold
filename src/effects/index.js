@@ -32,7 +32,7 @@ const KINDS = {
   fire: { life: 0.9, size: [1.2, 0.3], color: '#ff8a2a', alpha: 0.85, rise: 2.6, drag: 0.8, additive: true },
   ember: { life: 2.2, size: [0.12, 0.05], color: '#ffb35c', alpha: 1, rise: 1.8, drag: 0.4, additive: true },
   blood: { life: 0.5, size: [0.25, 0.1], color: '#7a2a20', alpha: 0.9, rise: -7, drag: 0.6, additive: false },
-  flare: { life: 0.9, size: [1.5, 6], color: '#ffe0a0', alpha: 0.9, rise: 0.5, drag: 1.5, additive: true },
+  flare: { life: 0.9, size: [1.2, 3.4], color: '#ffe0a0', alpha: 0.6, rise: 0.5, drag: 1.5, additive: true },
   ward: { life: 1.4, size: [0.5, 0.1], color: '#8fd0ff', alpha: 0.9, rise: 1.6, drag: 0.5, additive: true },
   glint: { life: 0.8, size: [0.35, 0.1], color: '#ffe9b0', alpha: 1, rise: 1.2, drag: 1, additive: true },
 };
