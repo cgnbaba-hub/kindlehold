@@ -112,3 +112,17 @@ export function createTerrainData(map) {
 
   return { map, half: map.half, size, res, n, step, heights, height, slope, isWater, waterDepth, inBounds, waterLevel: WATER_LEVEL };
 }
+
+/**
+ * Visual-only relief for the unplayable border mountains (ridges and peaks so the valley
+ * walls read as a mountain range). Rendering and scenery use it; the simulation does not.
+ */
+export function sceneryRelief(map, x, z) {
+  const edge = Math.max(Math.abs(x), Math.abs(z));
+  const w = smoothstep(map.borderStart + 8, map.borderStart + 26, edge);
+  if (w <= 0) return 0;
+  const s = map.noiseSeed;
+  const ridge = 1 - Math.abs(2 * fbm2(x * 0.034, z * 0.034, s + 201, 4) - 1);
+  const massif = 0.45 + fbm2(x * 0.011, z * 0.011, s + 203, 2);
+  return w * (ridge * ridge * 22 * massif + (fbm2(x * 0.09, z * 0.09, s + 207, 2) - 0.5) * 3);
+}

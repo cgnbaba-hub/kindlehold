@@ -13,9 +13,10 @@ try {
     const g = window.__GAME__;
     g.freeze(true);
     g.session.selectionView.setVisible(false);
-    g.session.rc.rts.jumpTo(-30, 44, 0.95, 48);
+    // photo camera: over the settlement, up the valley towards the ford fort and the range
+    g.session.rc.rts.setOverride({ pos: [-90, 30, 100], target: [20, 12, -20] });
     g.world().selection.ids = [];
-    g.setTimeOfDay(15.2);
+    g.setTimeOfDay(15.6);
     g.renderNow(); g.renderNow();
   });
   await page.screenshot({ path: inRepo('src', 'ui', 'assets', 'menu-backdrop.jpg'), type: 'jpeg', quality: 80, timeout: 300000 });

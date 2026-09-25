@@ -5,7 +5,7 @@ import { all, structureVersion } from '../world/world.js';
 import { createStructureMaterial, patchStructureShader, PATTERN } from '../render/structure-material.js';
 import { paint, paintGradient, place, merge, jitterVertices, viewRng, cyl, cone, ico } from '../render/geometry-kit.js';
 import { computeSplat } from '../terrain/terrain-view.js';
-import { distToPolyline } from '../world/terrain-data.js';
+import { distToPolyline, sceneryRelief } from '../world/terrain-data.js';
 import { BUILDINGS } from '../buildings/defs.js';
 
 function conifer(rnd) {
@@ -164,6 +164,7 @@ export function createVegetation({ scene, terrain, world, quality }) {
   const col = new THREE.Color();
 
   // --- decorative, static layers -------------------------------------------------
+  const gh = (x, z) => terrain.height(x, z) + sceneryRelief(terrain.map, x, z);
   const map = terrain.map;
   const splat = computeSplat(terrain);
   const nearRoad = (x, z, pad) => map.roads.some((rd) => distToPolyline(x, z, rd.points) < rd.width + pad);
@@ -173,10 +174,10 @@ export function createVegetation({ scene, terrain, world, quality }) {
     return [splat[k], splat[k + 1], splat[k + 2], splat[k + 3]];
   };
   const decoTrees = [];
-  for (let i = 0; i < 2600 && decoTrees.length < 900; i++) {
+  for (let i = 0; i < 3600 && decoTrees.length < 1150; i++) {
     const x = (rnd() - 0.5) * terrain.size * 0.98, z = (rnd() - 0.5) * terrain.size * 0.98;
     const edge = Math.max(Math.abs(x), Math.abs(z));
-    const h = terrain.height(x, z);
+    const h = gh(x, z);
     if (h < 0.8) continue;
     const dk = Math.hypot(x - map.playerStart.x, z - map.playerStart.z);
     const de = Math.hypot(x - map.enemyCamp.x, z - map.enemyCamp.z);
@@ -184,13 +185,13 @@ export function createVegetation({ scene, terrain, world, quality }) {
     // denser near the borders and on hills, sparse in the valley floor
     const density = edge > 96 ? 0.9 : terrain.slope(x, z) > 0.25 ? 0.5 : 0.12;
     if (rnd() > density) continue;
-    if (terrain.slope(x, z) > 1.3) continue;
+    if (terrain.slope(x, z) > (edge > 100 ? 2.2 : 1.3)) continue;
     decoTrees.push([x, z, rnd() < 0.7 ? 0 : 1, 0.8 + rnd() * 0.6, rnd() * 6.28]);
   }
   const decoMesh = [make(geos.conifer, treeMat, decoTrees.length), make(geos.broadleaf, treeMat, decoTrees.length)];
   for (const [x, z, v, sc, rot] of decoTrees) {
     const mesh = decoMesh[v];
-    m4.compose(p.set(x, terrain.height(x, z) - 0.1, z), q.setFromEuler(e.set(0, rot, 0)), s.set(sc, sc * (0.9 + (sc % 0.2)), sc));
+    m4.compose(p.set(x, gh(x, z) - 0.1, z), q.setFromEuler(e.set(0, rot, 0)), s.set(sc, sc * (0.9 + (sc % 0.2)), sc));
     mesh.setMatrixAt(mesh.count, m4);
     mesh.setColorAt(mesh.count, col.setScalar(0.85 + (rot % 0.3)));
     mesh.count++;
@@ -214,7 +215,7 @@ export function createVegetation({ scene, terrain, world, quality }) {
   }
   const grassMatrices = [];
   for (const [x, z, sc, rot] of grassPos) {
-    m4.compose(p.set(x, terrain.height(x, z) - 0.02, z), q.setFromEuler(e.set(0, rot, 0)), s.set(sc, sc, sc));
+    m4.compose(p.set(x, gh(x, z) - 0.02, z), q.setFromEuler(e.set(0, rot, 0)), s.set(sc, sc, sc));
     grassMatrices.push(m4.clone());
     grass.setMatrixAt(grass.count, m4);
     grass.setColorAt(grass.count, col.setRGB(0.8 + (rot % 0.4), 0.85 + (sc % 0.2), 0.75 + (rot % 0.3)));
@@ -227,14 +228,14 @@ export function createVegetation({ scene, terrain, world, quality }) {
     const [g] = splatAt(x, z);
     if (g < 0.6 || nearRoad(x, z, 2) || Math.hypot(x - map.playerStart.x, z - map.playerStart.z) < 30) continue;
     const sc = 0.7 + rnd() * 0.8;
-    m4.compose(p.set(x, terrain.height(x, z) - 0.1, z), q.setFromEuler(e.set(0, rnd() * 6, 0)), s.set(sc, sc, sc));
+    m4.compose(p.set(x, gh(x, z) - 0.1, z), q.setFromEuler(e.set(0, rnd() * 6, 0)), s.set(sc, sc, sc));
     bushes.setMatrixAt(bushes.count++, m4);
   }
 
   const reeds = make(geos.reed, grassMat, 700, false);
   for (let i = 0; i < 12000 && reeds.count < 700; i++) {
     const x = (rnd() - 0.5) * terrain.size * 0.95, z = (rnd() - 0.5) * terrain.size * 0.95;
-    const h = terrain.height(x, z);
+    const h = gh(x, z);
     if (h < -0.25 || h > 0.55) continue;
     const sc = 0.8 + rnd() * 0.5;
     m4.compose(p.set(x, h - 0.05, z), q.setFromEuler(e.set(0, rnd() * 6, 0)), s.set(sc, sc, sc));
@@ -246,9 +247,9 @@ export function createVegetation({ scene, terrain, world, quality }) {
   for (let i = 0; i < 3000 && boulders.count < 160; i++) {
     const x = (rnd() - 0.5) * terrain.size * 0.95, z = (rnd() - 0.5) * terrain.size * 0.95;
     const sl = terrain.slope(x, z);
-    if (sl < 0.3 || terrain.height(x, z) < 1 || nearRoad(x, z, 3) || Math.hypot(x - map.playerStart.x, z - map.playerStart.z) < 40) continue;
+    if (sl < 0.3 || gh(x, z) < 1 || nearRoad(x, z, 3) || Math.hypot(x - map.playerStart.x, z - map.playerStart.z) < 40) continue;
     const sc = 0.3 + rnd() * 0.7;
-    m4.compose(p.set(x, terrain.height(x, z) - 0.3 * sc, z), q.setFromEuler(e.set(rnd() * 0.4, rnd() * 6, rnd() * 0.4)), s.set(sc, sc, sc));
+    m4.compose(p.set(x, gh(x, z) - 0.3 * sc, z), q.setFromEuler(e.set(rnd() * 0.4, rnd() * 6, rnd() * 0.4)), s.set(sc, sc, sc));
     boulders.setMatrixAt(boulders.count++, m4);
   }
 
