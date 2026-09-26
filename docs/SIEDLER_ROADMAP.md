@@ -22,7 +22,7 @@ Genre-Ideen. Diese Datei ordnet den Stand in drei Stufen ein.
 | Taler, Steuern, Zahltag, Leibeigene kaufen | Alle 2 min ist Zahltag: Siedler zahlen Steuern, Soldaten bekommen Sold. Der Steuersatz an der Burg (niedrig, fair, hoch) wirkt auf die Stabilität. Für 40 Taler lässt sich an der Burg sofort ein Arbeiter anwerben. | `src/population/index.js`, HUD, Speicherstand-Schema 3 |
 | Jahreszeit sichtbar | Die Uhr zeigt Sommer, Winter und einen Countdown. Die Minimap wird im Winter weiß. | `src/ui/hud.js`, `src/ui/minimap.js` |
 
-Nachweis: 81 automatische Tests (davon 9 neu in `tests/simulation/seasons.test.js` und
+Nachweis: 82 automatische Tests (davon 10 neu in `tests/simulation/seasons.test.js` und
 `tests/simulation/treasury.test.js`), neue
 Screenshot-Presets `winter-overview` und `winter-settlement`.
 

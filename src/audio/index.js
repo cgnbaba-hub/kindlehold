@@ -285,6 +285,13 @@ export function createAudio({ bus, world, settings, getListener }) {
   on(EV.COMMAND_REJECTED, () => { if (allowed('bad', 200)) sfx.uiBad(); });
   on(EV.MISSION_ENDED, (d) => (d.result === 'victory' ? sfx.victory : sfx.defeat)());
   on('keep:rekindled', () => sfx.flare(-46, 50));
+  // payday: a short run of coin clinks
+  on('population:payday', (d) => {
+    if (d.owner !== PLAYER || !(d.taxes > 0)) return;
+    const t = ctx.currentTime;
+    for (let i = 0; i < 4; i++) tone(buses.effects, { t: t + i * 0.09 + rand() * 0.03, freq: 2600 + rand() * 900, freqEnd: 2400, type: 'triangle', dur: 0.12, gain: 0.05 });
+  });
+  on('settlers:ordered', (d) => { if (d.type === 'gather' && allowed('ack', 400)) sfx.ack('ok'); });
 
   return {
     id: 'audio',

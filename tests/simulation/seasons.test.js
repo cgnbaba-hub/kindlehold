@@ -111,3 +111,14 @@ test('exploration: the valley starts hidden, the settlement is revealed, walking
   const loaded = deserializeWorld(serializeWorld(sim.world)).world;
   assert.deepEqual(loaded.explored, sim.world.explored);
 });
+
+test('exploration: the scouts reveal the ford fort once the counter-attack begins', async () => {
+  const { isExplored } = await import('../../src/exploration/index.js');
+  const sim = newSim();
+  const camp = sim.terrain.map.enemyCamp;
+  sim.step();
+  assert.equal(isExplored(sim.world, sim.terrain.half, camp.x, camp.z), false);
+  sim.world.mission.objectives.find((o) => o.id === 'strike').state = 'active';
+  sim.run(20);
+  assert.equal(isExplored(sim.world, sim.terrain.half, camp.x, camp.z), true);
+});

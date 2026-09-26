@@ -154,7 +154,8 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
   and becomes walkable everywhere (for both sides); a warning 20 s before the thaw; walkers
   caught on the ice are pushed ashore and lose 25% of their max HP.
 - **Exploration** (`src/exploration/`): 64×64 explored bitset in the world, revealed by the
-  player's units (20 m, hero 26 m), settlers (14 m) and buildings (20 m, Keep 44 m, tower 34 m).
+  player's units (20 m, hero 26 m), settlers (14 m) and buildings (20 m, Keep 52 m, tower 34 m). The ford fort is revealed
+  when the counter-attack objective starts (the scouts report it).
   Unexplored land is drawn dark and hidden on the minimap. The AI is not affected.
 - **Direct labourer orders** (`gather` / `release` commands): selected labourers fell trees
   (2 timber per 6.5 s trip) or cut rock (2 stone per 7.5 s) by hand within 16 m of the

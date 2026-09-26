@@ -6,7 +6,7 @@ import { PLAYER } from '../core/contracts.js';
 
 export const EXPLORE_GRID = 64;               // 64 x 64 cells over the map
 export const EXPLORE_WORDS = (EXPLORE_GRID * EXPLORE_GRID) / 32;
-const SIGHT = { unit: 20, hero: 26, settler: 14, building: 20, keep: 44, tower: 34, barracks: 24 };
+const SIGHT = { unit: 20, hero: 26, settler: 14, building: 20, keep: 52, tower: 34, barracks: 24 };
 
 export function ensureExplored(world) {
   if (!Array.isArray(world.explored) || world.explored.length !== EXPLORE_WORDS) world.explored = new Array(EXPLORE_WORDS).fill(0);
@@ -61,6 +61,13 @@ export function createExplorationModule() {
     for (const u of all(world, 'unit')) if (u.owner === PLAYER && !u.downed) reveal(world, half, u.x, u.z, u.hero ? SIGHT.hero : SIGHT.unit);
     for (const s of all(world, 'settler')) if (s.owner === PLAYER) reveal(world, half, s.x, s.z, SIGHT.settler);
     for (const b of all(world, 'building')) if (b.owner === PLAYER && b.state !== 'destroyed') reveal(world, half, b.x, b.z, SIGHT[b.type] || SIGHT.building);
+    // once the counter-attack is the objective, the scouts have mapped the ford fort
+    const flags = world.mission.flags;
+    if (!flags.fortRevealed) {
+      const strike = world.mission.objectives.find((o) => o.id === 'strike');
+      const camp = ctx.services.terrain.map.enemyCamp;
+      if (strike && strike.state !== 'pending' && camp) { reveal(world, half, camp.x, camp.z, 40); flags.fortRevealed = true; }
+    }
   }
   return {
     id: 'exploration',
