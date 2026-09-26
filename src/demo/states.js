@@ -11,6 +11,7 @@ function playTo(sim, bot, tick) { while (sim.world.tick < tick && !sim.world.mis
 
 function quietEnemy(sim) {
   sim.world.ai.nextScoutTick = 1e9;
+  sim.world.ai.nextHarassTick = 1e9;
   sim.world.mission.raidWarningTick = Math.max(sim.world.mission.raidWarningTick, sim.world.tick + 20 * 60 * 30);
 }
 

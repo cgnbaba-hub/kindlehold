@@ -4,7 +4,7 @@
 import { h, icon, portrait, clear, setText, fmtTime } from './dom.js';
 import { portraitKey } from './portraits.js';
 import { seasonAt } from '../weather/index.js';
-import { paydayForecast, TAX_LEVELS, HIRE_COST } from '../population/index.js';
+import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf } from '../population/index.js';
 import { POI_INFO, TRADES } from '../pois/index.js';
 import { createMinimap } from './minimap.js';
 import { all } from '../world/world.js';
@@ -59,15 +59,119 @@ export function createHud({ root, session, input, settings, actions }) {
   ribbon.append(popEl, stabEl);
   hud.append(ribbon);
 
+  // --- people: census panel (click the population) --------------------------------------
+  const peopleBody = h('div.people-body');
+  const peoplePanel = h('section.people-panel.panel', { 'aria-label': 'Your people' }, [
+    h('div.people-head', {}, [h('h2', { text: 'Your people' }), h('button.btn-ghost.people-close', { type: 'button', 'aria-label': 'Close', text: '×' })]),
+    peopleBody,
+  ]);
+  peoplePanel.hidden = true;
+  peoplePanel.querySelector('.people-close').addEventListener('click', () => { peoplePanel.hidden = true; });
+  popEl.setAttribute('role', 'button');
+  popEl.addEventListener('click', () => { peoplePanel.hidden = !peoplePanel.hidden; renderPeople(); });
+  hud.append(peoplePanel);
+  const CENSUS_ROWS = [
+    ['building', 'hammer', 'Building'], ['carrying', 'provisions', 'Carrying goods'], ['repairing', 'hammer', 'Repairing'], ['gathering', 'tree', 'Gathering by hand'],
+    ['idle', 'idle', 'Idle'], ['asleep', 'moon', 'Asleep'], ['arriving', 'settler', 'Arriving'], ['training', 'barracks', 'Going to train'], ['fleeing', 'alertDanger', 'Fleeing'],
+  ];
+  const JOB_ICONS = { forester: 'lodge', quarrier: 'quarry', farmer: 'farm', miner: 'mine', hunter: 'hunter', cook: 'canteen' };
+  function censusLines(c) {
+    const lines = [];
+    for (const [k, , label] of CENSUS_ROWS) if (c[k]) lines.push(`${c[k]} ${label.toLowerCase()}`);
+    for (const j in c.jobs) lines.push(`${c.jobs[j]} ${JOB_NAMES[j].toLowerCase()}${c.jobs[j] > 1 ? 's' : ''}`);
+    if (c.soldierCount) lines.push(`${c.soldierCount} soldier${c.soldierCount > 1 ? 's' : ''}`);
+    return lines;
+  }
+  function renderPeople() {
+    if (peoplePanel.hidden) return;
+    const c = censusOf(world(), PLAYER);
+    const total = Math.max(1, c.people + c.soldierCount);
+    const row = (ic, label, n) => h('div.people-row', {}, [icon(ic, 'icon icon-sm'), h('span.people-label', { text: label }), h('span.people-n', { text: String(n) }), h('div.people-bar', {}, [h('div', { style: { width: `${Math.round((n / total) * 100)}%` } })])]);
+    clear(peopleBody);
+    peopleBody.append(h('h3', { text: `Labourers (${c.labourers})` }));
+    for (const [k, ic, label] of CENSUS_ROWS) if (c[k]) peopleBody.append(row(ic, label, c[k]));
+    peopleBody.append(h('h3', { text: 'Workers' }));
+    const jobs = Object.keys(c.jobs);
+    if (!jobs.length) peopleBody.append(h('p.muted', { text: 'No workplaces staffed yet.' }));
+    for (const j of jobs) peopleBody.append(row(JOB_ICONS[j] || 'settler', `${JOB_NAMES[j]}s`, c.jobs[j]));
+    peopleBody.append(h('h3', { text: `Soldiers (${c.soldierCount})` }));
+    if (!c.soldierCount) peopleBody.append(h('p.muted', { text: 'No soldiers yet — build a Barracks.' }));
+    for (const t in c.soldiers) peopleBody.append(row(t, `${UNITS[t].name}s`, c.soldiers[t]));
+  }
+
+  // --- advisor: Osric reports the mood of the people and what is needed -------------------
+  const advisorText = h('p.advisor-text', { text: '' });
+  const advisorMood = h('span.advisor-mood', { text: '' });
+  const advisorPic = portrait('osric', 'advisor-portrait');
+  const advisor = h('section.advisor.panel', { 'aria-label': 'Advisor', 'aria-live': 'polite', role: 'button', tabindex: 0, 'data-tip': 'Osric, your reeve. Click for his next piece of advice.' }, [advisorPic, h('div.advisor-body', {}, [h('div.advisor-head', {}, [h('strong', { text: 'Osric' }), advisorMood]), advisorText])]);
+  hud.append(advisor);
+  let adviceIdx = 0, adviceTimer = 0, lastAdvice = '';
+  advisor.addEventListener('click', () => { adviceIdx++; adviceTimer = 0; updateAdvisor(true); });
+  function adviceList() {
+    const w = world(), p = w.players[PLAYER];
+    const c = censusOf(w, PLAYER);
+    const out = [];
+    const has = (t) => all(w, 'building').some((b) => b.owner === PLAYER && b.type === t && b.state !== 'destroyed');
+    if (w.ai.state === 'gather' || w.ai.state === 'raid') out.push('The Rustfang are on the march! Gather the soldiers near what they are after, Warden.');
+    if (w.ai.harass) out.push('Plunderers are raiding our outlying workshops. A few soldiers there would send them running.');
+    if (p.lastMealFed < 1 || p.res.provisions + 2 < p.pop * 0.5) out.push('Our stores are nearly bare, Warden. We need farms, a hunter, or smaller rations.');
+    if (p.res.timber < 15) out.push(has('lodge') ? 'Timber runs short, Warden. Another Woodcutter\'s Lodge, or send idle labourers to fell trees by hand.' : 'We have no woodcutters! Build a Woodcutter\'s Lodge near the forest.');
+    if (p.res.stone < 10 && w.tick > 3 * 1200) out.push(has('quarry') ? 'Stone is running low. A second quarry would help.' : 'We will need stone soon — build a Quarry by the rock outcrops.');
+    if (p.pop >= p.popCap) out.push('Every bed is taken. Build Cottages, or upgrade them to Stone Houses, so more folk can settle.');
+    if (c.labourers - c.asleep <= 1 && c.people > 4 && !(w.time.hour >= 22 || w.time.hour < 5)) out.push('No hands are free to carry goods or build. Pause a workplace or house more people.');
+    if (p.stability < 40) out.push('The people grumble, Warden. Lower the taxes, serve hot meals, give more rations or hold a feast.');
+    if (p.tax === 2 && p.stability < 60) out.push('High taxes weigh on the people.');
+    const ss = seasonAt(w.tick);
+    if (!ss.winter && ss.untilNext < 90 * 20) out.push('Winter is close. Fill the stores — the fields will grow slowly under the snow.');
+    if (has('barracks') && !c.soldierCount && w.tick > 8 * 1200) out.push('A Barracks and no soldiers? Train a few before the Rustfang come.');
+    if (w.mission.flags.raidWarned && c.soldierCount < 6) out.push('A raid is announced and our guard is thin. More soldiers, Warden!');
+    if (!out.length) {
+      const calm = [
+        'All is well in Kindlehold. The hearth burns bright.',
+        p.res.taler > 150 ? 'The treasury is full. Upgrades, a feast or the trader at the crossroads could use it.' : 'The treasury grows with every payday.',
+        c.idle > 3 ? 'Some labourers stand idle. They could fell trees by hand — select them and right-click a tree.' : 'The people are busy and content.',
+      ];
+      out.push(calm[Math.floor(w.tick / 400) % calm.length]);
+    }
+    return out;
+  }
+  function updateAdvisor(force = false) {
+    const w = world(), p = w.players[PLAYER];
+    const st = p.stability;
+    const mood = st >= 70 ? ['Content', 'good'] : st >= 45 ? ['Calm', 'mid'] : st >= 25 ? ['Uneasy', 'warn'] : ['Angry', 'bad'];
+    setText(advisorMood, `${mood[0]} · ${Math.round(st)}`);
+    advisor.dataset.mood = mood[1];
+    // keep the current advice until it rotates (every 12 s or on click) or no longer applies
+    const list = adviceList();
+    const stillTrue = list.includes(lastAdvice);
+    if (!force && stillTrue && adviceTimer > 0) return;
+    const text = force || !stillTrue ? list[adviceIdx % list.length] : lastAdvice;
+    if (text !== lastAdvice) { lastAdvice = text; setText(advisorText, text); advisor.classList.remove('flash'); void advisor.offsetWidth; advisor.classList.add('flash'); }
+  }
+
   // --- top-centre: clock + speed + menu ---------------------------------------------
   const clockIcon = h('span.clock-icon');
   const clockText = h('span.clock-text', { text: '' });
-  const speedBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Game speed', 'data-tip': 'Game speed ([ and ])' }, ['1×']);
+  const speedBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Game speed', 'aria-haspopup': 'menu', 'data-tip': 'Game speed: click to choose ([ and ] step through)' }, ['1×']);
   const pauseBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Pause menu', 'data-tip': 'Menu (Esc)' }, [icon('menu')]);
-  speedBtn.addEventListener('click', () => actions.cycleSpeed());
+  // speed: a small drop-down with every speed
+  const speedMenu = h('div.speed-menu.panel', { role: 'menu', 'aria-label': 'Game speed' });
+  speedMenu.hidden = true;
+  for (const sp of [0.5, 1, 2, 4, 8]) {
+    const b = h('button.speed-opt', { type: 'button', role: 'menuitemradio', 'data-speed': String(sp) }, [`${sp}×`, h('span', { text: sp === 0.5 ? ' slow' : sp === 1 ? ' normal' : sp >= 4 ? ' fast' : '' })]);
+    b.addEventListener('click', () => { session.loop.setSpeed(sp); speedMenu.hidden = true; });
+    speedMenu.append(b);
+  }
+  speedBtn.addEventListener('click', (ev) => { ev.stopPropagation(); speedMenu.hidden = !speedMenu.hidden; for (const b of speedMenu.children) b.classList.toggle('active', Number(b.dataset.speed) === session.loop.getSpeed()); });
+  document.addEventListener('pointerdown', (ev) => { if (!speedMenu.hidden && !speedMenu.contains(ev.target) && ev.target !== speedBtn) speedMenu.hidden = true; });
   pauseBtn.addEventListener('click', () => actions.pause());
+  // skip the night: race to dawn at 8x, then return to the previous speed
+  const nightBtn = h('button.night-skip.panel', { type: 'button', 'aria-label': 'Skip the night', 'data-tip': 'Skip the night: time runs at 8× until dawn' }, [icon('moon', 'icon icon-sm'), h('span', { text: ' Skip night' })]);
+  nightBtn.hidden = true;
+  let skipping = null;
+  nightBtn.addEventListener('click', () => { if (skipping == null) { skipping = session.loop.getSpeed(); session.loop.setSpeed(8); } });
   const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, pauseBtn]);
-  hud.append(topbar);
+  hud.append(topbar, nightBtn, speedMenu);
 
   // --- top-right: objectives ----------------------------------------------------------
   const objList = h('ol.obj-list');
@@ -287,6 +391,15 @@ export function createHud({ root, session, input, settings, actions }) {
             taxRow.append(b);
           });
           selPanel.append(taxRow);
+          const rationRow = h('div.tax-row', { role: 'group', 'aria-label': 'Rations' }, [h('span', { text: 'Rations' })]);
+          RATIONS.forEach((r, i) => {
+            const cur = (p.rations ?? 1) === i;
+            const b = h(`button.tax-btn${cur ? '.active' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'data-tip': `${r.portion}× food per person at mealtime · stability ${r.stability > 0 ? '+' : ''}${r.stability}`, text: r.name });
+            b.addEventListener('click', () => { input.issue({ type: 'setRations', level: i }); setTimeout(() => { dirtySel = true; }, 120); });
+            rationRow.append(b);
+          });
+          selPanel.append(rationRow);
+          if ((p.feastUntil || 0) > w.tick) selPanel.append(h('div.sel-row.small', { text: `Feast in the hall: ${fmtTime((p.feastUntil - w.tick) / 20)} left (stability +${FEAST.stability})` }));
           selPanel.append(h('div.sel-row.small', { text: `Payday in ${fmtTime(Math.max(0, (p.nextPayTick ?? 0) - w.tick) / 20)}: +${f.taxes} taxes from ${f.settlers} settlers${f.pay ? `, −${f.pay} pay for ${f.soldiers} soldiers` : ''}` }));
         }
         if (e.type === 'barracks' && e.queue.length) {
@@ -349,12 +462,12 @@ export function createHud({ root, session, input, settings, actions }) {
   // --- command grid ------------------------------------------------------------------------------
   let cmdMode = 'auto'; // 'auto' | 'build'
   let confirmDemolish = 0;
-  const SHORT = { 'Back to work': 'Release', 'Upgrading…': 'Upgrading', 'Steel Mail': 'Mail', 'Veteran Drill': 'Drill', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
+  const SHORT = { 'Hold a feast': 'Feast', "Hunter's Hut": 'Hunter', 'Keen Axes': 'Axes', 'Braced Timber': 'Bracing', 'Tempered Blades': 'Blades', 'March Charter': 'Charter', 'Hire labourer': 'Hire', 'Back to work': 'Release', 'Upgrading…': 'Upgrading', 'Steel Mail': 'Mail', 'Veteran Drill': 'Drill', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
   function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
   function cmdButton({ ic, label, key, tip, tipTitle, onClick, disabled = false, cost = null, progress = null, cooldown = null, active = false, highlight = false }) {
     const b = h(`button.cmd${active ? '.active' : ''}${highlight ? '.pulse' : ''}`, { type: 'button', 'aria-label': label, 'data-tip': tip || label, 'data-tip-title': tipTitle || label, 'aria-disabled': disabled ? 'true' : 'false' }, [icon(ic, 'icon icon-md'), cost ? null : h('span.cmd-label', { text: shortLabel(label) })]);
     if (key) b.append(h('span.cmd-key', { text: keyLabel(key) }));
-    if (cost) b.append(costRow(cost));
+    if (cost) { b.append(h('span.cmd-name', { text: /^(Buy|Sell) /.test(label) ? label.replace(/\d+ /, '') : shortLabel(label) })); b.append(costRow(cost)); }
     if (progress !== null) b.append(h('div.cmd-progress', { style: { height: `${Math.round(progress * 100)}%` } }));
     if (cooldown) b.append(h('div.cmd-cooldown', { text: String(Math.ceil(cooldown)) }));
     if (disabled) b.classList.add('disabled');
@@ -459,6 +572,11 @@ export function createHud({ root, session, input, settings, actions }) {
             onClick: () => input.issue({ type: 'research', techId: id }),
           }));
         }
+        if (one.lit) {
+          const feasting = (p.feastUntil || 0) > w.tick;
+          const canFeast = canAfford(w, PLAYER, FEAST.cost);
+          cmdGrid.append(cmdButton({ ic: 'feast', label: 'Hold a feast', tipTitle: 'Hold a feast', tip: feasting ? 'The feast is under way.' : canFeast ? `Everyone celebrates in the great hall: stability +${FEAST.stability} for three minutes.` : 'Not enough Taler or provisions for a feast.', cost: FEAST.cost, disabled: feasting || !canFeast, onClick: () => input.issue({ type: 'feast' }) }));
+        }
         cmdGrid.append(cmdButton({ ic: 'build', label: 'Build…', key: bb.buildMenu, tip: 'Open the construction menu.', highlight: hl && hl.startsWith('build'), onClick: () => { cmdMode = 'build'; dirtySel = true; } }));
         return;
       }
@@ -466,7 +584,8 @@ export function createHud({ root, session, input, settings, actions }) {
         for (const type of RECRUITABLE) {
           const u = UNITS[type];
           const afford = canAfford(w, PLAYER, u.cost);
-          cmdGrid.append(cmdButton({ ic: type, label: `Train ${u.name}`, tipTitle: u.name, tip: afford ? `${u.desc} Uses one idle settler.` : `Not enough resources. ${u.desc}`, cost: u.cost, disabled: !afford || one.queue.length >= 5, highlight: hl === 'build:barracks', onClick: () => input.issue({ type: 'recruit', building: one.id, unitType: type }) }));
+          const locked = (u.requiresLevel || 1) > levelOf(one);
+          cmdGrid.append(cmdButton({ ic: type, label: `Train ${u.name}`, tipTitle: u.name, tip: locked ? `Needs the Drill Yard: upgrade this Barracks. ${u.desc}` : afford ? `${u.desc} Uses one idle settler.` : `Not enough resources. ${u.desc}`, cost: u.cost, disabled: locked || !afford || one.queue.length >= 5, highlight: hl === 'build:barracks' && !locked, onClick: () => input.issue({ type: 'recruit', building: one.id, unitType: type }) }));
         }
         cmdGrid.append(cmdButton({ ic: 'patrol', label: 'Set rally point', tip: 'Right-click the ground while the Barracks is selected.', onClick: () => toast('Right-click the ground to set the rally point', 'info') }));
       }
@@ -520,6 +639,10 @@ export function createHud({ root, session, input, settings, actions }) {
       resEls[r].rate.className = `res-rate ${rt < 0 ? 'neg' : 'pos'}`;
     }
     setText(popVal, `${p.pop}/${p.popCap}`);
+    { const c = censusOf(w, PLAYER); popEl.setAttribute('data-tip', `${censusLines(c).join('\n')}\nClick for the full list.`); popEl.setAttribute('data-tip-title', 'Your people'); }
+    renderPeople();
+    adviceTimer += 0.25;
+    if (adviceTimer >= 12) { adviceTimer = 0; adviceIdx++; updateAdvisor(true); } else updateAdvisor();
     const idle = all(w, 'settler').filter((s) => s.owner === PLAYER && !s.job).length;
     setText(idleVal, `${idle} labourers`);
     popEl.classList.toggle('warn', p.pop >= p.popCap);
@@ -534,9 +657,12 @@ export function createHud({ root, session, input, settings, actions }) {
     // season: compact (the top bar must stay clear of the ribbon at 1280 px); details in the tooltip
     const season = ss.winter ? ` · ❄ ${fmtTime(ss.untilEnd / 20)}` : ss.untilNext <= 60 * 20 ? ` · ❄ in ${fmtTime(ss.untilNext / 20)}` : '';
     // time of day first and unmistakable; the elapsed match time lives in the tooltip
-    const day = 1 + Math.floor((w.tick / w.time.dayLengthTicks) + (7.5 / 24));
+    const day = w.time.day || 1;
     setText(clockText, `Day ${day} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}${season}`);
-    clockText.setAttribute('data-tip', `Time of day ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} (one day lasts ${Math.round(w.time.dayLengthTicks / 1200)} minutes). Played ${fmtTime(w.tick / 20)}. ${ss.winter ? `Winter: crops grow slowly, the river is frozen. Thaw in ${fmtTime(ss.untilEnd / 20)}.` : `Summer. Next winter in ${fmtTime(ss.untilNext / 20)}.`}`);
+    clockText.setAttribute('data-tip', `Time of day ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} (a day lasts about ${Math.round(w.time.dayLengthTicks / 1200 * 0.78)} minutes; nights pass quickly). Played ${fmtTime(w.tick / 20)}. ${ss.winter ? `Winter: crops grow slowly, the river is frozen. Thaw in ${fmtTime(ss.untilEnd / 20)}.` : `Summer. Next winter in ${fmtTime(ss.untilNext / 20)}.`}`);
+    const nightNow = hour >= 20 || hour < 5.5;
+    if (skipping != null && !nightNow) { session.loop.setSpeed(skipping); skipping = null; }
+    nightBtn.hidden = !nightNow || skipping != null;
     setText(speedBtn, session.loop.isPaused() ? 'II' : `${session.loop.getSpeed()}×`);
     // raid countdown
     if (w.ai.raidTick != null && w.ai.state === 'build' && w.mission.flags.raidWarned) {

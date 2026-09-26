@@ -17,6 +17,10 @@ export const UNITS = {
     cost: { iron: 20, provisions: 5 }, trainTime: 8, desc: 'Fast swordsman. Cuts down archers and slingers.' },
   fletcher: { id: 'fletcher', name: 'Fletcher', owner: 'p1', cls: 'ranged', hp: 90, armor: 0, damage: 12, range: 15, cooldown: 1.6, speed: 3.8, sight: 16,
     cost: { timber: 15, provisions: 5 }, trainTime: 8, desc: 'Longbow archer. Arcing shots pierce shield lines.' },
+  crossbow: { id: 'crossbow', name: 'Crossbowman', owner: 'p1', cls: 'ranged', hp: 110, armor: 2, damage: 22, range: 17, cooldown: 2.4, speed: 3.5, sight: 17, requiresLevel: 2,
+    pierce: 0.5, cost: { timber: 20, iron: 15, provisions: 5 }, trainTime: 10, desc: 'Heavy bolts that punch through armour and shields. Slow to reload. Needs the Drill Yard.' },
+  halberd: { id: 'halberd', name: 'Halberdier', owner: 'p1', cls: 'defensive', hp: 250, armor: 7, damage: 16, range: 2.5, cooldown: 1.4, speed: 3.2, sight: 12, requiresLevel: 2,
+    cost: { timber: 10, iron: 30, provisions: 5 }, trainTime: 10, desc: 'Armoured elite with a long halberd: holds any line against blades and raiders. Needs the Drill Yard.' },
   maren: { id: 'maren', name: 'Maren Ashgrove', title: 'Lantern Warden', owner: 'p1', cls: 'hero', hp: 420, armor: 4, damage: 20, range: 2.2, cooldown: 1.3, speed: 4.2, sight: 14,
     cost: {}, trainTime: 0, desc: 'Lamplighter of the old roads. Her lantern steadies allies and blinds foes.' },
   // Rustfang Reavers
@@ -26,7 +30,7 @@ export const UNITS = {
   vharek: { id: 'vharek', name: 'Vharek the Tollbreaker', owner: 'p2', cls: 'commander', hp: 700, armor: 5, damage: 35, range: 2.4, cooldown: 1.8, speed: 3.8, sight: 14, cost: {}, desc: 'Former bridge-warden turned warlord.' },
 };
 
-export const RECRUITABLE = ['shield', 'blade', 'fletcher'];
+export const RECRUITABLE = ['shield', 'blade', 'fletcher', 'crossbow', 'halberd'];
 
 export const SETTLER = { hp: 60, speed: 3.9 }; // rested settlers (they sleep at night) walk a little faster
 

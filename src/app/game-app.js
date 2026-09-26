@@ -13,6 +13,8 @@ import { EV } from '../core/contracts.js';
 import { log } from '../core/logger.js';
 import { smokeTestWorld } from './load-check.js';
 
+const SPEEDS = [0.5, 1, 2, 4, 8];
+
 export async function startApp(params) {
   const container = document.getElementById('app');
   const boot = document.getElementById('boot-screen');
@@ -99,7 +101,7 @@ export async function startApp(params) {
           onToast: (t) => hud && hud.toast(t),
           onQuickSave: () => doSave('quick'),
           onQuickLoad: () => startGame({ slot: 'quick' }),
-          onSpeed: (d) => { const sp = [0.5, 1, 2]; const i = Math.max(0, Math.min(2, sp.indexOf(session.loop.getSpeed()) + d)); session.loop.setSpeed(sp[i]); },
+          onSpeed: (d) => { const sp = SPEEDS; const i = Math.max(0, Math.min(sp.length - 1, sp.indexOf(session.loop.getSpeed()) + d)); session.loop.setSpeed(sp[i]); },
           onFrame: (dt) => { if (hud) hud.update(dt); if (tutorial) tutorial.update(dt); autosave(dt); },
           onUiFailure: (err) => showErrorOverlay({ title: 'The interface stopped responding', message: 'The game is still running. Save and reload, or return to the menu.', detail: err && (err.stack || err.message), actions: [{ label: 'Save and reload', primary: true, run: () => { doSave('quick', true); location.reload(); } }, { label: 'Main menu', run: () => { hideErrorOverlay(); showMain(); } }] }),
         },
@@ -113,7 +115,7 @@ export async function startApp(params) {
     session.loop.setSpeed(settings.gameSpeed);
     hud = createHud({ root: uiRoot, session, input: session.input, settings, actions: {
       pause: () => togglePause(),
-      cycleSpeed: () => { const sp = [0.5, 1, 2]; const i = (sp.indexOf(session.loop.getSpeed()) + 1) % 3; session.loop.setSpeed(sp[i]); },
+      cycleSpeed: () => { const sp = SPEEDS; const i = (sp.indexOf(session.loop.getSpeed()) + 1) % sp.length; session.loop.setSpeed(sp[i]); },
     } });
     if (!verify && !slot && !settings.tutorialDone) {
       tutorial = createTutorial({ root: uiRoot, session, settings, onFinish: () => { saveSettings(settings); tutorial = null; } });

@@ -62,6 +62,37 @@ Vor den Änderungen der Stufen 2 und 2.5 gewann der Bot Hard auf allen Seeds, Ha
 schwerer geworden. Menschliche Spieler haben mit Ausbaustufen, Handel und Leibeigenen mehr
 Werkzeuge als der Bot, getestet ist das aber nicht.
 
+## Stufe 2.6: umgesetzt (Session vom 2026-09-26, dritter Teil)
+
+| Wunsch | Umsetzung |
+|---|---|
+| Nacht viel zu lang | Die dunklen Stunden (20–6 Uhr) vergehen 6-mal so schnell, die sichtbare Nacht dauert etwa 1,5 Minuten. Mit „Skip night“ unter der Uhr springt man mit 8× bis zum Morgen. Ein Tageszähler zeigt „Day N“. |
+| Schnellere Geschwindigkeiten | 0,5×, 1×, 2×, 4×, 8× (Knopf an der Uhr oder `[` / `]`). |
+| Gegner zu passiv | Plünderzüge: Vor dem großen Überfall greifen kleine Trupps abgelegene Betriebe an und ziehen wieder ab, angekündigt durch ein Kriegshorn. Große Überfälle bevorzugen schlecht bewachte Gebäude. |
+| Zu wenig Rohstoffe | Gefällte Bäume werden nachgepflanzt und wachsen in 2,5 Minuten nach (sichtbare Setzlinge). Felsen haben 150 statt 60 Stein, die Eisenader ist unerschöpflich. Träger holen zuerst, was im Lager knapp ist. |
+| Menüs ausführlicher | Hauptmenü mit großen Buttons, Symbolen und Beschreibungen. Schwierigkeitskarten mit Symbol und Eckdaten. Bau- und Befehlsknöpfe zeigen Name und Kosten. |
+| Mehr Sound-Vielfalt | Kampfgeräusche mit 3–4 Varianten und zufälliger Tonhöhe (Stahl auf Stahl, Klinge auf Schild, Schrammen, schwerer Hieb). Der Bogen bekommt ein Sehnen-Schwirren, Schleudern mehrere Würfe. Ein Horn kündigt Plünderer an. |
+
+Balance (`npm run balance`): 7 von 8 Partien gewonnen (Story 29,8 min, Normal 4/4 mit 31–36 min,
+Hard 2/3). Der Test-Bot achtet jetzt darauf, genug Träger übrig zu lassen. Ohne Träger
+stand vorher die ganze Wirtschaft still.
+
+## Stufe 2.7: umgesetzt
+
+| Wunsch / Idee | Umsetzung |
+|---|---|
+| Ausklappbares Tempo-Menü | Klick auf die Tempoanzeige an der Uhr öffnet die Auswahl 0,5× bis 8×. |
+| Was machen die Bewohner? | Beim Überfahren der Einwohnerzahl steht, wie viele bauen, tragen, sammeln, schlafen, welche Berufe sie haben und wie viele Soldaten es gibt. Ein Klick öffnet das Fenster „Your people“ mit Balken je Gruppe. |
+| Berater wie in Stronghold | Osric, der Vogt, sitzt unten links. Ein farbiger Ring zeigt die Stimmung des Volkes (Content, Calm, Uneasy, Angry). Er gibt Hinweise wie Holzmangel, Hunger, volle Häuser, keine freien Hände, Unzufriedenheit, nahenden Winter und anrückende Plünderer. Ein Klick zeigt den nächsten Rat. |
+| Mehr Truppen (eigene Idee) | Kasernen-Ausbau „Drill Yard“ (+25 % Ausbildungstempo). Er schaltet **Armbrustschützen** frei (Fernkampf, Bolzen durchschlagen die Hälfte der Rüstung) und **Hellebardiere** (schwere Elite, 250 Leben, 7 Rüstung, große Reichweite). |
+| Rationen (eigene Idee, nach Stronghold) | An der Burg wählbar: halbe, normale oder großzügige Portionen. Das kostet mehr oder weniger Vorräte und wirkt auf die Stimmung (−10 / 0 / +8). |
+| Festmahl (eigene Idee) | An der Burg: 80 Taler und 30 Proviant für ein Fest mit +15 Stimmung für drei Minuten, mit Funken und Musik. |
+
+Prüfung: 99 Tests, `npm run balance` 7/8.
+
+Offen für das nächste große Paket: eine deutlich größere Karte, mehrere Gegner, Diplomatie
+und Handel zwischen Parteien.
+
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
 1. **Echte animierte Figuren (Variante B):** Modelle mit Skelett, z. B. aus CC0-Paketen,

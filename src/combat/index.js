@@ -137,7 +137,8 @@ export function createCombatModule() {
     u.attackT = world.tick;
     const base = def.damage;
     const tcls = classOf(t);
-    const armor = t.kind === 'unit' ? UNITS[t.type].armor + soldierMods(world, t).armor : 0;
+    // crossbow bolts ignore part of the armour
+    const armor = t.kind === 'unit' ? (UNITS[t.type].armor + soldierMods(world, t).armor) * (1 - (def.pierce || 0)) : 0;
     let dmg = computeDamage({ base, attackerCls: def.cls, defenderCls: tcls, armor, damageMult: damageMult(world, u) });
     const strong = counterOf(def.cls, tcls) > 1;
     if (def.cls === 'ranged') {

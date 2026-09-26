@@ -2,7 +2,7 @@
 // independent of frame rate. Rendering receives an interpolation factor.
 import { DT } from './contracts.js';
 
-export const MAX_STEPS_PER_FRAME = 5;
+export const MAX_STEPS_PER_FRAME = 12; // enough for 8x at 30 fps
 
 /**
  * @param {{ step: () => void, render: (alpha:number, frameDt:number) => void }} hooks
@@ -31,7 +31,7 @@ export function createFixedLoop(hooks) {
       hooks.render(paused ? 1 : acc / DT, e);
       return steps;
     },
-    setSpeed(s) { speed = Math.max(0, Math.min(4, s)); },
+    setSpeed(s) { speed = Math.max(0, Math.min(8, s)); },
     getSpeed: () => speed,
     pause() { paused = true; },
     resume() { paused = false; },

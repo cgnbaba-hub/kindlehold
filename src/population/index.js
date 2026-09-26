@@ -5,7 +5,7 @@ import { spawn, remove, all, emit, alert, worldRng } from '../world/world.js';
 import { BUILDINGS, doorOf, slotsOf, upgradeBonus, levelOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { TECH_EFFECTS } from '../technology/defs.js';
-import { addRes } from '../economy/stock.js';
+import { addRes, canAfford, pay } from '../economy/stock.js';
 import { walkTo, stopWalking } from '../navigation/agent.js';
 
 export const MEAL_INTERVAL = 90 * 20;
@@ -21,7 +21,37 @@ export const TAX_LEVELS = [
   { id: 'high', name: 'High', perSettler: 3, stability: -12 },
 ];
 export const SOLDIER_PAY = 1;
-export const HOT_MEAL_STABILITY = 8; // stability target bonus when everyone gets a hot meal
+export const HOT_MEAL_STABILITY = 8;
+// Rations: how much each person gets at mealtime (portions) and what it does to the mood
+export const RATIONS = [
+  { id: 'half', name: 'Half', portion: 0.5, stability: -10 },
+  { id: 'normal', name: 'Normal', portion: 1, stability: 0 },
+  { id: 'generous', name: 'Generous', portion: 1.5, stability: 8 },
+];
+// A feast in the hall: costs goods up front, lifts the mood for three minutes
+export const FEAST = { cost: { taler: 80, provisions: 30 }, duration: 180 * 20, stability: 15 };
+
+/** What everybody is doing right now (for the HUD census and the advisor). */
+export function censusOf(world, owner) {
+  const c = { people: 0, labourers: 0, building: 0, carrying: 0, repairing: 0, gathering: 0, idle: 0, asleep: 0, arriving: 0, training: 0, fleeing: 0, jobs: {}, soldiers: {}, soldierCount: 0 };
+  for (const s of all(world, 'settler')) {
+    if (s.owner !== owner) continue;
+    c.people++;
+    if (s.sleep && s.sleep.in) c.asleep++;
+    else if (s.arriving) c.arriving++;
+    else if (s.enlisting) c.training++;
+    else if (s.fleeing) c.fleeing++;
+    else if (s.job) c.jobs[s.job] = (c.jobs[s.job] || 0) + 1;
+    else if (s.order) c.gathering++;
+    else if (s.task && s.task.type === 'build') c.building++;
+    else if (s.task && (s.task.type === 'supply' || s.task.type === 'haul' || s.task.type === 'deliver')) c.carrying++;
+    else if (s.task && s.task.type === 'repair') c.repairing++;
+    else c.idle++;
+    if (!s.job) c.labourers++;
+  }
+  for (const u of all(world, 'unit')) if (u.owner === owner && !u.hero) { c.soldiers[u.type] = (c.soldiers[u.type] || 0) + 1; c.soldierCount++; }
+  return c;
+} // stability target bonus when everyone gets a hot meal
 
 export function asleepCount(world, owner) { let n = 0; for (const s of all(world, 'settler')) if (s.owner === owner && s.sleep && s.sleep.in) n++; return n; }
 export function mealsInStock(world, owner) { let n = 0; for (const b of all(world, 'building')) if (b.owner === owner && b.type === 'canteen' && b.state === 'active') n += Math.floor(b.meals || 0); return n; }
@@ -86,7 +116,7 @@ export function stabilityFactor(world, owner) {
   return (0.6 + 0.4 * (p ? p.stability / 100 : 1)) * RESTED;
 }
 /** Settlers who sleep at night work faster by day; balances the hours lost to the night. */
-export const RESTED = 1.18;
+export const RESTED = 1.08;
 
 export function keepOf(world, owner) {
   for (const b of all(world, 'building')) if (b.type === 'keep' && b.owner === owner && b.state !== 'destroyed') return b;
@@ -149,7 +179,8 @@ export function createPopulationModule() {
     if (world.tick >= p.nextMealTick) {
       p.nextMealTick = world.tick + MEAL_INTERVAL;
       // sleepers do not eat; hot meals from the Tavern are served first, then plain stores
-      const need = Math.max(0, p.pop - asleepCount(world, owner));
+      const ration = RATIONS[p.rations ?? 1] || RATIONS[1];
+      const need = Math.ceil(Math.max(0, p.pop - asleepCount(world, owner)) * ration.portion);
       let hot = 0;
       for (const b of all(world, 'building')) {
         if (b.owner !== owner || b.type !== 'canteen' || b.state !== 'active' || !b.meals) continue;
@@ -173,7 +204,8 @@ export function createPopulationModule() {
       const headroom = p.popCap - p.pop;
       const target = Math.max(0, Math.min(100,
         40 + 35 * p.lastMealFed + (headroom >= 1 ? 10 : 0) + (headroom < 0 ? -20 : 0) + (keep && keep.lit ? 10 : -10) - p.burnPenalty
-        + (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability + HOT_MEAL_STABILITY * (p.hotMeals || 0)));
+        + (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability + HOT_MEAL_STABILITY * (p.hotMeals || 0)
+        + (RATIONS[p.rations ?? 1] || RATIONS[1]).stability * Math.min(1, p.lastMealFed) + ((p.feastUntil || 0) > world.tick ? FEAST.stability : 0)));
       const step = 0.5;
       if (p.stability < target) p.stability = Math.min(target, p.stability + step);
       else if (p.stability > target) p.stability = Math.max(target, p.stability - step);
@@ -284,6 +316,18 @@ export function createPopulationModule() {
       if (lvl < 0 || lvl >= TAX_LEVELS.length || lvl === p.tax) return;
       p.tax = lvl;
       emit(world, 'population:tax', { owner, level: lvl });
+    } else if (cmd.type === 'setRations') {
+      const lvl = cmd.level | 0;
+      if (lvl < 0 || lvl >= RATIONS.length) return;
+      p.rations = lvl;
+    } else if (cmd.type === 'feast') {
+      const keep = keepOf(world, owner);
+      if (!keep || !keep.lit || (p.feastUntil || 0) > world.tick) { emit(world, EV.COMMAND_REJECTED, { cmd, reason: 'A feast is already under way' }); return; }
+      if (!canAfford(world, owner, FEAST.cost)) { emit(world, EV.COMMAND_REJECTED, { cmd, reason: 'Not enough Taler or provisions for a feast' }); return; }
+      pay(world, owner, FEAST.cost, 'feast');
+      p.feastUntil = world.tick + FEAST.duration;
+      alert(world, 'success', 'A feast in the great hall! Spirits are high for the next three minutes.', keep.x, keep.z);
+      emit(world, 'population:feast', { owner, x: keep.x, z: keep.z, until: p.feastUntil });
     } else if (cmd.type === 'hireSettler') {
       const keep = keepOf(world, owner);
       if (!keep || !keep.lit || p.res.taler < HIRE_COST || populationOf(world, owner) >= housingCap(world, owner)) {

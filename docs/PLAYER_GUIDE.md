@@ -44,6 +44,33 @@ Taler in pay. Select the Keep to set the tax level — *Low* keeps people conten
 the treasury but lowers stability. Spend Taler at the Keep on **Hire labourer** (40 Taler, needs
 free housing): a new labourer joins at once instead of walking in from the valley.
 
+## Resources
+
+Felled trees are replanted and grow back after about two and a half minutes, so a staffed
+Lodge keeps its forest. Rock outcrops hold 150 stone, and the iron vein never runs dry.
+Carriers fetch what the Keep is short of first.
+
+## The Rustfang
+
+Before the great raid, small **plunder parties** slip out of the ford fort to hit an outlying
+workshop and run home again (a war horn warns you). The main raids prefer buildings nobody
+guards — keep a few soldiers near your farms and mines.
+
+## Keeping an eye on things
+
+* **Your people:** hover over the population in the ribbon to see who is building, carrying,
+  asleep or working where; click it for the full list.
+* **Osric, your reeve** (bottom left) shows the mood of the people and tells you what is
+  missing. Click him for his next piece of advice.
+* **Rations** (at the Keep): half, normal or generous portions — less food or a better mood.
+* **Feast** (at the Keep): 80 Taler and 30 provisions for three minutes of high spirits.
+* **Game speed:** click the speed next to the clock to pick 0.5× to 8×.
+
+## More soldiers
+
+Upgrade the Barracks to the **Drill Yard** to train **Crossbowmen** (their bolts pierce armour)
+and **Halberdiers** (heavily armoured elite with a long reach).
+
 ## Seasons
 
 Long summers alternate with short, hard winters (the first begins at minute 17 and lasts
@@ -65,7 +92,8 @@ through research at the Keep: **Steel Mail** (tougher) and **Veteran Drill** (fa
 ## Day and night
 
 At ten in the evening your people walk home and sleep; at five they are back at work. Sleepers
-are safe indoors and do not eat. Nights pass quickly. Soldiers keep watch, and the Barracks will
+are safe indoors and do not eat. The dark hours (20:00–06:00) pass six times as fast, and the
+**Skip night** button under the clock races to dawn at 8×. Game speed goes up to 8× (`]`). Soldiers keep watch, and the Barracks will
 rouse a volunteer if you train soldiers at night.
 
 ## Food
