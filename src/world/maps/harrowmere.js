@@ -61,6 +61,13 @@ export const HARROWMERE_MAP = Object.freeze({
     { x: 6, z: -30, count: 3, spread: 6 },
   ],
   ironVeins: [{ x: -80, z: 70 }],
+  // places worth exploring (see src/pois/)
+  pois: [
+    { type: 'trader', x: 8, z: 14 },     // Crossroads trader on the north road
+    { type: 'cairn', x: 36, z: 58 },     // Lookout cairn on the eastern knoll
+    { type: 'ruin', x: -60, z: -62 },    // Old watch ruins beyond the Harrow (north-west)
+    { type: 'hamlet', x: 74, z: 46 },    // Millbrook hamlet (south-east)
+  ],
   playerStart: { x: -46, z: 50 },
   enemyCamp: { x: 72, z: -70 },
   palisade: { r: 25, gateHalfAngle: 0.16, step: 0.034 },

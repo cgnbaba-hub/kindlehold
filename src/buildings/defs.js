@@ -60,6 +60,18 @@ export const BUILDINGS = {
     cost: { timber: 25, stone: 15 }, buildTime: 22, hp: 450, radius: 4, navRadius: 3.2, slots: 1, job: 'miner',
     deposit: 'iron', depositRange: 10, outCap: 8, inCap: 6, door: [0, 4],
   },
+  hunter: {
+    id: 'hunter', name: "Hunter's Hut", owner: 'p1', buildable: true,
+    desc: 'A hunter stalks the deer herds within 45 m for meat (provisions). Hunting goes on in winter.',
+    cost: { timber: 25, stone: 5 }, buildTime: 16, hp: 300, radius: 3.4, navRadius: 2.8, slots: 1, job: 'hunter',
+    huntRange: 45, outCap: 8, door: [0, 3.4],
+  },
+  canteen: {
+    id: 'canteen', name: 'Tavern', owner: 'p1', buildable: true,
+    desc: 'The cook turns provisions into hot meals: one provision feeds one and a half people, and warm meals lift stability.',
+    cost: { timber: 30, stone: 20 }, buildTime: 24, hp: 450, radius: 4.4, navRadius: 3.6, slots: 1, job: 'cook',
+    inCap: 10, mealCap: 30, door: [0, 4.4],
+  },
   barracks: {
     id: 'barracks', name: 'Barracks', owner: 'p1', buildable: true,
     desc: 'Trains idle settlers into soldiers.',
@@ -102,6 +114,8 @@ export const UPGRADES = {
   quarry: { 2: { ...WORKSHOP_L2, name: 'Stoneworks' } },
   farm: { 2: { ...WORKSHOP_L2, name: 'Manor Farm' } },
   mine: { 2: { ...WORKSHOP_L2, name: 'Deep Mine', cost: { timber: 30, stone: 30, taler: 35 } } },
+  hunter: { 2: { ...WORKSHOP_L2, name: 'Hunting Lodge' } },
+  canteen: { 2: { ...WORKSHOP_L2, name: 'Inn', desc: 'A second cook and 20% faster cooking.' } },
 };
 
 export function levelOf(b) { return b.level || 1; }
@@ -123,7 +137,7 @@ export function displayName(b) {
   return BUILDINGS[b.type].name;
 }
 
-export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'quarry', 'mine', 'barracks', 'tower'];
+export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'canteen', 'quarry', 'mine', 'barracks', 'tower'];
 
 export function buildingDef(type) {
   const d = BUILDINGS[type];

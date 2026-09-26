@@ -10,7 +10,7 @@ import { TECHS } from '../technology/defs.js';
 
 export const SAVE_FORMAT = 'kindlehold-save';
 
-const ENTITY_KINDS = ['building', 'settler', 'unit', 'deposit'];
+const ENTITY_KINDS = ['building', 'settler', 'unit', 'deposit', 'animal', 'poi'];
 
 const num = v.number();
 const stockSchema = v.object(Object.fromEntries(RESOURCES.map((r) => [r, v.number({ min: 0, max: 1e7 })])));
@@ -38,6 +38,7 @@ const KIND_SCHEMAS = {
     stock: v.object({ out: v.record(nonNeg(1e5), { max: 8 }), in: v.record(nonNeg(1e5), { max: 8 }), outReserved: nonNeg(1e5), inIncoming: nonNeg(1e5) }),
     build: v.optional(v.object({ progress: nonNeg(1), required: v.record(nonNeg(1e5), { max: 8 }), supplied: v.record(nonNeg(1e5), { max: 8 }), incoming: v.record(nonNeg(1e5), { max: 8 }), builders: ids(16) })),
     level: v.optional(v.number({ min: 1, max: 3, int: true })),
+    meals: v.optional(nonNeg(1000)),
     upgrade: v.optional(v.object({ progress: nonNeg(1) }, { allowExtra: false })),
     plots: v.optional(v.array(v.object({ x: coord, z: coord, growth: nonNeg(1), state: v.string({ oneOf: ['fallow', 'growing', 'ripe'] }) }), { max: 12 })),
   }),
@@ -49,11 +50,15 @@ const KIND_SCHEMAS = {
   }),
   settler: v.object({
     hp: v.number({ min: -1e4, max: 1e5 }), maxHp: v.number({ min: 1, max: 1e5 }),
-    job: v.optional(v.string({ oneOf: ['forester', 'quarrier', 'farmer', 'miner'] })),
+    job: v.optional(v.string({ oneOf: ['forester', 'quarrier', 'farmer', 'miner', 'hunter', 'cook'] })),
+    sleep: v.optional(v.object({ home: v.number({ min: 1, max: 1e9, int: true }), in: v.boolean() }, { allowExtra: false })),
+    hidden: v.optional(v.boolean()),
     carry: v.optional(v.object({ res: v.string({ oneOf: RESOURCES }), amt: nonNeg(1000) })),
     order: v.optional(v.object({ type: v.string({ oneOf: ['gather'] }), kind: v.string({ oneOf: ['tree', 'rock'] }), x: coord, z: coord }, { allowExtra: true })),
     path,
   }),
+  poi: v.object({ type: v.string({ oneOf: ['trader', 'cairn', 'ruin', 'hamlet'] }), state: v.string({ oneOf: ['hidden', 'found', 'done'] }) }),
+  animal: v.object({ type: v.string({ oneOf: ['deer'] }), herd: v.number({ min: 1, max: 64, int: true }), goal: v.optional(point) }),
   deposit: v.object({ type: v.string({ oneOf: ['tree', 'rock', 'iron'] }), amount: v.number({ min: -1000, max: 1e5 }), maxAmount: v.number({ min: 1, max: 1e5 }) }),
 };
 
@@ -87,6 +92,7 @@ const worldSchema = v.object({
     kind: v.string({ oneOf: ['clear', 'snow'] }), intensity: nonNeg(1),
     season: v.optional(v.string({ oneOf: ['summer', 'winter'] })), snow: v.optional(nonNeg(1)), frozen: v.optional(v.boolean()),
   }, { allowExtra: false })),
+  herds: v.optional(v.array(v.object({ id: v.number({ min: 1, max: 64, int: true }), x: coord, z: coord, nextBirth: nonNeg(1e10) }, { allowExtra: false }), { max: 32 })),
   explored: v.optional(v.array(v.number({ min: 0, max: 4294967295, int: true }), { max: 128 })),
   players: v.object({ p1: playerFull, p2: playerFull }, { allowExtra: false }),
   entities: v.record(entitySchema, { max: ENTITY_CAP, keyPattern: /^\d{1,9}$/ }),

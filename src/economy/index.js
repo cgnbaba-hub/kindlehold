@@ -390,7 +390,7 @@ export function createEconomyModule() {
     update() {
       const world = ctx.world;
       for (const s of all(world, 'settler')) {
-        if (s.job || s.arriving || s.leaving) continue;
+        if (s.job || s.arriving || s.leaving || s.sleep) continue;
         if (s.enlisting) continue; // handled by recruitment
         if (s.fleeing) { if (s.interrupted) { if (s.order) releaseGather(world, s, false); abandonTask(world, s); s.interrupted = false; } continue; }
         const keep = keepOf(world, s.owner);

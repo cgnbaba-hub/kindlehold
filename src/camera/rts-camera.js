@@ -13,6 +13,8 @@ export const CAMERA_PRESETS = {
   'enemy-camp': { x: 70, z: -66, yaw: 3.6, zoom: 60 },
   'ford': { x: 22, z: -4, yaw: 0.4, zoom: 55 },
   'showcase': { x: 0, z: 0, yaw: 0.6, zoom: 40 },
+  'levels': { x: -30, z: 52, yaw: 0.9, zoom: 44 },
+  'wildlife': { x: -12, z: 50, yaw: 0.9, zoom: 24 },
 };
 
 const MIN_ZOOM = 16, MAX_ZOOM = 170;

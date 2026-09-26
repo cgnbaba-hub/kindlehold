@@ -50,6 +50,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
       const tickTime = (w.tick + alpha) / 20;
       figs.begin();
       for (const s of all(w, 'settler')) {
+        if (s.hidden) continue; // asleep indoors
         const x = s.px + (s.x - s.px) * alpha, z = s.pz + (s.z - s.pz) * alpha;
         f.x = x; f.z = z; f.y = terrain.height(x, z);
         f.heading = smoothHeading(s, frame.dt);

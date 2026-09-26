@@ -5,6 +5,7 @@ import { h, icon, portrait, clear, setText, fmtTime } from './dom.js';
 import { portraitKey } from './portraits.js';
 import { seasonAt } from '../weather/index.js';
 import { paydayForecast, TAX_LEVELS, HIRE_COST } from '../population/index.js';
+import { POI_INFO, TRADES } from '../pois/index.js';
 import { createMinimap } from './minimap.js';
 import { all } from '../world/world.js';
 import { PLAYER, EV, RESOURCES } from '../core/contracts.js';
@@ -22,7 +23,7 @@ import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler' };
 const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander' };
-const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner' };
+const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner', hunter: 'Hunter', cook: 'Cook' };
 
 function costRow(cost) {
   const row = h('span.cost');
@@ -267,7 +268,8 @@ export function createHud({ root, session, input, settings, actions }) {
         if (def.slots) selPanel.append(h('div.sel-row.small', { text: `${JOB_NAMES[def.job]}s: ${e.workers.length}/${slotsOf(e)}` }));
         let out = 0; for (const r in e.stock.out) out += e.stock.out[r];
         if (def.outCap) selPanel.append(h('div.sel-row.small', { text: `Waiting for pickup: ${out}/${def.outCap} ${RES_NAMES[WORK[def.job].res].toLowerCase()}` }));
-        if (def.inCap) selPanel.append(h('div.sel-row.small', { text: `Provisions for miners: ${e.stock.in.provisions || 0}/${def.inCap}` }));
+        if (def.inCap) selPanel.append(h('div.sel-row.small', { text: `Provisions for the ${e.type === 'canteen' ? 'kitchen' : 'miners'}: ${e.stock.in.provisions || 0}/${def.inCap}` }));
+        if (e.type === 'canteen') selPanel.append(h('div.sel-row.small', { text: `Hot meals ready: ${Math.floor(e.meals || 0)}/${def.mealCap} — served first at every mealtime` }));
         if (def.housing) selPanel.append(h('div.sel-row.small', { text: `Houses ${def.housing + upgradeBonus(e, 'housing') + (e.type === 'keep' && w.players[PLAYER].techs.charter ? 6 : 0)} people` }));
         if (e.type === 'farm' && e.plots) selPanel.append(h('div.sel-row.small', { text: `Fields: ${e.plots.filter((p) => p.state === 'ripe').length} ripe, ${e.plots.filter((p) => p.state === 'growing').length} growing` }));
         if (e.type === 'keep') {
@@ -320,6 +322,7 @@ export function createHud({ root, session, input, settings, actions }) {
       const what = e.job ? JOB_NAMES[e.job] : 'Labourer';
       let doing = 'Idle';
       if (e.fleeing) doing = 'Fleeing to the Keep!';
+      else if (e.sleep) doing = e.sleep.in ? 'Asleep at home' : 'Heading home for the night';
       else if (e.arriving) doing = 'Arriving in Kindlehold';
       else if (e.enlisting) doing = 'Going to the Barracks to train';
       else if (e.order) doing = e.carry ? `Carrying ${e.carry.amt} ${RES_NAMES[e.carry.res].toLowerCase()} to the Keep (your order)` : `${e.order.kind === 'tree' ? 'Felling trees' : 'Cutting stone'} by hand (your order)`;
@@ -328,6 +331,13 @@ export function createHud({ root, session, input, settings, actions }) {
       selPanel.append(head('settler', what, doing));
       selPanel.append(h('div.sel-row', {}, [h('span', { text: `Health ${Math.ceil(e.hp)}/${e.maxHp}` }), hpBar(e.hp / e.maxHp, 'health')]));
       if (e.owner === PLAYER && !e.order) selPanel.append(h('div.sel-row.small.muted', { text: 'Right-click a tree or rock outcrop to gather there by hand.' }));
+      return;
+    }
+    if (e.kind === 'poi') {
+      const info = POI_INFO[e.type];
+      const status = { found: e.type === 'hamlet' ? 'Send Maren here to win the hamlet over.' : e.type === 'trader' ? 'Open for trade: see the buttons on the right.' : 'Send anyone here to see what it holds.', done: { cairn: 'Climbed — the view is mapped.', ruin: 'The cache has been recovered.', hamlet: 'Allied: families joined Kindlehold; a tithe comes every payday.', trader: '' }[e.type] }[e.state] || '';
+      selPanel.append(head(e.type === 'trader' ? 'taler' : e.type === 'hamlet' ? 'cottage' : e.type === 'ruin' ? 'stone' : 'objective', info.name, info.desc));
+      if (status) selPanel.append(h('div.sel-row.small', { text: status }));
       return;
     }
     if (e.kind === 'deposit') {
@@ -366,6 +376,15 @@ export function createHud({ root, session, input, settings, actions }) {
       setText(cmdTitle, 'Labourers');
       cmdGrid.append(cmdButton({ ic: 'stop', label: 'Back to work', tip: 'Stop gathering by hand; they return to hauling and building on their own.', onClick: () => input.issue({ type: 'release', ids: serfs.map((e) => e.id) }) }));
       cmdGrid.append(cmdButton({ ic: 'build', label: 'Build…', key: bb.buildMenu, tip: 'Open the construction menu.', onClick: () => { cmdMode = 'build'; dirtySel = true; } }));
+      return;
+    }
+    if (one && one.kind === 'poi' && one.type === 'trader' && one.state !== 'hidden' && cmdMode !== 'build') {
+      setText(cmdTitle, 'Trade');
+      for (const d of TRADES) {
+        const afford = canAfford(w, PLAYER, d.give);
+        const got = Object.entries(d.get).map(([r, n]) => `${n} ${RES_NAMES[r].toLowerCase()}`).join(', ');
+        cmdGrid.append(cmdButton({ ic: Object.keys(d.get)[0], label: d.label, tipTitle: d.label, tip: afford ? `You receive ${got}.` : `Not enough to trade. You would receive ${got}.`, cost: d.give, disabled: !afford, onClick: () => input.issue({ type: 'trade', id: one.id, deal: d.id }) }));
+      }
       return;
     }
     if (cmdMode === 'build' || (!items.length) || (serfs.length && serfs.length === items.length)) {

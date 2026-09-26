@@ -8,6 +8,8 @@ import { createWater } from '../environment/water.js';
 import { createVegetation } from '../environment/vegetation.js';
 import { createWinter } from '../environment/winter.js';
 import { createShroud } from '../environment/shroud.js';
+import { createWildlifeView } from '../environment/wildlife-view.js';
+import { createPoisView } from '../environment/pois-view.js';
 import { createBuildingsView } from '../buildings/view.js';
 import { createUnitsView } from '../units/view.js';
 import { createEffects } from '../effects/index.js';
@@ -32,6 +34,8 @@ export async function createSession({ container, seed, quality = 'high', verify 
   const terrainView = views.register(createTerrainView({ scene: rc.scene, terrain: sim.terrain, quality: rc.quality, world }));
   const water = views.register(createWater({ scene: rc.scene, terrain: sim.terrain }));
   views.register(createVegetation({ scene: rc.scene, terrain: sim.terrain, world, quality: rc.quality }));
+  views.register(createWildlifeView({ scene: rc.scene, terrain: sim.terrain, world }));
+  views.register(createPoisView({ scene: rc.scene, terrain: sim.terrain, world }));
   const buildingsView = views.register(createBuildingsView({ scene: rc.scene, terrain: sim.terrain, world, renderer: rc.renderer, sky }));
   const unitsView = views.register(createUnitsView({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, getZoom: () => rc.rts.state.zoom }));
   const effects = views.register(createEffects({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, quality: rc.quality, camera: rc.camera, reducedMotion: () => !!settings.reducedMotion }));

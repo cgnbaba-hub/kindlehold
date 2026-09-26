@@ -10,6 +10,7 @@ import { checkPlacement } from '../construction/index.js';
 import { ABILITIES } from '../heroes/index.js';
 import { territorySources } from '../world/territory.js';
 import { shroudOverlay, SNOW } from '../render/structure-material.js';
+import { isNight } from '../population/daily.js';
 
 const MAX_RINGS = 240;
 const MAX_BARS = 240;
@@ -220,8 +221,10 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
       // stall markers
       stallMarks.count = 0;
       const bob = Math.sin(frame.time * 3) * 0.15;
+      const nightNow = isNight(w);
       for (const b of all(w, 'building')) {
-        if (b.owner !== PLAYER || b.state !== 'active' || !STALL_SHOWN.has(b.stall) || stallMarks.count >= 64) continue;
+        // at night the village sleeps: idle workshops are expected, only real access problems show
+        if (b.owner !== PLAYER || b.state !== 'active' || !STALL_SHOWN.has(b.stall) || stallMarks.count >= 64 || (nightNow && b.stall !== 'noAccess')) continue;
         m4.compose(p.set(b.x, terrain.height(b.x, b.z) + BUILDINGS[b.type].radius * 1.1 + 4.5 + bob, b.z), camera.quaternion, s.set(1, 1, 1));
         stallMarks.setMatrixAt(stallMarks.count++, m4);
       }

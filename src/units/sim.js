@@ -151,7 +151,9 @@ export function createUnitsModule() {
           q.settlerId = null;
           let best = null, bestD = Infinity;
           for (const c of all(world, 'settler')) {
-            if (c.owner !== b.owner || !isIdleLabourer(c) || c.leaving || c.enlisting) continue;
+            // the Barracks rouses sleeping labourers too: a call to arms does not wait for dawn
+            const roused = c.sleep && !c.job && !c.order && !c.carry;
+            if (c.owner !== b.owner || !(isIdleLabourer(c) || roused) || c.leaving || c.enlisting) continue;
             const d = (c.x - b.x) ** 2 + (c.z - b.z) ** 2;
             if (d < bestD) { bestD = d; best = c; }
           }
@@ -159,6 +161,7 @@ export function createUnitsModule() {
           if (b.stall === 'noSettler') b.stall = null;
           best.enlisting = b.id;
           best.task = null;
+          if (best.sleep) { best.sleep = null; best.hidden = false; }
           stopWalking(best);
           q.settlerId = best.id;
           s = best;

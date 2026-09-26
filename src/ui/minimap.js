@@ -83,7 +83,8 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
       ctx.fillStyle = '#d8d6cc';
       ctx.fillRect(toPx(d.x) - 1.5, toPx(d.z) - 1.5, 3, 3);
     }
-    for (const s of all(w, 'settler')) { ctx.fillStyle = '#efe6d2'; ctx.fillRect(toPx(s.x) - 0.8, toPx(s.z) - 0.8, 1.6, 1.6); }
+    for (const a of all(w, 'animal')) { if (!seen(a)) continue; ctx.fillStyle = '#b07a44'; ctx.fillRect(toPx(a.x) - 1, toPx(a.z) - 1, 2, 2); }
+    for (const s of all(w, 'settler')) { if (s.hidden) continue; ctx.fillStyle = '#efe6d2'; ctx.fillRect(toPx(s.x) - 0.8, toPx(s.z) - 0.8, 1.6, 1.6); }
     for (const u of all(w, 'unit')) {
       if (u.downed || !seen(u)) continue;
       ctx.fillStyle = u.hero ? '#ffd27a' : u.owner === PLAYER ? '#7fe0ff' : '#ff7a5a';

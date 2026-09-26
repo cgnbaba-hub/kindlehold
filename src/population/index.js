@@ -21,6 +21,10 @@ export const TAX_LEVELS = [
   { id: 'high', name: 'High', perSettler: 3, stability: -12 },
 ];
 export const SOLDIER_PAY = 1;
+export const HOT_MEAL_STABILITY = 8; // stability target bonus when everyone gets a hot meal
+
+export function asleepCount(world, owner) { let n = 0; for (const s of all(world, 'settler')) if (s.owner === owner && s.sleep && s.sleep.in) n++; return n; }
+export function mealsInStock(world, owner) { let n = 0; for (const b of all(world, 'building')) if (b.owner === owner && b.type === 'canteen' && b.state === 'active') n += Math.floor(b.meals || 0); return n; }
 export const HIRE_COST = 40; // Taler to hire a labourer at the Keep (needs free housing)
 
 /** Expected income at the next payday: { taxes, pay, net }. */
@@ -73,14 +77,16 @@ export function populationOf(world, owner) {
 }
 
 export function isIdleLabourer(s) {
-  return s.kind === 'settler' && !s.job && !s.order && !s.carry && (!s.task || s.task.type === 'idle') && !s.arriving && !s.fleeing;
+  return s.kind === 'settler' && !s.job && !s.order && !s.sleep && !s.enlisting && !s.carry && (!s.task || s.task.type === 'idle') && !s.arriving && !s.fleeing;
 }
 
-/** Work-speed multiplier from stability (0.6 .. 1.0). */
+/** Work-speed multiplier from stability (0.6 .. 1.0), times the rested-by-day bonus. */
 export function stabilityFactor(world, owner) {
   const p = world.players[owner];
-  return 0.6 + 0.4 * (p ? p.stability / 100 : 1);
+  return (0.6 + 0.4 * (p ? p.stability / 100 : 1)) * RESTED;
 }
+/** Settlers who sleep at night work faster by day; balances the hours lost to the night. */
+export const RESTED = 1.18;
 
 export function keepOf(world, owner) {
   for (const b of all(world, 'building')) if (b.type === 'keep' && b.owner === owner && b.state !== 'destroyed') return b;
@@ -136,16 +142,25 @@ export function createPopulationModule() {
     }
 
     // warn half a minute before a meal the stores cannot cover
-    if (keep && p.nextMealTick - world.tick === 900 && p.res.provisions < p.pop) {
+    if (keep && p.nextMealTick - world.tick === 900 && p.res.provisions + mealsInStock(world, owner) < p.pop - asleepCount(world, owner)) {
       alert(world, 'warn', `Provisions are running low: ${Math.floor(p.res.provisions)} left for ${p.pop} people at the next meal. Build or staff Farmsteads.`, keep.x, keep.z);
     }
     // meals
     if (world.tick >= p.nextMealTick) {
       p.nextMealTick = world.tick + MEAL_INTERVAL;
-      const need = p.pop;
-      const eat = Math.min(need, Math.floor(p.res.provisions));
+      // sleepers do not eat; hot meals from the Tavern are served first, then plain stores
+      const need = Math.max(0, p.pop - asleepCount(world, owner));
+      let hot = 0;
+      for (const b of all(world, 'building')) {
+        if (b.owner !== owner || b.type !== 'canteen' || b.state !== 'active' || !b.meals) continue;
+        const take = Math.min(need - hot, Math.floor(b.meals));
+        b.meals -= take; hot += take;
+        if (hot >= need) break;
+      }
+      const eat = Math.min(need - hot, Math.floor(p.res.provisions));
       if (eat > 0) { addRes(world, owner, 'provisions', -eat, 'meal'); world.stats.consumed.provisions += eat; }
-      p.lastMealFed = need > 0 ? eat / need : 1;
+      p.lastMealFed = need > 0 ? (hot + eat) / need : 1;
+      if (need > 0) p.hotMeals = hot / need;
       if (p.lastMealFed < 1) {
         p.stability = Math.max(0, p.stability - 8 * (1 - p.lastMealFed));
         alert(world, 'warn', 'Your people went hungry. Build or staff Farmsteads.', keep ? keep.x : 0, keep ? keep.z : 0);
@@ -158,7 +173,7 @@ export function createPopulationModule() {
       const headroom = p.popCap - p.pop;
       const target = Math.max(0, Math.min(100,
         40 + 35 * p.lastMealFed + (headroom >= 1 ? 10 : 0) + (headroom < 0 ? -20 : 0) + (keep && keep.lit ? 10 : -10) - p.burnPenalty
-        + (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability));
+        + (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability + HOT_MEAL_STABILITY * (p.hotMeals || 0)));
       const step = 0.5;
       if (p.stability < target) p.stability = Math.min(target, p.stability + step);
       else if (p.stability > target) p.stability = Math.max(target, p.stability - step);
@@ -237,6 +252,7 @@ export function createPopulationModule() {
         continue;
       }
       // flee from nearby enemies (checked every 10 ticks)
+      if (s.hidden) continue; // asleep indoors
       if ((world.tick + s.id) % 10 === 0 && spatial) {
         spatial.query(s.x, s.z, 9, enemyBuf, (e) => e.kind === 'unit' && e.owner !== s.owner && !e.downed);
         if (enemyBuf.length > 0 && keep) {

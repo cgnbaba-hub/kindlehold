@@ -110,6 +110,7 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
     else if (d.kind === 'quarrier') { emit('dust', d.x, y + 0.6, d.z, 2, 0.8, [0, 0.6, 0], 0.6); emit('chips', d.x, y + 0.8, d.z, 3, 0.4, [0, 2.8, 0], 2.2); }
     else if (d.kind === 'mine') { emit('sparks', d.x, y + 1.1, d.z, 5, 0.3, [0, 2.2, 0], 2.8); }
     else if (d.kind === 'build' || d.kind === 'repair') { emit('dust', d.x, y + 0.3, d.z, 2, 0.6, [0, 0.4, 0], 0.5); }
+    else if (d.kind === 'cook') { emit('smoke', d.x, y + 5.5, d.z, 1, 0.6, [0, 0.8, 0], 0.3); }
     else if (d.kind === 'harvest' || d.kind === 'sow') { emit('dust', d.x, y + 0.2, d.z, 1, 0.8, [0, 0.3, 0], 0.4); }
   }));
   // breaking ice: whoever was on the river scrambles out in a spray of water and ice
