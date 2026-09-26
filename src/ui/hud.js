@@ -1,7 +1,10 @@
 // In-game HUD (semantic HTML over the canvas): resources, population, stability,
 // clock, objectives + tutorial hints, dialogue, alerts, selection panel, command grid,
 // minimap, tooltips, placement banner, toasts.
-import { h, icon, clear, setText, fmtTime } from './dom.js';
+import { h, icon, portrait, clear, setText, fmtTime } from './dom.js';
+import { portraitKey } from './portraits.js';
+import { seasonAt } from '../weather/index.js';
+import { paydayForecast, TAX_LEVELS, HIRE_COST } from '../population/index.js';
 import { createMinimap } from './minimap.js';
 import { all } from '../world/world.js';
 import { PLAYER, EV, RESOURCES } from '../core/contracts.js';
@@ -17,7 +20,7 @@ import { scenarioOf } from '../missions/index.js';
 import { aiSettings } from '../ai/index.js';
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 
-const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions' };
+const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler' };
 const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander' };
 const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner' };
 
@@ -177,7 +180,9 @@ export function createHud({ root, session, input, settings, actions }) {
     }
     if (!msgShowing && msgQueue.length) {
       const m = msgQueue.shift();
-      msgShowing = h('div.msg', {}, [h('div.msg-speaker', {}, [h('strong', { text: m.speaker }), h('span', { text: m.role ? ` — ${m.role}` : '' })]), h('p', { text: m.text })]);
+      const pk = portraitKey(m);
+      const pic = pk ? portrait(pk) : null;
+      msgShowing = h(`div.msg${pic ? '.with-portrait' : ''}`, {}, [pic, h('div.msg-body', {}, [h('div.msg-speaker', {}, [h('strong', { text: m.speaker }), h('span', { text: m.role ? ` — ${m.role}` : '' })]), h('p', { text: m.text })])]);
       clear(dialogue).append(msgShowing);
       msgTimer = Math.max(5, Math.min(11, m.text.length / 14));
     }
@@ -224,7 +229,7 @@ export function createHud({ root, session, input, settings, actions }) {
       selPanel.append(h('div.sel-empty', {}, [
         h('h3', { text: 'Kindlehold' }),
         h('p', { text: `${p.pop} people · ${idle} labourers · stability ${Math.round(p.stability)}` }),
-        h('p.muted', { text: 'Left-click to select, drag to select soldiers, right-click to command.' }),
+        h('p.muted', { text: 'Left-click to select, drag to select soldiers (or labourers), right-click to command.' }),
       ]));
       return;
     }
@@ -240,6 +245,7 @@ export function createHud({ root, session, input, settings, actions }) {
         grid.append(b);
       }
       selPanel.append(grid);
+      if (groups.settler && groups.settler.length === items.length) selPanel.append(h('div.sel-row.small.muted', { text: 'Right-click a tree or rock outcrop: these labourers fell timber or cut stone by hand and carry it to the Keep.' }));
       return;
     }
     const e = items[0];
@@ -266,6 +272,16 @@ export function createHud({ root, session, input, settings, actions }) {
           const p = w.players[PLAYER];
           if (!e.lit) selPanel.append(h('div.sel-warn', { text: 'The hearth is dark. Rekindle it so settlers come home.' }));
           if (p.research) selPanel.append(h('div.sel-row', {}, [h('span', { text: `Studying ${TECHS[p.research.techId].name}` }), hpBar(p.research.progress, 'research')]));
+          // treasury: tax level and the next payday
+          const f = paydayForecast(w, PLAYER);
+          const taxRow = h('div.tax-row', { role: 'group', 'aria-label': 'Tax level' }, [h('span', { text: 'Taxes' })]);
+          TAX_LEVELS.forEach((lvl, i) => {
+            const b = h(`button.tax-btn${(p.tax ?? 1) === i ? '.active' : ''}`, { type: 'button', 'aria-pressed': (p.tax ?? 1) === i ? 'true' : 'false', 'data-tip': `${lvl.perSettler} Taler per settler each payday · stability ${lvl.stability > 0 ? '+' : ''}${lvl.stability}` , text: lvl.name });
+            b.addEventListener('click', () => { input.issue({ type: 'setTax', level: i }); setTimeout(() => { dirtySel = true; }, 120); });
+            taxRow.append(b);
+          });
+          selPanel.append(taxRow);
+          selPanel.append(h('div.sel-row.small', { text: `Payday in ${fmtTime(Math.max(0, (p.nextPayTick ?? 0) - w.tick) / 20)}: +${f.taxes} taxes from ${f.settlers} settlers${f.pay ? `, −${f.pay} pay for ${f.soldiers} soldiers` : ''}` }));
         }
         if (e.type === 'barracks' && e.queue.length) {
           const q = h('div.queue');
@@ -302,10 +318,12 @@ export function createHud({ root, session, input, settings, actions }) {
       if (e.fleeing) doing = 'Fleeing to the Keep!';
       else if (e.arriving) doing = 'Arriving in Kindlehold';
       else if (e.enlisting) doing = 'Going to the Barracks to train';
+      else if (e.order) doing = e.carry ? `Carrying ${e.carry.amt} ${RES_NAMES[e.carry.res].toLowerCase()} to the Keep (your order)` : `${e.order.kind === 'tree' ? 'Felling trees' : 'Cutting stone'} by hand (your order)`;
       else if (e.job) doing = e.carry ? `Carrying ${e.carry.amt} ${RES_NAMES[e.carry.res].toLowerCase()}` : `Working at the ${BUILDINGS[w.entities[e.workplace] ? w.entities[e.workplace].type : 'keep'].name}`;
       else if (e.task) doing = { supply: 'Carrying building materials', build: 'Building', haul: 'Hauling goods to the Keep', deliver: 'Delivering provisions', repair: 'Repairing', idle: 'Idle at the hearth' }[e.task.type] || 'Busy';
       selPanel.append(head('settler', what, doing));
       selPanel.append(h('div.sel-row', {}, [h('span', { text: `Health ${Math.ceil(e.hp)}/${e.maxHp}` }), hpBar(e.hp / e.maxHp, 'health')]));
+      if (e.owner === PLAYER && !e.order) selPanel.append(h('div.sel-row.small.muted', { text: 'Right-click a tree or rock outcrop to gather there by hand.' }));
       return;
     }
     if (e.kind === 'deposit') {
@@ -317,7 +335,7 @@ export function createHud({ root, session, input, settings, actions }) {
   // --- command grid ------------------------------------------------------------------------------
   let cmdMode = 'auto'; // 'auto' | 'build'
   let confirmDemolish = 0;
-  const SHORT = { 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
+  const SHORT = { 'Back to work': 'Release', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
   function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
   function cmdButton({ ic, label, key, tip, tipTitle, onClick, disabled = false, cost = null, progress = null, cooldown = null, active = false, highlight = false }) {
     const b = h(`button.cmd${active ? '.active' : ''}${highlight ? '.pulse' : ''}`, { type: 'button', 'aria-label': label, 'data-tip': tip || label, 'data-tip-title': tipTitle || label, 'aria-disabled': disabled ? 'true' : 'false' }, [icon(ic, 'icon icon-md'), cost ? null : h('span.cmd-label', { text: shortLabel(label) })]);
@@ -339,7 +357,14 @@ export function createHud({ root, session, input, settings, actions }) {
     const units = items.filter((e) => e.kind === 'unit' && e.owner === PLAYER && !e.downed);
     const activeObj = scenarioOf(w).objectives.find((o) => { const st = w.mission.objectives.find((x) => x.id === o.id); return st && st.state === 'active' && !o.optional; });
     const hl = settings.tutorialHints && activeObj ? activeObj.highlight : null;
-    if (cmdMode === 'build' || (!items.length) || (one && one.kind === 'settler')) {
+    const serfs = items.filter((e) => e.kind === 'settler' && e.owner === PLAYER);
+    if (cmdMode !== 'build' && serfs.length && serfs.length === items.length && serfs.some((e) => e.order)) {
+      setText(cmdTitle, 'Labourers');
+      cmdGrid.append(cmdButton({ ic: 'stop', label: 'Back to work', tip: 'Stop gathering by hand; they return to hauling and building on their own.', onClick: () => input.issue({ type: 'release', ids: serfs.map((e) => e.id) }) }));
+      cmdGrid.append(cmdButton({ ic: 'build', label: 'Build…', key: bb.buildMenu, tip: 'Open the construction menu.', onClick: () => { cmdMode = 'build'; dirtySel = true; } }));
+      return;
+    }
+    if (cmdMode === 'build' || (!items.length) || (serfs.length && serfs.length === items.length)) {
       setText(cmdTitle, 'Build');
       for (const type of PLAYER_BUILD_ORDER) {
         const def = BUILDINGS[type];
@@ -383,6 +408,10 @@ export function createHud({ root, session, input, settings, actions }) {
       if (one.state !== 'active') return;
       if (one.type === 'keep') {
         if (!one.lit) cmdGrid.append(cmdButton({ ic: 'rekindle', label: 'Rekindle the Hearth', tip: 'Light the keep fire. Settlers will return to Kindlehold.', highlight: hl === 'keep', onClick: () => input.issue({ type: 'rekindle' }) }));
+        else {
+          const full = p.pop >= p.popCap;
+          cmdGrid.append(cmdButton({ ic: 'settler', label: 'Hire labourer', tipTitle: `Hire a labourer (${HIRE_COST} Taler)`, tip: full ? 'No free housing — build Cottages first.' : p.res.taler < HIRE_COST ? `Not enough Taler. Taxes come in every payday.` : 'A labourer joins at once, straight from the Keep.', cost: { taler: HIRE_COST }, disabled: full || p.res.taler < HIRE_COST, onClick: () => input.issue({ type: 'hireSettler' }) }));
+        }
         for (const id of TECH_ORDER) {
           const t = TECHS[id];
           const done = p.techs[id];
@@ -448,7 +477,7 @@ export function createHud({ root, session, input, settings, actions }) {
     t = 0;
     // resources + rates over the last minute
     while (resHistory.length && w.tick - resHistory[0].tick > 1200) resHistory.shift();
-    const rates = { timber: 0, stone: 0, iron: 0, provisions: 0 };
+    const rates = { timber: 0, stone: 0, iron: 0, provisions: 0, taler: 0 };
     for (const r of resHistory) rates[r.res] += r.delta;
     for (const r of RESOURCES) {
       setText(resEls[r].val, Math.floor(p.res[r]));
@@ -467,7 +496,11 @@ export function createHud({ root, session, input, settings, actions }) {
     const hour = w.time.hour;
     const hh = Math.floor(hour), mm = Math.floor((hour - hh) * 60);
     clear(clockIcon).append(icon(hour > 6 && hour < 19 ? 'sun' : 'moon', 'icon icon-sm'));
-    setText(clockText, `${fmtTime(w.tick / 20)} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`);
+    const ss = seasonAt(w.tick);
+    // season: compact (the top bar must stay clear of the ribbon at 1280 px); details in the tooltip
+    const season = ss.winter ? ` · ❄ ${fmtTime(ss.untilEnd / 20)}` : ss.untilNext <= 60 * 20 ? ` · ❄ in ${fmtTime(ss.untilNext / 20)}` : '';
+    setText(clockText, `${fmtTime(w.tick / 20)} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}${season}`);
+    clockText.setAttribute('data-tip', ss.winter ? `Winter: crops grow slowly, the river is frozen. Thaw in ${fmtTime(ss.untilEnd / 20)}.` : `Summer. Next winter in ${fmtTime(ss.untilNext / 20)}.`);
     setText(speedBtn, session.loop.isPaused() ? 'II' : `${session.loop.getSpeed()}×`);
     // raid countdown
     if (w.ai.raidTick != null && w.ai.state === 'build' && w.mission.flags.raidWarned) {

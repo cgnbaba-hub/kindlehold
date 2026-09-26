@@ -7,6 +7,7 @@ import { SETTLER } from '../units/defs.js';
 import { stabilityFactor } from '../population/index.js';
 import { walkTo, stopWalking } from '../navigation/agent.js';
 import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
+import { growthFactor } from '../weather/index.js';
 
 export const WORK = {
   forester: { res: 'timber', perTrip: 3, work: 5.0, strike: 0.7, anim: 'chop' },
@@ -250,7 +251,7 @@ export function createProductionModule() {
       if (world.tick % 5 === 0) {
         for (const b of all(world, 'building')) {
           if (b.type !== 'farm' || b.state !== 'active' || !b.plots) continue;
-          const rate = (5 * DT) / WORK.farmer.grow * stabilityFactor(world, b.owner);
+          const rate = (5 * DT) / WORK.farmer.grow * stabilityFactor(world, b.owner) * growthFactor(world);
           for (const p of b.plots) if (p.state === 'growing') { p.growth = Math.min(1, p.growth + rate); if (p.growth >= 1) p.state = 'ripe'; }
         }
       }

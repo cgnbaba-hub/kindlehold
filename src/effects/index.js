@@ -6,6 +6,7 @@ import { all } from '../world/world.js';
 import { EV } from '../core/contracts.js';
 import { BUILDINGS } from '../buildings/defs.js';
 import { viewRng } from '../render/geometry-kit.js';
+import { shroudOverlay } from '../render/structure-material.js';
 
 function spriteTexture() {
   const size = 64;
@@ -35,6 +36,7 @@ const KINDS = {
   flare: { life: 0.9, size: [1.2, 3.4], color: '#ffe0a0', alpha: 0.6, rise: 0.5, drag: 1.5, additive: true },
   ward: { life: 1.4, size: [0.5, 0.1], color: '#8fd0ff', alpha: 0.9, rise: 1.6, drag: 0.5, additive: true },
   glint: { life: 0.8, size: [0.35, 0.1], color: '#ffe9b0', alpha: 1, rise: 1.2, drag: 1, additive: true },
+  splash: { life: 0.8, size: [0.35, 0.12], color: '#cfe4ee', alpha: 0.9, rise: -8, drag: 0.6, additive: false },
 };
 
 export function createEffects({ scene, terrain, world, bus, quality, camera, reducedMotion = () => false }) {
@@ -51,6 +53,7 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
         .replace('#include <alphamap_fragment>', '#include <alphamap_fragment>\ndiffuseColor.a *= vAlpha;');
     };
     mat.customProgramCacheKey = () => 'kh-particles-' + additive;
+    shroudOverlay(mat); // effects in unexplored land stay hidden
     const mesh = new THREE.InstancedMesh(geo, mat, max);
     const alphaAttr = new THREE.InstancedBufferAttribute(new Float32Array(max), 1);
     alphaAttr.setUsage(THREE.DynamicDrawUsage);
@@ -109,6 +112,8 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
     else if (d.kind === 'build' || d.kind === 'repair') { emit('dust', d.x, y + 0.3, d.z, 2, 0.6, [0, 0.4, 0], 0.5); }
     else if (d.kind === 'harvest' || d.kind === 'sow') { emit('dust', d.x, y + 0.2, d.z, 1, 0.8, [0, 0.3, 0], 0.4); }
   }));
+  // breaking ice: whoever was on the river scrambles out in a spray of water and ice
+  unsub.push(bus.on('weather:soaked', (d) => { emit('splash', d.x, heightAt(d.x, d.z) + 0.6, d.z, 10, 0.5, [0, 3.2, 0], 2.4); }));
   unsub.push(bus.on(EV.COMBAT_SHOT, (d) => {
     if (shots.length > 180) return;
     const fy = d.fy != null ? d.fy : 1.4;

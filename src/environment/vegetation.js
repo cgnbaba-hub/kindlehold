@@ -134,7 +134,13 @@ export function createVegetation({ scene, terrain, world, quality }) {
   treeMat.onBeforeCompile = windPatch(uniforms, [0.03, 2.0]);
   treeMat.customProgramCacheKey = () => 'kh-tree';
   const grassMat = createStructureMaterial({ roughness: 1 });
-  grassMat.onBeforeCompile = windPatch(uniforms, [0.12, 0.05]);
+  const grassWind = windPatch(uniforms, [0.12, 0.05]);
+  grassMat.onBeforeCompile = (shader) => {
+    grassWind(shader);
+    // winter: only dry, straw-coloured tufts poke through the snow
+    shader.fragmentShader = shader.fragmentShader.replace('float roughnessFactor = roughness * khRough / 0.85;', `float roughnessFactor = roughness * khRough / 0.85;
+diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(vWPos.xz * 3.0) * 0.4), uSnow * 0.8);`);
+  };
   grassMat.customProgramCacheKey = () => 'kh-grass';
   const rockMat = createStructureMaterial({ roughness: 0.9 });
 

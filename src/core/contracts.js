@@ -2,11 +2,11 @@
 
 export const TICK_RATE = 20;
 export const DT = 1 / TICK_RATE;
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export const ENTITY_CAP = 1200;
 export const MAX_SAVE_BYTES = 2 * 1024 * 1024;
 
-export const RESOURCES = /** @type {const} */ (['timber', 'stone', 'iron', 'provisions']);
+export const RESOURCES = /** @type {const} */ (['timber', 'stone', 'iron', 'provisions', 'taler']);
 
 export const PLAYER = 'p1';
 export const ENEMY = 'p2';
@@ -44,7 +44,7 @@ export const EV = Object.freeze({
 });
 
 /**
- * @typedef {'timber'|'stone'|'iron'|'provisions'} ResourceId
+ * @typedef {'timber'|'stone'|'iron'|'provisions'|'taler'} ResourceId
  * @typedef {Record<ResourceId, number>} Stock
  *
  * @typedef {Object} Entity

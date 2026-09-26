@@ -12,6 +12,29 @@ export const MEAL_INTERVAL = 90 * 20;
 export const ARRIVAL_COST = 2;
 export const MIN_FREE_LABOURERS = 2;
 
+// Money: every two minutes is payday. Settlers pay taxes into the Keep, soldiers draw their pay.
+// The tax level trades income against stability (contentment).
+export const PAY_INTERVAL = 120 * 20;
+export const TAX_LEVELS = [
+  { id: 'low', name: 'Low', perSettler: 1, stability: 8 },
+  { id: 'fair', name: 'Fair', perSettler: 2, stability: 0 },
+  { id: 'high', name: 'High', perSettler: 3, stability: -12 },
+];
+export const SOLDIER_PAY = 1;
+export const HIRE_COST = 40; // Taler to hire a labourer at the Keep (needs free housing)
+
+/** Expected income at the next payday: { taxes, pay, net }. */
+export function paydayForecast(world, owner) {
+  const p = world.players[owner];
+  const level = TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1];
+  let settlers = 0, soldiers = 0;
+  for (const s of all(world, 'settler')) if (s.owner === owner && !s.arriving && !s.leaving) settlers++;
+  for (const u of all(world, 'unit')) if (u.owner === owner && !u.hero) soldiers++;
+  const taxes = settlers * level.perSettler;
+  const pay = soldiers * SOLDIER_PAY;
+  return { taxes, pay, net: taxes - pay, settlers, soldiers };
+}
+
 const DIFF = {
   story: { arrival: 12 * 20 },
   normal: { arrival: 16 * 20 },
@@ -49,7 +72,7 @@ export function populationOf(world, owner) {
 }
 
 export function isIdleLabourer(s) {
-  return s.kind === 'settler' && !s.job && !s.carry && (!s.task || s.task.type === 'idle') && !s.arriving && !s.fleeing;
+  return s.kind === 'settler' && !s.job && !s.order && !s.carry && (!s.task || s.task.type === 'idle') && !s.arriving && !s.fleeing;
 }
 
 /** Work-speed multiplier from stability (0.6 .. 1.0). */
@@ -94,6 +117,23 @@ export function createPopulationModule() {
       }
     }
 
+    // payday: taxes in, soldiers' pay out; unpaid soldiers grumble (stability)
+    if (p.nextPayTick == null) p.nextPayTick = world.tick + PAY_INTERVAL;
+    if (keep && keep.lit && world.tick >= p.nextPayTick) {
+      p.nextPayTick = world.tick + PAY_INTERVAL;
+      const f = paydayForecast(world, owner);
+      if (f.taxes > 0) { addRes(world, owner, 'taler', f.taxes, 'taxes'); world.stats.produced.taler = (world.stats.produced.taler || 0) + f.taxes; }
+      const paid = Math.min(f.pay, Math.floor(p.res.taler));
+      if (paid > 0) { addRes(world, owner, 'taler', -paid, 'pay'); world.stats.consumed.taler = (world.stats.consumed.taler || 0) + paid; }
+      if (paid < f.pay) {
+        p.stability = Math.max(0, p.stability - 6);
+        alert(world, 'warn', `Payday: the treasury cannot pay ${f.pay - paid} soldiers. Unpaid troops grumble — raise taxes or keep fewer soldiers.`, keep.x, keep.z);
+      } else {
+        alert(world, 'info', `Payday: +${f.taxes} Taler in taxes${f.pay ? `, −${f.pay} soldiers' pay` : ''}.`, keep.x, keep.z);
+      }
+      emit(world, 'population:payday', { owner, taxes: f.taxes, pay: f.pay, paid });
+    }
+
     // warn half a minute before a meal the stores cannot cover
     if (keep && p.nextMealTick - world.tick === 900 && p.res.provisions < p.pop) {
       alert(world, 'warn', `Provisions are running low: ${Math.floor(p.res.provisions)} left for ${p.pop} people at the next meal. Build or staff Farmsteads.`, keep.x, keep.z);
@@ -116,7 +156,8 @@ export function createPopulationModule() {
     if (world.tick % 20 === 0) {
       const headroom = p.popCap - p.pop;
       const target = Math.max(0, Math.min(100,
-        40 + 35 * p.lastMealFed + (headroom >= 1 ? 10 : 0) + (headroom < 0 ? -20 : 0) + (keep && keep.lit ? 10 : -10) - p.burnPenalty));
+        40 + 35 * p.lastMealFed + (headroom >= 1 ? 10 : 0) + (headroom < 0 ? -20 : 0) + (keep && keep.lit ? 10 : -10) - p.burnPenalty
+        + (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability));
       const step = 0.5;
       if (p.stability < target) p.stability = Math.min(target, p.stability + step);
       else if (p.stability > target) p.stability = Math.max(target, p.stability - step);
@@ -215,10 +256,36 @@ export function createPopulationModule() {
     }
   }
 
+  function onCommand(cmd) {
+    const world = ctx.world;
+    const owner = cmd.owner || PLAYER;
+    const p = world.players[owner];
+    if (!p || p.ai) return;
+    if (cmd.type === 'setTax') {
+      const lvl = cmd.level | 0;
+      if (lvl < 0 || lvl >= TAX_LEVELS.length || lvl === p.tax) return;
+      p.tax = lvl;
+      emit(world, 'population:tax', { owner, level: lvl });
+    } else if (cmd.type === 'hireSettler') {
+      const keep = keepOf(world, owner);
+      if (!keep || !keep.lit || p.res.taler < HIRE_COST || populationOf(world, owner) >= housingCap(world, owner)) {
+        emit(world, EV.COMMAND_REJECTED, { cmd, reason: !keep || !keep.lit ? 'The hearth must burn first' : p.res.taler < HIRE_COST ? 'Not enough Taler' : 'No free housing' });
+        return;
+      }
+      const door = doorOf(keep);
+      const s = spawnSettler(world, owner, door.x, door.z + 1.5);
+      if (!s) return;
+      addRes(world, owner, 'taler', -HIRE_COST, 'hire');
+      world.stats.consumed.taler = (world.stats.consumed.taler || 0) + HIRE_COST;
+      world.stats.settlersArrived++;
+      emit(world, EV.SETTLER_ARRIVED, { id: s.id, hired: true });
+    }
+  }
+
   return {
     id: 'population',
     kind: 'sim',
-    init(c) { ctx = c; },
+    init(c) { ctx = c; unsub.push(c.bus.on('command', onCommand)); },
     update() {
       const world = ctx.world;
       for (const owner in world.players) {

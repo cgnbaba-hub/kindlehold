@@ -18,7 +18,7 @@ export function createMissionsModule() {
     const sc = scenarioOf(world);
     for (const l of lines) {
       const sp = sc.speakers[l.speaker] || { name: l.speaker, role: '' };
-      const msg = { tick: world.tick, speaker: sp.name, role: sp.role, text: l.text, kind };
+      const msg = { tick: world.tick, speaker: sp.name, role: sp.role, text: l.text, kind, portrait: l.speaker };
       world.mission.messages.push(msg);
       if (world.mission.messages.length > 60) world.mission.messages.shift();
       emit(world, EV.MISSION_MESSAGE, msg);

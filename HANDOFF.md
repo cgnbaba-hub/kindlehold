@@ -1,4 +1,4 @@
-# Handoff — Stand für neue Sessions (Stand 2026-09-26)
+# Handoff — Stand für neue Sessions (Stand 2026-09-26, Stufe 2)
 
 Kindlehold ist ein originales Browser-3D-Siedlungs-/RTS-Spiel (Three.js 0.186, Vite 8, reines JS,
 ES-Module). Entwickelt wurde es in einer Claude-Code-Session auf einem Hostinger-VPS. Diese Datei
@@ -19,14 +19,15 @@ fasst zusammen, was eine neue Session (z. B. Claude Code im Web) wissen muss.
   VPS (127.0.0.1:8098), erreichbar über einen Cloudflare-Tunnel.
 - **Deployen geht nur auf dem VPS** (`SKIP_TUNNEL=1 deploy/scripts/publish-vps.sh`). Eine
   Cloud-Session kann nicht deployen. Änderungen pushen, der Nutzer deployt danach vom VPS aus.
-- Zuletzt deployt: Commit `072565d`.
+- Zuletzt deployt: Commit `072565d`. Die Stufe-2-Änderungen liegen auf dem Branch
+  `claude/dreamy-ptolemy-ef0rzl` und sind noch nicht deployt.
 
 ## Befehle
 
 ```bash
 npm ci && npx playwright install chromium   # einmalig
 npm run dev          # http://127.0.0.1:5180/  (?debug=1 stellt window.__GAME__ bereit)
-npm test             # 72 node:test-Tests (Unit, Integration, deterministische Simulation)
+npm test             # 82 node:test-Tests (Unit, Integration, deterministische Simulation)
 npm run build
 npm run verify -- --prod --nofps    # 12 Screenshot-Presets + JSON-Berichte (langsam)
 npm run test:e2e -- --only=<name>   # UI-Tests in Headless-Chromium, --only filtert
@@ -60,6 +61,19 @@ Details stehen in `ARCHITECTURE.md`, `GAME_DESIGN.md` und `docs/DECISIONS.md`.
     (`scripts/assets/render-menu-art.mjs`).
 - Das interaktive Tutorial liegt in `src/ui/tutorial.js`. `settings.tutorialDone` merkt sich, ob es
   schon durchlaufen wurde; unter „How to Play“ lässt es sich neu starten.
+
+## Stufe 2 „Siedler-Gefühl“ (Cloud-Session 2026-09-26)
+
+Neu: Jahreszeiten mit Winter (Schnee, zugefrorener und begehbarer Fluss, langsame Felder),
+Leibeigenen-Befehle (Arbeiter per Rechtsklick auf Baum oder Felsen schicken), Taler mit
+Steuern und Zahltag (Speicherstand-Schema 3), eine
+Erkundungs-Schwärze über unerkundetem Land und Porträts im Dialogfenster. Details und die
+Liste für Stufe 3 stehen in `docs/SIEDLER_ROADMAP.md`. Prüflauf 2026-09-26: Tests 82/82,
+Screenshot-Presets 14/14, e2e 10/10 (der 1280er-Layout-Test nach Korrektur einzeln wiederholt).
+
+- Cloud-Session: Playwright findet den vorinstallierten Browser über
+  `CHROMIUM_PATH=/opt/pw-browsers/chromium` (ohne diese Variable bleibt alles wie bisher).
+- Neue Screenshot-Presets: `winter-overview` und `winter-settlement` (Demo-Zustand `winter`).
 
 ## Stand und Qualität
 

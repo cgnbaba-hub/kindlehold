@@ -12,7 +12,8 @@ export const CHROMIUM_ARGS = [
 ];
 
 export async function launch() {
-  return chromium.launch({ headless: true, args: CHROMIUM_ARGS });
+  // CHROMIUM_PATH lets environments with a preinstalled browser (e.g. cloud sessions) skip the download
+  return chromium.launch({ headless: true, args: CHROMIUM_ARGS, executablePath: process.env.CHROMIUM_PATH || undefined });
 }
 
 /** Attach listeners that record console messages, page errors and failed requests. */

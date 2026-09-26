@@ -3,6 +3,7 @@ import { all } from '../world/world.js';
 import { PLAYER } from '../core/contracts.js';
 import { BUILDINGS } from '../buildings/defs.js';
 import { computeSplat } from '../terrain/terrain-view.js';
+import { EXPLORE_GRID, isExplored } from '../exploration/index.js';
 import { h } from './dom.js';
 
 const SIZE = 256; // drawn at native resolution, scaled down by CSS
@@ -47,24 +48,39 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
   window.addEventListener('pointerup', () => { dragging = false; });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
+  const shroudCanvas = document.createElement('canvas');
+  shroudCanvas.width = shroudCanvas.height = EXPLORE_GRID;
+  const shroudCtx = shroudCanvas.getContext('2d');
+  { const img = shroudCtx.createImageData(EXPLORE_GRID, EXPLORE_GRID); for (let k = 0; k < img.data.length; k += 4) { img.data[k] = 12; img.data[k + 1] = 14; img.data[k + 2] = 18; } shroudCtx.putImageData(img, 0, 0); }
   let timer = 0;
   function draw() {
     const w = world();
     ctx.drawImage(base, 0, 0);
+    const snow = (w.weather && w.weather.snow) || 0;
+    if (snow > 0.01) { ctx.fillStyle = `rgba(226,233,242,${(snow * 0.72).toFixed(3)})`; ctx.fillRect(0, 0, SIZE, SIZE); }
+    // unexplored land stays dark
+    if (w.explored) {
+      const img = shroudCtx.getImageData(0, 0, EXPLORE_GRID, EXPLORE_GRID);
+      for (let k = 0; k < EXPLORE_GRID * EXPLORE_GRID; k++) img.data[k * 4 + 3] = (w.explored[k >>> 5] & (1 << (k & 31))) ? 0 : 235;
+      shroudCtx.putImageData(img, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(shroudCanvas, 0, 0, SIZE, SIZE);
+    }
+    const seen = (e) => e.owner === PLAYER || isExplored(w, terrain.half, e.x, e.z);
     for (const b of all(w, 'building')) {
-      if (b.state === 'destroyed') continue;
+      if (b.state === 'destroyed' || !seen(b)) continue;
       const r = Math.max(2.5, (BUILDINGS[b.type].radius / terrain.size) * SIZE * 1.3);
       ctx.fillStyle = b.owner === PLAYER ? (b.state === 'site' ? '#9fd6ec' : '#4fb0dc') : '#e0604a';
       ctx.fillRect(toPx(b.x) - r, toPx(b.z) - r, r * 2, r * 2);
     }
     for (const d of all(w, 'deposit')) {
-      if (d.type === 'tree' || d.amount <= 0) continue;
+      if (d.type === 'tree' || d.amount <= 0 || !seen(d)) continue;
       ctx.fillStyle = d.type === 'iron' ? '#c26a3a' : '#d8d6cc';
       ctx.fillRect(toPx(d.x) - 1.5, toPx(d.z) - 1.5, 3, 3);
     }
     for (const s of all(w, 'settler')) { ctx.fillStyle = '#efe6d2'; ctx.fillRect(toPx(s.x) - 0.8, toPx(s.z) - 0.8, 1.6, 1.6); }
     for (const u of all(w, 'unit')) {
-      if (u.downed) continue;
+      if (u.downed || !seen(u)) continue;
       ctx.fillStyle = u.hero ? '#ffd27a' : u.owner === PLAYER ? '#7fe0ff' : '#ff7a5a';
       const r = u.hero || u.commander ? 2.4 : 1.5;
       ctx.beginPath(); ctx.arc(toPx(u.x), toPx(u.z), r, 0, Math.PI * 2); ctx.fill();

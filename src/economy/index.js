@@ -1,7 +1,7 @@
 // Economy: labourers (settlers without a workplace) haul goods between the Keep store,
 // construction sites and workplaces, build, and repair. All transport is physical.
 import { EV, DT } from '../core/contracts.js';
-import { all, emit } from '../world/world.js';
+import { all, emit, alert } from '../world/world.js';
 import { BUILDINGS, doorOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { addRes } from './stock.js';
@@ -15,6 +15,13 @@ export const HAUL_LOAD = 6;
 export const DELIVER_LOAD = 3;
 export const REPAIR_HP_PER_TIMBER = 30;
 export const REPAIR_RATE = 14; // hp per second
+// Direct orders (like serfs in the old settler games): labourers can be sent to fell trees
+// or cut stone by hand. Slower than a specialist at a Lodge or Quarry, but needs no building.
+export const GATHER = {
+  tree: { res: 'timber', perTrip: 2, work: 6.5, strike: 0.7, anim: 'chop', stand: 1.1 },
+  rock: { res: 'stone', perTrip: 2, work: 7.5, strike: 0.8, anim: 'pick', stand: 2.2 },
+};
+export const GATHER_RADIUS = 16; // keeps working the same grove / outcrop within this range
 
 function spotAround(b, id, extra = 1.2) {
   const def = BUILDINGS[b.type];
@@ -244,11 +251,138 @@ export function createEconomyModule() {
     }
   }
 
+  /** Drop the deposit reservation (and, if `end`, the order itself). Hand-carried goods are kept. */
+  function releaseGather(world, s, end = true) {
+    const t = s.task;
+    if (t && t.deposit) { const d = world.entities[t.deposit]; if (d && d.reservedBy === s.id) d.reservedBy = null; }
+    if (s.task && s.task.type === 'gather') { s.task = null; stopWalking(s); }
+    if (end) s.order = null;
+  }
+
+  function nextDeposit(world, s, o) {
+    let best = null, bestD = Infinity;
+    for (const d of all(world, 'deposit')) {
+      if (d.type !== o.kind || d.amount <= 0) continue;
+      if (d.reservedBy && d.reservedBy !== s.id && world.entities[d.reservedBy]) continue;
+      if (Math.hypot(d.x - o.x, d.z - o.z) > GATHER_RADIUS) continue;
+      const dd = Math.hypot(d.x - s.x, d.z - s.z);
+      if (dd < bestD) { bestD = dd; best = d; }
+    }
+    return best;
+  }
+
+  function stepGatherer(world, s, keep) {
+    const nav = ctx.services.nav;
+    const o = s.order;
+    const G = GATHER[o.kind];
+    if (!G) { s.order = null; return; }
+    if (!s.task || s.task.type !== 'gather') {
+      // hand-carried goods from an interrupted trip go to the store first
+      s.task = { type: 'gather', stage: s.carry ? 'toKeep' : 'find', timer: 0, nextStrike: 0 };
+    }
+    const t = s.task;
+    const door = doorOf(keep);
+    const walk = (x, z, arrive) => {
+      const r = walkTo(nav, s, x, z, SETTLER.speed * (s.carry ? 0.9 : 1), DT, arrive);
+      s.anim = r === 'walking' ? (s.carry ? 'carry' : 'walk') : 'idle';
+      if (r === 'fail') {
+        releaseGather(world, s);
+        alert(world, 'warn', 'A labourer cannot reach that spot and has gone back to general work.', s.x, s.z, s.owner);
+      }
+      return r;
+    };
+    switch (t.stage) {
+      case 'find': {
+        const d = (o.deposit && world.entities[o.deposit] && world.entities[o.deposit].amount > 0 && (!world.entities[o.deposit].reservedBy || world.entities[o.deposit].reservedBy === s.id || !world.entities[world.entities[o.deposit].reservedBy]))
+          ? world.entities[o.deposit] : nextDeposit(world, s, o);
+        o.deposit = null;
+        if (!d) {
+          releaseGather(world, s);
+          alert(world, 'info', `Nothing left to ${o.kind === 'tree' ? 'fell' : 'cut'} here — the labourer returns to general work.`, s.x, s.z, s.owner);
+          return;
+        }
+        d.reservedBy = s.id;
+        t.deposit = d.id;
+        const dx = s.x - d.x, dz = s.z - d.z, len = Math.hypot(dx, dz) || 1;
+        t.spot = [d.x + (dx / len) * G.stand, d.z + (dz / len) * G.stand];
+        t.stage = 'toDeposit';
+        break;
+      }
+      case 'toDeposit': {
+        const d = world.entities[t.deposit];
+        if (!d || d.amount <= 0) { t.stage = 'find'; return; }
+        if (walk(t.spot[0], t.spot[1], 0.6) === 'arrived') { t.stage = 'work'; t.timer = 0; t.nextStrike = 0; }
+        break;
+      }
+      case 'work': {
+        const d = world.entities[t.deposit];
+        if (!d || d.amount <= 0) { t.stage = 'find'; return; }
+        s.anim = G.anim;
+        s.heading = Math.atan2(d.x - s.x, d.z - s.z);
+        t.timer += DT * stabilityFactor(world, s.owner);
+        if (t.timer >= t.nextStrike) {
+          t.nextStrike += G.strike;
+          emit(world, EV.WORK_STRIKE, { id: s.id, kind: G.anim === 'chop' ? 'forester' : 'quarrier', x: d.x, z: d.z, deposit: d.id });
+        }
+        if (t.timer >= G.work) {
+          const amt = Math.min(G.perTrip, d.amount);
+          d.amount -= amt;
+          if (d.amount <= 0) { d.depletedTick = world.tick; emit(world, 'deposit:depleted', { id: d.id, type: d.type, x: d.x, z: d.z }); }
+          if (d.reservedBy === s.id) d.reservedBy = null;
+          s.carry = { res: G.res, amt };
+          t.stage = 'toKeep';
+        }
+        break;
+      }
+      case 'toKeep': {
+        const spot = [door.x + ((s.id % 7) - 3) * 0.6, door.z + 0.8];
+        if (walk(spot[0], spot[1], 0.8) === 'arrived') {
+          if (s.carry) {
+            addRes(world, s.owner, s.carry.res, s.carry.amt, 'gather');
+            world.stats.produced[s.carry.res] += s.carry.amt;
+            emit(world, 'goods:stored', { id: s.id, res: s.carry.res, amt: s.carry.amt, x: s.x, z: s.z });
+            emit(world, EV.PRODUCTION_CYCLE, { id: s.id, res: s.carry.res, amount: s.carry.amt, x: s.x, z: s.z });
+          }
+          s.carry = null;
+          t.stage = 'find';
+        }
+        break;
+      }
+      default: t.stage = 'find';
+    }
+  }
+
+  function onCommand(cmd) {
+    const world = ctx.world;
+    if (cmd.type !== 'gather' && cmd.type !== 'release') return;
+    if (!Array.isArray(cmd.ids)) return;
+    const owner = cmd.owner || 'p1';
+    const d = cmd.type === 'gather' ? world.entities[cmd.target] : null;
+    if (cmd.type === 'gather' && (!d || d.kind !== 'deposit' || !GATHER[d.type] || d.amount <= 0)) return;
+    for (const id of cmd.ids.slice(0, 200)) {
+      const s = world.entities[id];
+      if (!s || s.kind !== 'settler' || s.owner !== owner || s.arriving || s.leaving || s.enlisting) continue;
+      if (cmd.type === 'release') { if (s.order) { releaseGather(world, s); } continue; }
+      // take the settler off its workplace or current task
+      if (s.job) {
+        const t = s.task;
+        if (t && t.deposit) { const dep = world.entities[t.deposit]; if (dep && dep.reservedBy === s.id) dep.reservedBy = null; }
+        if (t && t.plot != null) { const b = world.entities[s.workplace]; if (b && b.plots && b.plots[t.plot]) b.plots[t.plot].tender = undefined; }
+        s.job = null; s.workplace = null; s.task = null; s.carry = null; stopWalking(s);
+      } else if (s.order) releaseGather(world, s, false);
+      else if (s.task) abandonTask(world, s);
+      s.order = { type: 'gather', kind: d.type, x: d.x, z: d.z, deposit: d.id };
+      s.task = null;
+    }
+    emit(world, 'settlers:ordered', { ids: cmd.ids, type: cmd.type });
+  }
+
   return {
     id: 'economy',
     kind: 'sim',
     init(c) {
       ctx = c;
+      unsub.push(c.bus.on('command', onCommand));
       unsub.push(c.bus.on('settler:killed', ({ entity }) => {
         if (entity) { const carry = entity.carry; entity.carry = null; abandonTask(ctx.world, entity); if (carry) { /* goods are lost with the settler */ } }
       }));
@@ -258,9 +392,10 @@ export function createEconomyModule() {
       for (const s of all(world, 'settler')) {
         if (s.job || s.arriving || s.leaving) continue;
         if (s.enlisting) continue; // handled by recruitment
-        if (s.fleeing) { if (s.interrupted) { abandonTask(world, s); s.interrupted = false; } continue; }
+        if (s.fleeing) { if (s.interrupted) { if (s.order) releaseGather(world, s, false); abandonTask(world, s); s.interrupted = false; } continue; }
         const keep = keepOf(world, s.owner);
         if (!keep) continue;
+        if (s.order) { stepGatherer(world, s, keep); continue; }
         if (!s.task || (s.task.type === 'idle' && (world.tick + s.id) % 10 === 0)) {
           const task = isIdleLabourer(s) || s.task === null ? chooseTask(world, s, keep) : null;
           if (task) { stopWalking(s); s.task = task; }

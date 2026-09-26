@@ -19,6 +19,8 @@ import { createProductionModule } from '../production/index.js';
 import { createUnitsModule } from '../units/sim.js';
 import { createHeroesModule } from '../heroes/index.js';
 import { createCombatModule } from '../combat/index.js';
+import { createWeatherModule } from '../weather/index.js';
+import { createExplorationModule } from '../exploration/index.js';
 
 const terrainCache = new Map();
 export function terrainFor(map = HARROWMERE_MAP) {
@@ -31,6 +33,7 @@ export function terrainFor(map = HARROWMERE_MAP) {
 export const SIM_MODULE_FACTORIES = [
   createNavigationModule,
   createWorldServicesModule,
+  createWeatherModule,
   createMissionsModule,
   createAiModule,
   createTechnologyModule,
@@ -41,6 +44,7 @@ export const SIM_MODULE_FACTORIES = [
   createUnitsModule,
   createHeroesModule,
   createCombatModule,
+  createExplorationModule,
 ];
 
 export function createSimulation({ seed = 1337, difficulty = 'normal', world = null, modules = SIM_MODULE_FACTORIES, onCritical = null, setup = true } = {}) {

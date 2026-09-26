@@ -49,6 +49,7 @@ const KIND_SCHEMAS = {
     hp: v.number({ min: -1e4, max: 1e5 }), maxHp: v.number({ min: 1, max: 1e5 }),
     job: v.optional(v.string({ oneOf: ['forester', 'quarrier', 'farmer', 'miner'] })),
     carry: v.optional(v.object({ res: v.string({ oneOf: RESOURCES }), amt: nonNeg(1000) })),
+    order: v.optional(v.object({ type: v.string({ oneOf: ['gather'] }), kind: v.string({ oneOf: ['tree', 'rock'] }), x: coord, z: coord }, { allowExtra: true })),
     path,
   }),
   deposit: v.object({ type: v.string({ oneOf: ['tree', 'rock', 'iron'] }), amount: v.number({ min: -1000, max: 1e5 }), maxAmount: v.number({ min: 1, max: 1e5 }) }),
@@ -70,7 +71,7 @@ const playerFull = v.object({
   techs: v.record(v.boolean(), { max: 16, keyPattern: /^(axes|bracing|blades|charter)$/ }),
   stability: v.number({ min: 0, max: 100 }),
   research: v.optional(v.object({ techId: v.string({ oneOf: Object.keys(TECHS) }), progress: nonNeg(1) })),
-  popCap: nonNeg(1e4), pop: nonNeg(1e4), nextMealTick: nonNeg(1e9), nextSettlerTick: nonNeg(1e9), lastMealFed: nonNeg(1), burnPenalty: nonNeg(1e4),
+  popCap: nonNeg(1e4), pop: nonNeg(1e4), tax: v.optional(v.number({ min: 0, max: 2, int: true })), nextPayTick: v.optional(nonNeg(1e10)), nextMealTick: nonNeg(1e9), nextSettlerTick: nonNeg(1e9), lastMealFed: nonNeg(1), burnPenalty: nonNeg(1e4),
 });
 
 const worldSchema = v.object({
@@ -80,6 +81,11 @@ const worldSchema = v.object({
   rng: v.array(v.number({ min: 0, max: 4294967295, int: true }), { max: 4 }),
   nextId: v.number({ min: 1, max: 1e8, int: true }),
   time: v.object({ hour: v.number({ min: 0, max: 24 }), dayLengthTicks: v.number({ min: 100, max: 1e7 }), running: v.boolean() }),
+  weather: v.optional(v.object({
+    kind: v.string({ oneOf: ['clear', 'snow'] }), intensity: nonNeg(1),
+    season: v.optional(v.string({ oneOf: ['summer', 'winter'] })), snow: v.optional(nonNeg(1)), frozen: v.optional(v.boolean()),
+  }, { allowExtra: false })),
+  explored: v.optional(v.array(v.number({ min: 0, max: 4294967295, int: true }), { max: 128 })),
   players: v.object({ p1: playerFull, p2: playerFull }, { allowExtra: false }),
   entities: v.record(entitySchema, { max: ENTITY_CAP, keyPattern: /^\d{1,9}$/ }),
   mission: v.object({

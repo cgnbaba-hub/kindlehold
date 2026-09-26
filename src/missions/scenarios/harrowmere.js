@@ -5,7 +5,7 @@ export const HARROWMERE_SCENARIO = {
   id: 'harrowmere',
   title: 'The Rekindling of Harrowmere',
   blurb: 'Seven winters after the Long Frost, the Hearthbound return to the burnt keep of Kindlehold. The Rustfang toll-raiders who hold the ford will not welcome them.',
-  startResources: { timber: 80, stone: 60, iron: 0, provisions: 40 },
+  startResources: { timber: 80, stone: 60, iron: 0, provisions: 40, taler: 60 },
   raidWarningAt: { story: 18 * 60, normal: 14 * 60, hard: 13 * 60 }, // seconds, if not triggered earlier
   speakers: {
     maren: { name: 'Maren Ashgrove', role: 'Lantern Warden' },
@@ -28,7 +28,7 @@ export const HARROWMERE_SCENARIO = {
     {
       id: 'timber-food', title: 'Timber and bread',
       text: "Build a Woodcutter's Lodge near the western trees and a Farmstead on open ground.",
-      hint: 'Press {buildMenu} or open the Build menu. Green outlines are valid spots; the Lodge needs trees within 28 m.',
+      hint: 'Press {buildMenu} or open the Build menu. Green outlines are valid spots; the Lodge needs trees within 28 m. Tip: select labourers and right-click a tree to fell timber by hand meanwhile.',
       highlight: 'build', activeWhen: { completed: 'rekindle' },
       completeWhen: { all: [{ built: 'lodge', count: 1 }, { built: 'farm', count: 1 }] },
       onComplete: [{ speaker: 'osric', text: 'Logs and grain moving again. We will need roofs for the newcomers.' }],

@@ -193,17 +193,20 @@ export function createAudio({ bus, world, settings, getListener }) {
     const hour = w.time.hour;
     const night = hour < 5.5 || hour > 19.5;
     const t = ctx.currentTime;
-    amb.wf.frequency.setTargetAtTime(380 + Math.sin(t * 0.13) * 180 + L.zoom * 2, t, 0.8);
-    amb.wg.gain.setTargetAtTime(0.07 + L.zoom / 900, t, 1);
+    // winter: a colder, gustier wind; the frozen river falls silent; no birds or crickets
+    const snow = (w.weather && w.weather.snow) || 0;
+    const frozen = !!(w.weather && w.weather.frozen);
+    amb.wf.frequency.setTargetAtTime(380 + Math.sin(t * 0.13) * 180 + L.zoom * 2 + snow * (260 + Math.sin(t * 0.31) * 160), t, 0.8);
+    amb.wg.gain.setTargetAtTime((0.07 + L.zoom / 900) * (1 + snow * 0.8), t, 1);
     // river loudness from distance to the listener target (river runs roughly along z≈0)
     const riverNear = Math.max(0, 1 - Math.abs(L.z - (-8 + L.x * 0.05)) / 45);
-    amb.rg.gain.setTargetAtTime(riverNear * 0.1, t, 1);
+    amb.rg.gain.setTargetAtTime(frozen ? 0 : riverNear * 0.1, t, 1);
     const keepNear = Math.max(0, 1 - Math.hypot(L.x + 46, L.z - 50) / 60) * (w.players[PLAYER] ? Math.min(1, w.players[PLAYER].pop / 20) : 0);
     amb.vg.gain.setTargetAtTime(keepNear * 0.05, t, 1);
     amb.nextCritter -= dt;
     if (amb.nextCritter <= 0) {
       amb.nextCritter = night ? 0.35 + rand() * 0.5 : 1.2 + rand() * 3;
-      if (night) { // crickets
+      if (snow > 0.5) { /* silent winter */ } else if (night) { // crickets
         const f = 4200 + rand() * 500;
         for (let i = 0; i < 3; i++) tone(buses.ambience, { t: t + i * 0.06, freq: f, dur: 0.03, gain: 0.02 });
       } else { // bird call
@@ -282,6 +285,13 @@ export function createAudio({ bus, world, settings, getListener }) {
   on(EV.COMMAND_REJECTED, () => { if (allowed('bad', 200)) sfx.uiBad(); });
   on(EV.MISSION_ENDED, (d) => (d.result === 'victory' ? sfx.victory : sfx.defeat)());
   on('keep:rekindled', () => sfx.flare(-46, 50));
+  // payday: a short run of coin clinks
+  on('population:payday', (d) => {
+    if (d.owner !== PLAYER || !(d.taxes > 0)) return;
+    const t = ctx.currentTime;
+    for (let i = 0; i < 4; i++) tone(buses.effects, { t: t + i * 0.09 + rand() * 0.03, freq: 2600 + rand() * 900, freqEnd: 2400, type: 'triangle', dur: 0.12, gain: 0.05 });
+  });
+  on('settlers:ordered', (d) => { if (d.type === 'gather' && allowed('ack', 400)) sfx.ack('ok'); });
 
   return {
     id: 'audio',

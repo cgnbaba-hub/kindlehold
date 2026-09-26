@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { hash2 } from '../core/rng.js';
 import { rawHeight } from '../world/terrain-data.js';
+import { SHROUD_GLSL, bindShroud } from '../render/structure-material.js';
 
 function makeNormalTexture(size = 256) {
   // tileable height from summed periodic sines + hash noise, converted to a normal map
@@ -66,16 +67,19 @@ export function createWater({ scene, terrain }) {
 
   const normalTex = makeNormalTexture();
   const mat = new THREE.MeshStandardMaterial({ color: '#2d6470', roughness: 0.34, metalness: 0.0, transparent: true, depthWrite: false });
-  const uniforms = { uTime: { value: 0 }, tNormal: { value: normalTex }, uSky: { value: new THREE.Color('#9fb8cc') }, uNight: { value: 0 } };
+  const uniforms = { uTime: { value: 0 }, tNormal: { value: normalTex }, uSky: { value: new THREE.Color('#9fb8cc') }, uNight: { value: 0 }, uIce: { value: 0 } };
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
+    bindShroud(shader);
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nattribute float depth;\nvarying float vDepth;\nvarying vec3 vWPos;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvDepth = depth;\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
-uniform float uTime; uniform sampler2D tNormal; uniform vec3 uSky; uniform float uNight;
-varying float vDepth; varying vec3 vWPos;`)
+uniform float uTime; uniform sampler2D tNormal; uniform vec3 uSky; uniform float uNight; uniform float uIce;
+varying float vDepth; varying vec3 vWPos;
+${SHROUD_GLSL}`)
+      .replace('#include <fog_fragment>', 'gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);\n#include <fog_fragment>')
       .replace('#include <color_fragment>', `#include <color_fragment>
 float d = clamp(vDepth, 0.0, 2.5);
 vec3 shallow = vec3(0.34, 0.44, 0.33);
@@ -88,18 +92,28 @@ diffuseColor.rgb += vec3(0.05, 0.07, 0.06) * smoothstep(0.55, 0.8, streak) * (1.
 float foam = (1.0 - smoothstep(0.0, 0.6, d)) * (0.55 + 0.45 * sin(uTime * 1.3 + vWPos.x * 0.8 + vWPos.z * 0.6));
 diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.9, 0.88), foam * 0.7);
 float shore = smoothstep(-0.02, 0.18, vDepth);
-diffuseColor.a = (mix(0.35, 0.92, smoothstep(0.0, 0.9, d)) + foam * 0.3) * shore;`)
+diffuseColor.a = (mix(0.35, 0.92, smoothstep(0.0, 0.9, d)) + foam * 0.3) * shore;
+if (uIce > 0.001) {
+  // winter ice: milky blue-white sheet with darker clear patches and pale cracks
+  float ic = texture2D(tNormal, vWPos.xz * 0.03).r;
+  float crack = 1.0 - smoothstep(0.0, 0.035, abs(texture2D(tNormal, vWPos.xz * 0.018 + 0.3).g - 0.5));
+  vec3 iceCol = mix(vec3(0.62, 0.74, 0.8), vec3(0.86, 0.91, 0.95), smoothstep(0.35, 0.7, ic));
+  iceCol = mix(iceCol, vec3(0.3, 0.42, 0.5), (1.0 - smoothstep(0.2, 0.45, ic)) * depthK * 0.6);
+  iceCol = mix(iceCol, vec3(0.97, 0.98, 1.0), crack * 0.55);
+  diffuseColor.rgb = mix(diffuseColor.rgb, iceCol, uIce);
+  diffuseColor.a = mix(diffuseColor.a, 0.96 * shore, uIce);
+}`)
       .replace('#include <normal_fragment_maps>', `
 vec2 flow = vec2(0.035, 0.012);
 vec3 n1 = texture2D(tNormal, vWPos.xz * 0.045 + flow * uTime).xyz * 2.0 - 1.0;
 vec3 n2 = texture2D(tNormal, vWPos.xz * 0.11 - flow.yx * uTime * 1.7).xyz * 2.0 - 1.0;
-vec3 nW = normalize(vec3(n1.x + n2.x, 1.8, n1.y + n2.y));
+vec3 nW = normalize(mix(vec3(n1.x + n2.x, 1.8, n1.y + n2.y), vec3(n1.x * 0.15, 1.8, n1.y * 0.15), uIce));
 normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 float fres = clamp(pow(1.0 - abs(dot(normalize(-vViewPosition), normal)), 3.0), 0.0, 1.0);
-totalEmissiveRadiance += uSky * fres * 0.55 * (1.0 - uNight * 0.7);`);
+totalEmissiveRadiance += uSky * fres * mix(0.55, 0.25, uIce) * (1.0 - uNight * 0.7);`);
   };
-  mat.customProgramCacheKey = () => 'kh-water-v1';
+  mat.customProgramCacheKey = () => 'kh-water-v3';
   const mesh = new THREE.Mesh(geo, mat);
   mesh.renderOrder = 2;
   mesh.name = 'water';
@@ -110,6 +124,7 @@ totalEmissiveRadiance += uSky * fres * 0.55 * (1.0 - uNight * 0.7);`);
     kind: 'view',
     mesh,
     render(alpha, frame) { uniforms.uTime.value = frame.time; },
+    setIce(v) { uniforms.uIce.value = v; mat.roughness = 0.34 + v * 0.3; },
     setSky(color, night) { uniforms.uSky.value.copy(color); uniforms.uNight.value = night; },
     dispose() { scene.remove(mesh); geo.dispose(); mat.dispose(); normalTex.dispose(); },
   };
