@@ -56,6 +56,21 @@ Before the great raid, small **plunder parties** slip out of the ford fort to hi
 workshop and run home again (a war horn warns you). The main raids prefer buildings nobody
 guards — keep a few soldiers near your farms and mines.
 
+## Keeping an eye on things
+
+* **Your people:** hover over the population in the ribbon to see who is building, carrying,
+  asleep or working where; click it for the full list.
+* **Osric, your reeve** (bottom left) shows the mood of the people and tells you what is
+  missing. Click him for his next piece of advice.
+* **Rations** (at the Keep): half, normal or generous portions — less food or a better mood.
+* **Feast** (at the Keep): 80 Taler and 30 provisions for three minutes of high spirits.
+* **Game speed:** click the speed next to the clock to pick 0.5× to 8×.
+
+## More soldiers
+
+Upgrade the Barracks to the **Drill Yard** to train **Crossbowmen** (their bolts pierce armour)
+and **Halberdiers** (heavily armoured elite with a long reach).
+
 ## Seasons
 
 Long summers alternate with short, hard winters (the first begins at minute 17 and lasts

@@ -2,7 +2,7 @@
 import { EV, PLAYER, DT } from '../core/contracts.js';
 import { spawn, remove, all, emit } from '../world/world.js';
 import { UNITS, RECRUITABLE, unitDef } from './defs.js';
-import { BUILDINGS, doorOf } from '../buildings/defs.js';
+import { BUILDINGS, doorOf, workSpeedOf } from '../buildings/defs.js';
 import { pay, refund } from '../economy/stock.js';
 import { followPath, formationSlots } from '../navigation/index.js';
 import { isIdleLabourer } from '../population/index.js';
@@ -111,6 +111,7 @@ export function createUnitsModule() {
         const reject = (reason) => emit(world, EV.COMMAND_REJECTED, { type: 'recruit', reason });
         if (!b || b.kind !== 'building' || b.type !== 'barracks' || b.owner !== owner || b.state !== 'active') return reject('Needs a finished Barracks');
         if (!RECRUITABLE.includes(cmd.unitType)) return reject('Unknown unit');
+        if ((UNITS[cmd.unitType].requiresLevel || 1) > (b.level || 1)) return reject('Needs the Drill Yard (upgrade the Barracks)');
         if (b.queue.length >= MAX_QUEUE) return reject('Training queue is full');
         if (!pay(world, owner, UNITS[cmd.unitType].cost, `recruit ${cmd.unitType}`)) return reject('Not enough resources');
         b.queue.push({ unitType: cmd.unitType, settlerId: null, training: false, progress: 0 });
@@ -174,7 +175,7 @@ export function createUnitsModule() {
           q.settlerId = null;
         }
       } else {
-        q.progress += DT / UNITS[q.unitType].trainTime;
+        q.progress += (DT / UNITS[q.unitType].trainTime) * workSpeedOf(b);
         if (q.progress >= 1) {
           b.queue.shift();
           const u = spawnUnit(world, q.unitType, b.owner, door.x, door.z);

@@ -77,6 +77,19 @@ Balance (`npm run balance`): 7 von 8 Partien gewonnen (Story 29,8 min, Normal 4/
 Hard 2/3). Der Test-Bot achtet jetzt darauf, genug Träger übrig zu lassen. Ohne Träger
 stand vorher die ganze Wirtschaft still.
 
+## Stufe 2.7: umgesetzt
+
+| Wunsch / Idee | Umsetzung |
+|---|---|
+| Ausklappbares Tempo-Menü | Klick auf die Tempoanzeige an der Uhr öffnet die Auswahl 0,5× bis 8×. |
+| Was machen die Bewohner? | Beim Überfahren der Einwohnerzahl steht, wie viele bauen, tragen, sammeln, schlafen, welche Berufe sie haben und wie viele Soldaten es gibt. Ein Klick öffnet das Fenster „Your people“ mit Balken je Gruppe. |
+| Berater wie in Stronghold | Osric, der Vogt, sitzt unten links. Ein farbiger Ring zeigt die Stimmung des Volkes (Content, Calm, Uneasy, Angry). Er gibt Hinweise wie Holzmangel, Hunger, volle Häuser, keine freien Hände, Unzufriedenheit, nahenden Winter und anrückende Plünderer. Ein Klick zeigt den nächsten Rat. |
+| Mehr Truppen (eigene Idee) | Kasernen-Ausbau „Drill Yard“ (+25 % Ausbildungstempo). Er schaltet **Armbrustschützen** frei (Fernkampf, Bolzen durchschlagen die Hälfte der Rüstung) und **Hellebardiere** (schwere Elite, 250 Leben, 7 Rüstung, große Reichweite). |
+| Rationen (eigene Idee, nach Stronghold) | An der Burg wählbar: halbe, normale oder großzügige Portionen. Das kostet mehr oder weniger Vorräte und wirkt auf die Stimmung (−10 / 0 / +8). |
+| Festmahl (eigene Idee) | An der Burg: 80 Taler und 30 Proviant für ein Fest mit +15 Stimmung für drei Minuten, mit Funken und Musik. |
+
+Prüfung: 99 Tests, `npm run balance` 7/8.
+
 Offen für das nächste große Paket: eine deutlich größere Karte, mehrere Gegner, Diplomatie
 und Handel zwischen Parteien.
 

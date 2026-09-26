@@ -115,6 +115,7 @@ export const UPGRADES = {
   farm: { 2: { ...WORKSHOP_L2, name: 'Manor Farm' } },
   mine: { 2: { ...WORKSHOP_L2, name: 'Deep Mine', cost: { timber: 30, stone: 30, taler: 35 } } },
   hunter: { 2: { ...WORKSHOP_L2, name: 'Hunting Lodge' } },
+  barracks: { 2: { name: 'Drill Yard', cost: { timber: 40, stone: 30, iron: 20, taler: 60 }, time: 45, speed: 1.25, hp: 250, desc: 'Unlocks Crossbowmen and Halberdiers; training 25% faster.' } },
   canteen: { 2: { ...WORKSHOP_L2, name: 'Inn', desc: 'A second cook and 20% faster cooking.' } },
 };
 

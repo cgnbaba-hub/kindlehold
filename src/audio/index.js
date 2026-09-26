@@ -307,6 +307,7 @@ export function createAudio({ bus, world, settings, getListener }) {
   on(EV.MISSION_OBJECTIVE, (d) => { if (d.state === 'done') sfx.objective(); });
   on(EV.AI_WAVE, () => { sfx.horn(); });
   on('ai:harass', () => { sfx.horn(); });
+  on('population:feast', (d) => { if (d.owner === PLAYER) { sfx.objective(); sfx.complete(d.x, d.z); } });
   on('mission:raid-warning', () => sfx.alarm());
   on(EV.COMMAND_REJECTED, () => { if (allowed('bad', 200)) sfx.uiBad(); });
   on(EV.MISSION_ENDED, (d) => (d.result === 'victory' ? sfx.victory : sfx.defeat)());

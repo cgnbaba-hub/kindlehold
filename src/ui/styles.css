@@ -103,6 +103,32 @@ button { font: inherit; color: inherit; }
 .night-skip { position: absolute; left: 50%; top: 58px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 5px 14px; cursor: pointer; color: var(--ink, #efe6d2); font: inherit; border: 1px solid var(--brass-dim); }
 .night-skip:hover { border-color: var(--brass); }
 .night-skip[hidden] { display: none; }
+.people-panel { position: absolute; left: 12px; top: 70px; width: 290px; max-height: calc(100vh - 300px); overflow: auto; padding: 10px 14px; z-index: 25; }
+.people-panel[hidden] { display: none; }
+.people-head { display: flex; justify-content: space-between; align-items: center; }
+.people-head h2 { margin: 0; font: 600 1.1em var(--serif); color: var(--brass); }
+.people-body h3 { margin: 10px 0 4px; font: 600 0.9em var(--sans); color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+.people-row { display: grid; grid-template-columns: 22px 1fr 28px 70px; align-items: center; gap: 6px; font-size: 0.9em; padding: 2px 0; }
+.people-n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.people-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+.people-bar > div { height: 100%; background: var(--brass); }
+.res[role="button"] { cursor: pointer; }
+.advisor { position: absolute; left: 12px; bottom: calc(238px * var(--ui-scale, 1)); width: min(300px, 26vw); display: flex; gap: 10px; align-items: center; padding: 8px 10px; cursor: pointer; }
+.advisor-portrait { flex: none; width: 54px; height: 54px; border-radius: 50%; overflow: hidden; border: 3px solid var(--ok, #8fbf73); box-shadow: 0 0 0 2px rgba(0,0,0,0.5); }
+.advisor[data-mood="mid"] .advisor-portrait { border-color: #c9c47a; } .advisor[data-mood="warn"] .advisor-portrait { border-color: var(--warn, #e0b04a); } .advisor[data-mood="bad"] .advisor-portrait { border-color: var(--bad, #d86a4f); }
+.advisor-portrait svg { display: block; }
+.advisor-body { min-width: 0; }
+.advisor-head { display: flex; gap: 8px; align-items: baseline; }
+.advisor-head strong { font-family: var(--serif); color: var(--brass); }
+.advisor-mood { font-size: 0.78em; color: var(--ink-dim); }
+.advisor-text { margin: 2px 0 0; font: 0.86em/1.3 var(--serif); }
+.advisor.flash { animation: msgIn 0.35s ease-out; }
+.speed-menu { position: absolute; top: 58px; left: 50%; transform: translateX(40px); display: flex; flex-direction: column; padding: 4px; gap: 2px; z-index: 30; min-width: 110px; }
+.speed-menu[hidden] { display: none; }
+.speed-opt { text-align: left; padding: 6px 12px; background: transparent; border: 1px solid transparent; border-radius: 5px; color: inherit; font: 600 0.95em var(--sans); cursor: pointer; }
+.speed-opt span { font-weight: 400; color: var(--ink-dim); font-size: 0.85em; }
+.speed-opt:hover { border-color: var(--brass-dim); } .speed-opt.active { background: var(--brass); color: #1a1410; }
+.speed-opt.active span { color: #3a2a18; }
 .tax-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 0.9em; }
 .tax-row > span { color: var(--ink-dim); margin-right: 4px; }
 .tax-btn { background: rgba(255,255,255,0.06); border: 1px solid var(--brass-dim); color: inherit; border-radius: 4px; padding: 2px 10px; cursor: pointer; font: inherit; }
@@ -123,6 +149,7 @@ button { font: inherit; color: inherit; }
 .banner.bad { border-color: var(--bad); color: #ffd2c4; }
 .banner[hidden], .tooltip[hidden], .drag-box[hidden] { display: none; }
 .tooltip { position: fixed; z-index: 60; max-width: 280px; padding: 8px 11px; background: #111519; border: 1px solid var(--brass-dim); border-radius: 6px; font-size: 0.86em; line-height: 1.35; pointer-events: none; box-shadow: 0 6px 18px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 3px; }
+.tooltip span { white-space: pre-line; }
 .tooltip strong { color: var(--brass); font-family: var(--serif); }
 .drag-box { position: fixed; border: 1px solid rgba(143,224,143,0.9); background: rgba(143,224,143,0.12); pointer-events: none; }
 
@@ -246,6 +273,8 @@ button { font: inherit; color: inherit; }
 @media (max-width: 1400px), (max-height: 800px) {
   .ui-root { font-size: calc(12.5px * var(--ui-scale, 1)); }
   .minimap-canvas { width: calc(150px * var(--ui-scale, 1)); height: calc(150px * var(--ui-scale, 1)); }
+  .advisor { bottom: calc(184px * var(--ui-scale, 1)); width: 250px; }
+  .advisor-portrait { width: 44px; height: 44px; }
   .commands { width: calc(290px * var(--ui-scale, 1)); }
   .objectives { width: calc(250px * var(--ui-scale, 1)); max-height: 38vh; }
   .selection { min-height: calc(120px * var(--ui-scale, 1)); }

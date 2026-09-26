@@ -113,6 +113,8 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
     else if (d.kind === 'cook') { emit('smoke', d.x, y + 5.5, d.z, 1, 0.6, [0, 0.8, 0], 0.3); }
     else if (d.kind === 'harvest' || d.kind === 'sow') { emit('dust', d.x, y + 0.2, d.z, 1, 0.8, [0, 0.3, 0], 0.4); }
   }));
+  // a feast: sparks and embers fly up from the hall
+  unsub.push(bus.on('population:feast', (d) => { for (let i = 0; i < 4; i++) { emit('ember', d.x, heightAt(d.x, d.z) + 8 + i, d.z, 12, 2.5, [0, 2.5, 0], 2); emit('glint', d.x, heightAt(d.x, d.z) + 10, d.z, 6, 3, [0, 1.5, 0], 2); } }));
   // breaking ice: whoever was on the river scrambles out in a spray of water and ice
   unsub.push(bus.on('weather:soaked', (d) => { emit('splash', d.x, heightAt(d.x, d.z) + 0.6, d.z, 10, 0.5, [0, 3.2, 0], 2.4); }));
   unsub.push(bus.on(EV.COMBAT_SHOT, (d) => {

@@ -59,6 +59,8 @@ function buildParts() {
     spear: g([paint(place(cyl(0.022, 0.025, 2.0, 5), { y: -0.3 }), '#6b4a2f', 0, null, P.planks), paint(place(cone(0.05, 0.24, 4), { y: -1.42, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)]),
     bow: g([paint(place(new THREE.TorusGeometry(0.62, 0.018, 4, 12, Math.PI * 0.8), { y: -0.1, rz: Math.PI / 2 + 0.3 }), '#6b4a2f', 0, null, P.planks), paint(place(cyl(0.004, 0.004, 1.1, 3), { y: -0.1, x: -0.25 }), '#e8e0cc', 0, null, P.plain)]),
     pole: g([paint(place(cyl(0.03, 0.035, 2.3, 6), { y: -0.55 }), '#3e2c1f', 0, null, P.planks), paint(place(cyl(0.016, 0.016, 0.3, 4), { y: 0.72, z: 0.12, rx: 0.9 }), '#2f2f31', 0, null, P.metal)]),
+    crossbow: g([B(0.07, 0.7, 0.09, '#6b4a2f', P.planks, { y: -0.3 }), B(0.62, 0.05, 0.05, '#4a4a4c', P.metal, { y: -0.6 }), paint(place(cyl(0.004, 0.004, 0.6, 3), { y: -0.55, rz: Math.PI / 2 }), '#e8e0cc', 0, null, P.plain)]),
+    halberd: g([paint(place(cyl(0.024, 0.027, 2.3, 5), { y: -0.45 }), '#5a4030', 0, null, P.planks), B(0.05, 0.3, 0.26, '#b9bcc0', P.metal, { y: -1.45, z: 0.1 }), paint(place(cone(0.045, 0.3, 4), { y: -1.72, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)]),
     greataxe: g([paint(place(cyl(0.035, 0.04, 1.3, 6), { y: -0.4 }), '#3e2c1f', 0, null, P.planks), B(0.06, 0.4, 0.46, '#7a716a', P.metal, { y: -0.98, z: 0.2 })]),
     sling: g([paint(place(cyl(0.008, 0.008, 0.6, 3), { y: -0.3 }), '#8a7050', 0, null, P.plain), paint(place(sphere(0.05, 6, 4), { y: -0.6 }), '#6a625a', 0, null, P.plain)]),
     // left-hand items
@@ -84,6 +86,8 @@ export const STYLE = {
   shield: { torso: '#2f6f8f', head: 'helm', right: 'spear', left: 'shieldKite', leftColor: '#2f6f8f', legs: '#4d4338' },
   blade: { torso: '#5d93ab', coat: true, head: 'helm', right: 'sword', left: null, legs: '#4d4338' },
   fletcher: { torso: '#4f6f4a', head: 'hood', headColor: '#3f5a3c', right: null, left: 'bow', legs: '#4d4338' },
+  crossbow: { torso: '#3f5a6a', coat: true, head: 'helm', right: 'crossbow', left: null, legs: '#4d4338' },
+  halberd: { torso: '#2a5a7a', coat: true, head: 'helm', right: 'halberd', left: null, legs: '#3a3a3c' },
   maren: { torso: '#384a5c', coat: true, head: 'hood', headColor: '#2c3a48', right: 'pole', left: null, legs: '#3a3028', lantern: true },
   reaver: { torso: '#8c3b2a', head: 'cap', headColor: '#3a302a', right: 'axe', left: null, legs: '#3a302a', beard: true, beardColor: '#6a2e18' },
   slinger: { torso: '#7a5a3e', head: 'hood', headColor: '#5b2a20', right: 'sling', left: null, legs: '#3a302a' },
@@ -202,7 +206,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
       default: {
         const breathe = Math.sin(t * 1.6 + (f.phase || 0)) * 0.03;
         armL = breathe; armR = -breathe; nod = Math.sin(t * 0.5 + (f.phase || 0)) * 0.05;
-        if (st.right === 'spear' || st.right === 'pole') { armR = -0.35; elbowR = -0.9; }
+        if (st.right === 'spear' || st.right === 'pole' || st.right === 'halberd' || st.right === 'crossbow') { armR = -0.35; elbowR = -0.9; }
       }
     }
     // root
@@ -242,7 +246,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     // right hand item
     const right = f.tool || st.right;
     if (right && !(f.carry && f.anim !== 'hammer')) {
-      out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, right === 'bow' ? 0 : (right === 'spear' || right === 'pole' ? 1.6 : 0), 0, 0));
+      out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, right === 'bow' ? 0 : (right === 'spear' || right === 'pole' || right === 'halberd' || right === 'crossbow' ? 1.6 : 0), 0, 0));
       if (right === 'axe' || right === 'pick' || right === 'hammer' || right === 'sword' || right === 'greataxe' || right === 'sickle') out.multiplyMatrices(foreRM, local(0, -0.29, 0.05, Math.PI * 0.5 + handItemA));
       put(right, out, f.bladeTint && (right === 'sword' || right === 'axe' || right === 'spear') ? f.bladeTint : null);
     }
