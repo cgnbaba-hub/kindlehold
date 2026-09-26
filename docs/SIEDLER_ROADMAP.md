@@ -26,6 +26,14 @@ Nachweis: 82 automatische Tests (davon 10 neu in `tests/simulation/seasons.test.
 `tests/simulation/treasury.test.js`), neue
 Screenshot-Presets `winter-overview` und `winter-settlement`.
 
+Belegbilder: `docs/screenshots/evidence/level2-winter-overview.png`,
+`level2-winter-settlement.png`, `level2-dialogue-portrait.png` und `level2-exploration-shroud.png`.
+Letzter Prüflauf: 14/14 Screenshot-Presets bestanden (0 Konsolenfehler, höchstens 1,40 M Dreiecke
+bei einem Budget von 1,5 M), e2e 10/10 (der Layout-Test bei 1280×720 nach einer Korrektur der
+Ressourcenleiste einzeln wiederholt).
+
+![Winter](screenshots/evidence/level2-winter-overview.png)
+
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
 1. **Geld weiter ausbauen.** Die Grundform steht (Zahltag, Steuern, Sold, Arbeiter kaufen).

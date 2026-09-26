@@ -497,9 +497,10 @@ export function createHud({ root, session, input, settings, actions }) {
     const hh = Math.floor(hour), mm = Math.floor((hour - hh) * 60);
     clear(clockIcon).append(icon(hour > 6 && hour < 19 ? 'sun' : 'moon', 'icon icon-sm'));
     const ss = seasonAt(w.tick);
-    const season = ss.winter ? `Winter ${fmtTime(ss.untilEnd / 20)}` : ss.untilNext <= 60 * 20 ? `Winter in ${fmtTime(ss.untilNext / 20)}` : 'Summer';
-    if (ss.winter) clear(clockIcon).append(icon('snow', 'icon icon-sm'));
-    setText(clockText, `${fmtTime(w.tick / 20)} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} · ${season}`);
+    // season: compact (the top bar must stay clear of the ribbon at 1280 px); details in the tooltip
+    const season = ss.winter ? ` · ❄ ${fmtTime(ss.untilEnd / 20)}` : ss.untilNext <= 60 * 20 ? ` · ❄ in ${fmtTime(ss.untilNext / 20)}` : '';
+    setText(clockText, `${fmtTime(w.tick / 20)} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}${season}`);
+    clockText.setAttribute('data-tip', ss.winter ? `Winter: crops grow slowly, the river is frozen. Thaw in ${fmtTime(ss.untilEnd / 20)}.` : `Summer. Next winter in ${fmtTime(ss.untilNext / 20)}.`);
     setText(speedBtn, session.loop.isPaused() ? 'II' : `${session.loop.getSpeed()}×`);
     // raid countdown
     if (w.ai.raidTick != null && w.ai.state === 'build' && w.mission.flags.raidWarned) {

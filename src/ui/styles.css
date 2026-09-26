@@ -233,7 +233,12 @@ button { font: inherit; color: inherit; }
   .commands { width: calc(290px * var(--ui-scale, 1)); }
   .objectives { width: calc(250px * var(--ui-scale, 1)); max-height: 38vh; }
   .selection { min-height: calc(120px * var(--ui-scale, 1)); }
-  .res { min-width: 62px; padding: 2px 5px; }
+  .res { min-width: 52px; padding: 2px 4px; gap: 4px; }
+  .ribbon { gap: 2px; padding: 5px 6px; }
+  .ui-root .ribbon .icon { width: 20px; height: 20px; }
+  .res.stab { min-width: 76px; }
+  .res.stab .meter { width: 46px; }
+  .res-rate { font-size: 0.68em; }
   .alerts { top: 64px; }
 }
 
