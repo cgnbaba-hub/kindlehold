@@ -37,6 +37,8 @@ const KIND_SCHEMAS = {
     workers: ids(16), queue: v.array(v.object({ unitType: v.string({ oneOf: Object.keys(UNITS) }), progress: nonNeg(2) }), { max: 8 }),
     stock: v.object({ out: v.record(nonNeg(1e5), { max: 8 }), in: v.record(nonNeg(1e5), { max: 8 }), outReserved: nonNeg(1e5), inIncoming: nonNeg(1e5) }),
     build: v.optional(v.object({ progress: nonNeg(1), required: v.record(nonNeg(1e5), { max: 8 }), supplied: v.record(nonNeg(1e5), { max: 8 }), incoming: v.record(nonNeg(1e5), { max: 8 }), builders: ids(16) })),
+    level: v.optional(v.number({ min: 1, max: 3, int: true })),
+    upgrade: v.optional(v.object({ progress: nonNeg(1) }, { allowExtra: false })),
     plots: v.optional(v.array(v.object({ x: coord, z: coord, growth: nonNeg(1), state: v.string({ oneOf: ['fallow', 'growing', 'ripe'] }) }), { max: 12 })),
   }),
   unit: v.object({
@@ -68,7 +70,7 @@ const entitySchema = (x, p) => {
 const playerFull = v.object({
   id: v.string({ oneOf: ['p1', 'p2'] }),
   res: stockSchema,
-  techs: v.record(v.boolean(), { max: 16, keyPattern: /^(axes|bracing|blades|charter)$/ }),
+  techs: v.record(v.boolean(), { max: 16, keyPattern: /^(axes|bracing|blades|charter|mail|drill)$/ }),
   stability: v.number({ min: 0, max: 100 }),
   research: v.optional(v.object({ techId: v.string({ oneOf: Object.keys(TECHS) }), progress: nonNeg(1) })),
   popCap: nonNeg(1e4), pop: nonNeg(1e4), tax: v.optional(v.number({ min: 0, max: 2, int: true })), nextPayTick: v.optional(nonNeg(1e10)), nextMealTick: nonNeg(1e9), nextSettlerTick: nonNeg(1e9), lastMealFed: nonNeg(1), burnPenalty: nonNeg(1e4),

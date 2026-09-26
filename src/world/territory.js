@@ -1,6 +1,6 @@
 // Territory: circles around active territory buildings. Derived, cheap to recompute.
 import { all } from './world.js';
-import { BUILDINGS } from '../buildings/defs.js';
+import { BUILDINGS, upgradeBonus } from '../buildings/defs.js';
 import { TECH_EFFECTS } from '../technology/defs.js';
 
 export function territorySources(world) {
@@ -8,7 +8,7 @@ export function territorySources(world) {
   for (const b of all(world, 'building')) {
     const d = BUILDINGS[b.type];
     if (!d.territory || b.state !== 'active') continue;
-    let r = d.territory;
+    let r = d.territory + upgradeBonus(b, 'territory');
     if (b.type === 'keep' && world.players[b.owner] && world.players[b.owner].techs.charter) r += TECH_EFFECTS.charterTerritory;
     out.push({ owner: b.owner, x: b.x, z: b.z, r, id: b.id });
   }

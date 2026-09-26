@@ -265,6 +265,16 @@ export function createBuildingsView({ scene, terrain, world, renderer, sky }) {
           r.clip.constant = r.root.position.y + 0.3 + k * r.height;
           r.site.scale.setScalar(Math.max(0.4, 1 - k * 0.6));
         }
+        // upgrades swap in the dressed model of the new level
+        const lvl = b.level || 1;
+        if (r.level !== lvl) {
+          r.level = lvl;
+          const g = buildingGeometries(b.type, BUILDINGS[b.type].radius, lvl);
+          r.body.geometry = g.body;
+          if (r.glow && g.glow) r.glow.geometry = g.glow;
+        }
+        if (r.upScaffold) r.upScaffold.visible = !!b.upgrade && stage === 'done';
+        else if (b.upgrade && stage === 'done') { r.upScaffold = new THREE.Mesh(buildingGeometries(b.type, BUILDINGS[b.type].radius).scaffold, mat); r.root.add(r.upScaffold); }
         if (r.charter) r.charter.visible = stage === 'done' && !!(w.players[b.owner] && w.players[b.owner].techs.charter);
         // lit buildings for the night light pool (keep only when its hearth burns)
         if (stage === 'done' && (b.type !== 'keep' || b.lit) && (r.glow || b.type === 'keep' || r.lantern)) litList.push(b);

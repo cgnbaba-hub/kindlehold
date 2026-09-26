@@ -2,7 +2,7 @@
 // automatic worker assignment and fleeing from raiders.
 import { EV, PLAYER, DT } from '../core/contracts.js';
 import { spawn, remove, all, emit, alert, worldRng } from '../world/world.js';
-import { BUILDINGS, doorOf } from '../buildings/defs.js';
+import { BUILDINGS, doorOf, slotsOf, upgradeBonus, levelOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { TECH_EFFECTS } from '../technology/defs.js';
 import { addRes } from '../economy/stock.js';
@@ -30,7 +30,8 @@ export function paydayForecast(world, owner) {
   let settlers = 0, soldiers = 0;
   for (const s of all(world, 'settler')) if (s.owner === owner && !s.arriving && !s.leaving) settlers++;
   for (const u of all(world, 'unit')) if (u.owner === owner && !u.hero) soldiers++;
-  const taxes = settlers * level.perSettler;
+  const keep = keepOf(world, owner);
+  const taxes = Math.round(settlers * level.perSettler * (1 + (keep ? upgradeBonus(keep, 'tax') : 0)));
   const pay = soldiers * SOLDIER_PAY;
   return { taxes, pay, net: taxes - pay, settlers, soldiers };
 }
@@ -55,7 +56,7 @@ export function housingCap(world, owner) {
   let cap = 0;
   for (const b of all(world, 'building')) {
     if (b.owner !== owner || b.state !== 'active') continue;
-    cap += BUILDINGS[b.type].housing || 0;
+    cap += (BUILDINGS[b.type].housing || 0) + upgradeBonus(b, 'housing');
     if (b.type === 'keep' && world.players[owner].techs.charter) cap += TECH_EFFECTS.charterHousing;
   }
   return cap;
@@ -181,15 +182,16 @@ export function createPopulationModule() {
     const labourers = all(world, 'settler').filter((s) => s.owner === owner && !s.job).length;
     // keep enough labourers free to haul and build: 2 plus one per two workplaces
     let workplaces = 0;
-    for (const b of all(world, 'building')) if (b.owner === owner && b.state === 'active' && BUILDINGS[b.type].slots) workplaces++;
+    for (const b of all(world, 'building')) if (b.owner === owner && b.state === 'active' && slotsOf(b)) workplaces++;
     const minFree = MIN_FREE_LABOURERS + Math.floor(workplaces / 2);
     for (const b of all(world, 'building')) {
       if (b.owner !== owner || b.state !== 'active') continue;
       const def = BUILDINGS[b.type];
-      if (!def.slots || b.paused) continue;
+      const slots = slotsOf(b);
+      if (!slots || b.paused) continue;
       // drop workers that no longer exist
       b.workers = b.workers.filter((id) => world.entities[id] && world.entities[id].workplace === b.id);
-      while (b.workers.length < def.slots) {
+      while (b.workers.length < slots) {
         if (free <= 0 || labourers - (idle.length - free) <= minFree) break;
         // nearest idle settler
         let best = null, bestD = Infinity;

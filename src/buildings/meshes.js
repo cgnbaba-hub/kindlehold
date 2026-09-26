@@ -351,13 +351,95 @@ function rubble(radius, rnd) {
   return merge(parts);
 }
 
+// Upgrade dressings: extra parts merged onto the base model for levels 2 and 3.
+function crenelRing(r, y, z0, from, to, n, rnd) {
+  const parts = [];
+  for (let i = 0; i <= n; i++) {
+    const a = from + (to - from) * (i / n);
+    parts.push(b(0.7, 0.6, 0.6, C.stone, P.stone, { x: Math.sin(a) * r, y, z: z0 + Math.cos(a) * r, ry: a }, 0.08, rnd));
+  }
+  return parts;
+}
+function roundTower(x, z, r, h, rnd, roofColor = C.slate) {
+  return [
+    paint(place(cyl(r, r * 1.08, h, 12), { x, z, y: h / 2 }), C.stone, 0.06, rnd, P.stone),
+    paint(place(cone(r * 1.35, r * 2.2, 12), { x, z, y: h + r * 1.1 }), roofColor, 0, null, P.shingles),
+  ];
+}
+function leanTo(x, z, rnd) {
+  const parts = [];
+  for (const [dx, dz] of [[-1.1, -0.9], [1.1, -0.9], [-1.1, 0.9], [1.1, 0.9]]) parts.push(b(0.18, 2.1, 0.18, C.timberDark, P.planks, { x: x + dx, y: 1.05, z: z + dz }));
+  parts.push(b(2.7, 0.14, 2.3, C.plank, P.planks, { x, y: 2.2, z, rx: 0.18 }));
+  return parts;
+}
+function hangingSign(x, z, color) {
+  return [
+    b(0.12, 2.6, 0.12, C.timberDark, P.planks, { x, y: 1.3, z }),
+    b(0.9, 0.1, 0.1, C.timberDark, P.planks, { x: x + 0.4, y: 2.5, z }),
+    b(0.75, 0.55, 0.06, color, P.planks, { x: x + 0.5, y: 2.05, z }),
+    b(0.35, 0.25, 0.07, C.gold, P.metal, { x: x + 0.5, y: 2.05, z: z + 0.02 }),
+  ];
+}
+const LEVEL_EXTRAS = {
+  keep: {
+    2: (rnd) => { // Castle: curtain wall around the back, a second tower
+      const body = [];
+      const r = 6.9, from = Math.PI * 0.42, to = Math.PI * 1.58, n = 10;
+      for (let i = 0; i < n; i++) {
+        const a0 = from + (to - from) * (i / n), a1 = from + (to - from) * ((i + 1) / n);
+        const am = (a0 + a1) / 2, len = 2 * r * Math.sin((a1 - a0) / 2) + 0.2;
+        body.push(b(len, 2.4, 0.8, C.stone, P.stone, { x: Math.sin(am) * r, y: 1.2, z: 0.6 + Math.cos(am) * r, ry: am }, 0.06, rnd));
+      }
+      body.push(...crenelRing(r, 2.7, 0.6, from, to, 18, rnd));
+      body.push(...roundTower(-5.4, -3.4, 1.5, 8.5, rnd));
+      body.push(...banner(-5.4, 11.6, -3.4, C.teal, rnd, 1.8));
+      return { body, glow: [win(0.5, 0.9, { x: -5.4, y: 6, z: -1.85 })] };
+    },
+    3: (rnd) => { // Fortress: gate turrets in front, taller corner tower
+      const body = [];
+      for (const x of [-3.4, 3.4]) {
+        body.push(...roundTower(x, 6.7, 0.95, 5.2, rnd));
+        body.push(...banner(x, 7.8, 6.7, C.teal, rnd, 1.4));
+      }
+      body.push(b(5.6, 0.5, 0.6, C.stoneDark, P.stone, { y: 4.3, z: 6.7 }));
+      body.push(...roundTower(5.6, -4.4, 1.3, 11, rnd));
+      return { body, glow: [win(0.45, 0.8, { x: -3.4, y: 3.6, z: 7.66 }), win(0.45, 0.8, { x: 3.4, y: 3.6, z: 7.66 })] };
+    },
+  },
+  cottage: {
+    2: () => ({ // Stone House: stone ground storey and a slate roof
+      body: [b(5.14, 1.2, 4.14, C.stone, P.stone, { y: 1.1 }), roof(6.4, 5.4, 3.4, C.slate, P.shingles, { y: 3.32 })],
+      glow: [],
+    }),
+    3: (rnd) => { // Townhouse: side wing, dormer, second chimney
+      const body = [b(2.8, 0.5, 3.6, C.stoneDark, P.stone, { x: -3.9, y: 0.25 }), b(2.6, 2.3, 3.4, C.lime, P.plaster, { x: -3.9, y: 1.65 })];
+      body.push(...timberFrame(2.6, 2.1, 3.4, 0.5).map((g) => place(g, { x: -3.9 })));
+      body.push(roof(3.6, 3.0, 2.2, C.slate, P.shingles, { x: -3.9, y: 2.8, ry: Math.PI / 2 }));
+      body.push(b(1.3, 1.1, 1.4, C.lime, P.plaster, { x: 0.9, y: 4.25, z: 1.2 }), roof(1.6, 1.6, 0.8, C.slate, P.shingles, { x: 0.9, y: 4.8, z: 1.2, ry: Math.PI / 2 }));
+      body.push(...chimney(1.8, -1.2, 3.4, 2.8));
+      return { body, glow: [win(0.5, 0.5, { x: 0.9, y: 4.25, z: 1.92 }), win(0.55, 0.55, { x: -3.9, y: 1.7, z: 1.74 })] };
+    },
+  },
+};
+for (const t of ['lodge', 'quarry', 'farm', 'mine']) {
+  LEVEL_EXTRAS[t] = { 2: (rnd) => ({ body: [...leanTo(-3.4, -1.6, rnd), ...hangingSign(1.9, 3.9, t === 'mine' ? C.rust : C.teal), ...barrel(-3.8, -1.2), ...barrel(-3.0, -2.1)], glow: [] }) };
+}
+
 const cache = new Map();
 
 /** Build (and cache) the geometries for a building type. */
-export function buildingGeometries(type, radius) {
-  if (cache.has(type)) return cache.get(type);
+export function buildingGeometries(type, radius, level = 1) {
+  const key = level > 1 ? `${type}:${level}` : type;
+  if (cache.has(key)) return cache.get(key);
   const rnd = viewRng(type.split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 7));
   const model = MODELS[type](rnd);
+  for (let l = 2; l <= level; l++) {
+    const extra = LEVEL_EXTRAS[type] && LEVEL_EXTRAS[type][l];
+    if (!extra) continue;
+    const e = extra(rnd);
+    model.body.push(...e.body);
+    model.glow.push(...e.glow);
+  }
   const out = {
     body: merge(model.body),
     glow: model.glow.length ? mergeGlow(model.glow) : null,
@@ -368,7 +450,8 @@ export function buildingGeometries(type, radius) {
     rubble: rubble(radius, rnd),
   };
   if (type === 'keep') out.charter = merge(MODELS.keepCharter(rnd).body);
-  cache.set(type, out);
+  out.levelUp = level > 1;
+  cache.set(key, out);
   return out;
 }
 

@@ -75,7 +75,12 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
     }
     for (const d of all(w, 'deposit')) {
       if (d.type === 'tree' || d.amount <= 0 || !seen(d)) continue;
-      ctx.fillStyle = d.type === 'iron' ? '#c26a3a' : '#d8d6cc';
+      if (d.type === 'iron') { // iron: a bold rust dot with a light ring, easy to spot
+        ctx.fillStyle = '#e07a3a'; ctx.beginPath(); ctx.arc(toPx(d.x), toPx(d.z), 3.2, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,230,200,0.9)'; ctx.lineWidth = 1; ctx.stroke();
+        continue;
+      }
+      ctx.fillStyle = '#d8d6cc';
       ctx.fillRect(toPx(d.x) - 1.5, toPx(d.z) - 1.5, 3, 3);
     }
     for (const s of all(w, 'settler')) { ctx.fillStyle = '#efe6d2'; ctx.fillRect(toPx(s.x) - 0.8, toPx(s.z) - 0.8, 1.6, 1.6); }

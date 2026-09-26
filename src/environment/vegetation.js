@@ -47,10 +47,11 @@ function rockGeo(rnd, colorA, colorB, iron = false) {
     parts.push(g);
   }
   if (iron) {
-    for (let i = 0; i < 7; i++) {
-      const g = jitterVertices(ico(0.28 + rnd() * 0.2, 0), 0.1, rnd);
-      place(g, { x: (rnd() - 0.5) * 2.6, y: 0.6 + rnd() * 0.9, z: (rnd() - 0.5) * 2.2 });
-      paint(g, rnd() > 0.4 ? '#8a4a24' : '#3d3531', 0.15, rnd, PATTERN.metal);
+    // rust-red ore streaks and bright ore nuggets so the vein reads from the overview camera
+    for (let i = 0; i < 12; i++) {
+      const g = jitterVertices(ico(0.34 + rnd() * 0.28, 0), 0.12, rnd);
+      place(g, { x: (rnd() - 0.5) * 2.8, y: 0.7 + rnd() * 1.0, z: (rnd() - 0.5) * 2.4 });
+      paint(g, i % 3 === 0 ? '#e0a060' : rnd() > 0.35 ? '#b8582a' : '#7a3a1e', 0.15, rnd, PATTERN.metal);
       parts.push(g);
     }
   }
@@ -144,7 +145,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
   grassMat.customProgramCacheKey = () => 'kh-grass';
   const rockMat = createStructureMaterial({ roughness: 0.9 });
 
-  const geos = { conifer: conifer(rnd), broadleaf: broadleaf(rnd), stump: stumpGeo(), rock: rockGeo(rnd, '#5d5e5b', '#9b9c96'), iron: rockGeo(rnd, '#4a3e36', '#8a7a6a', true), grass: grassClump(rnd), reed: reedClump(rnd), bush: bush(rnd) };
+  const geos = { conifer: conifer(rnd), broadleaf: broadleaf(rnd), stump: stumpGeo(), rock: rockGeo(rnd, '#5d5e5b', '#9b9c96'), iron: rockGeo(rnd, '#5a3426', '#a0603c', true), grass: grassClump(rnd), reed: reedClump(rnd), bush: bush(rnd) };
   const deps = all(world(), 'deposit');
   const counts = { tree0: 0, tree1: 0 };
   for (const d of deps) if (d.type === 'tree') counts['tree' + (d.variant || 0)]++;

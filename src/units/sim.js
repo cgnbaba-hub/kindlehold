@@ -7,6 +7,7 @@ import { pay, refund } from '../economy/stock.js';
 import { followPath, formationSlots } from '../navigation/index.js';
 import { isIdleLabourer } from '../population/index.js';
 import { walkTo, stopWalking } from '../navigation/agent.js';
+import { soldierMods, TECH_EFFECTS } from '../technology/defs.js';
 
 export const MAX_QUEUE = 5;
 export const LEASH = 22;
@@ -15,9 +16,10 @@ const FOE_MIN_DIST = 1.1;
 
 export function spawnUnit(world, type, owner, x, z, extra = {}) {
   const def = unitDef(type);
+  const hp = Math.round(def.hp * (def.cls !== 'hero' ? soldierMods(world, { owner, hero: false }).hp : 1));
   return spawn(world, {
     kind: 'unit', type, owner, x, z, heading: owner === PLAYER ? Math.PI : 0,
-    hp: def.hp, maxHp: def.hp,
+    hp, maxHp: hp,
     order: { type: 'idle', ax: x, az: z },
     target: null, cd: 0, attackT: 0,
     ward: 0, wardUntil: 0, dazzleUntil: 0, hasteUntil: 0, rallyUntil: 0,
@@ -37,7 +39,7 @@ export function reachDistance(u, t) {
 
 export function unitSpeed(world, u) {
   const def = UNITS[u.type];
-  let s = def.speed;
+  let s = def.speed * soldierMods(world, u).speed;
   if (u.hasteUntil > world.tick) s *= 1.2;
   if (u.retreating) s *= 1.1;
   return s;
@@ -312,7 +314,19 @@ export function createUnitsModule() {
   return {
     id: 'units',
     kind: 'sim',
-    init(c) { ctx = c; unsub.push(c.bus.on('command', onCommand)); },
+    init(c) {
+      ctx = c;
+      unsub.push(c.bus.on('command', onCommand));
+      // Steel Mail: every serving soldier gets tougher at once
+      unsub.push(c.bus.on(EV.TECH_COMPLETED, ({ owner, techId }) => {
+        if (techId !== 'mail') return;
+        for (const u of all(ctx.world, 'unit')) {
+          if (u.owner !== owner || u.hero) continue;
+          u.maxHp = Math.round(u.maxHp * TECH_EFFECTS.mailHp);
+          u.hp = Math.min(u.maxHp, u.hp * TECH_EFFECTS.mailHp);
+        }
+      }));
+    },
     update() {
       const world = ctx.world;
       updateRecruitment(world);

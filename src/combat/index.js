@@ -4,7 +4,7 @@ import { EV, PLAYER, DT } from '../core/contracts.js';
 import { all, emit, remove, alert } from '../world/world.js';
 import { UNITS, COUNTERS } from '../units/defs.js';
 import { BUILDINGS } from '../buildings/defs.js';
-import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
+import { TECH_EFFECTS, hasTech, soldierMods } from '../technology/defs.js';
 import { isAlive, reachDistance } from '../units/sim.js';
 import { destroyBuilding } from '../construction/index.js';
 
@@ -133,11 +133,11 @@ export function createCombatModule() {
   function attack(world, u, t) {
     const def = UNITS[u.type];
     const dazzled = u.dazzleUntil > world.tick;
-    u.cd = Math.round(def.cooldown * 20 * (dazzled ? 2.5 : 1));
+    u.cd = Math.round(def.cooldown * 20 * (dazzled ? 2.5 : 1) * soldierMods(world, u).cooldown);
     u.attackT = world.tick;
     const base = def.damage;
     const tcls = classOf(t);
-    const armor = t.kind === 'unit' ? UNITS[t.type].armor : 0;
+    const armor = t.kind === 'unit' ? UNITS[t.type].armor + soldierMods(world, t).armor : 0;
     let dmg = computeDamage({ base, attackerCls: def.cls, defenderCls: tcls, armor, damageMult: damageMult(world, u) });
     const strong = counterOf(def.cls, tcls) > 1;
     if (def.cls === 'ranged') {
@@ -201,7 +201,7 @@ export function createCombatModule() {
         b.cooldown = Math.round(def.attack.cooldown * 20);
         const dist = Math.sqrt(bestD);
         const flight = Math.max(2, Math.round((dist / PROJECTILE_SPEED) * 20));
-        const armor = UNITS[best.type].armor;
+        const armor = UNITS[best.type].armor + soldierMods(world, best).armor;
         const dmg = Math.max(1, Math.round(def.attack.damage * (1 - armor * 0.05)));
         world.combat.pending.push({ from: b.id, owner: b.owner, target: best.id, damage: dmg, arrive: world.tick + flight, kind: b.owner === PLAYER ? 'arrow' : 'stone' });
         emit(world, EV.COMBAT_SHOT, { from: b.id, to: best.id, fx: b.x, fz: b.z, fy: 7, tx: best.x, tz: best.z, flightTicks: flight, kind: b.owner === PLAYER ? 'arrow' : 'stone' });

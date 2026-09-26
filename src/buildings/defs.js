@@ -84,6 +84,45 @@ export const BUILDINGS = {
   },
 };
 
+// Upgrades (levels 2 and 3). Each entry lists the bonuses gained on reaching that level;
+// bonuses add up. `requires` gates a level behind another building's level.
+const WORKSHOP_L2 = { name: null, cost: { timber: 20, stone: 25, taler: 25 }, time: 30, slots: 1, speed: 1.2, hp: 150, desc: 'One more worker and 20% faster work.' };
+export const UPGRADES = {
+  keep: {
+    2: { name: 'Kindlehold Castle', cost: { timber: 40, stone: 80, taler: 60 }, time: 60, territory: 14, housing: 4, hp: 600, tax: 0.25,
+      desc: 'Curtain walls and a second tower: territory +14 m, +4 housing, +25% taxes.' },
+    3: { name: 'Kindlehold Fortress', cost: { timber: 60, stone: 140, iron: 20, taler: 120 }, time: 90, territory: 12, housing: 4, hp: 800, tax: 0.25, requiresTech: 'charter',
+      desc: 'Gatehouse and great tower: territory +12 m, +4 housing, +25% taxes. Needs the March Charter.' },
+  },
+  cottage: {
+    2: { name: 'Stone House', cost: { stone: 20, taler: 15 }, time: 25, housing: 3, hp: 150, desc: 'Stone walls and a slate roof: +3 housing.' },
+    3: { name: 'Townhouse', cost: { timber: 15, stone: 30, taler: 30 }, time: 30, housing: 3, hp: 150, requiresKeep: 2, desc: 'A wing and dormers: +3 housing. Needs the Castle.' },
+  },
+  lodge: { 2: { ...WORKSHOP_L2, name: "Woodcutter's Hall" } },
+  quarry: { 2: { ...WORKSHOP_L2, name: 'Stoneworks' } },
+  farm: { 2: { ...WORKSHOP_L2, name: 'Manor Farm' } },
+  mine: { 2: { ...WORKSHOP_L2, name: 'Deep Mine', cost: { timber: 30, stone: 30, taler: 35 } } },
+};
+
+export function levelOf(b) { return b.level || 1; }
+/** The next upgrade for a building (or null at the top level). */
+export function nextUpgrade(b) { const u = UPGRADES[b.type]; return (u && u[levelOf(b) + 1]) || null; }
+/** Sum of an upgrade bonus up to the building's current level. */
+export function upgradeBonus(b, key) {
+  const u = UPGRADES[b.type];
+  if (!u) return 0;
+  let s = 0;
+  for (let l = 2; l <= levelOf(b); l++) if (u[l] && u[l][key]) s += u[l][key];
+  return s;
+}
+export function slotsOf(b) { return (BUILDINGS[b.type].slots || 0) + upgradeBonus(b, 'slots'); }
+export function workSpeedOf(b) { return b && levelOf(b) > 1 && UPGRADES[b.type] && UPGRADES[b.type][2].speed ? UPGRADES[b.type][2].speed : 1; }
+export function displayName(b) {
+  const u = UPGRADES[b.type];
+  for (let l = levelOf(b); l >= 2; l--) if (u && u[l] && u[l].name) return u[l].name;
+  return BUILDINGS[b.type].name;
+}
+
 export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'quarry', 'mine', 'barracks', 'tower'];
 
 export function buildingDef(type) {

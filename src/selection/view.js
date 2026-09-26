@@ -9,7 +9,7 @@ import { buildingGeometries } from '../buildings/meshes.js';
 import { checkPlacement } from '../construction/index.js';
 import { ABILITIES } from '../heroes/index.js';
 import { territorySources } from '../world/territory.js';
-import { shroudOverlay } from '../render/structure-material.js';
+import { shroudOverlay, SNOW } from '../render/structure-material.js';
 
 const MAX_RINGS = 240;
 const MAX_BARS = 240;
@@ -51,6 +51,14 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   const aoeMat = new THREE.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.35, depthWrite: false, fog: false });
   const aoe = new THREE.Mesh(new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2), aoeMat); aoe.visible = false; aoe.renderOrder = 4; scene.add(aoe);
   const castRange = new THREE.Mesh(new THREE.RingGeometry(0.985, 1, 72).rotateX(-Math.PI / 2), rangeMat.clone()); castRange.visible = false; scene.add(castRange);
+
+  // resource highlights: a rust ring always marks iron veins; while placing a Mine or Quarry,
+  // every usable deposit of its kind pulses so the right spot is obvious
+  const depRingMat = shroudOverlay(new THREE.MeshBasicMaterial({ color: '#e0823a', transparent: true, opacity: 0.8, depthWrite: false, fog: false }));
+  const depRings = new THREE.InstancedMesh(new THREE.RingGeometry(0.86, 1, 48).rotateX(-Math.PI / 2), depRingMat, 96);
+  depRings.count = 0; depRings.frustumCulled = false; depRings.renderOrder = 3;
+  scene.add(depRings);
+  let pulseT = 0;
 
   // stall markers: an amber "!" floating over buildings that stopped working
   const markCanvas = document.createElement('canvas');
@@ -113,6 +121,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   }
 
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3();
+  const q0 = new THREE.Quaternion();
   const col = new THREE.Color();
   const right = new THREE.Vector3(), tmpEnt = { x: 0, z: 0, owner: null }, cWard = new THREE.Color('#8fd0ff');
   const cOwn = new THREE.Color('#7fe07f'), cEnemy = new THREE.Color('#e0604a'), cNeutral = new THREE.Color('#e8d9a0'), cHover = new THREE.Color('#ffffff');
@@ -156,7 +165,8 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
     render(alpha, frame) {
       const w = world();
       const v = structureVersion(w);
-      const charter = !!(w.players[PLAYER] && w.players[PLAYER].techs.charter);
+      let charter = w.players[PLAYER] && w.players[PLAYER].techs.charter ? 'c' : '';
+      for (const b of all(w, 'building')) if (b.level > 1 && BUILDINGS[b.type].territory) charter += `${b.id}:${b.level}`;
       if (v !== lastVersion || charter !== lastCharter) { lastVersion = v; lastCharter = charter; rebuildBorder(); }
       rings.count = 0; bars.count = 0; barsBg.count = 0;
       right.set(1, 0, 0).applyQuaternion(camera.quaternion);
@@ -217,6 +227,25 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
       }
       stallMarks.instanceMatrix.needsUpdate = true;
 
+      // resource highlights
+      pulseT += frame.dt || 0;
+      {
+        const pst = input.state;
+        const want = pst.mode === 'place' && BUILDINGS[pst.placeType] ? BUILDINGS[pst.placeType].deposit : null;
+        depRings.count = 0;
+        const pulse = 1 + Math.sin(pulseT * 4) * 0.08;
+        for (const d of all(w, 'deposit')) {
+          if (d.amount <= 0 || depRings.count >= 96) continue;
+          const lit = want && want !== 'tree' && d.type === want;
+          if (!lit && d.type !== 'iron') continue;
+          const r = lit ? (d.type === 'iron' ? 4.2 : 3.2) * pulse : 3.6;
+          m4.compose(p.set(d.x, terrain.height(d.x, d.z) + 0.15, d.z), q0, s.set(r, 1, r));
+          depRings.setMatrixAt(depRings.count++, m4);
+        }
+        depRingMat.opacity = want === 'iron' || want === 'rock' ? 0.95 : 0.45;
+        depRings.instanceMatrix.needsUpdate = true;
+      }
+
       // placement ghost
       const st = input.state;
       const g = st.hoverGround;
@@ -263,7 +292,11 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
       }
     },
     /** Night dims the unlit border so it never outshines the scene. */
-    setNight(n) { borderMat.opacity = 0.22 * (1 - 0.7 * n); },
+    setNight(n) {
+      const snow = SNOW.value;
+      borderMat.opacity = 0.22 * (1 - 0.7 * n) + snow * 0.5 * (1 - 0.5 * n);
+      borderMat.color.setScalar(1 - snow * 0.62); // darker dashes that read on white ground
+    },
     /** Photo mode (key art, trailers): hide all overlays drawn by this module. */
     setVisible(v) { for (const o of [rings, bars, barsBg, border, stallMarks, discs, ghost, foot, range, aoe, castRange]) o.visible = v && o !== ghost && o !== foot && o !== range && o !== aoe && o !== castRange ? true : v ? o.visible : false; },
     getHealthStatus() { return { status: 'ok' }; },

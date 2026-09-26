@@ -2,7 +2,7 @@
 // fields or inputs, carry goods back, and report precise stall reasons.
 import { EV, DT } from '../core/contracts.js';
 import { all, emit, remove, alert } from '../world/world.js';
-import { BUILDINGS, doorOf } from '../buildings/defs.js';
+import { BUILDINGS, doorOf, workSpeedOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { stabilityFactor } from '../population/index.js';
 import { walkTo, stopWalking } from '../navigation/agent.js';
@@ -76,7 +76,7 @@ export function createProductionModule() {
     const def = BUILDINGS[b.type];
     const W = WORK[s.job];
     const door = doorOf(b);
-    const sf = stabilityFactor(world, s.owner);
+    const sf = stabilityFactor(world, s.owner) * workSpeedOf(b);
     if (!s.task) s.task = { stage: 'start', timer: 0 };
     const t = s.task;
     const walk = (x, z, arrive = 0.8) => {

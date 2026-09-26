@@ -63,6 +63,8 @@ export const ICONS = {
   alertSuccess: S('<circle cx="12" cy="12" r="9" fill="#8fbf73" stroke="#2a4a1a"/><path d="M8 12l3 3 5-6" stroke="#10200a" stroke-width="2"/>'),
   sun: S('<circle cx="12" cy="12" r="4" fill="#ffd27a" stroke="#a0601a"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M5 19l2-2" stroke="#ffd27a"/>'),
   taler: S('<ellipse cx="12" cy="15" rx="7" ry="3" fill="#b8892e" stroke="#4a3410"/><path d="M5 12v3M19 12v3" stroke="#4a3410"/><ellipse cx="12" cy="12" rx="7" ry="3" fill="#e3b94f" stroke="#4a3410"/><ellipse cx="12" cy="9" rx="7" ry="3" fill="#f0cd62" stroke="#4a3410"/><path d="M5 9v3M19 9v3" stroke="#4a3410"/><path d="M10 9h4" stroke="#8a6418"/>'),
+  mail: S('<path d="M6 5h12l1 5-2 9H7L5 10z" fill="#8e98a4" stroke="#2f3338"/><path d="M8 9h8M7.5 12h9M8 15h8M9 18h6" stroke="#5a626c" stroke-dasharray="1.2 1"/><path d="M9 5c0-2 6-2 6 0" stroke="#2f3338"/>'),
+  drill: S('<path d="M5 19L15 9M9 19L19 9" stroke="#b8c0c8" stroke-width="2"/><path d="M15 9l2-4 2 4zM19 9l2-4" fill="#d9b653" stroke="#5a4010"/><circle cx="6" cy="6" r="2.5" fill="#d9b653" stroke="#5a4010"/><path d="M6 8.5v3" stroke="#5a4010"/>'),
   snow: S('<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 6.5l2.5-2M9.5 19.5l2.5-2 2.5 2" stroke="#dbe8f6" stroke-width="1.7"/>'),
   moon: S('<path d="M16 3a8 8 0 1 0 5 13A7 7 0 0 1 16 3z" fill="#c8d4f0" stroke="#5a6a90"/>'),
   objective: S('<path d="M5 21V4M5 4h11l-2 4 2 4H5" fill="#e3b04b" fill-opacity=".3" stroke-width="1.6"/>'),
