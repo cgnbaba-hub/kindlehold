@@ -15,6 +15,7 @@ export const CAMERA_PRESETS = {
   'showcase': { x: 0, z: 0, yaw: 0.6, zoom: 40 },
   'levels': { x: -30, z: 52, yaw: 0.9, zoom: 44 },
   'wildlife': { x: -12, z: 50, yaw: 0.9, zoom: 24 },
+  'figures': { x: -41, z: 57, yaw: 0.9, zoom: 17 },
 };
 
 const MIN_ZOOM = 16, MAX_ZOOM = 170;

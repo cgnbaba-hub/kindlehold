@@ -11,7 +11,9 @@ const B = (w, h, d, c, pat, at) => paint(place(box(w, h, d), at), c, 0, null, pa
 /** Part geometries (local to their pivot). Colours here are multiplied by instance colour. */
 function buildParts() {
   return {
-    leg: g([paint(place(cyl(0.085, 0.075, 0.5, 7), { y: -0.25 }), '#ffffff', 0, null, P.cloth), paint(place(cyl(0.08, 0.07, 0.36, 7), { y: -0.66 }), '#b8b0a6', 0, null, P.cloth), B(0.16, 0.1, 0.27, '#4a3526', P.plain, { y: -0.87, z: 0.04 })]),
+    // jointed limbs: thigh (hip pivot) + shin with boot (knee pivot), upper arm + forearm with hand
+    thigh: g([paint(place(cyl(0.09, 0.078, 0.47, 7), { y: -0.235 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.078, 6, 5), { y: -0.46 }), '#f2f2f2', 0, null, P.cloth)]),
+    shin: g([paint(place(cyl(0.076, 0.066, 0.34, 7), { y: -0.17 }), '#b8b0a6', 0, null, P.cloth), B(0.16, 0.1, 0.28, '#4a3526', P.plain, { y: -0.4, z: 0.045 }), paint(place(cyl(0.085, 0.08, 0.1, 7), { y: -0.3 }), '#5a4030', 0, null, P.plain)]),
     torso: g([
       paintGradient(place(cyl(0.21, 0.24, 0.62, 10), { y: 0.31 }), '#e8e8e8', '#ffffff', P.cloth),
       paint(place(cyl(0.255, 0.22, 0.2, 10), { y: -0.02 }), '#f0f0f0', 0, null, P.cloth),
@@ -24,12 +26,30 @@ function buildParts() {
       paintGradient(place(cyl(0.2, 0.36, 1.05, 10), { y: 0.0 }), '#dedede', '#ffffff', P.cloth),
       B(0.46, 0.07, 0.36, '#5a4030', P.plain, { y: 0.1 }),
     ]),
-    head: g([paint(place(sphere(0.155, 12, 9), { y: 0.16 }), '#e2b894', 0, null, P.plain), paint(place(sphere(0.158, 12, 6, 0, Math.PI * 2, 0, Math.PI * 0.45), { y: 0.17, z: -0.01 }), '#6a4b33', 0, null, P.plain), B(0.05, 0.05, 0.05, '#d4a884', P.plain, { y: 0.14, z: 0.15 })]),
+    // a slightly large, friendly head with a readable face (eyes, brows, nose, mouth, ears)
+    head: g([
+      paint(place(sphere(0.17, 14, 10), { y: 0.17 }), '#e2b894', 0, null, P.plain),
+      paint(place(sphere(0.026, 6, 5), { x: 0.058, y: 0.19, z: 0.152 }), '#f4efe4', 0, null, P.plain),
+      paint(place(sphere(0.026, 6, 5), { x: -0.058, y: 0.19, z: 0.152 }), '#f4efe4', 0, null, P.plain),
+      paint(place(sphere(0.016, 6, 5), { x: 0.058, y: 0.19, z: 0.172 }), '#1e1712', 0, null, P.plain),
+      paint(place(sphere(0.016, 6, 5), { x: -0.058, y: 0.19, z: 0.172 }), '#1e1712', 0, null, P.plain),
+      B(0.06, 0.016, 0.02, '#5a3f2a', P.plain, { x: 0.06, y: 0.235, z: 0.158, rz: 0.12 }),
+      B(0.06, 0.016, 0.02, '#5a3f2a', P.plain, { x: -0.06, y: 0.235, z: 0.158, rz: -0.12 }),
+      paint(place(cone(0.028, 0.07, 5), { y: 0.15, z: 0.18, rx: Math.PI / 2 }), '#d4a884', 0, null, P.plain),
+      B(0.06, 0.014, 0.02, '#9a5a48', P.plain, { y: 0.095, z: 0.158 }),
+      paint(place(sphere(0.035, 5, 4), { x: 0.168, y: 0.17, sz: 0.6 }), '#d4a884', 0, null, P.plain),
+      paint(place(sphere(0.035, 5, 4), { x: -0.168, y: 0.17, sz: 0.6 }), '#d4a884', 0, null, P.plain),
+    ]),
+    // hair and beard take their colour from the instance (varied per settler)
+    hair: g([paint(place(sphere(0.176, 12, 6, 0, Math.PI * 2, 0, Math.PI * 0.46), { y: 0.18, z: -0.012 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.12, 8, 6), { y: 0.14, z: -0.09, sy: 1.1 }), '#ffffff', 0, null, P.cloth)]),
+    beard: g([paint(place(sphere(0.1, 8, 6), { y: 0.07, z: 0.1, sy: 1.15, sx: 1.25 }), '#ffffff', 0, null, P.cloth)]),
+    skirt: g([paintGradient(place(cyl(0.24, 0.34, 0.5, 10), { y: -0.2 }), '#e6e6e6', '#ffffff', P.cloth)]),
     hood: g([paintGradient(place(cone(0.2, 0.42, 9), { y: 0.3, rx: -0.12 }), '#cfcfcf', '#ffffff', P.cloth), paint(place(sphere(0.155, 10, 6), { y: 0.16, z: -0.03 }), '#ffffff', 0, null, P.cloth)]),
     cap: g([paint(place(sphere(0.15, 10, 5), { y: 0.2, sy: 0.6 }), '#ffffff', 0, null, P.cloth)]),
     helm: g([paint(place(sphere(0.16, 10, 6), { y: 0.19, sy: 0.9 }), '#b9bcc0', 0, null, P.metal), B(0.035, 0.18, 0.05, '#9a9da2', P.metal, { y: 0.14, z: 0.15 }), paint(place(cyl(0.18, 0.18, 0.04, 10), { y: 0.12 }), '#8f9296', 0, null, P.metal)]),
     hornhelm: g([paint(place(sphere(0.18, 10, 6), { y: 0.19 }), '#6a625a', 0, null, P.metal), paint(place(cone(0.05, 0.36, 6), { x: 0.2, y: 0.36, rz: -0.7 }), '#d8ccb0', 0, null, P.plain), paint(place(cone(0.05, 0.36, 6), { x: -0.2, y: 0.36, rz: 0.7 }), '#d8ccb0', 0, null, P.plain)]),
-    arm: g([paint(place(cyl(0.065, 0.06, 0.34, 7), { y: -0.17 }), '#ffffff', 0, null, P.cloth), paint(place(cyl(0.055, 0.05, 0.28, 7), { y: -0.46 }), '#e2b894', 0, null, P.plain), paint(place(sphere(0.06, 6, 5), { y: -0.62 }), '#d4a884', 0, null, P.plain)]),
+    arm: g([paint(place(cyl(0.068, 0.062, 0.31, 7), { y: -0.155 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.062, 6, 5), { y: -0.3 }), '#f2f2f2', 0, null, P.cloth)]),
+    forearm: g([paint(place(cyl(0.058, 0.05, 0.26, 7), { y: -0.13 }), '#e2b894', 0, null, P.plain), paint(place(sphere(0.064, 7, 5), { y: -0.3, sz: 0.8 }), '#d4a884', 0, null, P.plain)]),
     // right-hand items: pivot at the hand, pointing along -Y when the arm hangs
     axe: g([paint(place(cyl(0.025, 0.03, 0.8, 5), { y: -0.2 }), '#6b4a2f', 0, null, P.planks), B(0.05, 0.16, 0.2, '#9fa3a8', P.metal, { y: -0.52, z: 0.09 })]),
     pick: g([paint(place(cyl(0.025, 0.03, 0.8, 5), { y: -0.2 }), '#6b4a2f', 0, null, P.planks), B(0.05, 0.06, 0.5, '#8c8f93', P.metal, { y: -0.58 })]),
@@ -56,7 +76,8 @@ function buildParts() {
 
 const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', cook: null };
 const CARRY = { timber: 'log', stone: 'stone', provisions: 'sack', iron: 'ingot' };
-const SETTLER_TUNICS = ['#8a6f4e', '#6f7b5a', '#9b7c52', '#5f6f7a', '#7a5f4e', '#8e8a6a'];
+const SETTLER_TUNICS = ['#8a6f4e', '#6f7b5a', '#9b7c52', '#5f6f7a', '#7a5f4e', '#8e8a6a', '#8a4e4a', '#4e6a7a'];
+const HAIR = ['#4a3222', '#2a1e16', '#b8914e', '#8a4a24', '#6a5a4a', '#c8c0b0', '#3a2a1e'];
 
 export const STYLE = {
   settler: { torso: null, head: 'cap', skin: '#e2b894', legs: '#5b4b3c' },
@@ -64,10 +85,10 @@ export const STYLE = {
   blade: { torso: '#5d93ab', coat: true, head: 'helm', right: 'sword', left: null, legs: '#4d4338' },
   fletcher: { torso: '#4f6f4a', head: 'hood', headColor: '#3f5a3c', right: null, left: 'bow', legs: '#4d4338' },
   maren: { torso: '#384a5c', coat: true, head: 'hood', headColor: '#2c3a48', right: 'pole', left: null, legs: '#3a3028', lantern: true },
-  reaver: { torso: '#8c3b2a', head: 'cap', headColor: '#3a302a', right: 'axe', left: null, legs: '#3a302a' },
+  reaver: { torso: '#8c3b2a', head: 'cap', headColor: '#3a302a', right: 'axe', left: null, legs: '#3a302a', beard: true, beardColor: '#6a2e18' },
   slinger: { torso: '#7a5a3e', head: 'hood', headColor: '#5b2a20', right: 'sling', left: null, legs: '#3a302a' },
   brute: { torso: '#5b2a20', head: 'hornhelm', right: 'spear', left: 'shieldHide', leftColor: '#7a5a3e', legs: '#3a302a' },
-  vharek: { torso: '#3a302a', coat: true, head: 'hornhelm', right: 'greataxe', left: null, legs: '#2a2420', scale: 1.28 },
+  vharek: { torso: '#3a302a', coat: true, head: 'hornhelm', right: 'greataxe', left: null, legs: '#2a2420', scale: 1.28, beard: true, beardColor: '#8c3b1f' },
 };
 
 export function createFigureRenderer({ scene, maxFigures = 420 }) {
@@ -84,7 +105,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
   };
   outlineMat.customProgramCacheKey = () => 'kh-figure-outline';
   const uOutline = { value: 0.03 };
-  const caps = { leg: 2, arm: 2 };
+  const caps = { thigh: 2, shin: 2, arm: 2, forearm: 2 };
   for (const k in parts) {
     const n = maxFigures * (caps[k] || 1);
     const m = new THREE.InstancedMesh(parts[k], k === 'lantern' ? mat : mat, n);
@@ -110,6 +131,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
   const q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1);
   const col = new THREE.Color();
   const torsoFrame = new THREE.Matrix4(), armLM = new THREE.Matrix4(), armRM = new THREE.Matrix4(), scl = new THREE.Vector3();
+  const foreLM = new THREE.Matrix4(), foreRM = new THREE.Matrix4(), headM = new THREE.Matrix4(), tmp2 = new THREE.Matrix4();
 
   function begin() { for (const k in meshes) counts[k] = 0; glow.count = 0; }
 
@@ -137,75 +159,102 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     const sc = (st.scale || 1) * (f.scale || 1);
     const t = f.t;
     let legA = 0, armL = 0, armR = 0, armRz = 0, armLz = 0, bob = 0, lean = f.lean || 0, torsoTwist = 0, handItemA = 0;
+    // joints: knees bend backwards (+), elbows forwards (-); a little hip sway and head nod
+    let kneeL = 0.05, kneeR = 0.05, elbowL = -0.15, elbowR = -0.15, sway = 0, nod = 0;
     const walkF = f.anim === 'run' ? 11 : 8.5;
     switch (f.anim) {
-      case 'walk': case 'run': case 'carry':
-        legA = Math.sin(t * walkF) * 0.55; bob = Math.abs(Math.cos(t * walkF)) * 0.05;
-        armL = -legA * 0.8; armR = legA * 0.8;
-        if (f.anim === 'carry') { armL = -2.6; armR = -2.5; armLz = -0.3; armRz = 0.3; }
+      case 'walk': case 'run': case 'carry': {
+        const ph = t * walkF;
+        legA = Math.sin(ph) * (f.anim === 'run' ? 0.7 : 0.55); bob = Math.abs(Math.cos(ph)) * 0.05;
+        // the trailing leg folds at the knee as it swings through
+        kneeL = 0.1 + Math.max(0, Math.sin(ph + 1.2)) * (f.anim === 'run' ? 1.3 : 0.95);
+        kneeR = 0.1 + Math.max(0, Math.sin(ph + 1.2 + Math.PI)) * (f.anim === 'run' ? 1.3 : 0.95);
+        armL = -legA * 0.8; armR = legA * 0.8; elbowL = elbowR = f.anim === 'run' ? -1.3 : -0.35;
+        sway = Math.sin(ph) * 0.06; nod = Math.abs(Math.sin(ph)) * 0.06;
+        if (f.anim === 'carry') { armL = -2.6; armR = -2.5; armLz = -0.3; armRz = 0.3; elbowL = elbowR = -1.1; }
         break;
-      case 'carryIdle': armL = -2.6; armR = -2.5; armLz = -0.3; armRz = 0.3; break;
+      }
+      case 'carryIdle': armL = -2.6; armR = -2.5; armLz = -0.3; armRz = 0.3; elbowL = elbowR = -1.1; break;
       case 'chop': case 'pick': case 'hammer': {
         const c = (t * (f.anim === 'hammer' ? 2.2 : 1.45)) % 1;
         const swing = c < 0.55 ? -2.7 * (c / 0.55) : -2.7 + 3.2 * Math.min(1, (c - 0.55) / 0.15);
         armR = swing; armL = f.anim === 'hammer' ? -0.6 : swing * 0.9; lean = 0.18 + (c > 0.55 && c < 0.75 ? 0.15 : 0);
+        // wind up with bent elbows, strike with straight arms
+        elbowR = c < 0.55 ? -0.2 - 0.9 * (c / 0.55) : -0.15; elbowL = f.anim === 'hammer' ? -1.2 : elbowR;
+        kneeL = kneeR = 0.15 + (c > 0.55 && c < 0.75 ? 0.2 : 0); nod = lean * 0.4;
         break;
       }
       case 'sow': case 'harvest': case 'farm': {
         const c = Math.sin(t * 3.2);
-        lean = 0.55; armR = -0.9 + c * 0.5; armL = -0.5 - c * 0.3;
+        lean = 0.55; armR = -0.9 + c * 0.5; armL = -0.5 - c * 0.3; elbowR = -0.5 + c * 0.3; elbowL = -0.7; kneeL = kneeR = 0.45; nod = 0.2;
         break;
       }
-      case 'mine': { const c = Math.sin(t * 4); armR = -1.3 + c * 0.35; armL = -1.3 + c * 0.35; legA = c * 0.3; lean = 0.25; break; }
+      case 'mine': { const c = Math.sin(t * 4); armR = -1.3 + c * 0.35; armL = -1.3 + c * 0.35; elbowL = elbowR = -0.6 - c * 0.3; legA = c * 0.3; lean = 0.25; kneeL = kneeR = 0.3; break; }
       case 'attack': {
         const c = f.attackPhase;
-        if (f.ranged) { armL = -1.4; armLz = -0.15; armR = -0.95 + c * 0.25; armRz = 0.55 - c * 0.3; torsoTwist = 0.6; }
-        else { armR = c < 0.4 ? -2.4 * (c / 0.4) : -2.4 + 3.4 * Math.min(1, (c - 0.4) / 0.2); armL = -0.7; lean = 0.15; torsoTwist = -0.3 * Math.sin(c * Math.PI); }
+        if (f.ranged) { armL = -1.4; armLz = -0.15; armR = -0.95 + c * 0.25; armRz = 0.55 - c * 0.3; torsoTwist = 0.6; elbowL = -0.05; elbowR = -1.4 + c * 0.6; }
+        else { armR = c < 0.4 ? -2.4 * (c / 0.4) : -2.4 + 3.4 * Math.min(1, (c - 0.4) / 0.2); armL = -0.7; lean = 0.15; torsoTwist = -0.3 * Math.sin(c * Math.PI); elbowR = c < 0.4 ? -1.0 : -0.1; elbowL = -1.0; }
+        kneeL = 0.25; kneeR = 0.15; legA = 0.18;
         break;
       }
-      case 'cast': armR = -3.0; armL = -0.4; lean = -0.1; break;
-      case 'cower': lean = 0.4; armL = -1.8; armR = -1.8; armLz = -0.4; armRz = 0.4; bob = -0.12; break;
+      case 'cast': armR = -3.0; armL = -0.4; lean = -0.1; elbowR = -0.1; nod = -0.1; break;
+      case 'cower': lean = 0.4; armL = -1.8; armR = -1.8; armLz = -0.4; armRz = 0.4; bob = -0.12; elbowL = elbowR = -1.6; kneeL = kneeR = 0.8; nod = 0.3; break;
       default: {
         const breathe = Math.sin(t * 1.6 + (f.phase || 0)) * 0.03;
-        armL = breathe; armR = -breathe;
-        if (st.right === 'spear' || st.right === 'pole') armR = -0.35;
+        armL = breathe; armR = -breathe; nod = Math.sin(t * 0.5 + (f.phase || 0)) * 0.05;
+        if (st.right === 'spear' || st.right === 'pole') { armR = -0.35; elbowR = -0.9; }
       }
     }
     // root
     q.setFromEuler(e.set(f.fallen ? -Math.PI / 2 * f.fallen : 0, f.heading, 0, 'YXZ'));
     root.compose(v.set(f.x, f.y + bob * sc - (f.kneel ? 0.45 * sc : 0) - (f.fallen ? 0.15 : 0), f.z), q, scl.set(sc, sc, sc));
     const tunic = f.tunic || st.torso || '#8a6f4e';
-    // legs
-    out.multiplyMatrices(root, local(0.1, 0.9, 0, f.kneel ? -1.2 : legA)); put('leg', out, st.legs);
-    out.multiplyMatrices(root, local(-0.1, 0.9, 0, f.kneel ? 0.2 : -legA)); put('leg', out, st.legs);
-    // torso frame (lean + twist)
-    torsoFrame.multiplyMatrices(root, local(0, 0.88, 0, lean, torsoTwist));
+    // legs: thigh at the hip, shin at the knee
+    const hip = f.kneel ? [-1.2, 0.2] : [legA, -legA];
+    const knee = f.kneel ? [1.5, 0.3] : [kneeR, kneeL];
+    [0.1, -0.1].forEach((hx, i) => {
+      out.multiplyMatrices(root, local(hx, 0.9, 0, hip[i], 0, i ? -sway * 0.3 : sway * 0.3)); put('thigh', out, st.legs);
+      tmp2.copy(out);
+      out.multiplyMatrices(tmp2, local(0, -0.46, 0, knee[i])); put('shin', out, st.legs);
+    });
+    // torso frame (lean + twist + a little sway)
+    torsoFrame.multiplyMatrices(root, local(0, 0.88, 0, lean, torsoTwist, sway));
+    const settler = f.style === 'settler';
+    const skirt = settler && (f.phase || 0) % 2 === 0;
+    if (skirt) { out.multiplyMatrices(torsoFrame, local(0, 0.05, 0, 0)); put('skirt', out, tunic); }
     if (st.coat) { out.multiplyMatrices(torsoFrame, local(0, 0.08, 0, 0)); put('coat', out, tunic); }
     out.copy(torsoFrame); put('torso', out, tunic);
-    // head
-    out.multiplyMatrices(torsoFrame, local(0, 0.68, 0, 0)); put('head', out, null);
-    if (st.head) { out.multiplyMatrices(torsoFrame, local(0, 0.68, 0, 0)); put(st.head, out, st.headColor || (st.head === 'cap' ? (f.capColor || tunic) : null)); }
-    // arms
+    // head: face, hair (varied), beard, headgear
+    headM.multiplyMatrices(torsoFrame, local(0, 0.68, 0, nod));
+    put('head', headM, null);
+    const hairCol = HAIR[(f.phase || 0) % HAIR.length];
+    const headgear = st.head === 'cap' && settler ? ((f.phase || 0) % 3 === 0 ? 'cap' : null) : st.head;
+    if (headgear !== 'hood') put('hair', headM, st.hairColor || hairCol);
+    if ((settler && (f.phase || 0) % 4 === 1) || st.beard) put('beard', headM, st.beardColor || hairCol);
+    if (headgear) put(headgear, headM, st.headColor || (headgear === 'cap' ? (f.capColor || tunic) : null));
+    // arms: upper arm at the shoulder, forearm at the elbow
     armLM.multiplyMatrices(torsoFrame, local(-0.29, 0.58, 0, armL, 0, armLz));
     put('arm', armLM, tunic);
+    foreLM.multiplyMatrices(armLM, local(0, -0.3, 0, elbowL)); put('forearm', foreLM, null);
     armRM.multiplyMatrices(torsoFrame, local(0.29, 0.58, 0, armR, 0, armRz));
     put('arm', armRM, tunic);
+    foreRM.multiplyMatrices(armRM, local(0, -0.3, 0, elbowR)); put('forearm', foreRM, null);
     // right hand item
     const right = f.tool || st.right;
     if (right && !(f.carry && f.anim !== 'hammer')) {
-      out.multiplyMatrices(armRM, local(0, -0.62, 0.02, right === 'bow' ? 0 : (right === 'spear' || right === 'pole' ? 1.6 : 0), 0, 0));
-      if (right === 'axe' || right === 'pick' || right === 'hammer' || right === 'sword' || right === 'greataxe' || right === 'sickle') out.multiplyMatrices(armRM, local(0, -0.6, 0.05, Math.PI * 0.5 + handItemA));
+      out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, right === 'bow' ? 0 : (right === 'spear' || right === 'pole' ? 1.6 : 0), 0, 0));
+      if (right === 'axe' || right === 'pick' || right === 'hammer' || right === 'sword' || right === 'greataxe' || right === 'sickle') out.multiplyMatrices(foreRM, local(0, -0.29, 0.05, Math.PI * 0.5 + handItemA));
       put(right, out, f.bladeTint && (right === 'sword' || right === 'axe' || right === 'spear') ? f.bladeTint : null);
     }
     // left hand item
     const left = st.left;
     if (left && !f.carry) {
-      out.multiplyMatrices(armLM, local(0, -0.55, 0.05, left === 'bow' ? 1.4 : 0));
+      out.multiplyMatrices(foreLM, local(0, -0.25, 0.05, left === 'bow' ? 1.4 : 0));
       put(left, out, st.leftColor || null);
     }
     // hero lantern hangs from the pole tip
     if (st.lantern) {
-      out.multiplyMatrices(armRM, local(0, -0.62, 0.02, 1.6));
+      out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, 1.6));
       // pole top in pole-local space is +0.6 along y (pole points forward-up)
       tmp.makeTranslation(0, 0.72, 0.28);
       out.multiply(tmp);
