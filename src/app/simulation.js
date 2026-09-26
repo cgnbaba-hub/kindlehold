@@ -26,6 +26,8 @@ import { createWildlifeModule } from '../wildlife/index.js';
 import { createPoisModule } from '../pois/index.js';
 
 const terrainCache = new Map();
+export const NIGHT_PACE = 4;
+
 export function terrainFor(map = HARROWMERE_MAP) {
   let t = terrainCache.get(map.id);
   if (!t) { t = createTerrainData(map); terrainCache.set(map.id, t); }
@@ -73,8 +75,12 @@ export function createSimulation({ seed = 1337, difficulty = 'normal', world = n
     step() {
       const w = sim.world;
       w.tick++;
-      // nights pass twice as fast: the village sleeps, but the player does not wait long for dawn
-      if (w.time.running) w.time.hour = (w.time.hour + (24 / w.time.dayLengthTicks) * (w.time.hour >= 22 || w.time.hour < 5 ? 2 : 1)) % 24;
+      // nights pass four times as fast: the village sleeps, the player does not wait long for dawn
+      if (w.time.running) {
+        const h = w.time.hour + (24 / w.time.dayLengthTicks) * (w.time.hour >= 22 || w.time.hour < 5 ? NIGHT_PACE : 1);
+        if (h >= 24) w.time.day = (w.time.day || 1) + 1;
+        w.time.hour = h % 24;
+      }
       if (pending.length) {
         const cmds = pending.splice(0, pending.length);
         for (const cmd of cmds) {

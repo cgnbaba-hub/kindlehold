@@ -286,6 +286,17 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
       const y = terrain.height(d.x, d.z);
       if (d.type === 'tree') {
         if (d.amount <= 0) {
+          // replanted: after the stump has been cleared a sapling grows back to full size
+          const since = w.tick - (d.depletedTick ?? w.tick);
+          if (d.regrowAt != null && since > 20 * 40) {
+            const grow = Math.min(1, since / Math.max(1, d.regrowAt - d.depletedTick));
+            const tm = meshes['tree' + (d.variant || 0)];
+            const k = (d.scale || 1) * (0.15 + 0.85 * grow);
+            m4.compose(p.set(d.x, y - 0.15, d.z), q.setFromEuler(e.set(0, d.rot, 0)), s.setScalar(k));
+            col.setRGB(0.95, 1.05, 0.85);
+            tm.setColorAt(tm.count, col); tm.setMatrixAt(tm.count++, m4);
+            continue;
+          }
           const mesh = meshes.stump;
           if (mesh.count < 120) { m4.compose(p.set(d.x, y - 0.05, d.z), q.setFromEuler(e.set(0, d.rot, 0)), s.set(1, 1, 1)); mesh.setMatrixAt(mesh.count++, m4); }
           // falling trunk animates for a few seconds after depletion

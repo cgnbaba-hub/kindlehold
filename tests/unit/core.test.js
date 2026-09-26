@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRng, hashSeed } from '../../src/core/rng.js';
-import { createFixedLoop } from '../../src/core/loop.js';
+import { createFixedLoop, MAX_STEPS_PER_FRAME } from '../../src/core/loop.js';
 import { createModuleHost } from '../../src/core/module-host.js';
 import { createEventBus } from '../../src/core/events.js';
 import { DT } from '../../src/core/contracts.js';
@@ -44,7 +44,7 @@ test('fixed loop: pause stops ticks, speed scales them, huge gaps are clamped', 
   loop.resume(); loop.setSpeed(2); for (let i = 0; i < 10; i++) loop.advance(0.05);
   assert.ok(ticks >= 19 && ticks <= 20);
   ticks = 0; loop.setSpeed(1); loop.advance(10);
-  assert.ok(ticks <= 5, 'catch-up capped per frame');
+  assert.ok(ticks <= MAX_STEPS_PER_FRAME, 'catch-up capped per frame');
 });
 
 test('module host: a throwing non-critical module is isolated and eventually disabled', () => {

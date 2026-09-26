@@ -10,9 +10,10 @@ import { spawnUnit, isAlive } from '../units/sim.js';
 import { UNITS } from '../units/defs.js';
 
 export const AI_DIFFICULTY = {
-  story: { firstRaid: 6, growth: 2, spawnInterval: 50, waveInterval: 300, garrisonCap: 8, hpMult: 1, raidDelay: 180, reserves: 22 },
-  normal: { firstRaid: 9, growth: 3, spawnInterval: 35, waveInterval: 240, garrisonCap: 12, hpMult: 1, raidDelay: 120, reserves: 32 },
-  hard: { firstRaid: 11, growth: 4, spawnInterval: 24, waveInterval: 210, garrisonCap: 16, hpMult: 1.1, raidDelay: 105, reserves: 40 },
+  // harass: first plunder party (minutes), interval between parties (minutes), party size
+  story: { harassAt: 11, harassEvery: 6, harassSize: 2, firstRaid: 6, growth: 2, spawnInterval: 50, waveInterval: 300, garrisonCap: 8, hpMult: 1, raidDelay: 180, reserves: 22 },
+  normal: { harassAt: 8, harassEvery: 4.5, harassSize: 2, firstRaid: 9, growth: 3, spawnInterval: 35, waveInterval: 240, garrisonCap: 12, hpMult: 1, raidDelay: 120, reserves: 32 },
+  hard: { harassAt: 6, harassEvery: 3.5, harassSize: 3, firstRaid: 11, growth: 4, spawnInterval: 24, waveInterval: 210, garrisonCap: 16, hpMult: 1.1, raidDelay: 105, reserves: 40 },
 };
 
 const SPAWN_CYCLE = ['reaver', 'reaver', 'slinger', 'brute', 'reaver', 'slinger'];
@@ -36,7 +37,10 @@ export function pickRaidTarget(world, fromX, fromZ, vary = false) {
   for (const b of all(world, 'building')) {
     if (b.owner !== PLAYER || b.state === 'destroyed') continue;
     const pr = TARGET_PRIORITY[b.type] ?? 2;
-    cands.push({ b, score: pr * 1000 + Math.hypot(b.x - fromX, b.z - fromZ) });
+    // the Rustfang prefer what nobody guards: every defender nearby makes a target less tempting
+    let guards = 0;
+    for (const u of all(world, 'unit')) if (u.owner === PLAYER && !u.downed && Math.hypot(u.x - b.x, u.z - b.z) < 22) guards++;
+    cands.push({ b, score: pr * 1000 + Math.hypot(b.x - fromX, b.z - fromZ) + guards * 45 });
   }
   if (!cands.length) return null;
   cands.sort((a, c) => a.score - c.score || a.b.id - c.b.id);
@@ -62,7 +66,8 @@ export function createAiModule() {
   }
 
   function garrison(world) {
-    return all(world, 'unit').filter((u) => u.owner === ENEMY && !u.commander && !world.ai.raidIds.includes(u.id) && u.id !== world.ai.scoutId);
+    const h = world.ai.harass;
+    return all(world, 'unit').filter((u) => u.owner === ENEMY && !u.commander && !world.ai.raidIds.includes(u.id) && u.id !== world.ai.scoutId && !(h && h.ids.includes(u.id)));
   }
 
   /** Raids are formed only from the camp garrison (no units appear from nowhere), so
@@ -100,6 +105,46 @@ export function createAiModule() {
     ai.raidTick = null;
     alert(world, 'danger', `${raid.length} Rustfang raiders are gathering at the ford fort!`, gx, gz);
     emit(world, 'ai:gather', { size: raid.length, x: gx, z: gz });
+  }
+
+  /** Plunder parties: a few raiders slip out to hit an outlying workshop, then run home. */
+  function startHarass(world, hall) {
+    const cfg = aiSettings(world);
+    const ai = world.ai;
+    const pool = garrison(world).filter((u) => !u.downed && UNITS[u.type].cls !== 'defensive');
+    if (pool.length < cfg.harassSize + 3) return; // keep the fort manned
+    // the least-defended workshop, farthest from the Keep
+    const keep = all(world, 'building').find((b) => b.type === 'keep' && b.owner === PLAYER);
+    let best = null, bs = -Infinity;
+    for (const b of all(world, 'building')) {
+      if (b.owner !== PLAYER || b.state === 'destroyed' || !(TARGET_PRIORITY[b.type] === 0)) continue;
+      let guards = 0;
+      for (const u of all(world, 'unit')) if (u.owner === PLAYER && !u.downed && Math.hypot(u.x - b.x, u.z - b.z) < 22) guards++;
+      const s = (keep ? Math.hypot(b.x - keep.x, b.z - keep.z) : 0) - guards * 40 - Math.hypot(b.x - hall.x, b.z - hall.z) * 0.3;
+      if (s > bs) { bs = s; best = b; }
+    }
+    if (!best) return;
+    const party = pool.slice(0, cfg.harassSize);
+    const d = doorOf(best);
+    party.forEach((u, i) => {
+      u.order = { type: 'attackMove', x: d.x + i * 1.5, z: d.z + 1, ax: u.x, az: u.z, targetBuilding: best.id };
+      u.target = null; u.path = null; u.dest = null;
+    });
+    ai.harass = { ids: party.map((u) => u.id), target: best.id, until: world.tick + 75 * 20 }; // hit and run
+    alert(world, 'danger', `Rustfang plunderers are heading for your ${BUILDINGS[best.type].name}!`, best.x, best.z);
+    emit(world, 'ai:harass', { size: party.length, target: best.id, x: best.x, z: best.z });
+  }
+
+  function updateHarass(world, hall) {
+    const h = world.ai.harass;
+    if (!h) return;
+    const party = h.ids.map((id) => world.entities[id]).filter((u) => u && isAlive(u));
+    const target = world.entities[h.target];
+    const done = !party.length || !target || target.state === 'destroyed' || world.tick > h.until
+      || party.reduce((s, u) => s + u.hp / u.maxHp, 0) < party.length * 0.5;
+    if (!done) return;
+    for (const u of party) { guard(world, u, hall); u.path = null; u.dest = null; }
+    world.ai.harass = null;
   }
 
   function launchRaid(world, hall) {
@@ -244,6 +289,13 @@ export function createAiModule() {
           if (world.tick > 60 * 20) alert(world, 'warn', 'A Rustfang scout was seen near your borders.', s.x, s.z);
         } else if (ai.scoutStage === 'back' && s.order.type !== 'move') { guard(world, s, hall); ai.scoutId = null; }
       }
+      // plunder parties until the great raid is announced
+      if (ai.nextHarassTick == null) ai.nextHarassTick = Math.round(cfg.harassAt * 1200);
+      if (!ai.harass && ai.state === 'build' && !world.mission.flags.raidWarned && ai.wave === 0 && world.tick >= ai.nextHarassTick) {
+        ai.nextHarassTick = world.tick + Math.round(cfg.harassEvery * 1200);
+        startHarass(world, hall);
+      }
+      if (ai.harass && world.tick % 10 === 3) updateHarass(world, hall);
       // raids
       if (ai.state === 'build' && ai.raidTick != null && world.tick >= ai.raidTick) startRaid(world, hall);
       if (ai.state === 'gather' && world.tick >= ai.gatherUntil) launchRaid(world, hall);

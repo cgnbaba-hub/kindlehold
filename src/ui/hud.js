@@ -66,8 +66,13 @@ export function createHud({ root, session, input, settings, actions }) {
   const pauseBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Pause menu', 'data-tip': 'Menu (Esc)' }, [icon('menu')]);
   speedBtn.addEventListener('click', () => actions.cycleSpeed());
   pauseBtn.addEventListener('click', () => actions.pause());
+  // skip the night: race to dawn at 8x, then return to the previous speed
+  const nightBtn = h('button.night-skip.panel', { type: 'button', 'aria-label': 'Skip the night', 'data-tip': 'Skip the night: time runs at 8× until dawn' }, [icon('moon', 'icon icon-sm'), h('span', { text: ' Skip night' })]);
+  nightBtn.hidden = true;
+  let skipping = null;
+  nightBtn.addEventListener('click', () => { if (skipping == null) { skipping = session.loop.getSpeed(); session.loop.setSpeed(8); } });
   const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, pauseBtn]);
-  hud.append(topbar);
+  hud.append(topbar, nightBtn);
 
   // --- top-right: objectives ----------------------------------------------------------
   const objList = h('ol.obj-list');
@@ -534,9 +539,12 @@ export function createHud({ root, session, input, settings, actions }) {
     // season: compact (the top bar must stay clear of the ribbon at 1280 px); details in the tooltip
     const season = ss.winter ? ` · ❄ ${fmtTime(ss.untilEnd / 20)}` : ss.untilNext <= 60 * 20 ? ` · ❄ in ${fmtTime(ss.untilNext / 20)}` : '';
     // time of day first and unmistakable; the elapsed match time lives in the tooltip
-    const day = 1 + Math.floor((w.tick / w.time.dayLengthTicks) + (7.5 / 24));
+    const day = w.time.day || 1;
     setText(clockText, `Day ${day} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}${season}`);
-    clockText.setAttribute('data-tip', `Time of day ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} (one day lasts ${Math.round(w.time.dayLengthTicks / 1200)} minutes). Played ${fmtTime(w.tick / 20)}. ${ss.winter ? `Winter: crops grow slowly, the river is frozen. Thaw in ${fmtTime(ss.untilEnd / 20)}.` : `Summer. Next winter in ${fmtTime(ss.untilNext / 20)}.`}`);
+    clockText.setAttribute('data-tip', `Time of day ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} (a day lasts about ${Math.round(w.time.dayLengthTicks / 1200 * 0.78)} minutes; nights pass quickly). Played ${fmtTime(w.tick / 20)}. ${ss.winter ? `Winter: crops grow slowly, the river is frozen. Thaw in ${fmtTime(ss.untilEnd / 20)}.` : `Summer. Next winter in ${fmtTime(ss.untilNext / 20)}.`}`);
+    const nightNow = hour >= 21.5 || hour < 5;
+    if (skipping != null && !nightNow) { session.loop.setSpeed(skipping); skipping = null; }
+    nightBtn.hidden = !nightNow || skipping != null;
     setText(speedBtn, session.loop.isPaused() ? 'II' : `${session.loop.getSpeed()}×`);
     // raid countdown
     if (w.ai.raidTick != null && w.ai.state === 'build' && w.mission.flags.raidWarned) {

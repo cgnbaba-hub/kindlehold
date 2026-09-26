@@ -9,7 +9,7 @@ import { remove } from '../../src/world/world.js';
 function fight(p, e, n = 6) {
   const sim = newSim({ seed: 9 });
   for (const u of units(sim, 'p1').concat(units(sim, 'p2')).slice()) remove(sim.world, u.id);
-  sim.world.ai.nextSpawnTick = 1e9; sim.world.ai.nextScoutTick = 1e9; sim.world.mission.raidWarningTick = 1e9;
+  sim.world.ai.nextSpawnTick = 1e9; sim.world.ai.nextScoutTick = 1e9; sim.world.ai.nextHarassTick = 1e9; sim.world.mission.raidWarningTick = 1e9;
   const ps = [], es = [];
   for (let i = 0; i < n; i++) {
     ps.push(spawnUnit(sim.world, p, 'p1', -30 + (i % 3) * 1.8, 30 + Math.floor(i / 3) * 1.8));

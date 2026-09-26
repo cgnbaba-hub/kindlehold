@@ -82,6 +82,7 @@ export function createBot(sim, { aggressive = true } = {}) {
     }
     // upgrade workshops once the treasury allows (mine first: iron gates the army)
     for (const type of ['mine', 'lodge', 'quarry']) {
+      if (type !== 'mine' && all(world, 'building').some((x) => x.owner === PLAYER && x.type === type && (x.level || 1) > 1)) continue; // one of each is enough
       const b = all(world, 'building').find((x) => x.owner === PLAYER && x.type === type && x.state === 'active' && !x.upgrade && (x.level || 1) === 1);
       if (b && canAfford(world, PLAYER, UPGRADES[type][2].cost) && p.res.timber > 40) { sim.issue({ type: 'upgrade', id: b.id }); return; }
     }
@@ -108,7 +109,9 @@ export function createBot(sim, { aggressive = true } = {}) {
     if (!barracks) return;
     const idle = all(world, 'settler').filter((s) => s.owner === PLAYER && !s.job).length;
     const queued = barracks.queue.length;
-    if (queued < 2 && idle > 1 && soldiers().length < 20) {
+    // keep a few labourers free: without carriers the whole economy stalls
+    const carriers = all(world, 'settler').filter((s) => s.owner === PLAYER && !s.job && !s.order && !s.enlisting).length;
+    if (queued < 2 && idle > 1 && carriers > 4 && soldiers().length < 20) {
       const n = soldiers().length + queued;
       const type = ['shield', 'blade', 'fletcher', 'fletcher', 'blade', 'shield'][n % 6];
       if (canAfford(world, PLAYER, UNITS[type].cost)) sim.issue({ type: 'recruit', building: barracks.id, unitType: type });

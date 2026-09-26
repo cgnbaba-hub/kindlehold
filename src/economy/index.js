@@ -91,7 +91,11 @@ export function createEconomyModule() {
           const avail = out - b.stock.outReserved;
           const food = b.stock.out.provisions > 0 && res.provisions < world.players[owner].pop * 2;
           if (avail >= 2 || (avail >= 1 && out >= def.outCap - 1) || (food && avail >= 1)) {
-            consider((food ? 40 : 150) + d - Math.min(60, avail * 8), { type: 'haul', from: b.id, amt: Math.min(HAUL_LOAD, avail), stage: 'toBuilding' });
+            // haul what the Keep is short of first; a well-stocked good can wait
+            let kind = null; for (const r in b.stock.out) if (b.stock.out[r] > 0) { kind = r; break; }
+            const stock = kind ? res[kind] : 0;
+            const need = stock < 30 ? -45 : stock > 250 ? 90 : stock > 120 ? 30 : 0;
+            consider((food ? 40 : 150) + need + d - Math.min(60, avail * 8), { type: 'haul', from: b.id, amt: Math.min(HAUL_LOAD, avail), stage: 'toBuilding' });
           }
         }
         if (def.inCap) {

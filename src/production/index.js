@@ -19,6 +19,8 @@ export const WORK = {
   cook: { perCycle: 3, provisionsPerCycle: 2, work: 7.0, anim: 'mine' },
 };
 
+export const TREE_REGROW = 150 * 20; // a felled tree is replanted and stands again after 2.5 minutes
+
 export const STALL_TEXT = {
   paused: 'Work paused — its workers help as labourers',
   noWorker: 'No worker — needs an idle settler (build Cottages for more people)',
@@ -361,7 +363,16 @@ export function createProductionModule() {
       }
       // felled trees / exhausted rocks disappear after a while (stumps linger for 40 s)
       if (world.tick % 20 === 0) {
-        for (const d of all(world, 'deposit')) if (d.amount <= 0 && d.depletedTick != null && world.tick - d.depletedTick > 800) remove(world, d.id, 'depleted');
+        for (const d of all(world, 'deposit')) {
+          if (d.amount > 0 || d.depletedTick == null) continue;
+          // forests are replanted: a sapling grows where the tree fell
+          if (d.type === 'tree') {
+            if (d.regrowAt == null) d.regrowAt = d.depletedTick + TREE_REGROW;
+            if (world.tick >= d.regrowAt) { d.amount = d.maxAmount; d.depletedTick = null; d.regrowAt = null; emit(world, 'deposit:regrown', { id: d.id, x: d.x, z: d.z }); }
+            continue;
+          }
+          if (world.tick - d.depletedTick > 800) remove(world, d.id, 'depleted');
+        }
       }
     },
   };
