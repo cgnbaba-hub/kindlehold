@@ -75,10 +75,16 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
     }
     for (const d of all(w, 'deposit')) {
       if (d.type === 'tree' || d.amount <= 0 || !seen(d)) continue;
-      ctx.fillStyle = d.type === 'iron' ? '#c26a3a' : '#d8d6cc';
+      if (d.type === 'iron') { // iron: a bold rust dot with a light ring, easy to spot
+        ctx.fillStyle = '#e07a3a'; ctx.beginPath(); ctx.arc(toPx(d.x), toPx(d.z), 3.2, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,230,200,0.9)'; ctx.lineWidth = 1; ctx.stroke();
+        continue;
+      }
+      ctx.fillStyle = '#d8d6cc';
       ctx.fillRect(toPx(d.x) - 1.5, toPx(d.z) - 1.5, 3, 3);
     }
-    for (const s of all(w, 'settler')) { ctx.fillStyle = '#efe6d2'; ctx.fillRect(toPx(s.x) - 0.8, toPx(s.z) - 0.8, 1.6, 1.6); }
+    for (const a of all(w, 'animal')) { if (!seen(a)) continue; ctx.fillStyle = '#b07a44'; ctx.fillRect(toPx(a.x) - 1, toPx(a.z) - 1, 2, 2); }
+    for (const s of all(w, 'settler')) { if (s.hidden) continue; ctx.fillStyle = '#efe6d2'; ctx.fillRect(toPx(s.x) - 0.8, toPx(s.z) - 0.8, 1.6, 1.6); }
     for (const u of all(w, 'unit')) {
       if (u.downed || !seen(u)) continue;
       ctx.fillStyle = u.hero ? '#ffd27a' : u.owner === PLAYER ? '#7fe0ff' : '#ff7a5a';

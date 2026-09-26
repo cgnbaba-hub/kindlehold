@@ -77,6 +77,7 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
     let best = null, bestD = PICK_PX;
     for (const kind of ['unit', 'settler']) {
       for (const e of all(world(), kind)) {
+        if (e.hidden) continue;
         screenOf(e, sp);
         if (sp.z > 1) continue;
         const d = Math.hypot(sp.x - x, sp.y - (y + 6));
@@ -93,7 +94,8 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
       if (d < r && d < bd) { bd = d; bb = b; }
     }
     if (bb) return bb;
-    // deposits give information too
+    // places of interest (once discovered) and deposits give information too
+    for (const p of all(world(), 'poi')) if (p.state !== 'hidden' && Math.hypot(p.x - g.x, p.z - g.z) < 5) return p;
     for (const d of all(world(), 'deposit')) if (Math.hypot(d.x - g.x, d.z - g.z) < (d.type === 'tree' ? 1.2 : 2.2)) return d;
     return null;
   }
@@ -181,7 +183,7 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
     if (ids.length === 0 && !additive) {
       // no soldiers: allow selecting settlers
       for (const s of all(world(), 'settler')) {
-        if (s.owner !== PLAYER) continue;
+        if (s.owner !== PLAYER || s.hidden) continue;
         screenOf(s, sp);
         if (sp.z < 1 && sp.x >= minX && sp.x <= maxX && sp.y >= minY && sp.y <= maxY) ids.push(s.id);
       }

@@ -18,7 +18,7 @@ export function createWorldServicesModule() {
       const world = ctx.world;
       spatial.clear();
       for (const u of all(world, 'unit')) if (!u.downed) spatial.insert(u);
-      for (const s of all(world, 'settler')) spatial.insert(s);
+      for (const s of all(world, 'settler')) if (!s.hidden) spatial.insert(s);
       for (const b of all(world, 'building')) if (b.state !== 'destroyed') spatial.insert(b);
     },
   };

@@ -9,7 +9,7 @@ import { scenarioOf } from '../missions/index.js';
 
 const MIN = 60 * 20;
 export const SEASON = Object.freeze({
-  firstWinter: 11 * MIN,   // the first winter begins at minute 11
+  firstWinter: 17 * MIN,   // the first winter begins at minute 17 (after the first raid)
   winter: 3 * MIN,         // and lasts three minutes
   summer: 8 * MIN,         // then eight minutes of summer until the next
   freezeAfter: 30 * 20,    // the river freezes 30 s into winter
@@ -17,7 +17,7 @@ export const SEASON = Object.freeze({
   melt: 45 * 20,           // and melts over 45 s
   crackWarning: 20 * 20,   // warning before the ice breaks
 });
-export const WINTER_GROWTH = 0.3; // crops grow at 30% speed in winter
+export const WINTER_GROWTH = 0.5; // crops grow at half speed in winter
 export const THAW_DAMAGE = 0.25;  // fraction of max HP lost when caught on breaking ice
 
 /** Season at a tick: { winter, sinceStart, untilEnd, untilNext } (pure function of the tick). */

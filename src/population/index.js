@@ -2,7 +2,7 @@
 // automatic worker assignment and fleeing from raiders.
 import { EV, PLAYER, DT } from '../core/contracts.js';
 import { spawn, remove, all, emit, alert, worldRng } from '../world/world.js';
-import { BUILDINGS, doorOf } from '../buildings/defs.js';
+import { BUILDINGS, doorOf, slotsOf, upgradeBonus, levelOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { TECH_EFFECTS } from '../technology/defs.js';
 import { addRes } from '../economy/stock.js';
@@ -21,6 +21,10 @@ export const TAX_LEVELS = [
   { id: 'high', name: 'High', perSettler: 3, stability: -12 },
 ];
 export const SOLDIER_PAY = 1;
+export const HOT_MEAL_STABILITY = 8; // stability target bonus when everyone gets a hot meal
+
+export function asleepCount(world, owner) { let n = 0; for (const s of all(world, 'settler')) if (s.owner === owner && s.sleep && s.sleep.in) n++; return n; }
+export function mealsInStock(world, owner) { let n = 0; for (const b of all(world, 'building')) if (b.owner === owner && b.type === 'canteen' && b.state === 'active') n += Math.floor(b.meals || 0); return n; }
 export const HIRE_COST = 40; // Taler to hire a labourer at the Keep (needs free housing)
 
 /** Expected income at the next payday: { taxes, pay, net }. */
@@ -30,7 +34,8 @@ export function paydayForecast(world, owner) {
   let settlers = 0, soldiers = 0;
   for (const s of all(world, 'settler')) if (s.owner === owner && !s.arriving && !s.leaving) settlers++;
   for (const u of all(world, 'unit')) if (u.owner === owner && !u.hero) soldiers++;
-  const taxes = settlers * level.perSettler;
+  const keep = keepOf(world, owner);
+  const taxes = Math.round(settlers * level.perSettler * (1 + (keep ? upgradeBonus(keep, 'tax') : 0)));
   const pay = soldiers * SOLDIER_PAY;
   return { taxes, pay, net: taxes - pay, settlers, soldiers };
 }
@@ -55,7 +60,7 @@ export function housingCap(world, owner) {
   let cap = 0;
   for (const b of all(world, 'building')) {
     if (b.owner !== owner || b.state !== 'active') continue;
-    cap += BUILDINGS[b.type].housing || 0;
+    cap += (BUILDINGS[b.type].housing || 0) + upgradeBonus(b, 'housing');
     if (b.type === 'keep' && world.players[owner].techs.charter) cap += TECH_EFFECTS.charterHousing;
   }
   return cap;
@@ -72,14 +77,16 @@ export function populationOf(world, owner) {
 }
 
 export function isIdleLabourer(s) {
-  return s.kind === 'settler' && !s.job && !s.order && !s.carry && (!s.task || s.task.type === 'idle') && !s.arriving && !s.fleeing;
+  return s.kind === 'settler' && !s.job && !s.order && !s.sleep && !s.enlisting && !s.carry && (!s.task || s.task.type === 'idle') && !s.arriving && !s.fleeing;
 }
 
-/** Work-speed multiplier from stability (0.6 .. 1.0). */
+/** Work-speed multiplier from stability (0.6 .. 1.0), times the rested-by-day bonus. */
 export function stabilityFactor(world, owner) {
   const p = world.players[owner];
-  return 0.6 + 0.4 * (p ? p.stability / 100 : 1);
+  return (0.6 + 0.4 * (p ? p.stability / 100 : 1)) * RESTED;
 }
+/** Settlers who sleep at night work faster by day; balances the hours lost to the night. */
+export const RESTED = 1.18;
 
 export function keepOf(world, owner) {
   for (const b of all(world, 'building')) if (b.type === 'keep' && b.owner === owner && b.state !== 'destroyed') return b;
@@ -135,16 +142,25 @@ export function createPopulationModule() {
     }
 
     // warn half a minute before a meal the stores cannot cover
-    if (keep && p.nextMealTick - world.tick === 900 && p.res.provisions < p.pop) {
+    if (keep && p.nextMealTick - world.tick === 900 && p.res.provisions + mealsInStock(world, owner) < p.pop - asleepCount(world, owner)) {
       alert(world, 'warn', `Provisions are running low: ${Math.floor(p.res.provisions)} left for ${p.pop} people at the next meal. Build or staff Farmsteads.`, keep.x, keep.z);
     }
     // meals
     if (world.tick >= p.nextMealTick) {
       p.nextMealTick = world.tick + MEAL_INTERVAL;
-      const need = p.pop;
-      const eat = Math.min(need, Math.floor(p.res.provisions));
+      // sleepers do not eat; hot meals from the Tavern are served first, then plain stores
+      const need = Math.max(0, p.pop - asleepCount(world, owner));
+      let hot = 0;
+      for (const b of all(world, 'building')) {
+        if (b.owner !== owner || b.type !== 'canteen' || b.state !== 'active' || !b.meals) continue;
+        const take = Math.min(need - hot, Math.floor(b.meals));
+        b.meals -= take; hot += take;
+        if (hot >= need) break;
+      }
+      const eat = Math.min(need - hot, Math.floor(p.res.provisions));
       if (eat > 0) { addRes(world, owner, 'provisions', -eat, 'meal'); world.stats.consumed.provisions += eat; }
-      p.lastMealFed = need > 0 ? eat / need : 1;
+      p.lastMealFed = need > 0 ? (hot + eat) / need : 1;
+      if (need > 0) p.hotMeals = hot / need;
       if (p.lastMealFed < 1) {
         p.stability = Math.max(0, p.stability - 8 * (1 - p.lastMealFed));
         alert(world, 'warn', 'Your people went hungry. Build or staff Farmsteads.', keep ? keep.x : 0, keep ? keep.z : 0);
@@ -157,7 +173,7 @@ export function createPopulationModule() {
       const headroom = p.popCap - p.pop;
       const target = Math.max(0, Math.min(100,
         40 + 35 * p.lastMealFed + (headroom >= 1 ? 10 : 0) + (headroom < 0 ? -20 : 0) + (keep && keep.lit ? 10 : -10) - p.burnPenalty
-        + (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability));
+        + (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability + HOT_MEAL_STABILITY * (p.hotMeals || 0)));
       const step = 0.5;
       if (p.stability < target) p.stability = Math.min(target, p.stability + step);
       else if (p.stability > target) p.stability = Math.max(target, p.stability - step);
@@ -181,15 +197,16 @@ export function createPopulationModule() {
     const labourers = all(world, 'settler').filter((s) => s.owner === owner && !s.job).length;
     // keep enough labourers free to haul and build: 2 plus one per two workplaces
     let workplaces = 0;
-    for (const b of all(world, 'building')) if (b.owner === owner && b.state === 'active' && BUILDINGS[b.type].slots) workplaces++;
+    for (const b of all(world, 'building')) if (b.owner === owner && b.state === 'active' && slotsOf(b)) workplaces++;
     const minFree = MIN_FREE_LABOURERS + Math.floor(workplaces / 2);
     for (const b of all(world, 'building')) {
       if (b.owner !== owner || b.state !== 'active') continue;
       const def = BUILDINGS[b.type];
-      if (!def.slots || b.paused) continue;
+      const slots = slotsOf(b);
+      if (!slots || b.paused) continue;
       // drop workers that no longer exist
       b.workers = b.workers.filter((id) => world.entities[id] && world.entities[id].workplace === b.id);
-      while (b.workers.length < def.slots) {
+      while (b.workers.length < slots) {
         if (free <= 0 || labourers - (idle.length - free) <= minFree) break;
         // nearest idle settler
         let best = null, bestD = Infinity;
@@ -235,6 +252,7 @@ export function createPopulationModule() {
         continue;
       }
       // flee from nearby enemies (checked every 10 ticks)
+      if (s.hidden) continue; // asleep indoors
       if ((world.tick + s.id) % 10 === 0 && spatial) {
         spatial.query(s.x, s.z, 9, enemyBuf, (e) => e.kind === 'unit' && e.owner !== s.owner && !e.downed);
         if (enemyBuf.length > 0 && keep) {

@@ -2,18 +2,21 @@
 // fields or inputs, carry goods back, and report precise stall reasons.
 import { EV, DT } from '../core/contracts.js';
 import { all, emit, remove, alert } from '../world/world.js';
-import { BUILDINGS, doorOf } from '../buildings/defs.js';
+import { BUILDINGS, doorOf, workSpeedOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { stabilityFactor } from '../population/index.js';
 import { walkTo, stopWalking } from '../navigation/agent.js';
 import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
 import { growthFactor } from '../weather/index.js';
+import { killAnimal } from '../wildlife/index.js';
 
 export const WORK = {
-  forester: { res: 'timber', perTrip: 3, work: 5.0, strike: 0.7, anim: 'chop' },
+  forester: { res: 'timber', perTrip: 4, work: 5.0, strike: 0.7, anim: 'chop' },
   quarrier: { res: 'stone', perTrip: 3, work: 6.0, strike: 0.8, anim: 'pick' },
   farmer: { res: 'provisions', perTrip: 4, sow: 2.5, harvest: 3.0, grow: 30, anim: 'farm' },
   miner: { res: 'iron', perCycle: 2, work: 8.0, provisionsPerCycle: 1, anim: 'mine' },
+  hunter: { res: 'provisions', perTrip: 4, aim: 1.6, dress: 3.0, throwRange: 10, anim: 'cast' },
+  cook: { perCycle: 3, provisionsPerCycle: 2, work: 7.0, anim: 'mine' },
 };
 
 export const STALL_TEXT = {
@@ -24,9 +27,11 @@ export const STALL_TEXT = {
   noInput: 'Waiting for provisions to be delivered',
   noAccess: 'Workers cannot reach the site',
   noSettler: 'Needs an idle settler to train — all settlers are working: pause a workplace or build Cottages',
+  noGame: 'No deer within 45 m — build the hut nearer a herd, or wait for the herd to recover',
+  mealsFull: 'Meal store full — the cook waits for the next mealtime',
 };
 
-const STALL_ALERT = { noDeposit: 'has nothing left to work nearby — build a new one closer to resources', noInput: 'is waiting for provisions', noAccess: 'cannot be reached by its workers' };
+const STALL_ALERT = { noGame: 'has no deer left in range', noDeposit: 'has nothing left to work nearby — build a new one closer to resources', noInput: 'is waiting for provisions', noAccess: 'cannot be reached by its workers' };
 
 function setStall(world, b, reason) {
   if (b.stall === reason) return;
@@ -63,6 +68,7 @@ export function createProductionModule() {
 
   function releaseDeposit(world, s) {
     const t = s.task;
+    if (t && t.prey) { const a = world.entities[t.prey]; if (a && a.reservedBy === s.id) a.reservedBy = null; }
     if (t && t.deposit) {
       const d = world.entities[t.deposit];
       if (d && d.reservedBy === s.id) d.reservedBy = null;
@@ -76,7 +82,7 @@ export function createProductionModule() {
     const def = BUILDINGS[b.type];
     const W = WORK[s.job];
     const door = doorOf(b);
-    const sf = stabilityFactor(world, s.owner);
+    const sf = stabilityFactor(world, s.owner) * workSpeedOf(b);
     if (!s.task) s.task = { stage: 'start', timer: 0 };
     const t = s.task;
     const walk = (x, z, arrive = 0.8) => {
@@ -214,6 +220,100 @@ export function createProductionModule() {
       return;
     }
 
+    if (s.job === 'hunter') {
+      switch (t.stage) {
+        case 'start': {
+          if (outCount(b) >= def.outCap) { setStall(world, b, 'storageFull'); if (walk(door.x, door.z, 1.2) !== 'walking') s.anim = 'idle'; return; }
+          let best = null, bd = Infinity;
+          for (const a of all(world, 'animal')) {
+            if (a.reservedBy && a.reservedBy !== s.id && world.entities[a.reservedBy]) continue;
+            const d = Math.hypot(a.x - b.x, a.z - b.z);
+            if (d <= def.huntRange && d < bd) { bd = d; best = a; }
+          }
+          if (!best) { setStall(world, b, 'noGame'); s.task = { stage: 'wait', timer: 5 }; return; }
+          if (b.stall === 'noGame' || b.stall === 'noAccess') setStall(world, b, null);
+          best.reservedBy = s.id;
+          t.prey = best.id; t.stage = 'stalk'; t.repath = 0;
+          break;
+        }
+        case 'stalk': {
+          const a = world.entities[t.prey];
+          if (!a) { s.task = null; return; }
+          const d = Math.hypot(a.x - s.x, a.z - s.z);
+          if (d <= W.throwRange) { stopWalking(s); t.stage = 'aim'; t.timer = 0; break; }
+          if (Math.hypot(a.x - b.x, a.z - b.z) > def.huntRange + 15) { a.reservedBy = null; s.task = null; return; }
+          // stalk to just outside the flight distance, re-aiming as the deer moves
+          if (--t.repath <= 0) { t.repath = 30; stopWalking(s); }
+          const ux = (s.x - a.x) / (d || 1), uz = (s.z - a.z) / (d || 1);
+          walk(a.x + ux * (W.throwRange - 2), a.z + uz * (W.throwRange - 2), 0.8);
+          break;
+        }
+        case 'aim': {
+          const a = world.entities[t.prey];
+          if (!a) { s.task = null; return; }
+          s.anim = W.anim;
+          s.heading = Math.atan2(a.x - s.x, a.z - s.z);
+          t.timer += DT * sf;
+          if (Math.hypot(a.x - s.x, a.z - s.z) > W.throwRange + 3) { t.stage = 'stalk'; break; }
+          if (t.timer >= W.aim) {
+            t.kill = [a.x, a.z];
+            emit(world, EV.COMBAT_SHOT, { kind: 'arrow', fx: s.x, fz: s.z, tx: a.x, tz: a.z, flightTicks: 8, id: s.id });
+            killAnimal(world, a.id, s.id);
+            t.stage = 'toKill';
+          }
+          break;
+        }
+        case 'toKill': {
+          if (walk(t.kill[0], t.kill[1], 1.0) === 'arrived') { t.stage = 'dress'; t.timer = 0; t.nextStrike = 0; }
+          break;
+        }
+        case 'dress': {
+          s.anim = 'harvest';
+          t.timer += DT * sf;
+          if (t.timer >= t.nextStrike) { t.nextStrike += 1; emit(world, EV.WORK_STRIKE, { id: s.id, kind: 'harvest', x: s.x, z: s.z }); }
+          if (t.timer >= W.dress) { s.carry = { res: 'provisions', amt: W.perTrip }; t.stage = 'return'; }
+          break;
+        }
+        case 'return': {
+          if (walk(door.x, door.z, 1.0) === 'arrived') {
+            b.stock.out.provisions = (b.stock.out.provisions || 0) + s.carry.amt;
+            world.stats.produced.provisions += s.carry.amt;
+            emit(world, EV.PRODUCTION_CYCLE, { id: b.id, res: 'provisions', amount: s.carry.amt, x: door.x, z: door.z });
+            s.carry = null; s.task = null;
+          }
+          break;
+        }
+        default: s.task = null;
+      }
+      return;
+    }
+
+    if (s.job === 'cook') {
+      switch (t.stage) {
+        case 'start':
+          if (walk(door.x, door.z, 0.8) === 'arrived') { t.stage = 'work'; t.timer = 0; t.nextStrike = 0; }
+          break;
+        case 'work': {
+          s.heading = Math.atan2(b.x - s.x, b.z - s.z);
+          if ((b.meals || 0) >= def.mealCap) { setStall(world, b, 'mealsFull'); s.anim = 'idle'; return; }
+          if ((b.stock.in.provisions || 0) < W.provisionsPerCycle && t.timer === 0) { setStall(world, b, 'noInput'); s.anim = 'idle'; return; }
+          if (b.stall) setStall(world, b, null);
+          if (t.timer === 0) b.stock.in.provisions -= W.provisionsPerCycle;
+          s.anim = W.anim;
+          t.timer += DT * sf;
+          if (t.timer >= t.nextStrike) { t.nextStrike += 1.4; emit(world, EV.WORK_STRIKE, { id: s.id, kind: 'cook', x: door.x, z: door.z, building: b.id }); }
+          if (t.timer >= W.work) {
+            b.meals = Math.min(def.mealCap, (b.meals || 0) + W.perCycle);
+            emit(world, EV.PRODUCTION_CYCLE, { id: b.id, res: 'meals', amount: W.perCycle, x: door.x, z: door.z });
+            t.timer = 0; t.nextStrike = 0;
+          }
+          break;
+        }
+        default: s.task = null;
+      }
+      return;
+    }
+
     if (s.job === 'miner') {
       switch (t.stage) {
         case 'start':
@@ -256,7 +356,7 @@ export function createProductionModule() {
         }
       }
       for (const s of all(world, 'settler')) {
-        if (!s.job || s.fleeing || s.arriving) continue;
+        if (!s.job || s.fleeing || s.arriving || s.sleep || s.enlisting) continue;
         stepWorker(world, s);
       }
       // felled trees / exhausted rocks disappear after a while (stumps linger for 40 s)

@@ -5,14 +5,15 @@ import { h, icon, portrait, clear, setText, fmtTime } from './dom.js';
 import { portraitKey } from './portraits.js';
 import { seasonAt } from '../weather/index.js';
 import { paydayForecast, TAX_LEVELS, HIRE_COST } from '../population/index.js';
+import { POI_INFO, TRADES } from '../pois/index.js';
 import { createMinimap } from './minimap.js';
 import { all } from '../world/world.js';
 import { PLAYER, EV, RESOURCES } from '../core/contracts.js';
-import { BUILDINGS, PLAYER_BUILD_ORDER } from '../buildings/defs.js';
+import { BUILDINGS, PLAYER_BUILD_ORDER, UPGRADES, nextUpgrade, levelOf, displayName, upgradeBonus, slotsOf } from '../buildings/defs.js';
 import { UNITS, RECRUITABLE, COUNTERS } from '../units/defs.js';
 import { TECHS, TECH_ORDER } from '../technology/defs.js';
 import { researchBlocker } from '../technology/index.js';
-import { buildCost } from '../construction/index.js';
+import { buildCost, upgradeBlocker } from '../construction/index.js';
 import { canAfford } from '../economy/stock.js';
 import { ABILITIES } from '../heroes/index.js';
 import { STALL_TEXT, WORK } from '../production/index.js';
@@ -22,7 +23,7 @@ import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler' };
 const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander' };
-const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner' };
+const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner', hunter: 'Hunter', cook: 'Cook' };
 
 function costRow(cost) {
   const row = h('span.cost');
@@ -253,7 +254,9 @@ export function createHud({ root, session, input, settings, actions }) {
     const head = (ic, title, sub) => h('div.sel-head', {}, [icon(ic, 'icon icon-lg'), h('div', {}, [h('h3', { text: title }), h('div.sel-sub', { text: sub })])]);
     if (e.kind === 'building') {
       const def = BUILDINGS[e.type];
-      selPanel.append(head(e.type, def.name, e.owner === PLAYER ? (e.state === 'site' ? 'Under construction' : e.state === 'destroyed' ? 'Ruins' : def.desc) : def.desc));
+      const lvl = levelOf(e);
+      selPanel.append(head(e.type, `${displayName(e)}${UPGRADES[e.type] ? ` · Level ${lvl}` : ''}`, e.owner === PLAYER ? (e.state === 'site' ? 'Under construction' : e.state === 'destroyed' ? 'Ruins' : def.desc) : def.desc));
+      if (e.upgrade) selPanel.append(h('div.sel-row', {}, [h('span', { text: `Upgrading ${Math.round(e.upgrade.progress * 100)}%` }), hpBar(e.upgrade.progress, 'upgrade progress')]));
       if (e.state === 'site') {
         const need = [];
         for (const r in e.build.required) need.push(`${RES_NAMES[r]} ${Math.min(e.build.required[r], e.build.supplied[r] || 0)}/${e.build.required[r]}`);
@@ -262,16 +265,19 @@ export function createHud({ root, session, input, settings, actions }) {
         selPanel.append(h('div.sel-row.small', { text: `Builders: ${e.build.builders.length}/3` }));
       } else if (e.state === 'active') {
         selPanel.append(h('div.sel-row', {}, [h('span', { text: `Health ${Math.ceil(e.hp)}/${e.maxHp}` }), hpBar(e.hp / e.maxHp, 'health')]));
-        if (def.slots) selPanel.append(h('div.sel-row.small', { text: `${JOB_NAMES[def.job]}s: ${e.workers.length}/${def.slots}` }));
+        if (def.slots) selPanel.append(h('div.sel-row.small', { text: `${JOB_NAMES[def.job]}s: ${e.workers.length}/${slotsOf(e)}` }));
         let out = 0; for (const r in e.stock.out) out += e.stock.out[r];
         if (def.outCap) selPanel.append(h('div.sel-row.small', { text: `Waiting for pickup: ${out}/${def.outCap} ${RES_NAMES[WORK[def.job].res].toLowerCase()}` }));
-        if (def.inCap) selPanel.append(h('div.sel-row.small', { text: `Provisions for miners: ${e.stock.in.provisions || 0}/${def.inCap}` }));
-        if (def.housing) selPanel.append(h('div.sel-row.small', { text: `Houses ${def.housing + (e.type === 'keep' && w.players[PLAYER].techs.charter ? 6 : 0)} people` }));
+        if (def.inCap) selPanel.append(h('div.sel-row.small', { text: `Provisions for the ${e.type === 'canteen' ? 'kitchen' : 'miners'}: ${e.stock.in.provisions || 0}/${def.inCap}` }));
+        if (e.type === 'canteen') selPanel.append(h('div.sel-row.small', { text: `Hot meals ready: ${Math.floor(e.meals || 0)}/${def.mealCap} — served first at every mealtime` }));
+        if (def.housing) selPanel.append(h('div.sel-row.small', { text: `Houses ${def.housing + upgradeBonus(e, 'housing') + (e.type === 'keep' && w.players[PLAYER].techs.charter ? 6 : 0)} people` }));
         if (e.type === 'farm' && e.plots) selPanel.append(h('div.sel-row.small', { text: `Fields: ${e.plots.filter((p) => p.state === 'ripe').length} ripe, ${e.plots.filter((p) => p.state === 'growing').length} growing` }));
         if (e.type === 'keep') {
           const p = w.players[PLAYER];
           if (!e.lit) selPanel.append(h('div.sel-warn', { text: 'The hearth is dark. Rekindle it so settlers come home.' }));
           if (p.research) selPanel.append(h('div.sel-row', {}, [h('span', { text: `Studying ${TECHS[p.research.techId].name}` }), hpBar(p.research.progress, 'research')]));
+          const studied = TECH_ORDER.filter((id) => p.techs[id]).map((id) => TECHS[id].name);
+          if (studied.length) selPanel.append(h('div.sel-row.small.muted', { text: `Studied: ${studied.join(', ')}` }));
           // treasury: tax level and the next payday
           const f = paydayForecast(w, PLAYER);
           const taxRow = h('div.tax-row', { role: 'group', 'aria-label': 'Tax level' }, [h('span', { text: 'Taxes' })]);
@@ -316,6 +322,7 @@ export function createHud({ root, session, input, settings, actions }) {
       const what = e.job ? JOB_NAMES[e.job] : 'Labourer';
       let doing = 'Idle';
       if (e.fleeing) doing = 'Fleeing to the Keep!';
+      else if (e.sleep) doing = e.sleep.in ? 'Asleep at home' : 'Heading home for the night';
       else if (e.arriving) doing = 'Arriving in Kindlehold';
       else if (e.enlisting) doing = 'Going to the Barracks to train';
       else if (e.order) doing = e.carry ? `Carrying ${e.carry.amt} ${RES_NAMES[e.carry.res].toLowerCase()} to the Keep (your order)` : `${e.order.kind === 'tree' ? 'Felling trees' : 'Cutting stone'} by hand (your order)`;
@@ -324,6 +331,13 @@ export function createHud({ root, session, input, settings, actions }) {
       selPanel.append(head('settler', what, doing));
       selPanel.append(h('div.sel-row', {}, [h('span', { text: `Health ${Math.ceil(e.hp)}/${e.maxHp}` }), hpBar(e.hp / e.maxHp, 'health')]));
       if (e.owner === PLAYER && !e.order) selPanel.append(h('div.sel-row.small.muted', { text: 'Right-click a tree or rock outcrop to gather there by hand.' }));
+      return;
+    }
+    if (e.kind === 'poi') {
+      const info = POI_INFO[e.type];
+      const status = { found: e.type === 'hamlet' ? 'Send Maren here to win the hamlet over.' : e.type === 'trader' ? 'Open for trade: see the buttons on the right.' : 'Send anyone here to see what it holds.', done: { cairn: 'Climbed — the view is mapped.', ruin: 'The cache has been recovered.', hamlet: 'Allied: families joined Kindlehold; a tithe comes every payday.', trader: '' }[e.type] }[e.state] || '';
+      selPanel.append(head(e.type === 'trader' ? 'taler' : e.type === 'hamlet' ? 'cottage' : e.type === 'ruin' ? 'stone' : 'objective', info.name, info.desc));
+      if (status) selPanel.append(h('div.sel-row.small', { text: status }));
       return;
     }
     if (e.kind === 'deposit') {
@@ -335,7 +349,7 @@ export function createHud({ root, session, input, settings, actions }) {
   // --- command grid ------------------------------------------------------------------------------
   let cmdMode = 'auto'; // 'auto' | 'build'
   let confirmDemolish = 0;
-  const SHORT = { 'Back to work': 'Release', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
+  const SHORT = { 'Back to work': 'Release', 'Upgrading…': 'Upgrading', 'Steel Mail': 'Mail', 'Veteran Drill': 'Drill', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
   function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
   function cmdButton({ ic, label, key, tip, tipTitle, onClick, disabled = false, cost = null, progress = null, cooldown = null, active = false, highlight = false }) {
     const b = h(`button.cmd${active ? '.active' : ''}${highlight ? '.pulse' : ''}`, { type: 'button', 'aria-label': label, 'data-tip': tip || label, 'data-tip-title': tipTitle || label, 'aria-disabled': disabled ? 'true' : 'false' }, [icon(ic, 'icon icon-md'), cost ? null : h('span.cmd-label', { text: shortLabel(label) })]);
@@ -362,6 +376,15 @@ export function createHud({ root, session, input, settings, actions }) {
       setText(cmdTitle, 'Labourers');
       cmdGrid.append(cmdButton({ ic: 'stop', label: 'Back to work', tip: 'Stop gathering by hand; they return to hauling and building on their own.', onClick: () => input.issue({ type: 'release', ids: serfs.map((e) => e.id) }) }));
       cmdGrid.append(cmdButton({ ic: 'build', label: 'Build…', key: bb.buildMenu, tip: 'Open the construction menu.', onClick: () => { cmdMode = 'build'; dirtySel = true; } }));
+      return;
+    }
+    if (one && one.kind === 'poi' && one.type === 'trader' && one.state !== 'hidden' && cmdMode !== 'build') {
+      setText(cmdTitle, 'Trade');
+      for (const d of TRADES) {
+        const afford = canAfford(w, PLAYER, d.give);
+        const got = Object.entries(d.get).map(([r, n]) => `${n} ${RES_NAMES[r].toLowerCase()}`).join(', ');
+        cmdGrid.append(cmdButton({ ic: Object.keys(d.get)[0], label: d.label, tipTitle: d.label, tip: afford ? `You receive ${got}.` : `Not enough to trade. You would receive ${got}.`, cost: d.give, disabled: !afford, onClick: () => input.issue({ type: 'trade', id: one.id, deal: d.id }) }));
+      }
       return;
     }
     if (cmdMode === 'build' || (!items.length) || (serfs.length && serfs.length === items.length)) {
@@ -406,6 +429,16 @@ export function createHud({ root, session, input, settings, actions }) {
         return;
       }
       if (one.state !== 'active') return;
+      // upgrade to the next level (or its progress)
+      const up = nextUpgrade(one);
+      if (up || one.upgrade) {
+        if (one.upgrade) cmdGrid.append(cmdButton({ ic: 'bracing', label: 'Upgrading…', tipTitle: `Upgrading to ${up ? up.name : ''}`, tip: up ? up.desc : '', progress: one.upgrade.progress, disabled: true, onClick: () => {} }));
+        else {
+          const why = upgradeBlocker(w, PLAYER, one);
+          const afford = canAfford(w, PLAYER, up.cost);
+          cmdGrid.append(cmdButton({ ic: 'bracing', label: `Upgrade to ${up.name}`, tipTitle: `Upgrade to ${up.name} (level ${levelOf(one) + 1})`, tip: why ? `${why}. ${up.desc}` : afford ? `${up.desc} Takes ${up.time}s; the building keeps working.` : `Not enough resources. ${up.desc}`, cost: up.cost, disabled: !!why || !afford, onClick: () => input.issue({ type: 'upgrade', id: one.id }) }));
+        }
+      }
       if (one.type === 'keep') {
         if (!one.lit) cmdGrid.append(cmdButton({ ic: 'rekindle', label: 'Rekindle the Hearth', tip: 'Light the keep fire. Settlers will return to Kindlehold.', highlight: hl === 'keep', onClick: () => input.issue({ type: 'rekindle' }) }));
         else {
@@ -415,6 +448,7 @@ export function createHud({ root, session, input, settings, actions }) {
         for (const id of TECH_ORDER) {
           const t = TECHS[id];
           const done = p.techs[id];
+          if (done) continue; // finished studies are listed in the Keep panel, not as buttons
           const why = researchBlocker(w, PLAYER, id);
           const running = p.research && p.research.techId === id;
           cmdGrid.append(cmdButton({
@@ -499,8 +533,10 @@ export function createHud({ root, session, input, settings, actions }) {
     const ss = seasonAt(w.tick);
     // season: compact (the top bar must stay clear of the ribbon at 1280 px); details in the tooltip
     const season = ss.winter ? ` · ❄ ${fmtTime(ss.untilEnd / 20)}` : ss.untilNext <= 60 * 20 ? ` · ❄ in ${fmtTime(ss.untilNext / 20)}` : '';
-    setText(clockText, `${fmtTime(w.tick / 20)} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}${season}`);
-    clockText.setAttribute('data-tip', ss.winter ? `Winter: crops grow slowly, the river is frozen. Thaw in ${fmtTime(ss.untilEnd / 20)}.` : `Summer. Next winter in ${fmtTime(ss.untilNext / 20)}.`);
+    // time of day first and unmistakable; the elapsed match time lives in the tooltip
+    const day = 1 + Math.floor((w.tick / w.time.dayLengthTicks) + (7.5 / 24));
+    setText(clockText, `Day ${day} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}${season}`);
+    clockText.setAttribute('data-tip', `Time of day ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} (one day lasts ${Math.round(w.time.dayLengthTicks / 1200)} minutes). Played ${fmtTime(w.tick / 20)}. ${ss.winter ? `Winter: crops grow slowly, the river is frozen. Thaw in ${fmtTime(ss.untilEnd / 20)}.` : `Summer. Next winter in ${fmtTime(ss.untilNext / 20)}.`}`);
     setText(speedBtn, session.loop.isPaused() ? 'II' : `${session.loop.getSpeed()}×`);
     // raid countdown
     if (w.ai.raidTick != null && w.ai.state === 'build' && w.mission.flags.raidWarned) {

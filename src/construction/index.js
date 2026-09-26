@@ -1,8 +1,9 @@
 // Construction: placement validity, sites, progress, completion, cancel/refund,
 // demolition and repair bookkeeping. Labourers perform the physical work (economy).
-import { EV, PLAYER } from '../core/contracts.js';
+import { EV, PLAYER, DT } from '../core/contracts.js';
 import { spawn, remove, all, emit, alert } from '../world/world.js';
-import { BUILDINGS, buildingDef } from '../buildings/defs.js';
+import { BUILDINGS, buildingDef, nextUpgrade, levelOf, displayName } from '../buildings/defs.js';
+import { stabilityFactor } from '../population/index.js';
 import { territorySources, territoryOwner } from '../world/territory.js';
 import { pay, refund } from '../economy/stock.js';
 import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
@@ -217,6 +218,17 @@ export function createConstructionModule() {
       b.paused = !b.paused;
       if (b.paused) { releaseWorkers(world, b); b.stall = 'paused'; } else if (b.stall === 'paused') b.stall = null;
       emit(world, 'building:paused', { id: b.id, paused: b.paused });
+    } else if (cmd.type === 'upgrade') {
+      const b = world.entities[cmd.id];
+      if (!b || b.kind !== 'building' || b.owner !== owner || b.state !== 'active') return reject('Nothing to upgrade', cmd);
+      if (b.upgrade) return reject('Already being upgraded', cmd);
+      const up = nextUpgrade(b);
+      if (!up) return reject('Already at the highest level', cmd);
+      const why = upgradeBlocker(world, owner, b);
+      if (why) return reject(why, cmd);
+      if (!pay(world, owner, up.cost, `upgrade ${b.type}`)) return reject('Not enough resources', cmd);
+      b.upgrade = { progress: 0 };
+      emit(world, 'building:upgrade-started', { id: b.id, type: b.type, level: levelOf(b) + 1 });
     } else if (cmd.type === 'rekindle') {
       const keep = all(world, 'building').find((b) => b.type === 'keep' && b.owner === owner);
       if (!keep || keep.lit) return;
@@ -235,6 +247,22 @@ export function createConstructionModule() {
     },
     update() {
       const world = ctx.world;
+      // upgrades progress on their own (masons from the Keep); faster with Braced Timber
+      for (const b of all(world, 'building')) {
+        if (!b.upgrade) continue;
+        if (b.state !== 'active') { b.upgrade = null; continue; }
+        const up = nextUpgrade(b);
+        if (!up) { b.upgrade = null; continue; }
+        const speed = (hasTech(world, b.owner, 'bracing') ? TECH_EFFECTS.buildSpeed : 1) * stabilityFactor(world, b.owner);
+        b.upgrade.progress = Math.min(1, b.upgrade.progress + (DT * speed) / up.time);
+        if (b.upgrade.progress >= 1) {
+          b.level = levelOf(b) + 1;
+          b.upgrade = null;
+          if (up.hp) { b.maxHp += up.hp; b.hp = Math.min(b.maxHp, b.hp + up.hp); }
+          emit(world, 'building:upgraded', { id: b.id, type: b.type, level: b.level, owner: b.owner, x: b.x, z: b.z });
+          if (b.owner === PLAYER) alert(world, 'success', `${displayName(b)} completed.`, b.x, b.z);
+        }
+      }
       // rubble clean-up 30 s after destruction
       for (const b of all(world, 'building')) {
         if (b.state === 'destroyed' && world.tick - b.destroyedTick > 600) remove(world, b.id, 'rubble-cleared');
@@ -242,4 +270,16 @@ export function createConstructionModule() {
     },
     dispose() { unsub.forEach((u) => u()); unsub.length = 0; },
   };
+}
+
+/** Why a building cannot be upgraded right now (null when it can, cost aside). */
+export function upgradeBlocker(world, owner, b) {
+  const up = nextUpgrade(b);
+  if (!up) return 'Already at the highest level';
+  if (up.requiresTech && !hasTech(world, owner, up.requiresTech)) return 'Requires the March Charter';
+  if (up.requiresKeep) {
+    const keep = all(world, 'building').find((k) => k.type === 'keep' && k.owner === owner);
+    if (!keep || levelOf(keep) < up.requiresKeep) return 'Requires the Castle (upgrade the Keep)';
+  }
+  return null;
 }

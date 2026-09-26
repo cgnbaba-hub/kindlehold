@@ -28,7 +28,7 @@ export const UNITS = {
 
 export const RECRUITABLE = ['shield', 'blade', 'fletcher'];
 
-export const SETTLER = { hp: 60, speed: 3.6 };
+export const SETTLER = { hp: 60, speed: 3.9 }; // rested settlers (they sleep at night) walk a little faster
 
 export function unitDef(type) {
   const d = UNITS[type];

@@ -1,3 +1,5 @@
+import { UPGRADES } from '../buildings/defs.js';
+import { keepOf } from '../population/index.js';
 // Scripted player ("bot") that plays the scenario only through the public command API.
 // Used by the happy-path simulation test, balancing, and verification demo states.
 import { PLAYER, ENEMY } from '../core/contracts.js';
@@ -62,13 +64,31 @@ export function createBot(sim, { aggressive = true } = {}) {
     if (count('cottage') < 2) { place('cottage', [-58, 30]); return; }
     if (count('mine') < 1) { place('mine'); return; }
     if (count('farm') < 2) { place('farm', [-60, 78]); return; }
+    if (count('hunter') < 1) { place('hunter', [-72, 30]); return; }
     if (count('cottage') < 3) { place('cottage', [-40, 74]); return; }
     if (count('barracks') < 1 && (world.stats.produced.iron >= 10 || p.res.iron >= 10)) { place('barracks'); return; }
-    if (count('lodge') < 3 && p.res.timber < 30) { place('lodge', [-40, 16]); return; }
+    if (count('canteen') < 1 && count('barracks') > 0) { place('canteen', [-54, 38]); return; }
+    if (count('lodge') < 3 && (p.res.timber < 30 || count('barracks') > 0)) { place('lodge', [-40, 16]); return; }
     if (count('cottage') < 8 && p.pop >= p.popCap - 2) { place('cottage', [-62, 50]); return; }
+    // timber crisis: send spare labourers to fell trees by hand (and call them back later)
+    {
+      const free = all(world, 'settler').filter((x) => x.owner === PLAYER && !x.job && !x.order && !x.sleep && !x.enlisting && !x.arriving);
+      const gatherers = all(world, 'settler').filter((x) => x.owner === PLAYER && x.order);
+      if (p.res.timber < 25 && gatherers.length < 3 && free.length >= 4) {
+        const k = keepOf(world, PLAYER);
+        const tree = k && all(world, 'deposit').filter((d) => d.type === 'tree' && d.amount > 0).sort((a, b) => Math.hypot(a.x - k.x, a.z - k.z) - Math.hypot(b.x - k.x, b.z - k.z))[0];
+        if (tree) sim.issue({ type: 'gather', ids: free.slice(0, 2).map((x) => x.id), target: tree.id });
+      } else if (p.res.timber > 90 && gatherers.length) sim.issue({ type: 'release', ids: gatherers.map((x) => x.id) });
+    }
+    // upgrade workshops once the treasury allows (mine first: iron gates the army)
+    for (const type of ['mine', 'lodge', 'quarry']) {
+      const b = all(world, 'building').find((x) => x.owner === PLAYER && x.type === type && x.state === 'active' && !x.upgrade && (x.level || 1) === 1);
+      if (b && canAfford(world, PLAYER, UPGRADES[type][2].cost) && p.res.timber > 40) { sim.issue({ type: 'upgrade', id: b.id }); return; }
+    }
     if (!p.research && !researchBlocker(world, PLAYER, 'bracing') && p.res.timber > 90) { sim.issue({ type: 'research', techId: 'bracing' }); return; }
-    if (!p.research && !researchBlocker(world, PLAYER, 'blades')) { sim.issue({ type: 'research', techId: 'blades' }); return; }
-    if (!p.research && !researchBlocker(world, PLAYER, 'axes') && p.res.timber > 100) { sim.issue({ type: 'research', techId: 'axes' }); return; }
+    // iron goes to soldiers first: military research waits for a first squad
+    if (!p.research && soldiers().length >= 6 && !researchBlocker(world, PLAYER, 'blades')) { sim.issue({ type: 'research', techId: 'blades' }); return; }
+    if (!p.research && soldiers().length >= 6 && !researchBlocker(world, PLAYER, 'axes') && p.res.timber > 100) { sim.issue({ type: 'research', techId: 'axes' }); return; }
     if (!p.research && !researchBlocker(world, PLAYER, 'charter') && p.res.stone > 100) { sim.issue({ type: 'research', techId: 'charter' }); return; }
     if (p.techs.charter && count('tower') < 1) { place('tower'); return; }
     // exhausted forests: demolish the idle lodge and build a new one next to standing trees

@@ -237,6 +237,49 @@ const MODELS = {
     body.push(paint(place(cyl(0.05, 0.05, 1.6, 5), { x: 1.7, y: 1.1, z: 2.3 }), C.timberDark, 0, null, P.planks));
     return { body, glow: [], lantern: [1.7, 2.0, 2.3], height: 5 };
   },
+  hunter(rnd) {
+    const body = [], glow = [];
+    body.push(b(4.2, 0.4, 3.4, C.stoneDark, P.stone, { y: 0.2 }));
+    body.push(b(4, 2.3, 3.2, C.plank, P.planks, { y: 1.55 }));
+    body.push(...timberFrame(4, 2.1, 3.2, 0.4));
+    body.push(roof(5, 4.2, 2.4, C.thatchDark, P.thatch, { y: 2.7 }));
+    body.push(...door(0.9, 1.8, 1.65));
+    // antlers over the door, a drying rack with hides and a chopping block
+    for (const sx of [-1, 1]) {
+      body.push(beam(0, 2.55, 1.72, sx * 0.45, 3.0, 1.75, 0.05, C.bone));
+      body.push(beam(sx * 0.3, 2.85, 1.74, sx * 0.4, 3.15, 1.8, 0.04, C.bone));
+    }
+    body.push(b(0.35, 0.3, 0.3, C.hide, P.cloth, { y: 2.5, z: 1.72 }));
+    body.push(beam(2.6, 0, 0.6, 2.6, 1.9, 0.6, 0.1), beam(2.6, 0, -1.2, 2.6, 1.9, -1.2, 0.1), beam(2.6, 1.8, 0.7, 2.6, 1.8, -1.3, 0.08));
+    body.push(b(0.06, 1.1, 0.8, C.hide, P.cloth, { x: 2.62, y: 1.25, z: 0.1 }), b(0.06, 0.9, 0.6, '#9a7a56', P.cloth, { x: 2.62, y: 1.35, z: -0.8 }));
+    body.push(paint(place(cyl(0.35, 0.4, 0.5, 8), { x: -2.6, y: 0.25, z: 1.2 }), '#6e5037', 0, null, P.planks));
+    body.push(...logPile(-2.7, -0.6, 3, rnd, 1.2));
+    body.push(b(0.6, 0.6, 0.12, C.timberDark, P.planks, { x: 1.2, y: 1.6, z: 1.64 }));
+    glow.push(win(0.4, 0.4, { x: 1.2, y: 1.6, z: 1.71 }));
+    return { body, glow, height: 5.2 };
+  },
+  canteen(rnd) {
+    const body = [], glow = [];
+    body.push(b(7.4, 0.5, 5.4, C.stoneDark, P.stone, { y: 0.25 }));
+    body.push(b(7.2, 1.4, 5.2, C.stone, P.stone, { y: 1.2 }));
+    body.push(b(7.2, 2.0, 5.2, C.lime, P.plaster, { y: 2.9 }));
+    body.push(...timberFrame(7.2, 2.0, 5.2, 1.9));
+    body.push(roof(8.4, 6.4, 3.4, C.slate, P.shingles, { y: 3.9 }));
+    body.push(...door(1.3, 2.1, 2.65));
+    body.push(...chimney(-2.4, -1.2, 3.9, 3.6), ...chimney(2.6, 0.9, 3.9, 2.4));
+    for (const x of [-2.2, 2.2]) {
+      body.push(b(1.0, 0.9, 0.12, C.timberDark, P.planks, { x, y: 1.5, z: 2.64 }));
+      glow.push(win(0.75, 0.65, { x, y: 1.5, z: 2.71 }));
+      body.push(b(0.9, 0.8, 0.12, C.timberDark, P.planks, { x, y: 3.0, z: 2.64 }));
+      glow.push(win(0.65, 0.55, { x, y: 3.0, z: 2.71 }));
+    }
+    // hanging tankard sign, benches and barrels outside
+    body.push(beam(0.9, 3.3, 2.7, 0.9, 3.3, 3.6, 0.1, C.timberDark));
+    body.push(b(0.08, 0.7, 0.7, '#7a3a2a', P.planks, { x: 0.9, y: 2.8, z: 3.4 }), b(0.1, 0.35, 0.25, C.gold, P.metal, { x: 0.93, y: 2.8, z: 3.4 }));
+    for (const x of [-2.4, 2.6]) { body.push(b(1.8, 0.1, 0.5, C.plank, P.planks, { x, y: 0.5, z: 3.5 }), b(0.12, 0.45, 0.4, C.timberDark, P.planks, { x: x - 0.7, y: 0.23, z: 3.5 }), b(0.12, 0.45, 0.4, C.timberDark, P.planks, { x: x + 0.7, y: 0.23, z: 3.5 })); }
+    body.push(...barrel(3.9, 1.6), ...barrel(4.0, 0.7), ...barrel(3.95, 1.15, 0.85));
+    return { body, glow, height: 7.4 };
+  },
   barracks(rnd) {
     const body = [], glow = [];
     body.push(b(10.6, 1.4, 5.6, C.stone, P.stone, { y: 0.7 }));
@@ -351,13 +394,95 @@ function rubble(radius, rnd) {
   return merge(parts);
 }
 
+// Upgrade dressings: extra parts merged onto the base model for levels 2 and 3.
+function crenelRing(r, y, z0, from, to, n, rnd) {
+  const parts = [];
+  for (let i = 0; i <= n; i++) {
+    const a = from + (to - from) * (i / n);
+    parts.push(b(0.7, 0.6, 0.6, C.stone, P.stone, { x: Math.sin(a) * r, y, z: z0 + Math.cos(a) * r, ry: a }, 0.08, rnd));
+  }
+  return parts;
+}
+function roundTower(x, z, r, h, rnd, roofColor = C.slate) {
+  return [
+    paint(place(cyl(r, r * 1.08, h, 12), { x, z, y: h / 2 }), C.stone, 0.06, rnd, P.stone),
+    paint(place(cone(r * 1.35, r * 2.2, 12), { x, z, y: h + r * 1.1 }), roofColor, 0, null, P.shingles),
+  ];
+}
+function leanTo(x, z, rnd) {
+  const parts = [];
+  for (const [dx, dz] of [[-1.1, -0.9], [1.1, -0.9], [-1.1, 0.9], [1.1, 0.9]]) parts.push(b(0.18, 2.1, 0.18, C.timberDark, P.planks, { x: x + dx, y: 1.05, z: z + dz }));
+  parts.push(b(2.7, 0.14, 2.3, C.plank, P.planks, { x, y: 2.2, z, rx: 0.18 }));
+  return parts;
+}
+function hangingSign(x, z, color) {
+  return [
+    b(0.12, 2.6, 0.12, C.timberDark, P.planks, { x, y: 1.3, z }),
+    b(0.9, 0.1, 0.1, C.timberDark, P.planks, { x: x + 0.4, y: 2.5, z }),
+    b(0.75, 0.55, 0.06, color, P.planks, { x: x + 0.5, y: 2.05, z }),
+    b(0.35, 0.25, 0.07, C.gold, P.metal, { x: x + 0.5, y: 2.05, z: z + 0.02 }),
+  ];
+}
+const LEVEL_EXTRAS = {
+  keep: {
+    2: (rnd) => { // Castle: curtain wall around the back, a second tower
+      const body = [];
+      const r = 6.9, from = Math.PI * 0.42, to = Math.PI * 1.58, n = 10;
+      for (let i = 0; i < n; i++) {
+        const a0 = from + (to - from) * (i / n), a1 = from + (to - from) * ((i + 1) / n);
+        const am = (a0 + a1) / 2, len = 2 * r * Math.sin((a1 - a0) / 2) + 0.2;
+        body.push(b(len, 2.4, 0.8, C.stone, P.stone, { x: Math.sin(am) * r, y: 1.2, z: 0.6 + Math.cos(am) * r, ry: am }, 0.06, rnd));
+      }
+      body.push(...crenelRing(r, 2.7, 0.6, from, to, 18, rnd));
+      body.push(...roundTower(-5.4, -3.4, 1.5, 8.5, rnd));
+      body.push(...banner(-5.4, 11.6, -3.4, C.teal, rnd, 1.8));
+      return { body, glow: [win(0.5, 0.9, { x: -5.4, y: 6, z: -1.85 })] };
+    },
+    3: (rnd) => { // Fortress: gate turrets in front, taller corner tower
+      const body = [];
+      for (const x of [-3.4, 3.4]) {
+        body.push(...roundTower(x, 6.7, 0.95, 5.2, rnd));
+        body.push(...banner(x, 7.8, 6.7, C.teal, rnd, 1.4));
+      }
+      body.push(b(5.6, 0.5, 0.6, C.stoneDark, P.stone, { y: 4.3, z: 6.7 }));
+      body.push(...roundTower(5.6, -4.4, 1.3, 11, rnd));
+      return { body, glow: [win(0.45, 0.8, { x: -3.4, y: 3.6, z: 7.66 }), win(0.45, 0.8, { x: 3.4, y: 3.6, z: 7.66 })] };
+    },
+  },
+  cottage: {
+    2: () => ({ // Stone House: stone ground storey and a slate roof
+      body: [b(5.14, 1.2, 4.14, C.stone, P.stone, { y: 1.1 }), roof(6.4, 5.4, 3.4, C.slate, P.shingles, { y: 3.32 })],
+      glow: [],
+    }),
+    3: (rnd) => { // Townhouse: side wing, dormer, second chimney
+      const body = [b(2.8, 0.5, 3.6, C.stoneDark, P.stone, { x: -3.9, y: 0.25 }), b(2.6, 2.3, 3.4, C.lime, P.plaster, { x: -3.9, y: 1.65 })];
+      body.push(...timberFrame(2.6, 2.1, 3.4, 0.5).map((g) => place(g, { x: -3.9 })));
+      body.push(roof(3.6, 3.0, 2.2, C.slate, P.shingles, { x: -3.9, y: 2.8, ry: Math.PI / 2 }));
+      body.push(b(1.3, 1.1, 1.4, C.lime, P.plaster, { x: 0.9, y: 4.25, z: 1.2 }), roof(1.6, 1.6, 0.8, C.slate, P.shingles, { x: 0.9, y: 4.8, z: 1.2, ry: Math.PI / 2 }));
+      body.push(...chimney(1.8, -1.2, 3.4, 2.8));
+      return { body, glow: [win(0.5, 0.5, { x: 0.9, y: 4.25, z: 1.92 }), win(0.55, 0.55, { x: -3.9, y: 1.7, z: 1.74 })] };
+    },
+  },
+};
+for (const t of ['lodge', 'quarry', 'farm', 'mine', 'hunter', 'canteen']) {
+  LEVEL_EXTRAS[t] = { 2: (rnd) => ({ body: [...leanTo(-3.4, -1.6, rnd), ...hangingSign(1.9, 3.9, t === 'mine' ? C.rust : C.teal), ...barrel(-3.8, -1.2), ...barrel(-3.0, -2.1)], glow: [] }) };
+}
+
 const cache = new Map();
 
 /** Build (and cache) the geometries for a building type. */
-export function buildingGeometries(type, radius) {
-  if (cache.has(type)) return cache.get(type);
+export function buildingGeometries(type, radius, level = 1) {
+  const key = level > 1 ? `${type}:${level}` : type;
+  if (cache.has(key)) return cache.get(key);
   const rnd = viewRng(type.split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 7));
   const model = MODELS[type](rnd);
+  for (let l = 2; l <= level; l++) {
+    const extra = LEVEL_EXTRAS[type] && LEVEL_EXTRAS[type][l];
+    if (!extra) continue;
+    const e = extra(rnd);
+    model.body.push(...e.body);
+    model.glow.push(...e.glow);
+  }
   const out = {
     body: merge(model.body),
     glow: model.glow.length ? mergeGlow(model.glow) : null,
@@ -368,7 +493,8 @@ export function buildingGeometries(type, radius) {
     rubble: rubble(radius, rnd),
   };
   if (type === 'keep') out.charter = merge(MODELS.keepCharter(rnd).body);
-  cache.set(type, out);
+  out.levelUp = level > 1;
+  cache.set(key, out);
   return out;
 }
 

@@ -61,7 +61,7 @@ export const DEMO_STATES = {
   /** the settlement in deep winter: snow cover, the Harrow frozen over */
   winter(sim) {
     const bot = createBot(sim);
-    playTo(sim, bot, 12.4 * 1200);
+    playTo(sim, bot, 18.4 * 1200);
     quietEnemy(sim);
   },
   /** the first Rustfang raid hitting the settlement */
@@ -85,6 +85,18 @@ DEMO_STATES.buildingLineup = (sim) => {
   if (f) { f.plots = [0, 1, 2, 3, 4, 5].map((i) => ({ x: f.x + Math.sin(i + 0.5) * 9.5, z: f.z + Math.cos(i + 0.5) * 9.5, growth: i / 5, state: i === 5 ? 'ripe' : 'growing' })); }
   w.players.p1.techs.charter = true;
   sim.issue({ type: 'rekindle' });
+};
+
+/** Showcase: upgrade levels — Fortress keep, cottage levels 1-3, workshops at level 2. */
+DEMO_STATES.levels = (sim) => {
+  quietEnemy(sim);
+  const w = sim.world;
+  w.players.p1.techs.charter = true;
+  const keep = all(w, 'building').find((b) => b.type === 'keep' && b.owner === 'p1');
+  if (keep) { keep.level = 3; keep.lit = true; w.mission.flags.keepLit = true; }
+  [[-30, 60, 1], [-22, 62, 2], [-14, 64, 3]].forEach(([x, z, level]) => { const b = createBuildingEntity(w, { type: 'cottage', owner: 'p1', x, z, rot: 0.9, state: 'active' }); b.level = level; });
+  [['lodge', -30, 40], ['quarry', -20, 46]].forEach(([type, x, z]) => { const b = createBuildingEntity(w, { type, owner: 'p1', x, z, rot: 0.9, state: 'active' }); b.level = 2; });
+  sim.run(20);
 };
 
 /** Showcase: every unit type standing in a row. */

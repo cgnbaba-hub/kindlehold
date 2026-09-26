@@ -17,6 +17,7 @@ export function researchBlocker(world, owner, techId) {
   if (!keep.lit) return 'Rekindle the Keep hearth first';
   for (const r of tech.requires) if (!p.techs[r]) return `Requires ${TECHS[r].name}`;
   if (tech.requiresBuilding && !all(world, 'building').some((b) => b.owner === owner && b.type === tech.requiresBuilding && b.state === 'active')) return 'Requires a Barracks';
+  if (tech.requiresKeep && !all(world, 'building').some((b) => b.owner === owner && b.type === 'keep' && (b.level || 1) >= tech.requiresKeep)) return 'Requires the Castle (upgrade the Keep)';
   for (const r in tech.cost) if ((p.res[r] || 0) < tech.cost[r]) return 'Not enough resources';
   return null;
 }

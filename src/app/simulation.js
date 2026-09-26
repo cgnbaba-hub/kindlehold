@@ -21,6 +21,9 @@ import { createHeroesModule } from '../heroes/index.js';
 import { createCombatModule } from '../combat/index.js';
 import { createWeatherModule } from '../weather/index.js';
 import { createExplorationModule } from '../exploration/index.js';
+import { createDailyModule } from '../population/daily.js';
+import { createWildlifeModule } from '../wildlife/index.js';
+import { createPoisModule } from '../pois/index.js';
 
 const terrainCache = new Map();
 export function terrainFor(map = HARROWMERE_MAP) {
@@ -39,12 +42,15 @@ export const SIM_MODULE_FACTORIES = [
   createTechnologyModule,
   createConstructionModule,
   createPopulationModule,
+  createDailyModule,
   createEconomyModule,
   createProductionModule,
   createUnitsModule,
   createHeroesModule,
   createCombatModule,
   createExplorationModule,
+  createWildlifeModule,
+  createPoisModule,
 ];
 
 export function createSimulation({ seed = 1337, difficulty = 'normal', world = null, modules = SIM_MODULE_FACTORIES, onCritical = null, setup = true } = {}) {
@@ -67,7 +73,8 @@ export function createSimulation({ seed = 1337, difficulty = 'normal', world = n
     step() {
       const w = sim.world;
       w.tick++;
-      if (w.time.running) w.time.hour = (w.time.hour + 24 / w.time.dayLengthTicks) % 24;
+      // nights pass twice as fast: the village sleeps, but the player does not wait long for dawn
+      if (w.time.running) w.time.hour = (w.time.hour + (24 / w.time.dayLengthTicks) * (w.time.hour >= 22 || w.time.hour < 5 ? 2 : 1)) % 24;
       if (pending.length) {
         const cmds = pending.splice(0, pending.length);
         for (const cmd of cmds) {
