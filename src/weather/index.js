@@ -9,7 +9,7 @@ import { scenarioOf } from '../missions/index.js';
 
 const MIN = 60 * 20;
 export const SEASON = Object.freeze({
-  firstWinter: 11 * MIN,   // the first winter begins at minute 11
+  firstWinter: 17 * MIN,   // the first winter begins at minute 17 (after the first raid)
   winter: 3 * MIN,         // and lasts three minutes
   summer: 8 * MIN,         // then eight minutes of summer until the next
   freezeAfter: 30 * 20,    // the river freezes 30 s into winter

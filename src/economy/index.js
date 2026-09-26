@@ -97,7 +97,9 @@ export function createEconomyModule() {
         if (def.inCap) {
           const have = (b.stock.in.provisions || 0) + b.stock.inIncoming;
           if (have <= def.inCap - DELIVER_LOAD && res.provisions >= DELIVER_LOAD + 2) {
-            consider(110 + d, { type: 'deliver', to: b.id, res: 'provisions', amt: DELIVER_LOAD, stage: 'toKeep' });
+            // an empty mine comes first; the Tavern's kitchen is a comfort and waits its turn
+            const prio = b.type === 'canteen' ? 135 : have === 0 ? 70 : 110;
+            consider(prio + d, { type: 'deliver', to: b.id, res: 'provisions', amt: DELIVER_LOAD, stage: 'toKeep' });
           }
         }
         if (b.hp < b.maxHp * 0.75 && !b.repairer && world.tick - b.lastHitTick > 200 && res.timber >= 3) {

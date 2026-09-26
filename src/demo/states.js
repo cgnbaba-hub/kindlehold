@@ -61,7 +61,7 @@ export const DEMO_STATES = {
   /** the settlement in deep winter: snow cover, the Harrow frozen over */
   winter(sim) {
     const bot = createBot(sim);
-    playTo(sim, bot, 12.4 * 1200);
+    playTo(sim, bot, 18.4 * 1200);
     quietEnemy(sim);
   },
   /** the first Rustfang raid hitting the settlement */

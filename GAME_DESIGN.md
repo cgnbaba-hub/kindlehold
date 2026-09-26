@@ -149,8 +149,8 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 
 ## Seasons, exploration and direct orders (Level 2 additions)
 
-- **Seasons** (`src/weather/`): deterministic schedule — first winter at 11:00, winters last
-  3 min, summers 8 min. Winter: snow cover, crops grow at 30%, the Harrow freezes after 30 s
+- **Seasons** (`src/weather/`): deterministic schedule — first winter at 17:00, winters last
+  3 min, summers 8 min. Winter: snow cover, crops grow at 50%, the Harrow freezes after 30 s
   and becomes walkable everywhere (for both sides); a warning 20 s before the thaw; walkers
   caught on the ice are pushed ashore and lose 25% of their max HP.
 - **Exploration** (`src/exploration/`): 64×64 explored bitset in the world, revealed by the
@@ -165,6 +165,25 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
   (Low 1 / Fair 2 / High 3 Taler each; stability target +8 / 0 / −12), soldiers draw 1 Taler
   pay each (unpaid: stability −6). Start 60 Taler (×difficulty). The Keep hires a labourer
   for 40 Taler when housing is free. Save schema 3 (migration from 2 adds the fields).
+
+## Level 2.5 additions
+
+- **Upgrades** (`UPGRADES` in `src/buildings/defs.js`): Keep → Castle (+14 m territory, +4 housing,
+  +25% taxes) → Fortress (+12 m, +4, +25%; needs the Charter); Cottage → Stone House → Townhouse
+  (+3/+3 housing; townhouse needs the Castle); workshops level 2 (+1 slot, +20% speed). Paid up
+  front, progress automatically (Braced Timber speeds them up), the building keeps working.
+- **Military research:** Steel Mail (+20% HP, +2 armour), Veteran Drill (+15% attack rate,
+  +10% speed; needs the Castle).
+- **Day and night** (`src/population/daily.js`): settlers sleep 22:00–05:00 in the nearest house
+  (staggered), are hidden and safe and do not eat; nights pass at double speed; settlers are
+  "rested" (+18% work speed, faster walking); the Barracks rouses sleepers for training.
+- **Wildlife and food chain:** deer herds (graze, flee within 7 m, breed while ≥2 remain);
+  Hunter's Hut (45 m range, 4 provisions per kill, works in winter); Tavern (cook: 2 provisions →
+  3 hot meals, served first, up to +8 stability target).
+- **Points of interest** (`src/pois/`): trader (4 fixed trades), lookout cairn (reveals 70 m),
+  old watch ruins (120 Taler + 25 iron), Millbrook (Maren visits → up to 3 settlers, 30
+  provisions, tithe of 8 provisions + 10 Taler every payday).
+- Forester trip 4 timber (was 3). Deliveries: an empty mine is served before the Tavern.
 
 ## Controls (default)
 

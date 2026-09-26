@@ -27,7 +27,7 @@ fasst zusammen, was eine neue Session (z. B. Claude Code im Web) wissen muss.
 ```bash
 npm ci && npx playwright install chromium   # einmalig
 npm run dev          # http://127.0.0.1:5180/  (?debug=1 stellt window.__GAME__ bereit)
-npm test             # 82 node:test-Tests (Unit, Integration, deterministische Simulation)
+npm test             # 91 node:test-Tests (Unit, Integration, deterministische Simulation)
 npm run build
 npm run verify -- --prod --nofps    # 12 Screenshot-Presets + JSON-Berichte (langsam)
 npm run test:e2e -- --only=<name>   # UI-Tests in Headless-Chromium, --only filtert
@@ -74,6 +74,13 @@ Screenshot-Presets 14/14, e2e 10/10 (der 1280er-Layout-Test nach Korrektur einze
 - Cloud-Session: Playwright findet den vorinstallierten Browser über
   `CHROMIUM_PATH=/opt/pw-browsers/chromium` (ohne diese Variable bleibt alles wie bisher).
 - Neue Screenshot-Presets: `winter-overview` und `winter-settlement` (Demo-Zustand `winter`).
+
+## Stufe 2.5 (Cloud-Session 2026-09-26, zweiter Teil)
+
+Ausbaustufen (Burg, Häuser, Betriebe), Truppen-Forschung, Tag-Nacht-Rhythmus der Siedler, Wild
+und Jäger, Taverne, Entdeckungspunkte (Händler, Steinmann, Ruine, Millbrook), bessere Figuren,
+sichtbare Eisenadern, klarere Uhr. Details: `docs/SIEDLER_ROADMAP.md`. Balance-Check mit dem
+Bot: `npm run balance` (7/8 gewonnen). Tests: 91/91.
 
 ## Stand und Qualität
 

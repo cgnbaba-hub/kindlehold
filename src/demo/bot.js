@@ -86,8 +86,9 @@ export function createBot(sim, { aggressive = true } = {}) {
       if (b && canAfford(world, PLAYER, UPGRADES[type][2].cost) && p.res.timber > 40) { sim.issue({ type: 'upgrade', id: b.id }); return; }
     }
     if (!p.research && !researchBlocker(world, PLAYER, 'bracing') && p.res.timber > 90) { sim.issue({ type: 'research', techId: 'bracing' }); return; }
-    if (!p.research && !researchBlocker(world, PLAYER, 'blades')) { sim.issue({ type: 'research', techId: 'blades' }); return; }
-    if (!p.research && !researchBlocker(world, PLAYER, 'axes') && p.res.timber > 100) { sim.issue({ type: 'research', techId: 'axes' }); return; }
+    // iron goes to soldiers first: military research waits for a first squad
+    if (!p.research && soldiers().length >= 6 && !researchBlocker(world, PLAYER, 'blades')) { sim.issue({ type: 'research', techId: 'blades' }); return; }
+    if (!p.research && soldiers().length >= 6 && !researchBlocker(world, PLAYER, 'axes') && p.res.timber > 100) { sim.issue({ type: 'research', techId: 'axes' }); return; }
     if (!p.research && !researchBlocker(world, PLAYER, 'charter') && p.res.stone > 100) { sim.issue({ type: 'research', techId: 'charter' }); return; }
     if (p.techs.charter && count('tower') < 1) { place('tower'); return; }
     // exhausted forests: demolish the idle lodge and build a new one next to standing trees

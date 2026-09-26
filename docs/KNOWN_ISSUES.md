@@ -24,6 +24,9 @@ This list is kept honest and current. "Measured" items cite the report that show
   player can also see.
 - Labourers can only be ordered to gather timber or stone by hand; building, hauling and
   workplace jobs stay automatic. Work priorities cannot be set.
+- Balance after levels 2/2.5 (`npm run balance`): the scripted bot wins 7 of 8 matches; Hard
+  wins 2 of 3 seeds (before these levels it won all). Figures are improved procedural models,
+  not skinned/animated meshes.
 - Seasons were added after the last full balance measurement: winter slows crops to 30% and
   freezes the river. The bot tests still win on all difficulties, but the match-length
   numbers below predate winter.

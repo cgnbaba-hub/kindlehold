@@ -46,19 +46,40 @@ free housing): a new labourer joins at once instead of walking in from the valle
 
 ## Seasons
 
-Long summers alternate with short, hard winters (the first begins at minute 11 and lasts
+Long summers alternate with short, hard winters (the first begins at minute 17 and lasts
 three minutes; the clock shows the season). In winter:
 
-* snow covers the valley and **crops grow at a third of their speed** — fill the stores
+* snow covers the valley and **crops grow at half speed** — fill the stores
   before the geese fly south;
 * after half a minute the **Harrow freezes**: the river can be crossed anywhere, by your
   soldiers and by the Rustfang. Watch the banks, not just the fords;
 * when the ice cracks (you get a warning), anyone still on it scrambles ashore soaked and hurt.
 
+## Upgrades
+
+Select a building and press **Upgrade**: the Keep grows into a **Castle** and then a **Fortress**
+(more territory, housing and taxes), Cottages into **Stone Houses** and **Townhouses** (more
+housing), and workshops gain a second level (one more worker, 20% faster). Soldiers improve
+through research at the Keep: **Steel Mail** (tougher) and **Veteran Drill** (faster).
+
+## Day and night
+
+At ten in the evening your people walk home and sleep; at five they are back at work. Sleepers
+are safe indoors and do not eat. Nights pass quickly. Soldiers keep watch, and the Barracks will
+rouse a volunteer if you train soldiers at night.
+
+## Food
+
+Farmsteads grow grain, the **Hunter's Hut** hunts the deer herds (also in winter), and the
+**Tavern**'s cook turns two provisions into three hot meals. Hot meals are served first at
+mealtime and lift stability.
+
 ## Exploring
 
 The valley starts dark. Everything your people, soldiers and buildings have come near is
-revealed and stays revealed; the minimap shows only what you have explored.
+revealed and stays revealed; the minimap shows only what you have explored. Look out for a
+**trader** at the crossroads (trade goods for Taler), a **lookout cairn**, **old ruins** beyond the
+river and the hamlet of **Millbrook** — send Maren there to win an ally.
 
 ## Reading your settlement
 
