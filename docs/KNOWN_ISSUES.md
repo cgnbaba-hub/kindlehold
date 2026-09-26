@@ -16,13 +16,17 @@ This list is kept honest and current. "Measured" items cite the report that show
 
 ## Gameplay scope (Stage 1)
 
-- One map, one scenario, one hero. Diplomacy, trading, skirmish, weather gameplay effects
-  and a map editor are Stage 2 items and not started.
-- No fog of war (for either side). The AI reads the world directly; this is documented in
+- One map, one scenario, one hero. Diplomacy, trading, skirmish and a map editor are not
+  started. Weather is winter/summer only (no rain).
+- Exploration shroud for the player only (explored/unexplored, no live line-of-sight fog:
+  enemies in explored land stay visible). The AI reads the world directly; this is documented in
   `src/ai/index.js` and the AI gains no resource or vision advantage from it beyond what the
   player can also see.
-- Settlers cannot be ordered directly; they choose work automatically (workplace slots,
-  hauling, building, repairing). Priorities cannot be set.
+- Labourers can only be ordered to gather timber or stone by hand; building, hauling and
+  workplace jobs stay automatic. Work priorities cannot be set.
+- Seasons were added after the last full balance measurement: winter slows crops to 30% and
+  freezes the river. The bot tests still win on all difficulties, but the match-length
+  numbers below predate winter.
 - Measured match lengths (scripted bot, seeds 1337/7/42/99): Story 21.8–26.9 min,
   Normal 23.9–30.2 min, Hard 28.6–32.9 min (Hard slightly above the 15–30 min target).
   The difficulties feel similar in length; Hard's challenge comes from larger waves.

@@ -92,3 +92,22 @@ test('gather orders survive save/load and are rejected when malformed', () => {
   sim.step();
   assert.ok(!s2.order);
 });
+
+test('exploration: the valley starts hidden, the settlement is revealed, walking uncovers more', async () => {
+  const { isExplored, exploredFraction } = await import('../../src/exploration/index.js');
+  const sim = newSim();
+  const half = sim.terrain.half;
+  const k = keep(sim);
+  sim.step();
+  assert.ok(isExplored(sim.world, half, k.x, k.z), 'around the Keep is explored');
+  const camp = sim.terrain.map.enemyCamp;
+  assert.equal(isExplored(sim.world, half, camp.x, camp.z), false, 'the enemy fort is hidden at the start');
+  const before = exploredFraction(sim.world);
+  assert.ok(before > 0.02 && before < 0.4, `explored ${before}`);
+  const hero = units(sim).find((u) => u.hero);
+  sim.issue({ type: 'move', ids: [hero.id], x: 10, z: 10 });
+  sim.run(20 * 25);
+  assert.ok(exploredFraction(sim.world) > before, 'moving the hero uncovers land');
+  const loaded = deserializeWorld(serializeWorld(sim.world)).world;
+  assert.deepEqual(loaded.explored, sim.world.explored);
+});

@@ -62,6 +62,7 @@ export const ICONS = {
   alertInfo: S('<circle cx="12" cy="12" r="9" fill="#5fb3d6" stroke="#15323f"/><path d="M12 11v6M12 8h.01" stroke="#0f1f28" stroke-width="2"/>'),
   alertSuccess: S('<circle cx="12" cy="12" r="9" fill="#8fbf73" stroke="#2a4a1a"/><path d="M8 12l3 3 5-6" stroke="#10200a" stroke-width="2"/>'),
   sun: S('<circle cx="12" cy="12" r="4" fill="#ffd27a" stroke="#a0601a"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M5 19l2-2" stroke="#ffd27a"/>'),
+  snow: S('<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 6.5l2.5-2M9.5 19.5l2.5-2 2.5 2" stroke="#dbe8f6" stroke-width="1.7"/>'),
   moon: S('<path d="M16 3a8 8 0 1 0 5 13A7 7 0 0 1 16 3z" fill="#c8d4f0" stroke="#5a6a90"/>'),
   objective: S('<path d="M5 21V4M5 4h11l-2 4 2 4H5" fill="#e3b04b" fill-opacity=".3" stroke-width="1.6"/>'),
   check: S('<path d="M5 12l5 5 9-10" stroke="#8fbf73" stroke-width="2.4"/>'),

@@ -1,6 +1,7 @@
 // Tiny DOM helpers. Text is always set with textContent; the only innerHTML use is
-// for project-authored static SVG icon markup from icons.js (never user/scenario data).
+// for project-authored static SVG markup from icons.js and portraits.js (never user/scenario data).
 import { ICONS } from './icons.js';
+import { PORTRAITS } from './portraits.js';
 
 /**
  * h('div.card#id', { onclick, title, 'aria-label': ... }, [children | 'text'])
@@ -36,6 +37,14 @@ export function icon(name, cls = 'icon') {
   span.className = cls;
   span.setAttribute('aria-hidden', 'true');
   span.innerHTML = ICONS[name] || ICONS.unknown; // static, project-authored markup only
+  return span;
+}
+
+export function portrait(key, cls = 'msg-portrait') {
+  const span = document.createElement('div');
+  span.className = cls;
+  span.setAttribute('aria-hidden', 'true');
+  span.innerHTML = PORTRAITS[key] || ''; // static, project-authored markup only
   return span;
 }
 

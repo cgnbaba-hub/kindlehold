@@ -7,6 +7,7 @@ import { createTerrainView } from '../terrain/terrain-view.js';
 import { createWater } from '../environment/water.js';
 import { createVegetation } from '../environment/vegetation.js';
 import { createWinter } from '../environment/winter.js';
+import { createShroud } from '../environment/shroud.js';
 import { createBuildingsView } from '../buildings/view.js';
 import { createUnitsView } from '../units/view.js';
 import { createEffects } from '../effects/index.js';
@@ -26,6 +27,8 @@ export async function createSession({ container, seed, quality = 'high', verify 
   views.register(rc);
   const sky = views.register(createSkyLight({ scene: rc.scene, renderer: rc.renderer, quality: rc.quality }));
   const world = () => sim.world;
+  const shroud = views.register(createShroud({ world, terrain: sim.terrain }));
+  shroud.snap();
   const terrainView = views.register(createTerrainView({ scene: rc.scene, terrain: sim.terrain, quality: rc.quality, world }));
   const water = views.register(createWater({ scene: rc.scene, terrain: sim.terrain }));
   views.register(createVegetation({ scene: rc.scene, terrain: sim.terrain, world, quality: rc.quality }));

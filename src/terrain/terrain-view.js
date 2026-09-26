@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { generateGroundTexture, generateMacroTexture } from './textures.js';
 import { distToPolyline, rawHeight, sceneryRelief } from '../world/terrain-data.js';
 import { all } from '../world/world.js';
+import { SHROUD_GLSL, bindShroud } from '../render/structure-material.js';
 
 function smoothstep(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
 
@@ -86,6 +87,7 @@ export function createTerrainView({ scene, terrain, quality, world }) {
   };
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
+    bindShroud(shader);
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec4 splat;\nvarying vec4 vSplat;\nvarying vec3 vWPos;\nvarying vec3 vWNrm;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvSplat = splat;\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWNrm = normalize(mat3(modelMatrix) * objectNormal);');
@@ -93,6 +95,7 @@ export function createTerrainView({ scene, terrain, quality, world }) {
       .replace('#include <common>', `#include <common>
 uniform sampler2D tGrass; uniform sampler2D tDirt; uniform sampler2D tRock; uniform sampler2D tMud; uniform sampler2D tWear; uniform sampler2D tMacro;
 uniform float uHalf; uniform float uSize; uniform float uSnow;
+${SHROUD_GLSL}
 varying vec4 vSplat; varying vec3 vWPos; varying vec3 vWNrm;
 vec4 sampleAT(sampler2D t, vec2 p) {
   // two scales to hide tiling
@@ -162,7 +165,8 @@ if (uSnow > 0.001) {
 diffuseColor.rgb *= ground;
 `)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = kRough;')
-      .replace('#include <fog_fragment>', `#include <fog_fragment>
+      .replace('#include <fog_fragment>', `gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);
+#include <fog_fragment>
 #ifdef USE_FOG
 // aerial perspective: distant high ground sinks into the haze, so the valley walls read as far mountains
 gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(6.0, 70.0, vWPos.y) * smoothstep(90.0, 300.0, vFogDepth) * 0.5);
@@ -177,7 +181,7 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(6.0, 70.0, vWPos.y
   normal = normalize(abs(det) * normal - grad * 0.12);
 }`);
   };
-  mat.customProgramCacheKey = () => 'kh-terrain-v4';
+  mat.customProgramCacheKey = () => 'kh-terrain-v5';
 
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;

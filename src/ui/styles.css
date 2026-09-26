@@ -96,6 +96,10 @@ button { font: inherit; color: inherit; }
 .dialogue { position: absolute; left: 50%; transform: translateX(-50%); top: 64px; width: min(620px, 50vw); pointer-events: none; }
 .msg { background: linear-gradient(180deg, rgba(34,30,26,0.94), rgba(26,24,22,0.94)); border: 1px solid var(--brass-dim); border-radius: 8px; padding: 10px 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); animation: msgIn 0.35s ease-out; }
 .msg.fade { opacity: 0; transition: opacity 0.4s; }
+.msg.with-portrait { display: flex; gap: 14px; align-items: center; padding-left: 10px; }
+.msg-portrait { flex: 0 0 auto; width: 76px; height: 76px; border-radius: 50%; overflow: hidden; border: 2px solid var(--brass); box-shadow: 0 0 0 3px rgba(0,0,0,0.45), inset 0 0 12px rgba(0,0,0,0.6); }
+.msg-portrait svg { display: block; }
+.msg-body { min-width: 0; }
 .msg-speaker strong { color: var(--brass); font-family: var(--serif); font-size: 1.05em; }
 .msg-speaker span { color: var(--ink-dim); font-size: 0.85em; }
 .msg p { margin: 4px 0 0; font-family: var(--serif); font-size: 1.05em; line-height: 1.4; }

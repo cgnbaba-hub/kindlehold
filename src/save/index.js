@@ -85,6 +85,7 @@ const worldSchema = v.object({
     kind: v.string({ oneOf: ['clear', 'snow'] }), intensity: nonNeg(1),
     season: v.optional(v.string({ oneOf: ['summer', 'winter'] })), snow: v.optional(nonNeg(1)), frozen: v.optional(v.boolean()),
   }, { allowExtra: false })),
+  explored: v.optional(v.array(v.number({ min: 0, max: 4294967295, int: true }), { max: 128 })),
   players: v.object({ p1: playerFull, p2: playerFull }, { allowExtra: false }),
   entities: v.record(entitySchema, { max: ENTITY_CAP, keyPattern: /^\d{1,9}$/ }),
   mission: v.object({

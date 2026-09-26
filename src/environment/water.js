@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { hash2 } from '../core/rng.js';
 import { rawHeight } from '../world/terrain-data.js';
+import { SHROUD_GLSL, bindShroud } from '../render/structure-material.js';
 
 function makeNormalTexture(size = 256) {
   // tileable height from summed periodic sines + hash noise, converted to a normal map
@@ -69,13 +70,16 @@ export function createWater({ scene, terrain }) {
   const uniforms = { uTime: { value: 0 }, tNormal: { value: normalTex }, uSky: { value: new THREE.Color('#9fb8cc') }, uNight: { value: 0 }, uIce: { value: 0 } };
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
+    bindShroud(shader);
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nattribute float depth;\nvarying float vDepth;\nvarying vec3 vWPos;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvDepth = depth;\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
 uniform float uTime; uniform sampler2D tNormal; uniform vec3 uSky; uniform float uNight; uniform float uIce;
-varying float vDepth; varying vec3 vWPos;`)
+varying float vDepth; varying vec3 vWPos;
+${SHROUD_GLSL}`)
+      .replace('#include <fog_fragment>', 'gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);\n#include <fog_fragment>')
       .replace('#include <color_fragment>', `#include <color_fragment>
 float d = clamp(vDepth, 0.0, 2.5);
 vec3 shallow = vec3(0.34, 0.44, 0.33);
@@ -109,7 +113,7 @@ normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);`)
 float fres = clamp(pow(1.0 - abs(dot(normalize(-vViewPosition), normal)), 3.0), 0.0, 1.0);
 totalEmissiveRadiance += uSky * fres * mix(0.55, 0.25, uIce) * (1.0 - uNight * 0.7);`);
   };
-  mat.customProgramCacheKey = () => 'kh-water-v2';
+  mat.customProgramCacheKey = () => 'kh-water-v3';
   const mesh = new THREE.Mesh(geo, mat);
   mesh.renderOrder = 2;
   mesh.name = 'water';

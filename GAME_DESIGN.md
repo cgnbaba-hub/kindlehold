@@ -147,6 +147,20 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 | Starting resources | ×1.5 | ×1 | ×0.8 |
 | AI advantage | none | none | +10% enemy HP (documented, exposed in menu) |
 
+## Seasons, exploration and direct orders (Level 2 additions)
+
+- **Seasons** (`src/weather/`): deterministic schedule — first winter at 11:00, winters last
+  3 min, summers 8 min. Winter: snow cover, crops grow at 30%, the Harrow freezes after 30 s
+  and becomes walkable everywhere (for both sides); a warning 20 s before the thaw; walkers
+  caught on the ice are pushed ashore and lose 25% of their max HP.
+- **Exploration** (`src/exploration/`): 64×64 explored bitset in the world, revealed by the
+  player's units (20 m, hero 26 m), settlers (14 m) and buildings (20 m, Keep 44 m, tower 34 m).
+  Unexplored land is drawn dark and hidden on the minimap. The AI is not affected.
+- **Direct labourer orders** (`gather` / `release` commands): selected labourers fell trees
+  (2 timber per 6.5 s trip) or cut rock (2 stone per 7.5 s) by hand within 16 m of the
+  clicked deposit and carry it to the Keep.
+- **Dialogue portraits**: every speaker has an original portrait in the dialogue box.
+
 ## Controls (default)
 
 Camera: right-drag grabs and moves the map (a short right-click stays the context order), arrow keys pan, screen-edge scrolling is optional (off by default), Q/E or middle-drag rotate, mouse wheel zooms towards the cursor,
@@ -159,5 +173,4 @@ Controls. (WASD is not used for panning because A/S are unit orders.)
 
 ## Out of scope for Stage 1
 
-Diplomacy, trading, weather gameplay effects (weather is visual only), multiple
-maps, skirmish, map editor, multiplayer.
+Diplomacy, trading, rain/other weather, multiple maps, skirmish, map editor, multiplayer.

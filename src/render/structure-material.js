@@ -7,6 +7,30 @@ import * as THREE from 'three';
 /** Shared season uniform: 0 = summer, 1 = full winter snow cover (set by the environment view). */
 export const SNOW = { value: 0 };
 
+/** Shared exploration shroud (set by the environment view): texture of explored land. */
+export const SHROUD = { tex: { value: null }, half: { value: 128 }, on: { value: 0 } };
+
+/** GLSL: brightness factor 0.1..1 from the shroud at a world position. Outside the map the
+ * scenery keeps a dim, misty look instead of turning black. */
+export const SHROUD_GLSL = `
+uniform sampler2D tShroud; uniform float uShroudHalf; uniform float uShroudOn;
+float khShroudK(vec3 wp) {
+  if (uShroudOn < 0.5) return 1.0;
+  vec2 uv = (wp.xz + uShroudHalf) / (2.0 * uShroudHalf);
+  float e = texture2D(tShroud, clamp(uv, 0.004, 0.996)).r;
+  float outside = max(max(-uv.x, uv.x - 1.0), max(-uv.y, uv.y - 1.0)) * 2.0 * uShroudHalf;
+  e = max(e, smoothstep(0.0, 24.0, outside) * 0.45);
+  return mix(0.07, 1.0, smoothstep(0.08, 0.92, e));
+}
+vec3 khShroud(vec3 col, vec3 wp) { float k = khShroudK(wp); return mix(vec3(0.018, 0.022, 0.03), col, k); }
+`;
+
+export function bindShroud(shader) {
+  shader.uniforms.tShroud = SHROUD.tex;
+  shader.uniforms.uShroudHalf = SHROUD.half;
+  shader.uniforms.uShroudOn = SHROUD.on;
+}
+
 export const PATTERN = { plain: 0, stone: 1, planks: 2, thatch: 3, shingles: 4, plaster: 5, cloth: 6, foliage: 7, metal: 8, rock: 9 };
 
 const GLSL_COMMON = `
@@ -91,6 +115,7 @@ vec3 khPattern(float pat, vec3 wp, vec3 n) {
 
 export function patchStructureShader(shader) {
   shader.uniforms.uSnow = SNOW;
+  bindShroud(shader);
   shader.vertexShader = shader.vertexShader
     .replace('#include <common>', '#include <common>\nattribute float pattern;\nvarying float vPattern; varying vec3 vWPos; varying vec3 vWNormal;')
     .replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
@@ -107,7 +132,8 @@ khN = mat3(instanceMatrix) * khN;
 #endif
 vWNormal = normalize(mat3(modelMatrix) * khN);`);
   shader.fragmentShader = shader.fragmentShader
-    .replace('#include <common>', '#include <common>\n' + GLSL_COMMON)
+    .replace('#include <common>', '#include <common>\n' + GLSL_COMMON + SHROUD_GLSL)
+    .replace('#include <fog_fragment>', 'gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);\n#include <fog_fragment>')
     .replace('#include <color_fragment>', `#include <color_fragment>
 diffuseColor.rgb *= khPattern(vPattern, vWPos, normalize(vWNormal));
 if (uSnow > 0.001 && vPattern > 0.5 && vPattern < 9.5 && (vPattern < 5.5 || vPattern > 6.5) && (vPattern < 7.5 || vPattern > 8.5)) {
@@ -127,5 +153,28 @@ export function createStructureMaterial(params = {}, key = 'kh-structure') {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0, ...params });
   mat.onBeforeCompile = patchStructureShader;
   mat.customProgramCacheKey = () => key;
+  return mat;
+}
+
+/** Fade an overlay material (rings, discs, bars, borders) out over unexplored land. */
+export function shroudOverlay(mat) {
+  const prev = mat.onBeforeCompile;
+  const prevKey = mat.customProgramCacheKey();
+  mat.onBeforeCompile = (shader, renderer) => {
+    if (prev) prev.call(mat, shader, renderer);
+    bindShroud(shader);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vKhW;')
+      .replace('#include <project_vertex>', `#include <project_vertex>
+vec4 khOW = vec4(transformed, 1.0);
+#ifdef USE_INSTANCING
+khOW = instanceMatrix * khOW;
+#endif
+vKhW = (modelMatrix * khOW).xyz;`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vKhW;\n' + SHROUD_GLSL)
+      .replace('#include <fog_fragment>', 'gl_FragColor.a *= smoothstep(0.25, 0.8, khShroudK(vKhW));\n#include <fog_fragment>');
+  };
+  mat.customProgramCacheKey = () => `${prevKey}|kh-overlay-shroud`;
   return mat;
 }

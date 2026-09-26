@@ -29,6 +29,30 @@ fort and will not share the valley.
    provision for every two iron.
 5. **Arms.** Build the *Barracks* and train soldiers. Each soldier is one of your settlers.
 
+## Labourers take orders
+
+Labourers normally haul and build on their own. Select one (click) or several (drag a box
+where there are no soldiers) and **right-click a tree or a rock outcrop**: they fell timber
+or cut stone by hand and carry it to the Keep, moving on to the next tree or rock nearby
+until nothing is left. It is slower than a Lodge or Quarry but needs no building — handy
+at the very start. *Back to work* returns them to their usual jobs.
+
+## Seasons
+
+Long summers alternate with short, hard winters (the first begins at minute 11 and lasts
+three minutes; the clock shows the season). In winter:
+
+* snow covers the valley and **crops grow at a third of their speed** — fill the stores
+  before the geese fly south;
+* after half a minute the **Harrow freezes**: the river can be crossed anywhere, by your
+  soldiers and by the Rustfang. Watch the banks, not just the fords;
+* when the ice cracks (you get a warning), anyone still on it scrambles ashore soaked and hurt.
+
+## Exploring
+
+The valley starts dark. Everything your people, soldiers and buildings have come near is
+revealed and stays revealed; the minimap shows only what you have explored.
+
 ## Reading your settlement
 
 * **Top-left ribbon:** stores in the Keep with the change over the last minute,

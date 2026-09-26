@@ -32,6 +32,8 @@ export function installVerifyApi(session) {
       return false;
     },
     issue: (cmd) => session.issue(cmd),
+    /** Show a dialogue line in the HUD (screenshots of the message box). */
+    showMessage: (m) => session.sim.bus.emit('mission:message', { tick: session.world.tick, kind: 'dialogue', ...m }),
     save: (slot) => session.save && session.save(slot),
     load: (slot) => session.load && session.load(slot),
     world: () => session.world,

@@ -9,20 +9,21 @@ import { buildingGeometries } from '../buildings/meshes.js';
 import { checkPlacement } from '../construction/index.js';
 import { ABILITIES } from '../heroes/index.js';
 import { territorySources } from '../world/territory.js';
+import { shroudOverlay } from '../render/structure-material.js';
 
 const MAX_RINGS = 240;
 const MAX_BARS = 240;
 
 export function createSelectionView({ scene, terrain, world, sim, input, camera, overlay }) {
   const ringGeo = new THREE.RingGeometry(0.82, 1, 40); ringGeo.rotateX(-Math.PI / 2);
-  const ringMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.9, depthWrite: false, fog: false });
+  const ringMat = shroudOverlay(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.9, depthWrite: false, fog: false }));
   const rings = new THREE.InstancedMesh(ringGeo, ringMat, MAX_RINGS);
   rings.count = 0; rings.frustumCulled = false; rings.renderOrder = 3;
   scene.add(rings);
 
   // faction discs under every soldier: tells friend from foe inside a melee at a glance
   const discGeo = new THREE.CircleGeometry(0.62, 20); discGeo.rotateX(-Math.PI / 2);
-  const discMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.45, depthWrite: false, fog: false });
+  const discMat = shroudOverlay(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.45, depthWrite: false, fog: false }));
   const discs = new THREE.InstancedMesh(discGeo, discMat, 400);
   discs.count = 0; discs.frustumCulled = false; discs.renderOrder = 2;
   scene.add(discs);
@@ -30,8 +31,8 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
 
   // health bars: background + fill quads, camera-facing
   const barGeo = new THREE.PlaneGeometry(1, 1);
-  const barBgMat = new THREE.MeshBasicMaterial({ color: '#141414', transparent: true, opacity: 0.75, depthTest: false, fog: false });
-  const barMat = new THREE.MeshBasicMaterial({ depthTest: false, fog: false });
+  const barBgMat = shroudOverlay(new THREE.MeshBasicMaterial({ color: '#141414', transparent: true, opacity: 0.75, depthTest: false, fog: false }));
+  const barMat = shroudOverlay(new THREE.MeshBasicMaterial({ transparent: true, depthTest: false, fog: false }));
   const barsBg = new THREE.InstancedMesh(barGeo, barBgMat, MAX_BARS);
   const bars = new THREE.InstancedMesh(barGeo, barMat, MAX_BARS);
   for (const m of [barsBg, bars]) { m.count = 0; m.frustumCulled = false; m.renderOrder = 10; scene.add(m); }
@@ -71,7 +72,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   const markerGeo = new THREE.RingGeometry(0.5, 0.75, 24).rotateX(-Math.PI / 2);
 
   // territory border (rebuilt when buildings change)
-  const borderMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.32, depthWrite: false, fog: true });
+  const borderMat = shroudOverlay(new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.32, depthWrite: false, fog: true }));
   const border = new THREE.Mesh(new THREE.BufferGeometry(), borderMat);
   border.renderOrder = 1;
   scene.add(border);

@@ -1,7 +1,9 @@
 // In-game HUD (semantic HTML over the canvas): resources, population, stability,
 // clock, objectives + tutorial hints, dialogue, alerts, selection panel, command grid,
 // minimap, tooltips, placement banner, toasts.
-import { h, icon, clear, setText, fmtTime } from './dom.js';
+import { h, icon, portrait, clear, setText, fmtTime } from './dom.js';
+import { portraitKey } from './portraits.js';
+import { seasonAt } from '../weather/index.js';
 import { createMinimap } from './minimap.js';
 import { all } from '../world/world.js';
 import { PLAYER, EV, RESOURCES } from '../core/contracts.js';
@@ -177,7 +179,9 @@ export function createHud({ root, session, input, settings, actions }) {
     }
     if (!msgShowing && msgQueue.length) {
       const m = msgQueue.shift();
-      msgShowing = h('div.msg', {}, [h('div.msg-speaker', {}, [h('strong', { text: m.speaker }), h('span', { text: m.role ? ` — ${m.role}` : '' })]), h('p', { text: m.text })]);
+      const pk = portraitKey(m);
+      const pic = pk ? portrait(pk) : null;
+      msgShowing = h(`div.msg${pic ? '.with-portrait' : ''}`, {}, [pic, h('div.msg-body', {}, [h('div.msg-speaker', {}, [h('strong', { text: m.speaker }), h('span', { text: m.role ? ` — ${m.role}` : '' })]), h('p', { text: m.text })])]);
       clear(dialogue).append(msgShowing);
       msgTimer = Math.max(5, Math.min(11, m.text.length / 14));
     }
@@ -477,7 +481,10 @@ export function createHud({ root, session, input, settings, actions }) {
     const hour = w.time.hour;
     const hh = Math.floor(hour), mm = Math.floor((hour - hh) * 60);
     clear(clockIcon).append(icon(hour > 6 && hour < 19 ? 'sun' : 'moon', 'icon icon-sm'));
-    setText(clockText, `${fmtTime(w.tick / 20)} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`);
+    const ss = seasonAt(w.tick);
+    const season = ss.winter ? `Winter ${fmtTime(ss.untilEnd / 20)}` : ss.untilNext <= 60 * 20 ? `Winter in ${fmtTime(ss.untilNext / 20)}` : 'Summer';
+    if (ss.winter) clear(clockIcon).append(icon('snow', 'icon icon-sm'));
+    setText(clockText, `${fmtTime(w.tick / 20)} · ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} · ${season}`);
     setText(speedBtn, session.loop.isPaused() ? 'II' : `${session.loop.getSpeed()}×`);
     // raid countdown
     if (w.ai.raidTick != null && w.ai.state === 'build' && w.mission.flags.raidWarned) {

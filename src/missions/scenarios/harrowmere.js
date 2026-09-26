@@ -28,7 +28,7 @@ export const HARROWMERE_SCENARIO = {
     {
       id: 'timber-food', title: 'Timber and bread',
       text: "Build a Woodcutter's Lodge near the western trees and a Farmstead on open ground.",
-      hint: 'Press {buildMenu} or open the Build menu. Green outlines are valid spots; the Lodge needs trees within 28 m.',
+      hint: 'Press {buildMenu} or open the Build menu. Green outlines are valid spots; the Lodge needs trees within 28 m. Tip: select labourers and right-click a tree to fell timber by hand meanwhile.',
       highlight: 'build', activeWhen: { completed: 'rekindle' },
       completeWhen: { all: [{ built: 'lodge', count: 1 }, { built: 'farm', count: 1 }] },
       onComplete: [{ speaker: 'osric', text: 'Logs and grain moving again. We will need roofs for the newcomers.' }],
