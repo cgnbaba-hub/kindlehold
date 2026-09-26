@@ -27,7 +27,7 @@ fasst zusammen, was eine neue Session (z. B. Claude Code im Web) wissen muss.
 ```bash
 npm ci && npx playwright install chromium   # einmalig
 npm run dev          # http://127.0.0.1:5180/  (?debug=1 stellt window.__GAME__ bereit)
-npm test             # 91 node:test-Tests (Unit, Integration, deterministische Simulation)
+npm test             # 95 node:test-Tests (Unit, Integration, deterministische Simulation)
 npm run build
 npm run verify -- --prod --nofps    # 12 Screenshot-Presets + JSON-Berichte (langsam)
 npm run test:e2e -- --only=<name>   # UI-Tests in Headless-Chromium, --only filtert
@@ -81,6 +81,12 @@ Ausbaustufen (Burg, Häuser, Betriebe), Truppen-Forschung, Tag-Nacht-Rhythmus de
 und Jäger, Taverne, Entdeckungspunkte (Händler, Steinmann, Ruine, Millbrook), bessere Figuren,
 sichtbare Eisenadern, klarere Uhr. Details: `docs/SIEDLER_ROADMAP.md`. Balance-Check mit dem
 Bot: `npm run balance` (7/8 gewonnen). Tests: 91/91.
+
+## Stufe 2.6
+
+Kurze Nächte (6×, „Skip night“, Tempo bis 8×), nachwachsende Wälder, größere Felsen,
+Plünderzüge der Rustfang, schönere Menüs, abwechslungsreiche Kampfgeräusche. Details:
+`docs/SIEDLER_ROADMAP.md`. Tests: 95/95.
 
 ## Stand und Qualität
 

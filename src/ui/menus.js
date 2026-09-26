@@ -13,8 +13,9 @@ function screen(cls, children, { onEsc } = {}) {
   return el;
 }
 
-function menuButton(label, onClick, { primary = false, disabled = false, tip = null } = {}) {
-  const b = h(`button.menu-btn${primary ? '.primary' : ''}`, { type: 'button', disabled, title: tip || undefined }, [label]);
+function menuButton(label, onClick, { primary = false, disabled = false, tip = null, ic = null, sub = null } = {}) {
+  const b = h(`button.menu-btn${primary ? '.primary' : ''}${ic ? '.rich' : ''}`, { type: 'button', disabled, title: tip || undefined },
+    ic ? [icon(ic, 'icon menu-ic'), h('span.menu-txt', {}, [h('span.menu-label', { text: label }), sub ? h('span.menu-sub', { text: sub }) : null])] : [label]);
   b.addEventListener('click', onClick);
   return b;
 }
@@ -40,12 +41,12 @@ export function createMenus({ root, settings, onSettingsChange }) {
         h('h1.title', {}, ['Kindlehold']),
         h('p.subtitle', { text: 'The Rekindling of Harrowmere' }),
         h('nav.menu-list', { 'aria-label': 'Main menu' }, [
-          menuButton('New Game', () => difficultyPicker({ onPick: onNew, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { primary: true }),
-          menuButton('Continue', onContinue, { disabled: !canContinue, tip: canContinue ? 'Load your most recent save' : 'No saved games yet' }),
-          menuButton('Load Game', () => loadDialog({ onLoad, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) })),
-          menuButton('Settings', () => settingsScreen({ onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) })),
-          menuButton('How to Play', () => howTo({ onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) })),
-          menuButton('Credits & Licences', () => credits({ onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) })),
+          menuButton('New Game', () => difficultyPicker({ onPick: onNew, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { primary: true, ic: 'rekindle', sub: 'Lead the Hearthbound home to Harrowmere' }),
+          menuButton('Continue', onContinue, { disabled: !canContinue, tip: canContinue ? 'Load your most recent save' : 'No saved games yet', ic: 'play', sub: canContinue ? 'Pick up where you left off' : 'No saved games yet' }),
+          menuButton('Load Game', () => loadDialog({ onLoad, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'save', sub: 'Quick, auto and three save slots' }),
+          menuButton('Settings', () => settingsScreen({ onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'gear', sub: 'Graphics, sound, controls, interface' }),
+          menuButton('How to Play', () => howTo({ onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'objective', sub: 'Controls, economy, seasons, battles' }),
+          menuButton('Credits & Licences', () => credits({ onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'menu', sub: 'Who made what' }),
         ]),
         h('p.fineprint', { text: 'An original game. Not affiliated with any other strategy series.' }),
       ]),
@@ -55,13 +56,13 @@ export function createMenus({ root, settings, onSettingsChange }) {
 
   function difficultyPicker({ onPick, onBack }) {
     const opts = [
-      ['story', 'Story', 'Smaller raids, more starting goods. Relaxed pace.'],
-      ['normal', 'Normal', 'The intended challenge.'],
-      ['hard', 'Hard', 'Larger, faster raids. Rustfang troops have +10% health (documented AI advantage).'],
+      ['story', 'Story', 'Smaller raids, more starting goods. Relaxed pace.', 'cottage', ['Starting goods ×1.5', 'First raid: 6 raiders', 'Plunderers from minute 11']],
+      ['normal', 'Normal', 'The intended challenge.', 'shield', ['Starting goods ×1', 'First raid: 9 raiders', 'Plunderers from minute 8']],
+      ['hard', 'Hard', 'Larger, faster raids. Rustfang troops have +10% health (documented AI advantage).', 'reaver', ['Starting goods ×0.8', 'First raid: 11 raiders', 'Plunderers from minute 6']],
     ];
-    const list = h('div.diff-list', { role: 'radiogroup', 'aria-label': 'Difficulty' });
-    for (const [id, name, desc] of opts) {
-      const b = h('button.diff', { type: 'button', role: 'radio', 'aria-checked': settings.difficulty === id ? 'true' : 'false' }, [h('strong', { text: name }), h('span', { text: desc })]);
+    const list = h('div.diff-list.cards', { role: 'radiogroup', 'aria-label': 'Difficulty' });
+    for (const [id, name, desc, ic, facts] of opts) {
+      const b = h('button.diff', { type: 'button', role: 'radio', 'aria-checked': settings.difficulty === id ? 'true' : 'false' }, [icon(ic, 'icon diff-ic'), h('strong', { text: name }), h('span', { text: desc }), h('ul.diff-facts', {}, facts.map((f) => h('li', { text: f })))]);
       b.addEventListener('click', () => { settings.difficulty = id; onSettingsChange(settings); onPick(id); });
       list.append(b);
     }

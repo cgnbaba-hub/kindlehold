@@ -136,11 +136,36 @@ export function createAudio({ bus, world, settings, getListener }) {
     anvil(x, z) { const d = placed(x, z, 0.5); if (!d.gain.value) return; tone(d, { freq: 1240, dur: 0.35, gain: 0.08 }); tone(d, { freq: 1810, dur: 0.25, gain: 0.05 }); noise(d, { freq: 4000, q: 1, dur: 0.03, gain: 0.2 }); },
     rustle(x, z) { const d = placed(x, z, 0.5); if (!d.gain.value) return; noise(d, { freq: 2500, q: 0.7, dur: 0.25, gain: 0.12, attack: 0.05 }); },
     treeFall(x, z) { const d = placed(x, z, 1); if (!d.gain.value) return; noise(d, { freq: 400, freqEnd: 120, q: 0.8, dur: 1.1, gain: 0.4, attack: 0.3, type: 'lowpass' }); tone(d, { t: ctx.currentTime + 1.2, freq: 70, freqEnd: 40, dur: 0.4, gain: 0.5 }); },
-    swing(x, z) { const d = placed(x, z, 0.6); if (!d.gain.value) return; noise(d, { freq: 1200, freqEnd: 400, q: 2, dur: 0.12, gain: 0.25, attack: 0.03 }); },
-    clash(x, z) { const d = placed(x, z, 0.8); if (!d.gain.value) return; tone(d, { freq: 2100 + rand() * 400, dur: 0.18, gain: 0.08, type: 'square' }); tone(d, { freq: 3300, dur: 0.12, gain: 0.05 }); noise(d, { freq: 5000, q: 1, dur: 0.06, gain: 0.25 }); },
-    thud(x, z) { const d = placed(x, z, 0.8); if (!d.gain.value) return; tone(d, { freq: 120, freqEnd: 60, dur: 0.15, gain: 0.35 }); noise(d, { freq: 500, q: 1, dur: 0.08, gain: 0.25, type: 'lowpass' }); },
-    arrow(x, z) { const d = placed(x, z, 0.6); if (!d.gain.value) return; noise(d, { freq: 3000, freqEnd: 1200, q: 4, dur: 0.22, gain: 0.18, attack: 0.02 }); },
-    sling(x, z) { const d = placed(x, z, 0.5); if (!d.gain.value) return; noise(d, { freq: 700, freqEnd: 1400, q: 3, dur: 0.18, gain: 0.15, attack: 0.04 }); },
+    // combat sounds come in several variants with random pitch, so a melee never sounds like a loop
+    swing(x, z) {
+      const d = placed(x, z, 0.6); if (!d.gain.value) return;
+      const v = Math.floor(rand() * 3), p = 0.85 + rand() * 0.3;
+      if (v === 0) noise(d, { freq: 1200 * p, freqEnd: 400 * p, q: 2, dur: 0.12, gain: 0.25, attack: 0.03 });
+      else if (v === 1) noise(d, { freq: 1800 * p, freqEnd: 600 * p, q: 3, dur: 0.16, gain: 0.2, attack: 0.05 }); // longer whoosh
+      else { noise(d, { freq: 900 * p, freqEnd: 300 * p, q: 1.5, dur: 0.1, gain: 0.28, attack: 0.02 }); noise(d, { t: ctx.currentTime + 0.05, freq: 2400 * p, q: 5, dur: 0.05, gain: 0.08 }); }
+    },
+    clash(x, z) {
+      const d = placed(x, z, 0.8); if (!d.gain.value) return;
+      const v = Math.floor(rand() * 4), p = 0.9 + rand() * 0.25;
+      if (v === 0) { // steel on steel: bright ring
+        tone(d, { freq: (2100 + rand() * 400) * p, dur: 0.18, gain: 0.08, type: 'square' }); tone(d, { freq: 3300 * p, dur: 0.12, gain: 0.05 }); noise(d, { freq: 5000, q: 1, dur: 0.06, gain: 0.25 });
+      } else if (v === 1) { // blade on shield: wooden knock with a metal edge
+        tone(d, { freq: 180 * p, freqEnd: 110 * p, dur: 0.12, gain: 0.3 }); noise(d, { freq: 900 * p, q: 1.2, dur: 0.07, gain: 0.3 }); tone(d, { freq: 2600 * p, dur: 0.08, gain: 0.035, type: 'triangle' });
+      } else if (v === 2) { // glancing scrape
+        noise(d, { freq: 4200 * p, freqEnd: 2200 * p, q: 6, dur: 0.2, gain: 0.14, attack: 0.01 }); tone(d, { freq: 1700 * p, freqEnd: 1500 * p, dur: 0.22, gain: 0.04, type: 'sawtooth' });
+      } else { // heavy chop into mail
+        noise(d, { freq: 1500 * p, q: 0.8, dur: 0.05, gain: 0.3 }); tone(d, { freq: 2800 * p, dur: 0.1, gain: 0.05, type: 'square' }); tone(d, { freq: 95 * p, freqEnd: 60, dur: 0.12, gain: 0.25 });
+      }
+    },
+    thud(x, z) { const d = placed(x, z, 0.8); if (!d.gain.value) return; const p = 0.85 + rand() * 0.3; tone(d, { freq: 120 * p, freqEnd: 60 * p, dur: 0.15, gain: 0.35 }); noise(d, { freq: 500 * p, q: 1, dur: 0.08, gain: 0.25, type: 'lowpass' }); if (rand() < 0.4) noise(d, { t: ctx.currentTime + 0.06, freq: 2600, q: 2, dur: 0.1, gain: 0.08 }); },
+    arrow(x, z) {
+      const d = placed(x, z, 0.6); if (!d.gain.value) return;
+      const p = 0.85 + rand() * 0.3;
+      // bowstring twang, then the arrow's hiss
+      tone(d, { freq: 190 * p, freqEnd: 150 * p, dur: 0.09, gain: 0.12, type: 'triangle' });
+      noise(d, { t: ctx.currentTime + 0.02, freq: 3000 * p, freqEnd: 1200 * p, q: 4, dur: 0.2 + rand() * 0.08, gain: 0.16, attack: 0.02 });
+    },
+    sling(x, z) { const d = placed(x, z, 0.5); if (!d.gain.value) return; const p = 0.85 + rand() * 0.3; noise(d, { freq: 700 * p, freqEnd: 1400 * p, q: 3, dur: 0.18, gain: 0.15, attack: 0.04 }); if (rand() < 0.5) noise(d, { t: ctx.currentTime + 0.12, freq: 500 * p, freqEnd: 1100 * p, q: 3, dur: 0.14, gain: 0.1 }); },
     collapse(x, z) { const d = placed(x, z, 1.2); if (!d.gain.value) return; noise(d, { freq: 300, freqEnd: 80, q: 0.6, dur: 1.6, gain: 0.6, attack: 0.02, type: 'lowpass' }); for (let i = 0; i < 5; i++) tone(d, { t: ctx.currentTime + i * 0.18, freq: 90 - i * 8, dur: 0.2, gain: 0.25 }); },
     complete(x, z) { const d = placed(x, z, 0.9); if (!d.gain.value) return; const t = ctx.currentTime; [0, 4, 7].forEach((s, i) => pluck(d, { t: t + i * 0.09, freq: ROOT_HZ * 2 * 2 ** (s / 12), gain: 0.18 })); },
     flare(x, z) { const d = placed(x, z, 1.2); const t = ctx.currentTime; noise(d, { freq: 800, freqEnd: 5000, q: 0.8, dur: 0.5, gain: 0.35, attack: 0.02 }); [0, 7, 12, 19].forEach((s, i) => tone(d, { t: t + i * 0.04, freq: 440 * 2 ** (s / 12), dur: 0.9, gain: 0.07, type: 'triangle' })); },
@@ -281,6 +306,7 @@ export function createAudio({ bus, world, settings, getListener }) {
   on(EV.UNIT_RECRUITED, () => sfx.ack('ok'));
   on(EV.MISSION_OBJECTIVE, (d) => { if (d.state === 'done') sfx.objective(); });
   on(EV.AI_WAVE, () => { sfx.horn(); });
+  on('ai:harass', () => { sfx.horn(); });
   on('mission:raid-warning', () => sfx.alarm());
   on(EV.COMMAND_REJECTED, () => { if (allowed('bad', 200)) sfx.uiBad(); });
   on(EV.MISSION_ENDED, (d) => (d.result === 'victory' ? sfx.victory : sfx.defeat)());

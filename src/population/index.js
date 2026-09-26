@@ -86,7 +86,7 @@ export function stabilityFactor(world, owner) {
   return (0.6 + 0.4 * (p ? p.stability / 100 : 1)) * RESTED;
 }
 /** Settlers who sleep at night work faster by day; balances the hours lost to the night. */
-export const RESTED = 1.12;
+export const RESTED = 1.08;
 
 export function keepOf(world, owner) {
   for (const b of all(world, 'building')) if (b.type === 'keep' && b.owner === owner && b.state !== 'destroyed') return b;

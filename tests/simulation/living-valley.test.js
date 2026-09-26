@@ -56,7 +56,7 @@ test('settlers sleep at night and wake at dawn; sleepers are hidden and safe', (
   grant(sim, RICH);
   place(sim, 'cottage', -54, 64);
   sim.world.time.hour = 21.9;
-  sim.run(20 * 60);
+  sim.run(20 * 20); // nights are short: 20 s of real time reach the small hours
   assert.ok(sim.world.time.hour >= 22 || sim.world.time.hour < 5);
   const asleep = settlers(sim).filter((s) => s.sleep && s.sleep.in);
   assert.ok(asleep.length >= settlers(sim).length - 1, `${asleep.length}/${settlers(sim).length} asleep`);
