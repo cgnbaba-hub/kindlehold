@@ -49,7 +49,7 @@ export function populationOf(world, owner) {
 }
 
 export function isIdleLabourer(s) {
-  return s.kind === 'settler' && !s.job && !s.carry && (!s.task || s.task.type === 'idle') && !s.arriving && !s.fleeing;
+  return s.kind === 'settler' && !s.job && !s.order && !s.carry && (!s.task || s.task.type === 'idle') && !s.arriving && !s.fleeing;
 }
 
 /** Work-speed multiplier from stability (0.6 .. 1.0). */

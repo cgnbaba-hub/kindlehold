@@ -82,7 +82,7 @@ export function createTerrainView({ scene, terrain, quality, world }) {
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, metalness: 0 });
   const uniforms = {
     tGrass: { value: tex.grass }, tDirt: { value: tex.dirt }, tRock: { value: tex.rock }, tMud: { value: tex.mud },
-    tWear: { value: wearTex }, tMacro: { value: tex.macro }, uHalf: { value: terrain.half }, uSize: { value: terrain.size },
+    tWear: { value: wearTex }, tMacro: { value: tex.macro }, uHalf: { value: terrain.half }, uSize: { value: terrain.size }, uSnow: { value: 0 },
   };
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
@@ -92,7 +92,7 @@ export function createTerrainView({ scene, terrain, quality, world }) {
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
 uniform sampler2D tGrass; uniform sampler2D tDirt; uniform sampler2D tRock; uniform sampler2D tMud; uniform sampler2D tWear; uniform sampler2D tMacro;
-uniform float uHalf; uniform float uSize;
+uniform float uHalf; uniform float uSize; uniform float uSnow;
 varying vec4 vSplat; varying vec3 vWPos; varying vec3 vWNrm;
 vec4 sampleAT(sampler2D t, vec2 p) {
   // two scales to hide tiling
@@ -147,8 +147,19 @@ ground = mix(ground, forestFloor, cover * 0.9);
 // weathered, lichen-dark mountain rock rather than pale quarry stone
 ground *= mix(vec3(1.0), vec3(0.68, 0.7, 0.62) * (0.85 + mac2.b * 0.3), high * ww.z * (1.0 - cover));
 ground = mix(ground, cG.rgb * vec3(0.5, 0.62, 0.4), high * (1.0 - cover) * smoothstep(0.66, 0.8, up) * 0.6);
-diffuseColor.rgb *= ground;
 kRough = dot(ww, vec4(0.96, 0.9, 0.78, 0.62));
+if (uSnow > 0.001) {
+  // winter: snow blankets flat ground, thins on slopes, trodden paths and the wet banks,
+  // and drifts unevenly so the relief still reads
+  float drift = texture2D(tMacro, wp * 0.035).g * 0.6 + mac2.r * 0.4;
+  float snowK = smoothstep(0.62, 0.86, up + (drift - 0.5) * 0.35) * (1.0 - wear * 0.75) * (1.0 - ww.w * 0.55) * smoothstep(-0.1, 0.5, vWPos.y);
+  snowK = clamp(snowK * (0.7 + drift * 0.45), 0.0, 0.94) * uSnow;
+  vec3 snowCol = vec3(0.8, 0.84, 0.9) * (0.88 + drift * 0.16);
+  ground = mix(ground, snowCol, snowK);
+  kHgt = mix(kHgt, drift * 1.5, snowK);
+  kRough = mix(kRough, 0.82, snowK);
+}
+diffuseColor.rgb *= ground;
 `)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = kRough;')
       .replace('#include <fog_fragment>', `#include <fog_fragment>
@@ -166,7 +177,7 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(6.0, 70.0, vWPos.y
   normal = normalize(abs(det) * normal - grad * 0.12);
 }`);
   };
-  mat.customProgramCacheKey = () => 'kh-terrain-v3';
+  mat.customProgramCacheKey = () => 'kh-terrain-v4';
 
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
@@ -228,6 +239,7 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(6.0, 70.0, vWPos.y
     kind: 'view',
     mesh,
     render(alpha, frame) { updateWear(frame.dt); },
+    setSnow(v) { uniforms.uSnow.value = v; },
     /** Pre-wear paths (used for deterministic screenshot presets that fast-forward). */
     seedWear(amount = 0.4) {
       const s = WEAR_RES / terrain.size;

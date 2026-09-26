@@ -55,6 +55,9 @@ export function createNavigationModule() {
 
     grid: () => nav,
     walkable: (x, z) => nav.walkable(x, z),
+    setFrozen: (f) => nav.setFrozen(f),
+    isFrozen: () => nav.isFrozen(),
+    isIce: (x, z) => nav.isIce(x, z),
     budgetLeft: () => budget,
     rebuildDynamic,
 

@@ -58,6 +58,12 @@ export const DEMO_STATES = {
       sim.issue({ type: 'ability', heroId: hero.id, ability: 'flare', x: cx / foes.length, z: cz / foes.length });
     }
   },
+  /** the settlement in deep winter: snow cover, the Harrow frozen over */
+  winter(sim) {
+    const bot = createBot(sim);
+    playTo(sim, bot, 12.4 * 1200);
+    quietEnemy(sim);
+  },
   /** the first Rustfang raid hitting the settlement */
   raid(sim) {
     const bot = createBot(sim);

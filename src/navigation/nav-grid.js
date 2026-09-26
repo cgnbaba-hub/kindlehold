@@ -11,6 +11,8 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
   const staticBlocked = new Uint8Array(n);
   const blockCount = new Uint16Array(n); // dynamic obstacles (building footprints), ref-counted
   const cost = new Float32Array(n);
+  const ice = new Uint8Array(n); // river cells that become walkable while the Harrow is frozen
+  let frozen = false;
 
   for (let j = 0; j < w; j++) {
     for (let i = 0; i < w; i++) {
@@ -20,6 +22,7 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
       const edge = i === 0 || j === 0 || i === w - 1 || j === w - 1;
       const k = j * w + i;
       staticBlocked[k] = edge || depth > 0.55 || slope > 0.95 ? 1 : 0;
+      ice[k] = !edge && depth > 0.55 && slope <= 0.95 ? 1 : 0;
       cost[k] = 1 + slope * 1.5 + (depth > 0.05 ? 1.5 : 0);
     }
   }
@@ -60,7 +63,7 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
 
   const cellOf = (x) => Math.max(0, Math.min(w - 1, Math.floor((x + half) / CELL)));
   const centre = (i) => -half + (i + 0.5) * CELL;
-  const walkableK = (k) => staticBlocked[k] === 0 && blockCount[k] === 0;
+  const walkableK = (k) => (staticBlocked[k] === 0 || (frozen && ice[k] === 1)) && blockCount[k] === 0;
   function walkable(x, z) { return walkableK(cellOf(z) * w + cellOf(x)); }
 
   function nearestWalkable(ci, cj, maxR = 8) {
@@ -185,7 +188,11 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
     isStaticBlocked: (x, z) => staticBlocked[cellOf(z) * w + cellOf(x)] === 1,
     findPath,
     lineWalkable,
-    blockStatic(x, z, r) { forCircle(x, z, r, (k) => { staticBlocked[k] = 1; }); },
+    blockStatic(x, z, r) { forCircle(x, z, r, (k) => { staticBlocked[k] = 1; ice[k] = 0; }); },
+    /** Winter: frozen river cells are walkable (they stay blocked for building). */
+    setFrozen(f) { frozen = !!f; },
+    isFrozen: () => frozen,
+    isIce: (x, z) => ice[cellOf(z) * w + cellOf(x)] === 1,
     block(x, z, r) { forCircle(x, z, r, (k) => { blockCount[k]++; }); },
     unblock(x, z, r) { forCircle(x, z, r, (k) => { if (blockCount[k] > 0) blockCount[k]--; }); },
     clearDynamic() { blockCount.fill(0); },

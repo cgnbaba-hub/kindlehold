@@ -224,7 +224,7 @@ export function createHud({ root, session, input, settings, actions }) {
       selPanel.append(h('div.sel-empty', {}, [
         h('h3', { text: 'Kindlehold' }),
         h('p', { text: `${p.pop} people · ${idle} labourers · stability ${Math.round(p.stability)}` }),
-        h('p.muted', { text: 'Left-click to select, drag to select soldiers, right-click to command.' }),
+        h('p.muted', { text: 'Left-click to select, drag to select soldiers (or labourers), right-click to command.' }),
       ]));
       return;
     }
@@ -240,6 +240,7 @@ export function createHud({ root, session, input, settings, actions }) {
         grid.append(b);
       }
       selPanel.append(grid);
+      if (groups.settler && groups.settler.length === items.length) selPanel.append(h('div.sel-row.small.muted', { text: 'Right-click a tree or rock outcrop: these labourers fell timber or cut stone by hand and carry it to the Keep.' }));
       return;
     }
     const e = items[0];
@@ -302,10 +303,12 @@ export function createHud({ root, session, input, settings, actions }) {
       if (e.fleeing) doing = 'Fleeing to the Keep!';
       else if (e.arriving) doing = 'Arriving in Kindlehold';
       else if (e.enlisting) doing = 'Going to the Barracks to train';
+      else if (e.order) doing = e.carry ? `Carrying ${e.carry.amt} ${RES_NAMES[e.carry.res].toLowerCase()} to the Keep (your order)` : `${e.order.kind === 'tree' ? 'Felling trees' : 'Cutting stone'} by hand (your order)`;
       else if (e.job) doing = e.carry ? `Carrying ${e.carry.amt} ${RES_NAMES[e.carry.res].toLowerCase()}` : `Working at the ${BUILDINGS[w.entities[e.workplace] ? w.entities[e.workplace].type : 'keep'].name}`;
       else if (e.task) doing = { supply: 'Carrying building materials', build: 'Building', haul: 'Hauling goods to the Keep', deliver: 'Delivering provisions', repair: 'Repairing', idle: 'Idle at the hearth' }[e.task.type] || 'Busy';
       selPanel.append(head('settler', what, doing));
       selPanel.append(h('div.sel-row', {}, [h('span', { text: `Health ${Math.ceil(e.hp)}/${e.maxHp}` }), hpBar(e.hp / e.maxHp, 'health')]));
+      if (e.owner === PLAYER && !e.order) selPanel.append(h('div.sel-row.small.muted', { text: 'Right-click a tree or rock outcrop to gather there by hand.' }));
       return;
     }
     if (e.kind === 'deposit') {
@@ -317,7 +320,7 @@ export function createHud({ root, session, input, settings, actions }) {
   // --- command grid ------------------------------------------------------------------------------
   let cmdMode = 'auto'; // 'auto' | 'build'
   let confirmDemolish = 0;
-  const SHORT = { 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
+  const SHORT = { 'Back to work': 'Release', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
   function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
   function cmdButton({ ic, label, key, tip, tipTitle, onClick, disabled = false, cost = null, progress = null, cooldown = null, active = false, highlight = false }) {
     const b = h(`button.cmd${active ? '.active' : ''}${highlight ? '.pulse' : ''}`, { type: 'button', 'aria-label': label, 'data-tip': tip || label, 'data-tip-title': tipTitle || label, 'aria-disabled': disabled ? 'true' : 'false' }, [icon(ic, 'icon icon-md'), cost ? null : h('span.cmd-label', { text: shortLabel(label) })]);
@@ -339,7 +342,14 @@ export function createHud({ root, session, input, settings, actions }) {
     const units = items.filter((e) => e.kind === 'unit' && e.owner === PLAYER && !e.downed);
     const activeObj = scenarioOf(w).objectives.find((o) => { const st = w.mission.objectives.find((x) => x.id === o.id); return st && st.state === 'active' && !o.optional; });
     const hl = settings.tutorialHints && activeObj ? activeObj.highlight : null;
-    if (cmdMode === 'build' || (!items.length) || (one && one.kind === 'settler')) {
+    const serfs = items.filter((e) => e.kind === 'settler' && e.owner === PLAYER);
+    if (cmdMode !== 'build' && serfs.length && serfs.length === items.length && serfs.some((e) => e.order)) {
+      setText(cmdTitle, 'Labourers');
+      cmdGrid.append(cmdButton({ ic: 'stop', label: 'Back to work', tip: 'Stop gathering by hand; they return to hauling and building on their own.', onClick: () => input.issue({ type: 'release', ids: serfs.map((e) => e.id) }) }));
+      cmdGrid.append(cmdButton({ ic: 'build', label: 'Build…', key: bb.buildMenu, tip: 'Open the construction menu.', onClick: () => { cmdMode = 'build'; dirtySel = true; } }));
+      return;
+    }
+    if (cmdMode === 'build' || (!items.length) || (serfs.length && serfs.length === items.length)) {
       setText(cmdTitle, 'Build');
       for (const type of PLAYER_BUILD_ORDER) {
         const def = BUILDINGS[type];

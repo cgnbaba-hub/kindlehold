@@ -4,9 +4,13 @@
 // foliage, metal) so geometry reads as crafted material without texture files.
 import * as THREE from 'three';
 
+/** Shared season uniform: 0 = summer, 1 = full winter snow cover (set by the environment view). */
+export const SNOW = { value: 0 };
+
 export const PATTERN = { plain: 0, stone: 1, planks: 2, thatch: 3, shingles: 4, plaster: 5, cloth: 6, foliage: 7, metal: 8, rock: 9 };
 
 const GLSL_COMMON = `
+uniform float uSnow;
 varying float vPattern; varying vec3 vWPos; varying vec3 vWNormal;
 float khHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
 float khNoise(vec2 p) {
@@ -86,6 +90,7 @@ vec3 khPattern(float pat, vec3 wp, vec3 n) {
 `;
 
 export function patchStructureShader(shader) {
+  shader.uniforms.uSnow = SNOW;
   shader.vertexShader = shader.vertexShader
     .replace('#include <common>', '#include <common>\nattribute float pattern;\nvarying float vPattern; varying vec3 vWPos; varying vec3 vWNormal;')
     .replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
@@ -103,7 +108,16 @@ khN = mat3(instanceMatrix) * khN;
 vWNormal = normalize(mat3(modelMatrix) * khN);`);
   shader.fragmentShader = shader.fragmentShader
     .replace('#include <common>', '#include <common>\n' + GLSL_COMMON)
-    .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= khPattern(vPattern, vWPos, normalize(vWNormal));')
+    .replace('#include <color_fragment>', `#include <color_fragment>
+diffuseColor.rgb *= khPattern(vPattern, vWPos, normalize(vWNormal));
+if (uSnow > 0.001 && vPattern > 0.5 && vPattern < 9.5 && (vPattern < 5.5 || vPattern > 6.5) && (vPattern < 7.5 || vPattern > 8.5)) {
+  // winter: snow settles on up-facing roofs, ledges, foliage and rocks (not on cloth or metal)
+  float khUp = normalize(vWNormal).y;
+  float khSn = khNoise(vWPos.xz * 1.7) * 0.6 + khNoise(vWPos.xz * 6.0) * 0.4;
+  float khSnowK = uSnow * smoothstep(0.34, 0.72, khUp + (khSn - 0.5) * 0.4) * (vPattern > 6.5 ? 0.72 : 0.92);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.83, 0.86, 0.92) * (0.92 + khSn * 0.1), khSnowK);
+  khRough = mix(khRough, 0.75, khSnowK);
+}`)
     .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = roughness * khRough / 0.85;')
     .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = max(metalness, khMetal);');
 }

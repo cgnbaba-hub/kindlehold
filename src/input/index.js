@@ -115,6 +115,15 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
       }
       return;
     }
+    // labourers take direct orders: right-click a tree or rock outcrop to gather by hand
+    const serfs = sel.filter((e) => e.kind === 'settler' && e.owner === PLAYER);
+    if (serfs.length) {
+      if (target && target.kind === 'deposit' && (target.type === 'tree' || target.type === 'rock') && target.amount > 0) {
+        issue({ type: 'gather', ids: serfs.map((e) => e.id), target: target.id });
+        if (hooks.onMarker) hooks.onMarker('gather', target.x, target.z);
+      } else if (hooks.onToast) hooks.onToast('Right-click a tree or a rock outcrop to gather there.');
+      return;
+    }
     const b = sel.find((e) => e.kind === 'building' && e.owner === PLAYER && e.type === 'barracks');
     if (b && g) { issue({ type: 'rally', building: b.id, x: g.x, z: g.z }); if (hooks.onMarker) hooks.onMarker('rally', g.x, g.z); }
   }

@@ -6,6 +6,7 @@ import { createSkyLight } from '../environment/sky-light.js';
 import { createTerrainView } from '../terrain/terrain-view.js';
 import { createWater } from '../environment/water.js';
 import { createVegetation } from '../environment/vegetation.js';
+import { createWinter } from '../environment/winter.js';
 import { createBuildingsView } from '../buildings/view.js';
 import { createUnitsView } from '../units/view.js';
 import { createEffects } from '../effects/index.js';
@@ -31,6 +32,11 @@ export async function createSession({ container, seed, quality = 'high', verify 
   const buildingsView = views.register(createBuildingsView({ scene: rc.scene, terrain: sim.terrain, world, renderer: rc.renderer, sky }));
   const unitsView = views.register(createUnitsView({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, getZoom: () => rc.rts.state.zoom }));
   const effects = views.register(createEffects({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, quality: rc.quality, camera: rc.camera, reducedMotion: () => !!settings.reducedMotion }));
+  const winter = views.register(createWinter({
+    scene: rc.scene, world, terrainView, water, sky, quality: rc.quality, reducedMotion: () => !!settings.reducedMotion,
+    getTarget: () => { const st = rc.rts.state; return { x: st.x, y: sim.terrain.height(st.x, st.z), z: st.z, scale: 1 }; },
+  }));
+  winter.snap();
   buildingsView.cameraTarget = { x: 0, z: 0 };
   const overlay = { placementReason: '' };
   const input = views.register(createInput({ canvas: rc.renderer.domElement, rc, sim, terrain: sim.terrain, settings, hooks }));
@@ -88,7 +94,7 @@ export async function createSession({ container, seed, quality = 'high', verify 
   }
 
   const session = {
-    sim, rc, stats, loop, firstFrame, effects, unitsView, buildingsView, sky, settings, input, selectionView, audio, overlay, marker: (k, x, z) => selectionView.marker(k, x, z),
+    sim, rc, stats, loop, firstFrame, effects, winter, unitsView, buildingsView, sky, settings, input, selectionView, audio, overlay, marker: (k, x, z) => selectionView.marker(k, x, z),
     get world() { return sim.world; },
     start() { running = true; requestAnimationFrame(frame); },
     stop() { running = false; },
