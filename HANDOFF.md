@@ -68,7 +68,8 @@ Neu: Jahreszeiten mit Winter (Schnee, zugefrorener und begehbarer Fluss, langsam
 Leibeigenen-Befehle (Arbeiter per Rechtsklick auf Baum oder Felsen schicken), Taler mit
 Steuern und Zahltag (Speicherstand-Schema 3), eine
 Erkundungs-Schwärze über unerkundetem Land und Porträts im Dialogfenster. Details und die
-Liste für Stufe 3 stehen in `docs/SIEDLER_ROADMAP.md`. Tests: 82/82.
+Liste für Stufe 3 stehen in `docs/SIEDLER_ROADMAP.md`. Prüflauf 2026-09-26: Tests 82/82,
+Screenshot-Presets 14/14, e2e 10/10 (der 1280er-Layout-Test nach Korrektur einzeln wiederholt).
 
 - Cloud-Session: Playwright findet den vorinstallierten Browser über
   `CHROMIUM_PATH=/opt/pw-browsers/chromium` (ohne diese Variable bleibt alles wie bisher).
