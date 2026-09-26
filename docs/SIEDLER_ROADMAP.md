@@ -19,16 +19,18 @@ Genre-Ideen. Diese Datei ordnet den Stand in drei Stufen ein.
 | Leibeigene, die man direkt zum Holzfällen oder Steinhauen schickt | Arbeiter anwählen, dann Rechtsklick auf Baum oder Felsen: Sie sammeln von Hand und tragen die Ware zur Burg. „Back to work“ schickt sie zurück an die normale Arbeit. | `src/economy/index.js` (`gather`/`release`), `src/input/index.js`, HUD |
 | Unerkundete Karte liegt im Dunkeln | Das erkundete Gebiet wird als Bitmaske gespeichert. Unerkundetes Land ist dunkel, die Minimap zeigt nur Erkundetes. | `src/exploration/`, `src/environment/shroud.js`, `src/ui/minimap.js` |
 | Missionsdialoge mit Porträts | Eigene SVG-Porträts für Maren, Osric, Wren und Vharek im Dialogfenster. Neue Sprechzeilen zu Winter und Eis. | `src/ui/portraits.js`, `src/ui/hud.js` |
+| Taler, Steuern, Zahltag, Leibeigene kaufen | Alle 2 min ist Zahltag: Siedler zahlen Steuern, Soldaten bekommen Sold. Der Steuersatz an der Burg (niedrig, fair, hoch) wirkt auf die Stabilität. Für 40 Taler lässt sich an der Burg sofort ein Arbeiter anwerben. | `src/population/index.js`, HUD, Speicherstand-Schema 3 |
 | Jahreszeit sichtbar | Die Uhr zeigt Sommer, Winter und einen Countdown. Die Minimap wird im Winter weiß. | `src/ui/hud.js`, `src/ui/minimap.js` |
 
-Nachweis: 78 automatische Tests (davon 6 neu in `tests/simulation/seasons.test.js`), neue
+Nachweis: 81 automatische Tests (davon 9 neu in `tests/simulation/seasons.test.js` und
+`tests/simulation/treasury.test.js`), neue
 Screenshot-Presets `winter-overview` und `winter-settlement`.
 
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
-1. **Geld und Steuern.** Taler als Ressource, Zahltag, Steuersatz an der Burg, der gegen die
-   Motivation (Stabilität) abwiegt. Soldaten kosten dann Sold. Das ist der Kern der
-   Wirtschaft im Vorbild.
+1. **Geld weiter ausbauen.** Die Grundform steht (Zahltag, Steuern, Sold, Arbeiter kaufen).
+   Offen: Truppen und Forschung in Taler bezahlen, Handel (Ware gegen Taler) und eine
+   Burg-Stufe, die mehr Steuern bringt.
 2. **Gebäudestufen.** Ausbau von Burg, Wohnhäusern und Betrieben in 2 bis 3 Stufen, jede mit
    eigenem Modell. Das bringt viel Abwechslung ins Stadtbild.
 3. **Arbeiter-Alltag.** Arbeiter essen auf einem Hof und schlafen in einem Wohnhaus.

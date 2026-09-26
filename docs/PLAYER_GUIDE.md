@@ -37,6 +37,13 @@ or cut stone by hand and carry it to the Keep, moving on to the next tree or roc
 until nothing is left. It is slower than a Lodge or Quarry but needs no building — handy
 at the very start. *Back to work* returns them to their usual jobs.
 
+## Taler and taxes
+
+Every two minutes is **payday**: each settler pays taxes into the Keep, each soldier draws one
+Taler in pay. Select the Keep to set the tax level — *Low* keeps people content, *High* fills
+the treasury but lowers stability. Spend Taler at the Keep on **Hire labourer** (40 Taler, needs
+free housing): a new labourer joins at once instead of walking in from the valley.
+
 ## Seasons
 
 Long summers alternate with short, hard winters (the first begins at minute 11 and lasts

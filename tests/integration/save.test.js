@@ -23,13 +23,16 @@ test('migration from schema 1', () => {
   const doc = JSON.parse(serializeWorld(sim.world));
   doc.schemaVersion = 1; doc.world.schemaVersion = 1;
   delete doc.world.mapEntry; delete doc.world.stats.buildingsBuilt;
-  for (const p of Object.values(doc.world.players)) delete p.burnPenalty;
+  for (const p of Object.values(doc.world.players)) { delete p.burnPenalty; delete p.res.taler; delete p.tax; delete p.nextPayTick; }
+  delete doc.world.stats.produced.taler; delete doc.world.stats.consumed.taler;
   const { world, migrated } = deserializeWorld(JSON.stringify(doc));
-  assert.deepEqual(migrated, [2]);
+  assert.deepEqual(migrated, [2, 3]);
   assert.equal(world.schemaVersion, SCHEMA_VERSION);
   assert.equal(world.stats.buildingsBuilt, 0);
   assert.ok(world.mapEntry);
   assert.equal(world.players.p1.burnPenalty, 0);
+  assert.equal(world.players.p1.res.taler, 0);
+  assert.equal(world.players.p1.tax, 1);
 });
 
 test('malicious and broken saves are rejected with readable errors', () => {

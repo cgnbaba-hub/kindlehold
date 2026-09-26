@@ -5,7 +5,7 @@ export const HARROWMERE_SCENARIO = {
   id: 'harrowmere',
   title: 'The Rekindling of Harrowmere',
   blurb: 'Seven winters after the Long Frost, the Hearthbound return to the burnt keep of Kindlehold. The Rustfang toll-raiders who hold the ford will not welcome them.',
-  startResources: { timber: 80, stone: 60, iron: 0, provisions: 40 },
+  startResources: { timber: 80, stone: 60, iron: 0, provisions: 40, taler: 60 },
   raidWarningAt: { story: 18 * 60, normal: 14 * 60, hard: 13 * 60 }, // seconds, if not triggered earlier
   speakers: {
     maren: { name: 'Maren Ashgrove', role: 'Lantern Warden' },

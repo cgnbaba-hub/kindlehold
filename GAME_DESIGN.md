@@ -160,6 +160,10 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
   (2 timber per 6.5 s trip) or cut rock (2 stone per 7.5 s) by hand within 16 m of the
   clicked deposit and carry it to the Keep.
 - **Dialogue portraits**: every speaker has an original portrait in the dialogue box.
+- **Taler, taxes and payday** (`src/population/index.js`): every 2 min settlers pay taxes
+  (Low 1 / Fair 2 / High 3 Taler each; stability target +8 / 0 / −12), soldiers draw 1 Taler
+  pay each (unpaid: stability −6). Start 60 Taler (×difficulty). The Keep hires a labourer
+  for 40 Taler when housing is free. Save schema 3 (migration from 2 adds the fields).
 
 ## Controls (default)
 

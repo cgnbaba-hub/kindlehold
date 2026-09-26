@@ -4,6 +4,7 @@
 import { h, icon, portrait, clear, setText, fmtTime } from './dom.js';
 import { portraitKey } from './portraits.js';
 import { seasonAt } from '../weather/index.js';
+import { paydayForecast, TAX_LEVELS, HIRE_COST } from '../population/index.js';
 import { createMinimap } from './minimap.js';
 import { all } from '../world/world.js';
 import { PLAYER, EV, RESOURCES } from '../core/contracts.js';
@@ -19,7 +20,7 @@ import { scenarioOf } from '../missions/index.js';
 import { aiSettings } from '../ai/index.js';
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 
-const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions' };
+const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler' };
 const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander' };
 const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner' };
 
@@ -271,6 +272,16 @@ export function createHud({ root, session, input, settings, actions }) {
           const p = w.players[PLAYER];
           if (!e.lit) selPanel.append(h('div.sel-warn', { text: 'The hearth is dark. Rekindle it so settlers come home.' }));
           if (p.research) selPanel.append(h('div.sel-row', {}, [h('span', { text: `Studying ${TECHS[p.research.techId].name}` }), hpBar(p.research.progress, 'research')]));
+          // treasury: tax level and the next payday
+          const f = paydayForecast(w, PLAYER);
+          const taxRow = h('div.tax-row', { role: 'group', 'aria-label': 'Tax level' }, [h('span', { text: 'Taxes' })]);
+          TAX_LEVELS.forEach((lvl, i) => {
+            const b = h(`button.tax-btn${(p.tax ?? 1) === i ? '.active' : ''}`, { type: 'button', 'aria-pressed': (p.tax ?? 1) === i ? 'true' : 'false', 'data-tip': `${lvl.perSettler} Taler per settler each payday · stability ${lvl.stability > 0 ? '+' : ''}${lvl.stability}` , text: lvl.name });
+            b.addEventListener('click', () => { input.issue({ type: 'setTax', level: i }); setTimeout(() => { dirtySel = true; }, 120); });
+            taxRow.append(b);
+          });
+          selPanel.append(taxRow);
+          selPanel.append(h('div.sel-row.small', { text: `Payday in ${fmtTime(Math.max(0, (p.nextPayTick ?? 0) - w.tick) / 20)}: +${f.taxes} taxes from ${f.settlers} settlers${f.pay ? `, −${f.pay} pay for ${f.soldiers} soldiers` : ''}` }));
         }
         if (e.type === 'barracks' && e.queue.length) {
           const q = h('div.queue');
@@ -397,6 +408,10 @@ export function createHud({ root, session, input, settings, actions }) {
       if (one.state !== 'active') return;
       if (one.type === 'keep') {
         if (!one.lit) cmdGrid.append(cmdButton({ ic: 'rekindle', label: 'Rekindle the Hearth', tip: 'Light the keep fire. Settlers will return to Kindlehold.', highlight: hl === 'keep', onClick: () => input.issue({ type: 'rekindle' }) }));
+        else {
+          const full = p.pop >= p.popCap;
+          cmdGrid.append(cmdButton({ ic: 'settler', label: 'Hire labourer', tipTitle: `Hire a labourer (${HIRE_COST} Taler)`, tip: full ? 'No free housing — build Cottages first.' : p.res.taler < HIRE_COST ? `Not enough Taler. Taxes come in every payday.` : 'A labourer joins at once, straight from the Keep.', cost: { taler: HIRE_COST }, disabled: full || p.res.taler < HIRE_COST, onClick: () => input.issue({ type: 'hireSettler' }) }));
+        }
         for (const id of TECH_ORDER) {
           const t = TECHS[id];
           const done = p.techs[id];
@@ -462,7 +477,7 @@ export function createHud({ root, session, input, settings, actions }) {
     t = 0;
     // resources + rates over the last minute
     while (resHistory.length && w.tick - resHistory[0].tick > 1200) resHistory.shift();
-    const rates = { timber: 0, stone: 0, iron: 0, provisions: 0 };
+    const rates = { timber: 0, stone: 0, iron: 0, provisions: 0, taler: 0 };
     for (const r of resHistory) rates[r.res] += r.delta;
     for (const r of RESOURCES) {
       setText(resEls[r].val, Math.floor(p.res[r]));

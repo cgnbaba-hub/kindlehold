@@ -71,7 +71,7 @@ const playerFull = v.object({
   techs: v.record(v.boolean(), { max: 16, keyPattern: /^(axes|bracing|blades|charter)$/ }),
   stability: v.number({ min: 0, max: 100 }),
   research: v.optional(v.object({ techId: v.string({ oneOf: Object.keys(TECHS) }), progress: nonNeg(1) })),
-  popCap: nonNeg(1e4), pop: nonNeg(1e4), nextMealTick: nonNeg(1e9), nextSettlerTick: nonNeg(1e9), lastMealFed: nonNeg(1), burnPenalty: nonNeg(1e4),
+  popCap: nonNeg(1e4), pop: nonNeg(1e4), tax: v.optional(v.number({ min: 0, max: 2, int: true })), nextPayTick: v.optional(nonNeg(1e10)), nextMealTick: nonNeg(1e9), nextSettlerTick: nonNeg(1e9), lastMealFed: nonNeg(1), burnPenalty: nonNeg(1e4),
 });
 
 const worldSchema = v.object({

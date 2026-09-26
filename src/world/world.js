@@ -57,6 +57,8 @@ export function addPlayer(world, { id, name, faction, color, res, stability = 60
     nextMealTick: 1200,
     nextSettlerTick: 200,
     burnPenalty: 0,
+    tax: 1,
+    nextPayTick: 2400,
   };
   return world.players[id];
 }
