@@ -12,7 +12,7 @@ const B = (w, h, d, c, pat, at) => paint(place(box(w, h, d), at), c, 0, null, pa
 function buildParts() {
   return {
     // jointed limbs: thigh (hip pivot) + shin with boot (knee pivot), upper arm + forearm with hand
-    thigh: g([paint(place(cyl(0.09, 0.078, 0.47, 7), { y: -0.235 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.078, 6, 5), { y: -0.46 }), '#f2f2f2', 0, null, P.cloth)]),
+    thigh: g([paint(place(cyl(0.09, 0.078, 0.47, 7), { y: -0.235 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.078, 5, 3), { y: -0.46 }), '#f2f2f2', 0, null, P.cloth)]),
     shin: g([paint(place(cyl(0.076, 0.066, 0.34, 7), { y: -0.17 }), '#b8b0a6', 0, null, P.cloth), B(0.16, 0.1, 0.28, '#4a3526', P.plain, { y: -0.4, z: 0.045 }), paint(place(cyl(0.085, 0.08, 0.1, 7), { y: -0.3 }), '#5a4030', 0, null, P.plain)]),
     torso: g([
       paintGradient(place(cyl(0.21, 0.24, 0.62, 10), { y: 0.31 }), '#e8e8e8', '#ffffff', P.cloth),
@@ -28,28 +28,28 @@ function buildParts() {
     ]),
     // a slightly large, friendly head with a readable face (eyes, brows, nose, mouth, ears)
     head: g([
-      paint(place(sphere(0.17, 14, 10), { y: 0.17 }), '#e2b894', 0, null, P.plain),
-      paint(place(sphere(0.026, 6, 5), { x: 0.058, y: 0.19, z: 0.152 }), '#f4efe4', 0, null, P.plain),
-      paint(place(sphere(0.026, 6, 5), { x: -0.058, y: 0.19, z: 0.152 }), '#f4efe4', 0, null, P.plain),
-      paint(place(sphere(0.016, 6, 5), { x: 0.058, y: 0.19, z: 0.172 }), '#1e1712', 0, null, P.plain),
-      paint(place(sphere(0.016, 6, 5), { x: -0.058, y: 0.19, z: 0.172 }), '#1e1712', 0, null, P.plain),
+      paint(place(sphere(0.17, 10, 7), { y: 0.17 }), '#e2b894', 0, null, P.plain),
+      B(0.05, 0.034, 0.02, '#f4efe4', P.plain, { x: 0.058, y: 0.19, z: 0.16 }),
+      B(0.05, 0.034, 0.02, '#f4efe4', P.plain, { x: -0.058, y: 0.19, z: 0.16 }),
+      B(0.026, 0.03, 0.02, '#1e1712', P.plain, { x: 0.058, y: 0.19, z: 0.168 }),
+      B(0.026, 0.03, 0.02, '#1e1712', P.plain, { x: -0.058, y: 0.19, z: 0.168 }),
       B(0.06, 0.016, 0.02, '#5a3f2a', P.plain, { x: 0.06, y: 0.235, z: 0.158, rz: 0.12 }),
       B(0.06, 0.016, 0.02, '#5a3f2a', P.plain, { x: -0.06, y: 0.235, z: 0.158, rz: -0.12 }),
-      paint(place(cone(0.028, 0.07, 5), { y: 0.15, z: 0.18, rx: Math.PI / 2 }), '#d4a884', 0, null, P.plain),
+      paint(place(cone(0.028, 0.07, 4), { y: 0.15, z: 0.18, rx: Math.PI / 2 }), '#d4a884', 0, null, P.plain),
       B(0.06, 0.014, 0.02, '#9a5a48', P.plain, { y: 0.095, z: 0.158 }),
-      paint(place(sphere(0.035, 5, 4), { x: 0.168, y: 0.17, sz: 0.6 }), '#d4a884', 0, null, P.plain),
-      paint(place(sphere(0.035, 5, 4), { x: -0.168, y: 0.17, sz: 0.6 }), '#d4a884', 0, null, P.plain),
+      B(0.04, 0.07, 0.05, '#d4a884', P.plain, { x: 0.168, y: 0.17 }),
+      B(0.04, 0.07, 0.05, '#d4a884', P.plain, { x: -0.168, y: 0.17 }),
     ]),
     // hair and beard take their colour from the instance (varied per settler)
-    hair: g([paint(place(sphere(0.176, 12, 6, 0, Math.PI * 2, 0, Math.PI * 0.46), { y: 0.18, z: -0.012 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.12, 8, 6), { y: 0.14, z: -0.09, sy: 1.1 }), '#ffffff', 0, null, P.cloth)]),
-    beard: g([paint(place(sphere(0.1, 8, 6), { y: 0.07, z: 0.1, sy: 1.15, sx: 1.25 }), '#ffffff', 0, null, P.cloth)]),
+    hair: g([paint(place(sphere(0.176, 10, 5, 0, Math.PI * 2, 0, Math.PI * 0.46), { y: 0.18, z: -0.012 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.12, 6, 4), { y: 0.14, z: -0.09, sy: 1.1 }), '#ffffff', 0, null, P.cloth)]),
+    beard: g([paint(place(sphere(0.1, 6, 4), { y: 0.07, z: 0.1, sy: 1.15, sx: 1.25 }), '#ffffff', 0, null, P.cloth)]),
     skirt: g([paintGradient(place(cyl(0.24, 0.34, 0.5, 10), { y: -0.2 }), '#e6e6e6', '#ffffff', P.cloth)]),
     hood: g([paintGradient(place(cone(0.2, 0.42, 9), { y: 0.3, rx: -0.12 }), '#cfcfcf', '#ffffff', P.cloth), paint(place(sphere(0.155, 10, 6), { y: 0.16, z: -0.03 }), '#ffffff', 0, null, P.cloth)]),
     cap: g([paint(place(sphere(0.15, 10, 5), { y: 0.2, sy: 0.6 }), '#ffffff', 0, null, P.cloth)]),
     helm: g([paint(place(sphere(0.16, 10, 6), { y: 0.19, sy: 0.9 }), '#b9bcc0', 0, null, P.metal), B(0.035, 0.18, 0.05, '#9a9da2', P.metal, { y: 0.14, z: 0.15 }), paint(place(cyl(0.18, 0.18, 0.04, 10), { y: 0.12 }), '#8f9296', 0, null, P.metal)]),
     hornhelm: g([paint(place(sphere(0.18, 10, 6), { y: 0.19 }), '#6a625a', 0, null, P.metal), paint(place(cone(0.05, 0.36, 6), { x: 0.2, y: 0.36, rz: -0.7 }), '#d8ccb0', 0, null, P.plain), paint(place(cone(0.05, 0.36, 6), { x: -0.2, y: 0.36, rz: 0.7 }), '#d8ccb0', 0, null, P.plain)]),
-    arm: g([paint(place(cyl(0.068, 0.062, 0.31, 7), { y: -0.155 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.062, 6, 5), { y: -0.3 }), '#f2f2f2', 0, null, P.cloth)]),
-    forearm: g([paint(place(cyl(0.058, 0.05, 0.26, 7), { y: -0.13 }), '#e2b894', 0, null, P.plain), paint(place(sphere(0.064, 7, 5), { y: -0.3, sz: 0.8 }), '#d4a884', 0, null, P.plain)]),
+    arm: g([paint(place(cyl(0.068, 0.062, 0.31, 7), { y: -0.155 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.062, 5, 3), { y: -0.3 }), '#f2f2f2', 0, null, P.cloth)]),
+    forearm: g([paint(place(cyl(0.058, 0.05, 0.26, 7), { y: -0.13 }), '#e2b894', 0, null, P.plain), paint(place(sphere(0.064, 5, 4), { y: -0.3, sz: 0.8 }), '#d4a884', 0, null, P.plain)]),
     // right-hand items: pivot at the hand, pointing along -Y when the arm hangs
     axe: g([paint(place(cyl(0.025, 0.03, 0.8, 5), { y: -0.2 }), '#6b4a2f', 0, null, P.planks), B(0.05, 0.16, 0.2, '#9fa3a8', P.metal, { y: -0.52, z: 0.09 })]),
     pick: g([paint(place(cyl(0.025, 0.03, 0.8, 5), { y: -0.2 }), '#6b4a2f', 0, null, P.planks), B(0.05, 0.06, 0.5, '#8c8f93', P.metal, { y: -0.58 })]),

@@ -41,6 +41,13 @@ Grundlage war die Wunschliste des Nutzers nach dem ersten Anspielen.
 | Uhrzeit passt nicht zur Helligkeit | Die Uhr zeigte zuerst die gespielte Zeit. Jetzt steht dort „Day 2 · 10:30“, die Spielzeit steht im Tooltip. | `src/ui/hud.js` |
 | Grenze im Winter unsichtbar | Die Gebietsgrenze wird bei Schnee dunkler und kräftiger. | `src/selection/view.js` |
 
+Prüfung: 91 Tests, e2e 10/10, alle 14 Screenshot-Presets bestanden. Zwei Presets lagen zunächst
+knapp über dem Budget von 1,5 M Dreiecken, nach dem Verschlanken der Figuren liegt das Maximum bei
+1,43 M. Belegbilder: `docs/screenshots/evidence/level25-*.png` (Festung und Ausbaustufen,
+schlafendes Dorf bei Nacht, Figuren mit Hirschrudel).
+
+![Ausbaustufen](screenshots/evidence/level25-upgrades.png)
+
 Nebenbei gefunden und behoben: Ein Siedler auf dem Weg zur Kaserne konnte gleichzeitig einen
 Arbeitsplatz bekommen und blieb dann für immer stehen. Die Kaserne bildete in solchen Fällen
 keine Soldaten mehr aus.
