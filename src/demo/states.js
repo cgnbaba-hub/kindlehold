@@ -23,6 +23,12 @@ export const DEMO_STATES = {
     playTo(sim, bot, 10.5 * 1200);
     quietEnemy(sim);
   },
+  /** a summer shower over the settlement (rain follows a fixed rhythm: see RAIN) */
+  rain(sim) {
+    const bot = createBot(sim);
+    playTo(sim, bot, 13.2 * 1200);
+    quietEnemy(sim);
+  },
   /** the Greyfen hold in the north-western fens, scouted */
   greyfen(sim) {
     DEMO_STATES.midgame(sim);

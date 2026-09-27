@@ -19,12 +19,13 @@ import { ABILITIES } from '../heroes/index.js';
 import { STALL_TEXT, WORK } from '../production/index.js';
 import { scenarioOf } from '../missions/index.js';
 import { aiSettings } from '../ai/index.js';
+import { RANKS, rankOf } from '../combat/index.js';
 import { BRIGANDS, relation, stance, TRUCE, GIFT, PEACE, WAR_AT, ALLY_AT } from '../diplomacy/index.js';
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler' };
 const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander' };
-const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner', hunter: 'Hunter', cook: 'Cook' };
+const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner', hunter: 'Hunter', fisher: 'Fisher', cook: 'Cook' };
 
 /**
  * Bring `target` in line with freshly rendered `fresh` children, replacing only the nodes that
@@ -89,7 +90,7 @@ export function createHud({ root, session, input, settings, actions }) {
     ['building', 'hammer', 'Building'], ['carrying', 'provisions', 'Carrying goods'], ['repairing', 'hammer', 'Repairing'], ['gathering', 'tree', 'Gathering by hand'],
     ['idle', 'idle', 'Idle'], ['asleep', 'moon', 'Asleep'], ['arriving', 'settler', 'Arriving'], ['training', 'barracks', 'Going to train'], ['fleeing', 'alertDanger', 'Fleeing'],
   ];
-  const JOB_ICONS = { forester: 'lodge', quarrier: 'quarry', farmer: 'farm', miner: 'mine', hunter: 'hunter', cook: 'canteen' };
+  const JOB_ICONS = { forester: 'lodge', quarrier: 'quarry', farmer: 'farm', miner: 'mine', hunter: 'hunter', fisher: 'fisher', cook: 'canteen' };
   function censusLines(c) {
     const lines = [];
     for (const [k, , label] of CENSUS_ROWS) if (c[k]) lines.push(`${c[k]} ${label.toLowerCase()}`);
@@ -131,7 +132,7 @@ export function createHud({ root, session, input, settings, actions }) {
     if (w.brigands && w.brigands.raidIds.length) out.push('Greyfen brigands are raiding us! Soldiers to the outskirts — or buy peace in the Diplomacy window.');
     else if (w.players[BRIGANDS] && stance(w, PLAYER, BRIGANDS) === 'neutral' && relation(w, PLAYER, BRIGANDS) < -10) out.push('Morwen\'s patience wears thin, Warden. A gift to the Greyfen would soothe her.');
     if (w.ai.harass) out.push('Plunderers are raiding our outlying workshops. A few soldiers there would send them running.');
-    if (p.lastMealFed < 1 || p.res.provisions + 2 < p.pop * 0.5) out.push('Our stores are nearly bare, Warden. We need farms, a hunter, or smaller rations.');
+    if (p.lastMealFed < 1 || p.res.provisions + 2 < p.pop * 0.5) out.push('Our stores are nearly bare, Warden. We need farms, a hunter or a fisher, or smaller rations.');
     if (p.res.timber < 15) out.push(has('lodge') ? 'Timber runs short, Warden. Another Woodcutter\'s Lodge, or send idle labourers to fell trees by hand.' : 'We have no woodcutters! Build a Woodcutter\'s Lodge near the forest.');
     if (p.res.stone < 10 && w.tick > 3 * 1200) out.push(has('quarry') ? 'Stone is running low. A second quarry would help.' : 'We will need stone soon — build a Quarry by the rock outcrops.');
     if (p.pop >= p.popCap) out.push('Every bed is taken. Build Cottages, or upgrade them to Stone Houses, so more folk can settle.');
@@ -512,9 +513,15 @@ export function createHud({ root, session, input, settings, actions }) {
     if (e.kind === 'unit') {
       const def = UNITS[e.type];
       const counters = Object.keys((COUNTERS[def.cls] || {})).map((c) => CLS_NAMES[c]).join(', ');
-      selPanel.append(head(e.type, def.name, def.title ? `${def.title} · ${CLS_NAMES[def.cls]}` : `${CLS_NAMES[def.cls]}${e.owner !== PLAYER ? ' · Rustfang' : ''}`));
+      const side = e.owner !== PLAYER && w.players[e.owner] ? ` · ${w.players[e.owner].name}` : '';
+      const rank = rankOf(e);
+      selPanel.append(head(e.type, def.name, def.title ? `${def.title} · ${CLS_NAMES[def.cls]}` : `${rank ? `${RANKS[rank].name} ` : ''}${CLS_NAMES[def.cls]}${side}`));
+      if (!e.hero && !e.commander && e.owner === PLAYER) {
+        const next = RANKS[rank + 1];
+        selPanel.append(h('div.sel-row.small', { 'data-tip': 'Soldiers who win fights become Veterans (+10% damage and health) and then Elite (+20%).' }, [h('span', { text: `${'★'.repeat(rank) || '☆'} ${RANKS[rank].name}` }), h('span.muted', { text: next ? ` · ${e.xp || 0}/${next.kills} victories to ${next.name}` : ` · ${e.xp || 0} victories` })]));
+      }
       selPanel.append(h('div.sel-row', {}, [h('span', { text: e.downed ? 'Recovering…' : `Health ${Math.ceil(e.hp)}/${e.maxHp}` }), hpBar(e.hp / e.maxHp, 'health')]));
-      const dmg = def.damage * (e.owner === PLAYER && !e.hero && w.players[PLAYER].techs.blades ? 1.25 : 1);
+      const dmg = def.damage * (e.owner === PLAYER && !e.hero && w.players[PLAYER].techs.blades ? 1.25 : 1) * RANKS[rank].damage;
       selPanel.append(h('div.stats', {}, [
         h('span', { 'data-tip': 'Damage per hit' }, [icon('sword', 'icon icon-xs'), String(Math.round(dmg))]),
         h('span', { 'data-tip': 'Armour (subtracted from each hit)' }, [icon('hold', 'icon icon-xs'), String(def.armor)]),

@@ -60,7 +60,44 @@ void main() {
   flakes.name = 'snowfall';
   scene.add(flakes);
 
-  let snow = -1, ice = -1;
+  // summer showers: falling streaks (line segments animated in the vertex shader)
+  const drops = quality && quality.pixelRatio < 1 ? 900 : 2200;
+  const rpos = new Float32Array(drops * 6), rseed = new Float32Array(drops * 2), rend = new Float32Array(drops * 2);
+  for (let i = 0; i < drops; i++) {
+    const x = (rnd() - 0.5) * FALL_BOX.w, y = rnd() * FALL_BOX.h, z = (rnd() - 0.5) * FALL_BOX.w, sd = rnd();
+    for (let k = 0; k < 2; k++) { rpos.set([x, y, z], (i * 2 + k) * 3); rseed[i * 2 + k] = sd; rend[i * 2 + k] = k; }
+  }
+  const rgeo = new THREE.BufferGeometry();
+  rgeo.setAttribute('position', new THREE.BufferAttribute(rpos, 3));
+  rgeo.setAttribute('seed', new THREE.BufferAttribute(rseed, 1));
+  rgeo.setAttribute('tip', new THREE.BufferAttribute(rend, 1));
+  const rmat = new THREE.ShaderMaterial({
+    uniforms, transparent: true, depthWrite: false, fog: false,
+    vertexShader: `
+uniform float uTime; uniform vec3 uOrigin; uniform vec2 uBox;
+attribute float seed; attribute float tip; varying float vA;
+void main() {
+  vec3 p = position;
+  float fall = 16.0 + seed * 8.0;
+  p.y = mod(p.y - uTime * fall, uBox.y);
+  p.xz = mod(p.xz - uOrigin.xz + uBox.x * 0.5, uBox.x) - uBox.x * 0.5 + uOrigin.xz;
+  // the lower end trails along the (slightly windblown) fall direction
+  p += tip * vec3(-0.12, -1.0, -0.05) * (0.9 + seed * 0.6);
+  p.y += uOrigin.y;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  vA = (0.35 + seed * 0.3) * (1.0 - tip * 0.6);
+}`,
+    fragmentShader: `
+uniform float uRain; varying float vA;
+void main() { gl_FragColor = vec4(0.72, 0.78, 0.86, uRain * vA); }`,
+  });
+  uniforms.uRain = { value: 0 };
+  const rain = new THREE.LineSegments(rgeo, rmat);
+  rain.frustumCulled = false; rain.renderOrder = 5; rain.visible = false; rain.name = 'rainfall';
+  scene.add(rain);
+  const grey = new THREE.Color('#8e959c');
+
+  let snow = -1, ice = -1, wetness = 0, pour = 0;
   const cold = new THREE.Color('#c9d6e6');
   const coldFog = new THREE.Color('#b8c4d0');
   let t = 0;
@@ -93,10 +130,28 @@ void main() {
         sky.sun.intensity *= 1 - snow * 0.12;
         if (scene.fog) { scene.fog.color.lerp(coldFog, snow * 0.4 * (1 - sky.nightFactor)); if (scene.background && scene.background.isColor) scene.background.copy(scene.fog.color); }
       }
+      // rain: greyer, flatter light and falling streaks
+      const rainNow = (w.intensity || 0) * (w.kind === 'rain' ? 1 : 0);
+      pour += (rainNow - pour) * Math.min(1, (frame.dt || 0) * 1.5);
+      wetness = w.wet || 0;
+      if (pour > 0.01) {
+        sky.sun.intensity *= 1 - pour * 0.45;
+        sky.sun.color.lerp(grey, pour * 0.35);
+        sky.hemi.color.lerp(grey, pour * 0.3);
+        if (scene.fog) { scene.fog.color.lerp(grey, pour * 0.45 * (1 - sky.nightFactor)); if (scene.background && scene.background.isColor) scene.background.copy(scene.fog.color); }
+      }
+      rain.visible = pour > 0.02 && !reducedMotion();
+      if (rain.visible) {
+        t += frame.dt || 0;
+        const tg = getTarget();
+        uniforms.uTime.value = t;
+        uniforms.uOrigin.value.set(tg.x, tg.y - 4, tg.z);
+        uniforms.uRain.value = pour * 0.8;
+      }
       const fall = (w.intensity || 0) * (w.kind === 'snow' ? 1 : 0);
       flakes.visible = fall > 0.01 && !reducedMotion();
       if (flakes.visible) {
-        t += frame.dt || 0;
+        if (!rain.visible) t += frame.dt || 0;
         const tg = getTarget();
         uniforms.uTime.value = t;
         uniforms.uOrigin.value.set(tg.x, tg.y - 4, tg.z);
@@ -106,6 +161,8 @@ void main() {
     },
     /** Snap to the current season (used after loads and for screenshot presets). */
     snap() { sync(0, true); },
-    dispose() { scene.remove(flakes); geo.dispose(); mat.dispose(); SNOW.value = 0; },
+    rain,
+    get wetness() { return wetness; },
+    dispose() { scene.remove(flakes, rain); geo.dispose(); mat.dispose(); rgeo.dispose(); rmat.dispose(); SNOW.value = 0; },
   };
 }

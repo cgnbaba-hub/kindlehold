@@ -204,6 +204,16 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
   × 0.9 on that good's price (0.5–2.5), relaxing 0.02 per 10 s towards 1. Saltbridge Market
   trades at a 20 % discount.
 
+## Level 2.9 additions
+
+- **Ranks** (`RANKS` in `src/combat/index.js`): 3 kills → Veteran (×1.1 damage and max HP),
+  8 kills → Elite (×1.2). Heroes and commanders do not rank up. Saved as `xp` and `rank`.
+- **Rain** (`RAIN` in `src/weather/index.js`): pure function of the tick, 75 s every 5 min in
+  summer after minute 3; crops ×1.35 while it rains; `weather.wet` for the view.
+- **Fisher's Hut:** `waterRange` 30 m (placement checks the distance to the river polyline),
+  3 provisions per 7-s catch, ×0.5 on ice; the spot is the dry bank nearest the hut.
+- **Job assignment:** workplaces without a worker first, then the scarcest output resource.
+
 ## Controls (default)
 
 Camera: right-drag grabs and moves the map (a short right-click stays the context order), arrow keys pan, screen-edge scrolling is optional (off by default), Q/E or middle-drag rotate, mouse wheel zooms towards the cursor,

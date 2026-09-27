@@ -15,6 +15,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
   unsub.push(bus.on(EV.UNIT_DIED, (d) => {
     if (corpses.length > 60) corpses.shift();
     corpses.push({ ...d, t0: -1 });
+    headings.delete(d.id); lastHp.delete(d.id); hitAt.delete(d.id);
   }));
   const f = { lanternOut: new THREE.Vector3() };
   const heroLantern = new THREE.Vector3();
@@ -28,6 +29,17 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
   }
 
   const headings = new Map();
+  // hit flinch: remember each unit's health and when it last dropped (view time, seconds)
+  const lastHp = new Map(), hitAt = new Map();
+  function hitAmount(u) {
+    const prev = lastHp.get(u.id);
+    if (prev !== undefined && u.hp < prev - 0.5) hitAt.set(u.id, time);
+    lastHp.set(u.id, u.hp);
+    const t0 = hitAt.get(u.id);
+    if (t0 === undefined) return 0;
+    const k = (time - t0) / 0.28;
+    return k >= 1 ? 0 : Math.sin(k * Math.PI);
+  }
 
   function smoothHeading(e, dt) {
     const target = e.heading || 0;
@@ -55,7 +67,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         f.x = x; f.z = z; f.y = terrain.height(x, z);
         f.heading = smoothHeading(s, frame.dt);
         f.style = 'settler'; f.scale = 1.25 * zk; f.tunic = figs.tunicFor(s.id); f.capColor = null;
-        f.anim = s.anim || 'idle'; f.t = tickTime + s.id * 0.37; f.phase = s.id;
+        f.anim = s.anim || 'idle'; f.t = tickTime + s.id * 0.37; f.phase = s.id; f.job = s.job || null; f.hit = 0; f.rank = 0;
         f.tool = s.job ? figs.toolFor(s.job) : (s.anim === 'hammer' ? 'hammer' : null);
         f.carry = s.carry ? s.carry.res : null;
         f.fallen = 0; f.kneel = false; f.lean = 0; f.attackPhase = 0; f.ranged = false;
@@ -69,7 +81,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         f.heading = smoothHeading(u, frame.dt);
         f.style = u.type; f.scale = 1.3 * zk; f.tunic = null; f.tool = null; f.carry = null; f.lean = 0;
         f.t = tickTime + u.id * 0.29; f.phase = u.id;
-        f.kneel = !!u.downed; f.fallen = 0;
+        f.kneel = !!u.downed; f.fallen = 0; f.job = null; f.hit = u.downed ? 0 : hitAmount(u); f.rank = u.rank || 0;
         f.ranged = def.cls === 'ranged';
         f.bladeTint = u.owner === 'p1' && w.players.p1 && w.players.p1.techs.blades ? '#9fc4e8' : null;
         const sinceAttack = w.tick - (u.attackT || -999);
@@ -88,7 +100,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         const age = time - c.t0;
         if (age > CORPSE_SECONDS) { corpses.splice(i, 1); continue; }
         f.x = c.x; f.z = c.z; f.y = terrain.height(c.x, c.z) - Math.max(0, age - CORPSE_SECONDS + 1.5) * 0.35;
-        f.heading = c.heading || 0; f.style = c.kind === 'settler' ? 'settler' : c.type; f.scale = 1;
+        f.heading = c.heading || 0; f.style = c.kind === 'settler' ? 'settler' : c.type; f.scale = (c.kind === 'settler' ? 1.25 : 1.3) * zk; f.job = null; f.hit = 0; f.rank = 0;
         f.tunic = c.kind === 'settler' ? figs.tunicFor(c.id) : null; f.tool = null; f.carry = null;
         f.anim = 'idle'; f.t = 0; f.kneel = false; f.lean = 0; f.ranged = false; f.bladeTint = null;
         f.fallen = Math.min(1, age / 0.45); f.lanternOut = null;

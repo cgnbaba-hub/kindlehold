@@ -56,6 +56,15 @@ Before the great raid, small **plunder parties** slip out of the ford fort to hi
 workshop and run home again (a war horn warns you). The main raids prefer buildings nobody
 guards — keep a few soldiers near your farms and mines.
 
+## Veterans, rain and fish
+
+* **Veterans:** soldiers who win fights earn stars — a Veteran after 3 victories (+10% damage
+  and health), Elite after 8 (+20%). Keep your veterans alive!
+* **Rain:** summer showers come every few minutes. Fields grow a third faster while it pours.
+* **Fisher's Hut:** build it within 30 m of the river. The fisher brings in fish all year
+  (slower when the river is frozen).
+* Workers go first to the workplaces whose goods are scarcest in the Keep store.
+
 ## The Greyfen brigands and diplomacy
 
 In the fens to the north-west lies the hold of **Morwen Greyfen** and her brigands. They start

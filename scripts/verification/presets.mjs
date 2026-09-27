@@ -16,6 +16,7 @@ export const PRESETS = [
   { name: 'winter-settlement', camera: 'settlement-close', hour: 10.5, demo: 'winter', ticks: 40 },
   { name: 'figures-settlers', camera: 'figures', hour: 11, demo: 'midgame', ticks: 30 },
   { name: 'figures-soldiers', camera: 'squad', hour: 11, demo: 'battle', ticks: 20 },
+  { name: 'rain-settlement', camera: 'settlement', hour: 14, demo: 'rain', ticks: 20 },
   { name: 'greyfen-hold', camera: 'greyfen', hour: 14, demo: 'greyfen', ticks: 60 },
   { name: 'ui-1920', camera: 'settlement', hour: 11, demo: 'midgame', ticks: 40, ui: true, viewport: { width: 1920, height: 1080 } },
   { name: 'ui-1280', camera: 'settlement', hour: 11, demo: 'midgame', ticks: 40, ui: true, viewport: { width: 1280, height: 720 } },
