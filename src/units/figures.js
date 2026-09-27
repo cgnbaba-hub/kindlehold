@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { createStructureMaterial, PATTERN as P } from '../render/structure-material.js';
 import { paint, paintGradient, place, merge, box, cyl, cone, sphere, ico } from '../render/geometry-kit.js';
+import { flushInstances } from '../render/instancing.js';
 
 function g(parts) { return merge(parts); }
 const B = (w, h, d, c, pat, at) => paint(place(box(w, h, d), at), c, 0, null, pat);
@@ -285,10 +286,9 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
       const m = meshes[k];
       m.count = Math.min(counts[k], m.instanceMatrix.count);
       outlines[k].count = m.count;
-      m.instanceMatrix.needsUpdate = true;
-      if (m.instanceColor) m.instanceColor.needsUpdate = true;
+      flushInstances(m);
     }
-    glow.instanceMatrix.needsUpdate = true;
+    flushInstances(glow);
   }
 
   return {

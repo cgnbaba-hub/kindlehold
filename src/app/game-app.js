@@ -117,6 +117,19 @@ export async function startApp(params) {
       pause: () => togglePause(),
       cycleSpeed: () => { const sp = SPEEDS; const i = (sp.indexOf(session.loop.getSpeed()) + 1) % sp.length; session.loop.setSpeed(sp[i]); },
     } });
+    // graphics trouble: keep the game safe and tell the player what happened
+    let scaledNotice = false;
+    session.rc.on('lost', () => {
+      doSave('auto', true);
+      if (!paused && !ended) togglePause();
+      if (hud) hud.toast('The graphics driver was reset. Your game was saved and paused.', 'warn');
+    });
+    session.rc.on('restored', () => { if (hud) hud.toast('Graphics recovered at a lower resolution. Resume when ready.', 'info'); });
+    session.rc.on('scaled', ({ ratio, max, reason }) => {
+      if (reason !== 'slow' || scaledNotice || !hud) return;
+      scaledNotice = true;
+      hud.toast(`Your graphics card is working hard: resolution lowered to ${Math.round((ratio / max) * 100)} %. Settings → Graphics → Quality can help too.`, 'info');
+    });
     if (!verify && !slot && !settings.tutorialDone) {
       tutorial = createTutorial({ root: uiRoot, session, settings, onFinish: () => { saveSettings(settings); tutorial = null; } });
     }

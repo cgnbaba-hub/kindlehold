@@ -7,6 +7,7 @@ import { paint, paintGradient, place, merge, jitterVertices, viewRng, cyl, cone,
 import { computeSplat } from '../terrain/terrain-view.js';
 import { distToPolyline, sceneryRelief } from '../world/terrain-data.js';
 import { BUILDINGS } from '../buildings/defs.js';
+import { flushInstance } from '../render/instancing.js';
 
 function conifer(rnd) {
   const parts = [paint(place(cyl(0.13, 0.22, 2.2, 7), { y: 1.1 }), '#5a3f2a', 0.1, rnd, PATTERN.planks)];
@@ -355,7 +356,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
           m4.compose(p.set(d.x, y - 0.15 - sink * 1.5, d.z), q.setFromEuler(e.set(fall, d.rot, 0, 'YXZ')), s.setScalar((d.scale || 1) * (1 - sink * 0.6)));
         }
         a.mesh.setMatrixAt(a.index, m4);
-        a.mesh.instanceMatrix.needsUpdate = true;
+        flushInstance(a.mesh, a.index);
       }
     },
     getHealthStatus() { return { status: 'ok' }; },

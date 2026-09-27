@@ -11,6 +11,7 @@ import { ABILITIES } from '../heroes/index.js';
 import { territorySources } from '../world/territory.js';
 import { shroudOverlay, SNOW } from '../render/structure-material.js';
 import { isNight } from '../population/daily.js';
+import { flushInstances } from '../render/instancing.js';
 
 const MAX_RINGS = 240;
 const MAX_BARS = 240;
@@ -195,7 +196,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
         discs.setColorAt(discs.count, u.hero ? cDiscH : u.owner === PLAYER ? cDiscP : u.owner === 'p3' ? cDiscB : cDiscE);
         discs.count++;
       }
-      discs.instanceMatrix.needsUpdate = true; if (discs.instanceColor) discs.instanceColor.needsUpdate = true;
+      flushInstances(discs);
       // health bars: selected, damaged units in view, damaged buildings
       for (const u of all(w, 'unit')) {
         if (u.downed) continue;
@@ -216,7 +217,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
         if (b.state === 'site') col.set('#e3b04b'); else col.setRGB(1 - frac, 0.3 + frac * 0.55, 0.2);
         addBar(b, b.x, b.z, (b.state === 'site' ? 3 : 7), Math.max(0.02, frac), col);
       }
-      for (const m of [rings, bars, barsBg]) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
+      for (const m of [rings, bars, barsBg]) flushInstances(m);
 
       // stall markers
       stallMarks.count = 0;
@@ -228,7 +229,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
         m4.compose(p.set(b.x, terrain.height(b.x, b.z) + BUILDINGS[b.type].radius * 1.1 + 4.5 + bob, b.z), camera.quaternion, s.set(1, 1, 1));
         stallMarks.setMatrixAt(stallMarks.count++, m4);
       }
-      stallMarks.instanceMatrix.needsUpdate = true;
+      flushInstances(stallMarks);
 
       // resource highlights
       pulseT += frame.dt || 0;
@@ -246,7 +247,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
           depRings.setMatrixAt(depRings.count++, m4);
         }
         depRingMat.opacity = want === 'iron' || want === 'rock' ? 0.95 : 0.45;
-        depRings.instanceMatrix.needsUpdate = true;
+        flushInstances(depRings);
       }
 
       // placement ghost

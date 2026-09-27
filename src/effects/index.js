@@ -7,6 +7,7 @@ import { EV } from '../core/contracts.js';
 import { BUILDINGS } from '../buildings/defs.js';
 import { viewRng } from '../render/geometry-kit.js';
 import { shroudOverlay } from '../render/structure-material.js';
+import { flushInstances } from '../render/instancing.js';
 
 function spriteTexture() {
   const size = 64;
@@ -236,9 +237,7 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
       alive = n;
       nL.mesh.count = cn; aL.mesh.count = ca;
       for (const L of [nL, aL]) {
-        L.mesh.instanceMatrix.needsUpdate = true;
-        if (L.mesh.instanceColor) L.mesh.instanceColor.needsUpdate = true;
-        L.alphaAttr.needsUpdate = true;
+        flushInstances(L.mesh, [L.alphaAttr]);
       }
       // projectiles
       let na = 0, ns = 0;
@@ -258,7 +257,7 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
         if (sh.kind === 'arrow') arrows.setMatrixAt(na++, m4); else stones.setMatrixAt(ns++, m4);
       }
       arrows.count = na; stones.count = ns;
-      arrows.instanceMatrix.needsUpdate = true; stones.instanceMatrix.needsUpdate = true;
+      flushInstances(arrows); flushInstances(stones);
       if (flashT > 0) { flashT = Math.max(0, flashT - frame.dt); flash.intensity = 180 * flashT; } else flash.intensity = 0;
       // expanding ability rings
       for (let i = rings.length - 1; i >= 0; i--) {

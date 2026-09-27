@@ -1,7 +1,7 @@
 // window.__GAME__ verification API (enabled in dev and with ?verify=1).
 // Everything here drives the game through the same paths as the player.
 
-import { findSpot } from '../demo/bot.js';
+import { findSpot, createBot } from '../demo/bot.js';
 
 export function installVerifyApi(session) {
   const api = {
@@ -32,6 +32,13 @@ export function installVerifyApi(session) {
       return false;
     },
     issue: (cmd) => session.issue(cmd),
+    /** Soak tests: let the scripted bot play the running game (every simulation tick). */
+    autoplay() {
+      if (api._bot) return true;
+      api._bot = createBot(session.sim);
+      session.sim.host.register({ id: 'verify-autoplay', kind: 'sim', update() { api._bot.step(); } });
+      return true;
+    },
     /** Show a dialogue line in the HUD (screenshots of the message box). */
     showMessage: (m) => session.sim.bus.emit('mission:message', { tick: session.world.tick, kind: 'dialogue', ...m }),
     save: (slot) => session.save && session.save(slot),
