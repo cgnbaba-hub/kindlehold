@@ -56,6 +56,19 @@ Before the great raid, small **plunder parties** slip out of the ford fort to hi
 workshop and run home again (a war horn warns you). The main raids prefer buildings nobody
 guards — keep a few soldiers near your farms and mines.
 
+## The Greyfen brigands and diplomacy
+
+In the fens to the north-west lies the hold of **Morwen Greyfen** and her brigands. They start
+**neutral** towards Kindlehold and are at feud with the Rustfang. Open **Diplomacy** with the
+banner button next to the clock:
+
+* **Send a gift** (50 Taler) improves the relation. From 60 on they are your **allies**: they
+  ride out when the Rustfang raid you and send game and timber every payday.
+* Attacking them, or building close to their hold, turns them hostile. At **war** they raid
+  Kindlehold every few minutes; **Offer peace** (80 Taler) ends the feud.
+* **Pay toll** to the Rustfang (120 Taler): five minutes without raids or plunderers.
+  Vharek never makes real peace.
+
 ## Keeping an eye on things
 
 * **Your people:** hover over the population in the ribbon to see who is building, carrying,
@@ -107,7 +120,12 @@ mealtime and lift stability.
 The valley starts dark. Everything your people, soldiers and buildings have come near is
 revealed and stays revealed; the minimap shows only what you have explored. Look out for a
 **trader** at the crossroads (trade goods for Taler), a **lookout cairn**, **old ruins** beyond the
-river and the hamlet of **Millbrook** — send Maren there to win an ally.
+river and the hamlet of **Millbrook** — send Maren there to win an ally. The valley is wide:
+further out wait the **Saltbridge Market** in the east (cheaper), two more cairns, a second iron
+vein on the Westmarch terrace and the **Tollkeeper's Vault**.
+
+Prices at the traders follow supply and demand: buying a good makes it dearer, selling floods
+the market. Prices drift back to normal over a few minutes.
 
 ## Reading your settlement
 

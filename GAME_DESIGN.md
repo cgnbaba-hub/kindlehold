@@ -185,6 +185,25 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
   provisions, tithe of 8 provisions + 10 Taler every payday).
 - Forester trip 4 timber (was 3). Deliveries: an empty mine is served before the Tavern.
 
+## Level 2.8 additions — "The wide valley"
+
+- **Map** 384 × 384 m (`half: 192`): Westmarch hills with a second iron vein (-118, 22), the
+  Greyfen fens (NW), Saltbridge downs with Saltford (E), Barrowmoor (SW); 9 deer herds.
+- **Greyfen brigands** (`src/brigands/`, player `p3`): Brigand Hall (1800 HP) + 2 towers,
+  Morwen Greyfen (commander), brigands (melee) and poachers (ranged); muster one fighter every
+  40 s from a pool of 30 (garrison cap 9). Neutral: guard the hold; a player building within
+  48 m costs 30 relation (once per building). War: a raid of up to 5 every 5 minutes (first
+  90 s after war begins). Allied: 4 fighters answer every Rustfang wave; 12 timber +
+  8 provisions every payday. Destroying the hall: 150 Taler.
+- **Diplomacy** (`src/diplomacy/`): relation per pair −100..100; war ≤ −30, allied ≥ 60, truce
+  overrides. `hostile()` decides who fights; striking a non-hostile faction sets −80.
+  Commands: `gift` (50 Taler, +18, 30 s cooldown), `peace` (80 Taler → −25), `declareWar`,
+  `truce` with the Rustfang only (120 Taler, 5 min, not during a gathering or raid; delays raids
+  and plunderers). Relations drift 1 point per 5 s back to 0 (p1|p3); p2|p3 feud at −70.
+- **Market** (`src/pois/`): 7 trades incl. selling stone and iron; each buy × 1.12, each sell
+  × 0.9 on that good's price (0.5–2.5), relaxing 0.02 per 10 s towards 1. Saltbridge Market
+  trades at a 20 % discount.
+
 ## Controls (default)
 
 Camera: right-drag grabs and moves the map (a short right-click stays the context order), arrow keys pan, screen-edge scrolling is optional (off by default), Q/E or middle-drag rotate, mouse wheel zooms towards the cursor,

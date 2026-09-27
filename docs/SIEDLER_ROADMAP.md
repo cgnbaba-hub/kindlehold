@@ -90,8 +90,21 @@ stand vorher die ganze Wirtschaft still.
 
 Prüfung: 99 Tests, `npm run balance` 7/8.
 
-Offen für das nächste große Paket: eine deutlich größere Karte, mehrere Gegner, Diplomatie
-und Handel zwischen Parteien.
+## Stufe 2.8: umgesetzt („Das große Tal“)
+
+| Wunsch | Umsetzung |
+|---|---|
+| Deutlich größere Karte | Das Tal misst jetzt 384 × 384 m statt 256 × 256 m (2,25-fache Fläche). Neu: Westmarch-Hügel mit zweiter Eisenader, die Greyfen-Sümpfe im Nordwesten, die Saltbridge-Hügel mit Furt im Osten, das Barrowmoor im Südwesten. Dazu Wege, Wälder, Felsen, zwei Aussichts-Steinmale, die „Tollkeeper's Vault“ (200 Taler, 40 Eisen) und mehr Wild. |
+| Mehrere Gegner | Zweite Partei: die **Greyfen-Banditen** unter **Morwen Greyfen** mit Langhaus, zwei Türmen, Räubern, Wilderern (Fernkampf) und eigenem Nachschub. Sie liegen mit den Rustfang in Fehde und kämpfen auch gegen sie. |
+| Diplomatie | Jede Partei hat eine Beziehung von −100 bis +100 → Krieg, neutral oder verbündet. Fenster über den Banner-Knopf an der Uhr: **Geschenk** an die Greyfen (50 Taler, +18), **Frieden** gegen Blutgeld (80 Taler), **Kriegserklärung**, bei den Rustfang **Wegzoll** (120 Taler, 5 Minuten Waffenstillstand ohne Überfälle und Plünderer). Wer eine neutrale Partei angreift oder in der Nähe ihres Lagers baut, verschlechtert die Beziehung. Verbündete Greyfen schicken bei Rustfang-Überfällen Hilfe und liefern jeden Zahltag Wild und Holz. Im Krieg ziehen sie alle paar Minuten auf Raubzug. |
+| Handel | Zweiter Händler auf dem **Saltbridge Market** (20 % günstiger). Die Preise folgen Angebot und Nachfrage: Wer viel kauft, treibt den Preis hoch, wer viel verkauft, drückt ihn. Mit der Zeit pendeln sich die Preise wieder ein. Neu: Stein und Eisen verkaufen. |
+
+Prüfung: 107 Tests (neu: Diplomatie, Banditen, Markt, Speichern/Laden). `npm run balance`:
+6 von 8 gewonnen (Story und alle 4 Normal-Partien, Hard 1/3). Auf der größeren Karte verliert
+der Test-Bot auf Hard zweimal gegen die Rustfang-Wellen. In einer Partie ging ihm das Holz aus,
+während 280 Stein im Lager lagen. Die Banditen blieben dabei neutral. Das ist eine Schwäche des
+Bots (er handelt nicht und baut Holzfäller nicht nach), keine Folge der neuen Partei.
+
 
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
