@@ -70,7 +70,7 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
     for (const b of all(w, 'building')) {
       if (b.state === 'destroyed' || !seen(b)) continue;
       const r = Math.max(2.5, (BUILDINGS[b.type].radius / terrain.size) * SIZE * 1.3);
-      ctx.fillStyle = b.owner === PLAYER ? (b.state === 'site' ? '#9fd6ec' : '#4fb0dc') : '#e0604a';
+      ctx.fillStyle = b.owner === PLAYER ? (b.state === 'site' ? '#9fd6ec' : '#4fb0dc') : b.owner === 'p3' ? '#8fb85a' : '#e0604a';
       ctx.fillRect(toPx(b.x) - r, toPx(b.z) - r, r * 2, r * 2);
     }
     for (const d of all(w, 'deposit')) {
@@ -87,7 +87,7 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
     for (const s of all(w, 'settler')) { if (s.hidden) continue; ctx.fillStyle = '#efe6d2'; ctx.fillRect(toPx(s.x) - 0.8, toPx(s.z) - 0.8, 1.6, 1.6); }
     for (const u of all(w, 'unit')) {
       if (u.downed || !seen(u)) continue;
-      ctx.fillStyle = u.hero ? '#ffd27a' : u.owner === PLAYER ? '#7fe0ff' : '#ff7a5a';
+      ctx.fillStyle = u.hero ? '#ffd27a' : u.owner === PLAYER ? '#7fe0ff' : u.owner === 'p3' ? '#b4dc78' : '#ff7a5a';
       const r = u.hero || u.commander ? 2.4 : 1.5;
       ctx.beginPath(); ctx.arc(toPx(u.x), toPx(u.z), r, 0, Math.PI * 2); ctx.fill();
     }

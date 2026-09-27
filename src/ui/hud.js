@@ -19,6 +19,7 @@ import { ABILITIES } from '../heroes/index.js';
 import { STALL_TEXT, WORK } from '../production/index.js';
 import { scenarioOf } from '../missions/index.js';
 import { aiSettings } from '../ai/index.js';
+import { BRIGANDS, relation, stance, TRUCE, GIFT, PEACE, WAR_AT, ALLY_AT } from '../diplomacy/index.js';
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler' };
@@ -113,6 +114,8 @@ export function createHud({ root, session, input, settings, actions }) {
     const out = [];
     const has = (t) => all(w, 'building').some((b) => b.owner === PLAYER && b.type === t && b.state !== 'destroyed');
     if (w.ai.state === 'gather' || w.ai.state === 'raid') out.push('The Rustfang are on the march! Gather the soldiers near what they are after, Warden.');
+    if (w.brigands && w.brigands.raidIds.length) out.push('Greyfen brigands are raiding us! Soldiers to the outskirts — or buy peace in the Diplomacy window.');
+    else if (w.players[BRIGANDS] && stance(w, PLAYER, BRIGANDS) === 'neutral' && relation(w, PLAYER, BRIGANDS) < -10) out.push('Morwen\'s patience wears thin, Warden. A gift to the Greyfen would soothe her.');
     if (w.ai.harass) out.push('Plunderers are raiding our outlying workshops. A few soldiers there would send them running.');
     if (p.lastMealFed < 1 || p.res.provisions + 2 < p.pop * 0.5) out.push('Our stores are nearly bare, Warden. We need farms, a hunter, or smaller rations.');
     if (p.res.timber < 15) out.push(has('lodge') ? 'Timber runs short, Warden. Another Woodcutter\'s Lodge, or send idle labourers to fell trees by hand.' : 'We have no woodcutters! Build a Woodcutter\'s Lodge near the forest.');
@@ -170,8 +173,85 @@ export function createHud({ root, session, input, settings, actions }) {
   nightBtn.hidden = true;
   let skipping = null;
   nightBtn.addEventListener('click', () => { if (skipping == null) { skipping = session.loop.getSpeed(); session.loop.setSpeed(8); } });
-  const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, pauseBtn]);
+  const diploBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Diplomacy', 'data-tip': 'Diplomacy: relations with the Rustfang and the Greyfen brigands' }, [icon('banner', 'icon icon-sm')]);
+  const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, diploBtn, pauseBtn]);
   hud.append(topbar, nightBtn, speedMenu);
+
+  // --- diplomacy: the factions of the valley, their mood and what can be offered -------------
+  const diploBody = h('div.diplo-body');
+  const diploPanel = h('section.diplo-panel.panel', { 'aria-label': 'Diplomacy' }, [
+    h('div.people-head', {}, [h('h2', { text: 'Diplomacy' }), h('button.btn-ghost.diplo-close', { type: 'button', 'aria-label': 'Close', text: '×' })]),
+    diploBody,
+  ]);
+  diploPanel.hidden = true;
+  diploPanel.querySelector('.diplo-close').addEventListener('click', () => { diploPanel.hidden = true; });
+  diploBtn.addEventListener('click', () => { diploPanel.hidden = !diploPanel.hidden; lastDiplo = ''; renderDiplomacy(); });
+  hud.append(diploPanel);
+  const STANCE_TEXT = { war: 'At war', neutral: 'Neutral', allied: 'Allied', truce: 'Truce' };
+  let lastDiplo = '';
+  function diploButton(label, ic, cost, tip, cmd, enabled) {
+    const b = h('button.cmd-btn.diplo-btn', { type: 'button', 'data-tip': tip, 'aria-label': label }, [icon(ic, 'icon icon-sm'), h('span', { text: label }), cost ? costRow(cost) : null].filter(Boolean));
+    if (!enabled) b.classList.add('disabled');
+    b.addEventListener('click', () => { if (!b.classList.contains('disabled')) { input.issue(cmd); lastDiplo = ''; } });
+    return b;
+  }
+  function renderDiplomacy() {
+    if (diploPanel.hidden) return;
+    const w = world(), p = w.players[PLAYER];
+    const d = w.diplomacy;
+    const rows = [];
+    const giftLeft = d ? Math.max(0, GIFT.cooldown - (w.tick - (d.giftTick[`${PLAYER}|${BRIGANDS}`] ?? -1e9))) : 0;
+    const truceSec = d ? Math.max(0, Math.ceil(((d.truceUntil['p1|p2'] || 0) - w.tick) / 20)) : 0;
+    // rebuild only when something shown changed (a rebuild under the pointer could swallow a click)
+    const key = JSON.stringify([d && d.rel, truceSec, Math.ceil(giftLeft / 20), p.res.taler >= GIFT.cost.taler, p.res.taler >= PEACE.cost.taler, p.res.taler >= TRUCE.cost.taler, w.ai.state, w.mission.flags.millbrookAllied, all(w, 'building').some((b) => b.type === 'brigandhall' && b.state !== 'destroyed')]);
+    if (key === lastDiplo) return;
+    lastDiplo = key;
+    // Rustfang: war, truces for a toll
+    const rs = stance(w, PLAYER, 'p2');
+    const truceLeft = d ? Math.max(0, ((d.truceUntil['p1|p2'] || 0) - w.tick) / 20) : 0;
+    const marching = w.ai.state === 'raid' || w.ai.state === 'gather';
+    rows.push({
+      id: 'p2', name: w.players.p2 ? w.players.p2.name : 'Rustfang', portrait: 'vharek', who: 'Vharek the Tollbreaker', st: rs, rel: relation(w, PLAYER, 'p2'),
+      note: rs === 'truce' ? `The toll is paid. No raids for ${fmtTime(truceLeft)}.` : 'Vharek never makes peace, but for a toll he keeps his reavers at home for a while.',
+      btns: [diploButton('Pay toll', 'taler', TRUCE.cost, `A truce of ${Math.round(TRUCE.duration / 1200)} minutes: no raids, no plunderers. Not while his warband is on the march.`, { type: 'truce', to: 'p2' }, rs !== 'truce' && !marching && p.res.taler >= TRUCE.cost.taler)],
+    });
+    // Greyfen brigands
+    if (w.players[BRIGANDS]) {
+      const bs = stance(w, PLAYER, BRIGANDS), rel = relation(w, PLAYER, BRIGANDS);
+      const cool = giftLeft;
+      const hallUp = all(w, 'building').some((b) => b.type === 'brigandhall' && b.state !== 'destroyed');
+      const btns = [];
+      if (hallUp) {
+        if (bs === 'war') btns.push(diploButton('Offer peace', 'handshake', PEACE.cost, 'Pay blood money to end the feud. They will be neutral again.', { type: 'peace', to: BRIGANDS }, p.res.taler >= PEACE.cost.taler));
+        else {
+          btns.push(diploButton(cool > 0 ? `Gift (${Math.ceil(cool / 20)}s)` : 'Send a gift', 'gift', GIFT.cost, `Improves the relation by ${GIFT.gain}. At ${ALLY_AT} they become allies: they help against Rustfang raids and share game and timber every payday.`, { type: 'gift', to: BRIGANDS }, cool <= 0 && p.res.taler >= GIFT.cost.taler));
+          btns.push(diploButton('Declare war', 'sword', null, 'Break with the Greyfen. They will raid Kindlehold; their hold is full of plunder.', { type: 'declareWar', to: BRIGANDS }, true));
+        }
+      }
+      rows.push({
+        id: BRIGANDS, name: w.players[BRIGANDS].name, portrait: 'morwen', who: 'Morwen Greyfen', st: hallUp ? bs : 'gone', rel,
+        note: !hallUp ? 'The Greyfen Hold has fallen.' : bs === 'war' ? 'They raid Kindlehold every few minutes.' : bs === 'allied' ? 'Allies: they ride out against Rustfang raids and send game and timber every payday.' : 'They guard the northern fens. Do not build near their hold. Gifts win their friendship.',
+        btns,
+      });
+    }
+    clear(diploBody);
+    for (const r of rows) {
+      const pct = Math.round(((r.rel + 100) / 200) * 100);
+      const bar = h('div.diplo-rel', { 'data-tip': `Relation ${r.rel} (war at ${WAR_AT} or less, allies at ${ALLY_AT} or more)` }, [h('div.diplo-rel-fill', { style: { width: `${pct}%` } }), h('div.diplo-mark', { style: { left: `${((WAR_AT + 100) / 2)}%` } }), h('div.diplo-mark', { style: { left: `${((ALLY_AT + 100) / 2)}%` } })]);
+      diploBody.append(h('div.diplo-row', { 'data-faction': r.id }, [
+        portrait(r.portrait, 'diplo-portrait'),
+        h('div.diplo-info', {}, [
+          h('div.diplo-name', {}, [h('strong', { text: r.name }), h('span.diplo-stance', { 'data-stance': r.st, text: r.st === 'gone' ? 'Defeated' : STANCE_TEXT[r.st] })]),
+          h('div.muted.diplo-who', { text: r.who }),
+          bar,
+          h('p.diplo-note', { text: r.note }),
+          h('div.diplo-btns', {}, r.btns),
+        ]),
+      ]));
+    }
+    const hamlet = w.mission.flags.millbrookAllied;
+    diploBody.append(h('p.muted.diplo-foot', { text: hamlet ? 'Millbrook: allied — a tithe of food and Taler every payday.' : 'Millbrook: not yet visited. Maren could win the river folk over.' }));
+  }
 
   // --- top-right: objectives ----------------------------------------------------------
   const objList = h('ol.obj-list');
@@ -644,6 +724,7 @@ export function createHud({ root, session, input, settings, actions }) {
     setText(popVal, `${p.pop}/${p.popCap}`);
     { const c = censusOf(w, PLAYER); popEl.setAttribute('data-tip', `${censusLines(c).join('\n')}\nClick for the full list.`); popEl.setAttribute('data-tip-title', 'Your people'); }
     renderPeople();
+    renderDiplomacy();
     adviceTimer += 0.25;
     if (adviceTimer >= 12) { adviceTimer = 0; adviceIdx++; updateAdvisor(true); } else updateAdvisor();
     const idle = all(w, 'settler').filter((s) => s.owner === PLAYER && !s.job).length;

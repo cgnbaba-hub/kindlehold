@@ -336,3 +336,29 @@ button { font: inherit; color: inherit; }
 .tut-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 .tut-actions [hidden] { display: none; }
 @media (max-width: 1400px), (max-height: 800px) { .tutorial { bottom: calc(180px * var(--ui-scale, 1)); width: 320px; } }
+/* diplomacy panel */
+.diplo-panel { position: absolute; left: 50%; top: 58px; transform: translateX(-50%); width: min(430px, 92vw); max-height: calc(100vh - 300px); overflow: auto; padding: 10px 14px; z-index: 32; }
+.diplo-panel[hidden] { display: none; }
+.diplo-panel h2 { margin: 0; font: 600 1.1em var(--serif); color: var(--brass); }
+.diplo-row { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.diplo-portrait { flex: none; width: 64px; height: 64px; border-radius: 50%; overflow: hidden; border: 2px solid var(--brass-dim); box-shadow: 0 0 0 2px rgba(0,0,0,0.5); }
+.diplo-portrait svg { display: block; }
+.diplo-info { flex: 1; min-width: 0; }
+.diplo-name { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.diplo-name strong { font-family: var(--serif); font-size: 1.05em; }
+.diplo-stance { font: 600 0.78em var(--sans); padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.1); text-transform: uppercase; letter-spacing: 0.05em; }
+.diplo-stance[data-stance="war"] { background: #7a2a1e; color: #ffd8cc; }
+.diplo-stance[data-stance="allied"] { background: #3e6a2a; color: #e2f5d0; }
+.diplo-stance[data-stance="truce"] { background: #6a5a2a; color: #fff0c8; }
+.diplo-stance[data-stance="gone"] { background: #333; color: #aaa; }
+.diplo-who { font-size: 0.8em; }
+.diplo-rel { position: relative; height: 8px; margin: 6px 0 4px; border-radius: 4px; overflow: hidden; background: linear-gradient(90deg, #7a2a1e 0 35%, #5a5448 35% 80%, #3e6a2a 80% 100%); }
+.diplo-rel-fill { height: 100%; background: rgba(255,240,200,0.55); border-right: 2px solid #fff4d6; }
+.diplo-mark { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,0.6); }
+.diplo-note { margin: 4px 0 6px; font: 0.86em/1.3 var(--serif); }
+.diplo-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.diplo-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; min-height: 36px; background: rgba(0,0,0,0.25); border: 1px solid var(--brass-dim); border-radius: 6px; color: inherit; font: 600 0.9em var(--sans); cursor: pointer; }
+.diplo-btn:hover { border-color: var(--brass); }
+.diplo-btn.disabled { opacity: 0.45; filter: grayscale(0.6); cursor: not-allowed; }
+.diplo-btn .cost { font-weight: 400; }
+.diplo-foot { margin: 8px 0 0; font-size: 0.85em; }

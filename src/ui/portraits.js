@@ -54,6 +54,19 @@ ${FACE('#c99a78', '#8a5a40')}${EYES('#1a0e0a')}
 <path d="M19 26c0-10 6-15 13-15s13 5 13 15l-4-3H23z" fill="#7a5040" stroke="#3a2418" stroke-width="1.2"/>
 <path d="M32 11v14" stroke="#a36a3a" stroke-width="2.4"/>
 <path d="M19 24l-5-8 7 4M45 24l5-8-7 4" fill="#e8dcc4" stroke="#6a5a48" stroke-width=".8"/>`, ['#5a2a22', '#140a08']),
+
+  // Morwen Greyfen, brigand chieftain: moss-green hood, braided grey-black hair, fen-bone torc
+  morwen: P('morwen', `<path d="M8 64c2-14 10-20 24-20s22 6 24 20z" fill="#3a4a2a"/>
+<path d="M15 38c-2-17 6-27 17-27s19 10 17 27l-4 10H19z" fill="#44582e"/>
+${FACE('#d6b494', '#9a7654')}${EYES('#1e2a14')}
+<path d="M25.5 25.5l4.5-.2M34 25.3l4.5.2" stroke="#2a2a22" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M29 35.5c2 .6 4 .6 6 0" stroke="#7a4a3a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M26 31l3 3M38 31l-3 3" stroke="#5a7a3a" stroke-width="1" opacity=".8"/>
+<path d="M22 23c2-6 6-8 10-8s8 2 10 8c-3-1-6-2-10-2s-7 1-10 2z" fill="#3a3632"/>
+<path d="M21 30c-2 6-1 14 1 18M43 30c2 6 1 14-1 18" stroke="#4a4640" stroke-width="3" stroke-dasharray="3 1.5" fill="none"/>
+<path d="M15 38c-1-15 6-25 17-25s18 10 17 25c-2-9-8-19-17-19s-15 10-17 19z" fill="#52693a"/>
+<path d="M20 50c4 3 8 4 12 4s8-1 12-4" stroke="#e8dcc0" stroke-width="2.2" fill="none"/>
+<path d="M26 53l-1 3M32 54v3M38 53l1 3" stroke="#e8dcc0" stroke-width="1.4"/>`, ['#4a5838', '#121810']),
 };
 
 /** Portrait key from a message (explicit key, or matched by the speaker's name). */

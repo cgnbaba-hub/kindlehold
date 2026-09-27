@@ -86,7 +86,7 @@ export function createBrigandsModule() {
       say(world, 'You walk in the Greyfen now, Warden. We have no quarrel with you — our feud is with Vharek. Bring gifts, not blades, and we may even be friends.');
     }
     // trespass: player buildings close to the hold sour the mood (once per building)
-    if (toPlayer !== 'war' && world.tick % 40 === 11) {
+    if (toPlayer !== 'war' && world.tick % 40 === 4) {
       for (const b of all(world, 'building')) {
         if (b.owner !== PLAYER || st.trespassed.includes(b.id) || Math.hypot(b.x - h.x, b.z - h.z) > BRIGAND_AI.trespassRadius) continue;
         st.trespassed.push(b.id);
