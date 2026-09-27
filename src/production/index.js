@@ -17,6 +17,7 @@ export const WORK = {
   miner: { res: 'iron', perCycle: 2, work: 8.0, provisionsPerCycle: 1, anim: 'mine' },
   hunter: { res: 'provisions', perTrip: 4, aim: 1.6, dress: 3.0, throwRange: 10, anim: 'cast' },
   cook: { perCycle: 3, provisionsPerCycle: 2, work: 7.0, anim: 'mine' },
+  fisher: { res: 'provisions', perTrip: 3, fish: 7.0, strike: 2.2, frozenSpeed: 0.5, anim: 'fish' },
 };
 
 export const TREE_REGROW = 150 * 20; // a felled tree is replanted and stands again after 2.5 minutes
@@ -63,6 +64,28 @@ function findDeposit(world, b, type, range, workerId) {
     if (dd <= range && dd < bestD) { bestD = dd; best = d; }
   }
   return best;
+}
+
+/** Where the fisher stands: the dry bank closest to the hut, facing the water. */
+export function fishingSpot(services, b) {
+  const map = services.terrain.map, nav = services.nav;
+  const pts = map.river.points;
+  let best = null, bd = Infinity;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [ax, az] = pts[i], [bx, bz] = pts[i + 1];
+    const vx = bx - ax, vz = bz - az, l2 = vx * vx + vz * vz || 1;
+    const k = Math.max(0, Math.min(1, ((b.x - ax) * vx + (b.z - az) * vz) / l2));
+    const px = ax + vx * k, pz = az + vz * k, d = Math.hypot(b.x - px, b.z - pz);
+    if (d < bd) { bd = d; best = [px, pz]; }
+  }
+  if (!best) return null;
+  // walk from mid-river towards the hut until the ground is dry and walkable
+  const [wx, wz] = best, len = bd || 1;
+  for (let s = 0; s <= bd; s += 0.5) {
+    const x = wx + ((b.x - wx) / len) * s, z = wz + ((b.z - wz) / len) * s;
+    if (services.terrain.waterDepth(x, z) <= 0 && nav.walkable(x, z)) return { x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10, wx: Math.round(wx * 10) / 10, wz: Math.round(wz * 10) / 10 };
+  }
+  return null;
 }
 
 export function createProductionModule() {
@@ -274,6 +297,42 @@ export function createProductionModule() {
           t.timer += DT * sf;
           if (t.timer >= t.nextStrike) { t.nextStrike += 1; emit(world, EV.WORK_STRIKE, { id: s.id, kind: 'harvest', x: s.x, z: s.z }); }
           if (t.timer >= W.dress) { s.carry = { res: 'provisions', amt: W.perTrip }; t.stage = 'return'; }
+          break;
+        }
+        case 'return': {
+          if (walk(door.x, door.z, 1.0) === 'arrived') {
+            b.stock.out.provisions = (b.stock.out.provisions || 0) + s.carry.amt;
+            world.stats.produced.provisions += s.carry.amt;
+            emit(world, EV.PRODUCTION_CYCLE, { id: b.id, res: 'provisions', amount: s.carry.amt, x: door.x, z: door.z });
+            s.carry = null; s.task = null;
+          }
+          break;
+        }
+        default: s.task = null;
+      }
+      return;
+    }
+
+    if (s.job === 'fisher') {
+      switch (t.stage) {
+        case 'start': {
+          if (outCount(b) >= def.outCap) { setStall(world, b, 'storageFull'); if (walk(door.x, door.z, 1.2) !== 'walking') s.anim = 'idle'; return; }
+          if (!b.fishSpot) b.fishSpot = fishingSpot(ctx.services, b);
+          if (!b.fishSpot) { setStall(world, b, 'noDeposit'); s.task = { stage: 'wait', timer: 5 }; return; }
+          if (b.stall === 'noDeposit' || b.stall === 'noAccess') setStall(world, b, null);
+          t.stage = 'toSpot';
+          break;
+        }
+        case 'toSpot': {
+          if (walk(b.fishSpot.x, b.fishSpot.z, 0.7) === 'arrived') { t.stage = 'fish'; t.timer = 0; t.nextStrike = W.strike; }
+          break;
+        }
+        case 'fish': {
+          s.anim = W.anim;
+          s.heading = Math.atan2(b.fishSpot.wx - s.x, b.fishSpot.wz - s.z);
+          t.timer += DT * sf * (world.weather && world.weather.frozen ? W.frozenSpeed : 1);
+          if (t.timer >= t.nextStrike) { t.nextStrike += W.strike; emit(world, EV.WORK_STRIKE, { id: s.id, kind: 'fish', x: b.fishSpot.wx, z: b.fishSpot.wz }); }
+          if (t.timer >= W.fish) { s.carry = { res: 'provisions', amt: W.perTrip }; t.stage = 'return'; }
           break;
         }
         case 'return': {

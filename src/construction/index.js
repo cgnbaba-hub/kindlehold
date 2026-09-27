@@ -7,6 +7,7 @@ import { stabilityFactor } from '../population/index.js';
 import { territorySources, territoryOwner } from '../world/territory.js';
 import { pay, refund } from '../economy/stock.js';
 import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
+import { distToPolyline } from '../world/terrain-data.js';
 
 export const MAX_BUILDERS = 3;
 export const CANCEL_REFUND_STARTED = 0.5;
@@ -61,6 +62,10 @@ export function checkPlacement(world, services, owner, type, x, z) {
     const clear = def.radius + (d.type === 'tree' ? 0.8 : d.type === 'rock' ? 2.6 : 2.2);
     if (dd < clear) return { ok: false, reason: d.type === 'tree' ? 'Trees are in the way' : 'Rocks are in the way' };
     if (def.deposit && d.type === def.deposit && dd <= def.depositRange && dd < nearest) { nearest = dd; depositId = d.id; }
+  }
+  if (def.waterRange) {
+    const river = services.terrain.map.river;
+    if (distToPolyline(x, z, river.points) - river.halfWidth > def.waterRange) return { ok: false, reason: `Needs the river within ${def.waterRange} m` };
   }
   if (def.deposit && depositId == null) {
     const what = { tree: 'trees', rock: 'a rock outcrop', iron: 'an iron vein' }[def.deposit];

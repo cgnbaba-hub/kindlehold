@@ -74,6 +74,7 @@ function buildParts() {
     sword: g([B(0.05, 0.75, 0.018, '#c9ccd0', P.metal, { y: -0.48 }), B(0.2, 0.035, 0.05, '#6b5a3a', P.metal, { y: -0.1 }), paint(place(cyl(0.02, 0.02, 0.12, 5), { y: -0.02 }), '#4a3526', 0, null, P.plain)]),
     spear: g([paint(place(cyl(0.022, 0.025, 2.0, 5), { y: -0.3 }), '#6b4a2f', 0, null, P.planks), paint(place(cone(0.05, 0.24, 4), { y: -1.42, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)]),
     bow: g([paint(place(new THREE.TorusGeometry(0.62, 0.018, 4, 12, Math.PI * 0.8), { y: -0.1, rz: Math.PI / 2 + 0.3 }), '#6b4a2f', 0, null, P.planks), paint(place(cyl(0.004, 0.004, 1.1, 3), { y: -0.1, x: -0.25 }), '#e8e0cc', 0, null, P.plain)]),
+    rod: g([paint(place(cyl(0.012, 0.022, 2.2, 4), { y: -0.6 }), '#8a6a44', 0, null, P.planks), paint(place(cyl(0.003, 0.003, 1.3, 3), { y: -1.6, z: 0.35, rx: -0.5 }), '#e8e0cc', 0, null, P.plain)]),
     pole: g([paint(place(cyl(0.03, 0.035, 2.3, 6), { y: -0.55 }), '#3e2c1f', 0, null, P.planks), paint(place(cyl(0.016, 0.016, 0.3, 4), { y: 0.72, z: 0.12, rx: 0.9 }), '#2f2f31', 0, null, P.metal)]),
     crossbow: g([B(0.07, 0.7, 0.09, '#6b4a2f', P.planks, { y: -0.3 }), B(0.62, 0.05, 0.05, '#4a4a4c', P.metal, { y: -0.6 }), paint(place(cyl(0.004, 0.004, 0.6, 3), { y: -0.55, rz: Math.PI / 2 }), '#e8e0cc', 0, null, P.plain)]),
     halberd: g([paint(place(cyl(0.024, 0.027, 2.3, 5), { y: -0.45 }), '#5a4030', 0, null, P.planks), B(0.05, 0.3, 0.26, '#b9bcc0', P.metal, { y: -1.45, z: 0.1 }), paint(place(cone(0.045, 0.3, 4), { y: -1.72, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)]),
@@ -101,7 +102,7 @@ function buildParts() {
   };
 }
 
-const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', cook: null };
+const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', cook: null };
 const CARRY = { timber: 'log', stone: 'stone', provisions: 'sack', iron: 'ingot' };
 const SETTLER_TUNICS = ['#8a6f4e', '#6f7b5a', '#9b7c52', '#5f6f7a', '#7a5f4e', '#8e8a6a', '#8a4e4a', '#4e6a7a'];
 const HAIR = ['#4a3222', '#2a1e16', '#b8914e', '#8a4a24', '#6a5a4a', '#c8c0b0', '#3a2a1e'];
@@ -234,6 +235,11 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
         break;
       }
       case 'cast': armR = -3.0; armL = -0.4; lean = -0.1; elbowR = -0.1; nod = -0.1; break;
+      case 'fish': { // rod held out over the water, a patient twitch now and then
+        const tw = Math.max(0, Math.sin(t * 0.9 + (f.phase || 0))) ** 8;
+        armR = -1.0 - tw * 0.35; elbowR = -0.4; armL = -0.8; elbowL = -1.1; armLz = 0.25; kneeL = kneeR = 0.12; nod = 0.12;
+        break;
+      }
       case 'cower': lean = 0.4; armL = -1.8; armR = -1.8; armLz = -0.4; armRz = 0.4; bob = -0.12; elbowL = elbowR = -1.6; kneeL = kneeR = 0.8; nod = 0.3; break;
       default: {
         const breathe = Math.sin(t * 1.6 + (f.phase || 0)) * 0.03;
@@ -292,7 +298,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     // right hand item
     const right = f.tool || st.right;
     if (right && !(f.carry && f.anim !== 'hammer')) {
-      out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, right === 'bow' ? 0 : (right === 'spear' || right === 'pole' || right === 'halberd' || right === 'crossbow' ? 1.6 : 0), 0, 0));
+      out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, right === 'bow' ? 0 : (right === 'spear' || right === 'pole' || right === 'halberd' || right === 'crossbow' || right === 'rod' ? 1.6 : 0), 0, 0));
       if (right === 'axe' || right === 'pick' || right === 'hammer' || right === 'sword' || right === 'greataxe' || right === 'sickle') out.multiplyMatrices(foreRM, local(0, -0.29, 0.05, Math.PI * 0.5 + handItemA));
       put(right, out, f.bladeTint && (right === 'sword' || right === 'axe' || right === 'spear') ? f.bladeTint : null);
     }

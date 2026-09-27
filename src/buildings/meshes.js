@@ -258,6 +258,26 @@ const MODELS = {
     glow.push(win(0.4, 0.4, { x: 1.2, y: 1.6, z: 1.71 }));
     return { body, glow, height: 5.2 };
   },
+  fisher(rnd) {
+    const body = [], glow = [];
+    // a low reed-thatched hut on stilts, a jetty plank, drying racks with fish and a little boat
+    for (const [x, z] of [[-1.7, -1.3], [1.7, -1.3], [-1.7, 1.3], [1.7, 1.3]]) body.push(paint(place(cyl(0.12, 0.14, 0.6, 6), { x, y: 0.3, z }), C.timberDark, 0, null, P.planks));
+    body.push(b(3.8, 0.2, 3.0, C.plank, P.planks, { y: 0.6 }));
+    body.push(b(3.4, 1.9, 2.6, C.plank, P.planks, { y: 1.65 }));
+    body.push(...timberFrame(3.4, 1.8, 2.6, 0.7));
+    body.push(roof(4.2, 3.4, 2.0, '#a08850', P.thatch, { y: 2.6 }));
+    body.push(...door(0.85, 1.6, 1.32));
+    body.push(b(0.5, 0.5, 0.1, C.timberDark, P.planks, { x: 1.0, y: 1.8, z: 1.33 }));
+    glow.push(win(0.36, 0.36, { x: 1.0, y: 1.8, z: 1.39 }));
+    // drying rack with fish
+    body.push(beam(-2.6, 0, 0.9, -2.6, 1.7, 0.9, 0.06), beam(-2.6, 0, -1.1, -2.6, 1.7, -1.1, 0.06), beam(-2.6, 1.6, 1.0, -2.6, 1.6, -1.2, 0.05));
+    for (let i = 0; i < 5; i++) body.push(paint(place(new THREE.ConeGeometry(0.08, 0.42, 5), { x: -2.6, y: 1.35, z: 0.75 - i * 0.4, rx: Math.PI }), i % 2 ? '#9aa6ae' : '#b8c2c8', 0.1, rnd, P.metal));
+    // an upturned boat and a coil of net
+    body.push(paint(place(new THREE.CylinderGeometry(0.45, 0.45, 2.4, 8, 1, false, 0, Math.PI), { x: 2.5, y: 0.2, z: -0.4, rz: Math.PI / 2, ry: 0.2 }), '#6e5037', 0, null, P.planks));
+    body.push(paint(place(new THREE.TorusGeometry(0.3, 0.1, 5, 10), { x: 2.3, y: 0.1, z: 1.4, rx: Math.PI / 2 }), '#8a7a5a', 0, null, P.cloth));
+    body.push(paint(place(cyl(0.035, 0.035, 2.2, 4), { x: 1.9, y: 1.4, z: 1.5, rz: 0.5 }), C.timberDark, 0, null, P.planks));
+    return { body, glow, height: 4.6 };
+  },
   canteen(rnd) {
     const body = [], glow = [];
     body.push(b(7.4, 0.5, 5.4, C.stoneDark, P.stone, { y: 0.25 }));
@@ -485,7 +505,7 @@ const LEVEL_EXTRAS = {
     },
   },
 };
-for (const t of ['lodge', 'quarry', 'farm', 'mine', 'hunter', 'canteen']) {
+for (const t of ['lodge', 'quarry', 'farm', 'mine', 'hunter', 'fisher', 'canteen']) {
   LEVEL_EXTRAS[t] = { 2: (rnd) => ({ body: [...leanTo(-3.4, -1.6, rnd), ...hangingSign(1.9, 3.9, t === 'mine' ? C.rust : C.teal), ...barrel(-3.8, -1.2), ...barrel(-3.0, -2.1)], glow: [] }) };
 }
 

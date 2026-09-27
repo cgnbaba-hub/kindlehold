@@ -51,7 +51,7 @@ const KIND_SCHEMAS = {
   }),
   settler: v.object({
     hp: v.number({ min: -1e4, max: 1e5 }), maxHp: v.number({ min: 1, max: 1e5 }),
-    job: v.optional(v.string({ oneOf: ['forester', 'quarrier', 'farmer', 'miner', 'hunter', 'cook'] })),
+    job: v.optional(v.string({ oneOf: ['forester', 'quarrier', 'farmer', 'miner', 'hunter', 'fisher', 'cook'] })),
     sleep: v.optional(v.object({ home: v.number({ min: 1, max: 1e9, int: true }), in: v.boolean() }, { allowExtra: false })),
     hidden: v.optional(v.boolean()),
     carry: v.optional(v.object({ res: v.string({ oneOf: RESOURCES }), amt: nonNeg(1000) })),

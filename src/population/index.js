@@ -224,6 +224,8 @@ export function createPopulationModule() {
     if (world.tick % 20 === 5) assignJobs(world, owner);
   }
 
+  const JOB_RES = { forester: 'timber', quarrier: 'stone', miner: 'iron', farmer: 'provisions', hunter: 'provisions', fisher: 'provisions', cook: 'provisions' };
+
   function assignJobs(world, owner) {
     const idle = all(world, 'settler').filter((s) => s.owner === owner && isIdleLabourer(s) && !s.leaving);
     let free = idle.length;
@@ -232,13 +234,23 @@ export function createPopulationModule() {
     let workplaces = 0;
     for (const b of all(world, 'building')) if (b.owner === owner && b.state === 'active' && slotsOf(b)) workplaces++;
     const minFree = MIN_FREE_LABOURERS + Math.floor(workplaces / 2);
+    // who gets hands first: every workplace one worker before any gets a second, and among
+    // those the ones whose goods are scarcest in the store (a rebuilt quarry is not last in line)
+    const store = world.players[owner] ? world.players[owner].res : {};
+    const places = [];
     for (const b of all(world, 'building')) {
       if (b.owner !== owner || b.state !== 'active') continue;
-      const def = BUILDINGS[b.type];
-      const slots = slotsOf(b);
-      if (!slots || b.paused) continue;
+      if (!slotsOf(b)) continue;
       // drop workers that no longer exist
       b.workers = b.workers.filter((id) => world.entities[id] && world.entities[id].workplace === b.id);
+      places.push(b);
+    }
+    const need = (b) => (b.workers.length ? 1e6 : 0) + (store[JOB_RES[BUILDINGS[b.type].job]] ?? 1e5);
+    places.sort((a, c) => need(a) - need(c) || a.id - c.id);
+    for (const b of places) {
+      const def = BUILDINGS[b.type];
+      const slots = slotsOf(b);
+      if (b.paused) continue;
       while (b.workers.length < slots) {
         if (free <= 0 || labourers - (idle.length - free) <= minFree) break;
         // nearest idle settler

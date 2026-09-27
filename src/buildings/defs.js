@@ -66,6 +66,12 @@ export const BUILDINGS = {
     cost: { timber: 25, stone: 5 }, buildTime: 16, hp: 300, radius: 3.4, navRadius: 2.8, slots: 1, job: 'hunter',
     huntRange: 45, outCap: 8, door: [0, 3.4],
   },
+  fisher: {
+    id: 'fisher', name: "Fisher's Hut", owner: 'p1', buildable: true,
+    desc: 'A fisher casts a line in the river for fish (provisions). Must stand within 30 m of the Harrow; slower when the river is frozen.',
+    cost: { timber: 20, stone: 5 }, buildTime: 14, hp: 280, radius: 3.2, navRadius: 2.6, slots: 1, job: 'fisher',
+    waterRange: 30, outCap: 8, door: [0, 3.2],
+  },
   canteen: {
     id: 'canteen', name: 'Tavern', owner: 'p1', buildable: true,
     desc: 'The cook turns provisions into hot meals: one provision feeds one and a half people, and warm meals lift stability.',
@@ -125,6 +131,7 @@ export const UPGRADES = {
   farm: { 2: { ...WORKSHOP_L2, name: 'Manor Farm' } },
   mine: { 2: { ...WORKSHOP_L2, name: 'Deep Mine', cost: { timber: 30, stone: 30, taler: 35 } } },
   hunter: { 2: { ...WORKSHOP_L2, name: 'Hunting Lodge' } },
+  fisher: { 2: { ...WORKSHOP_L2, name: 'Fishery' } },
   barracks: { 2: { name: 'Drill Yard', cost: { timber: 40, stone: 30, iron: 20, taler: 60 }, time: 45, speed: 1.25, hp: 250, desc: 'Unlocks Crossbowmen and Halberdiers; training 25% faster.' } },
   canteen: { 2: { ...WORKSHOP_L2, name: 'Inn', desc: 'A second cook and 20% faster cooking.' } },
 };
@@ -148,7 +155,7 @@ export function displayName(b) {
   return BUILDINGS[b.type].name;
 }
 
-export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'canteen', 'quarry', 'mine', 'barracks', 'tower'];
+export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'fisher', 'canteen', 'quarry', 'mine', 'barracks', 'tower'];
 
 export function buildingDef(type) {
   const d = BUILDINGS[type];

@@ -66,6 +66,8 @@ export function createBot(sim, { aggressive = true } = {}) {
     if (count('farm') < 2) { place('farm', [-60, 78]); return; }
     if (count('hunter') < 1) { place('hunter', [-72, 30]); return; }
     if (count('cottage') < 3) { place('cottage', [-40, 74]); return; }
+    // a fisher on the Harrow once the territory reaches the bank (tried now and then)
+    if (count('fisher') < 1 && world.tick % 1200 < 20 && place('fisher', [-44, 14])) return;
     if (count('barracks') < 1 && (world.stats.produced.iron >= 10 || p.res.iron >= 10)) { place('barracks'); return; }
     if (count('canteen') < 1 && count('barracks') > 0) { place('canteen', [-54, 38]); return; }
     if (count('lodge') < 3 && (p.res.timber < 30 || count('barracks') > 0)) { place('lodge', [-40, 16]); return; }
@@ -79,6 +81,19 @@ export function createBot(sim, { aggressive = true } = {}) {
         const tree = k && all(world, 'deposit').filter((d) => d.type === 'tree' && d.amount > 0).sort((a, b) => Math.hypot(a.x - k.x, a.z - k.z) - Math.hypot(b.x - k.x, b.z - k.z))[0];
         if (tree) sim.issue({ type: 'gather', ids: free.slice(0, 2).map((x) => x.id), target: tree.id });
       } else if (p.res.timber > 90 && gatherers.length) sim.issue({ type: 'release', ids: gatherers.map((x) => x.id) });
+    }
+    // the market: turn surplus stone and Taler into timber when the forests cannot keep up
+    if (world.tick % 400 === 0) {
+      const trader = all(world, 'poi').find((x) => x.type === 'trader' && x.state !== 'hidden');
+      if (trader) {
+        if (p.res.timber < 30) {
+          if (p.res.stone > 60) sim.issue({ type: 'trade', id: trader.id, deal: 'sellStone' });
+          sim.issue({ type: 'trade', id: trader.id, deal: 'buyTimber' });
+        }
+        // a full treasury buys what the army and the table lack
+        if (p.res.taler > 150 && p.res.iron < 25) sim.issue({ type: 'trade', id: trader.id, deal: 'buyIron' });
+        if (p.res.taler > 150 && p.res.provisions < 40) sim.issue({ type: 'trade', id: trader.id, deal: 'buyFood' });
+      }
     }
     // upgrade workshops once the treasury allows (mine first: iron gates the army)
     for (const type of ['mine', 'lodge', 'quarry']) {
