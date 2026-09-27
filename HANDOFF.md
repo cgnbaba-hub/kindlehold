@@ -93,7 +93,10 @@ Karte 384 × 384 m, zweite Partei (Greyfen-Banditen, `p3`, `src/brigands/`), Dip
 (`src/diplomacy/`, Fenster über den Banner-Knopf an der Uhr), Marktpreise nach Angebot und
 Nachfrage, zweiter Händler. Wer gegen wen kämpft, entscheidet `hostile()` in
 `src/diplomacy/index.js`. Neue Parteien also dort eintragen, nicht `owner !== PLAYER` prüfen.
-Tests: 107/107.
+Tests: 107/107. e2e 11/11 (neu: `diplomacy-gift`), Audio-Check ok, Dreiecke im Überblick
+1,436 M (Budget 1,5 M; dafür etwas weniger Deko-Wald). `npm run balance`: 6/8 (Hard 1/3, siehe
+Roadmap). Menüs setzen den Fokus jetzt sofort, sonst ging auf langsamen Rechnern das erste Esc
+verloren.
 
 ## Stufe 2.6
 

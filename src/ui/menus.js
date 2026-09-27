@@ -31,7 +31,7 @@ function backdrop() {
 
 export function createMenus({ root, settings, onSettingsChange }) {
   let current = null;
-  function show(el) { close(); current = el; root.append(el); requestAnimationFrame(() => focusFirst(el)); return el; }
+  function show(el) { close(); current = el; root.append(el); focusFirst(el); requestAnimationFrame(() => { if (!el.contains(document.activeElement)) focusFirst(el); }); return el; }
   function close() { if (current) { current.remove(); current = null; } }
 
   function mainMenu({ onNew, onContinue, onLoad, canContinue }) {
