@@ -26,6 +26,20 @@ const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 
 const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander' };
 const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner', hunter: 'Hunter', cook: 'Cook' };
 
+/**
+ * Bring `target` in line with freshly rendered `fresh` children, replacing only the nodes that
+ * changed: a button whose state flips does not rebuild (and flicker) the whole panel, and the
+ * one under the pointer keeps its hover. `full` swaps everything (new selection: new handlers).
+ */
+function patchChildren(target, fresh, full) {
+  const next = [...fresh.children];
+  if (full || target.children.length !== next.length) { clear(target); target.append(...next); return; }
+  for (let i = 0; i < next.length; i++) {
+    const cur = target.children[i];
+    if (!cur.isEqualNode(next[i])) target.replaceChild(next[i], cur);
+  }
+}
+
 function costRow(cost) {
   const row = h('span.cost');
   for (const r of RESOURCES) if (cost[r]) row.append(h('span.cost-item', {}, [icon(r, 'icon icon-xs'), String(cost[r])]));
@@ -765,9 +779,9 @@ export function createHud({ root, session, input, settings, actions }) {
       slow = 0; dirtySel = false;
       // build off-DOM and swap only when the markup changed, so clicks are never lost
       const s2 = h('div'); renderSelection(s2);
-      if (s2.innerHTML !== selPanel.innerHTML) { clear(selPanel); while (s2.firstChild) selPanel.append(s2.firstChild); }
+      patchChildren(selPanel, s2, false);
       const g2 = h('div'), t2 = h('div'); renderCommands(g2, t2);
-      if (g2.innerHTML !== cmdGrid.innerHTML || forceCmd) { forceCmd = false; clear(cmdGrid); while (g2.firstChild) cmdGrid.append(g2.firstChild); }
+      patchChildren(cmdGrid, g2, forceCmd); forceCmd = false;
       setText(cmdTitle, t2.textContent);
     }
     if (dirtyObjectives || w.tick % 100 < 5) { renderObjectives(); dirtyObjectives = false; }

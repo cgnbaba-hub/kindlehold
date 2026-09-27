@@ -207,6 +207,21 @@ try {
     assert(await page.locator('[data-faction="p2"] .diplo-btn').count() === 1, 'toll offered to the Rustfang');
   });
 
+  await test('graphics-reset-recovers', async (page) => {
+    await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    const ext = await page.evaluate(() => { const gl = window.__GAME__.session.rc.renderer.getContext(); window.__LOSE__ = gl.getExtension('WEBGL_lose_context'); if (window.__LOSE__) window.__LOSE__.loseContext(); return !!window.__LOSE__; });
+    assert(ext, 'WEBGL_lose_context available');
+    await page.waitForFunction(() => /graphics driver was reset/i.test(document.querySelector('.toasts').textContent), null, { timeout: 10000 });
+    assert(await page.getByRole('button', { name: 'Resume' }).count() === 1, 'game paused after the reset');
+    await page.evaluate(() => window.__LOSE__.restoreContext());
+    await page.waitForFunction(() => /Graphics recovered/.test(document.querySelector('.toasts').textContent), null, { timeout: 15000 });
+    await page.getByRole('button', { name: 'Resume' }).click();
+    await page.waitForTimeout(500);
+    const info = await page.evaluate(() => window.__GAME__.getStats().renderer);
+    assert(info.drawCalls > 0, 'drawing again after the reset');
+  });
+
   await test('ui-1280x720-no-overlap', async (page) => {
     await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });

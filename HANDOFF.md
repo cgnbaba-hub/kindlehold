@@ -32,6 +32,8 @@ npm run build
 npm run verify -- --prod --nofps    # 12 Screenshot-Presets + JSON-Berichte (langsam)
 npm run test:e2e -- --only=<name>   # UI-Tests in Headless-Chromium, --only filtert
 npm run test:audio   # Lautstärke-Grenze (Spitze < 0.5) und hörbare Musik
+npm run test:soak -- --minutes=16 --nobuild   # Bot spielt mit HUD; misst GPU-Ressourcen, DOM, Heap je Minute (~25 min)
+node scripts/verification/gl-leaks.mjs --autoplay --frames=30   # WebGL-Puffer/Texturen/Uploads pro Frame
 ```
 
 - Ohne GPU (SwiftShader) dauert ein Screenshot-Preset etwa 4 Minuten. Deshalb lange Läufe im
@@ -97,6 +99,24 @@ Tests: 107/107. e2e 11/11 (neu: `diplomacy-gift`), Audio-Check ok, Dreiecke im �
 1,436 M (Budget 1,5 M; dafür etwas weniger Deko-Wald). `npm run balance`: 6/8 (Hard 1/3, siehe
 Roadmap). Menüs setzen den Fokus jetzt sofort, sonst ging auf langsamen Rechnern das erste Esc
 verloren.
+
+## Hänger nach ~13 Minuten (Bericht nach 2.8)
+
+Der Nutzer meldete einen ~10-s-Hänger beim ersten Kampf. Danach flackerten HTML-Knöpfe, das
+Tempo-Menü war nur beim Überfahren sichtbar, und das Esc-Menü fehlte. Das passt zum
+GPU-Watchdog von Chrome (GPU-Prozess wird nach ~10 s neu gestartet). Gemessen: kein Leck bei
+GPU-Puffern, Texturen, Shadern, DOM oder Heap (`test:soak`, `gl-leaks.mjs`). Die Simulation
+braucht 0,1 ms pro Tick, der Speicherstand hat 195 KB. Gegenmaßnahmen:
+- Instanz-Puffer laden nur noch den genutzten Bereich hoch (`src/render/instancing.js`),
+  etwa 10× weniger Upload pro Frame.
+- Auflösungs-Regler in `src/app/render-context.js` (`govern`): Bei dauerhaft langsamen Frames
+  sinkt die Auflösung stufenweise, bei schnellen Frames steigt sie langsam wieder.
+- WebGL-Kontextverlust: Das Spiel speichert automatisch, pausiert, zeigt einen Hinweis und
+  läuft danach mit geringerer Auflösung weiter.
+- Befehls- und Auswahlfenster ersetzen nur noch geänderte Knöpfe (`patchChildren` in hud.js),
+  das beseitigt das Flackern und den verlorenen Hover.
+Nicht reproduzierbar ohne echte GPU. Falls es wieder auftritt: Browser, GPU,
+Qualitätsstufe und Spieltempo erfragen.
 
 ## Stufe 2.6
 

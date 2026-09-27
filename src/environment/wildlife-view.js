@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { all } from '../world/world.js';
 import { createStructureMaterial, PATTERN as P } from '../render/structure-material.js';
 import { paint, place, merge, box, cyl, cone, ico } from '../render/geometry-kit.js';
+import { flushInstances } from '../render/instancing.js';
 
 const MAX = 80;
 
@@ -73,7 +74,7 @@ export function createWildlifeView({ scene, terrain, world }) {
         n++;
       }
       bodies.count = n; heads.count = n; antlers.count = na; legs.count = nl;
-      for (const m of [bodies, heads, antlers, legs]) m.instanceMatrix.needsUpdate = true;
+      for (const m of [bodies, heads, antlers, legs]) flushInstances(m);
       if (headDip.size > MAX * 3) headDip.clear();
     },
     dispose() {

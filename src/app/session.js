@@ -95,6 +95,7 @@ export async function createSession({ container, seed, quality = 'high', verify 
     const dt = last ? (now - last) / 1000 : 0;
     last = now;
     stats.pushFrame(dt * 1000 || 16.7);
+    if (dt) rc.govern(dt * 1000);
     loop.advance(dt);
     frames++;
     if (frames === 2) resolveFirst();

@@ -28,9 +28,31 @@ export function createRenderContext({ container, terrain, quality = 'high', veri
   const rts = createRtsCamera({ aspect: renderer.domElement.width / Math.max(1, renderer.domElement.height), terrain });
   const lastInfo = { calls: 0, triangles: 0, points: 0, lines: 0 };
   let contextLost = false;
+  const listeners = { lost: [], restored: [], scaled: [] };
+  const fire = (k, d) => { for (const f of listeners[k]) { try { f(d); } catch { /* ui only */ } } };
 
-  renderer.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); contextLost = true; });
-  renderer.domElement.addEventListener('webglcontextrestored', () => { contextLost = false; });
+  // Resolution governor: when the graphics card cannot keep up (long frames for a few
+  // seconds), render at a lower resolution instead of stalling the whole browser; creep back
+  // up once frames are quick again. A graphics driver reset also drops a step.
+  const maxRatio = Math.min(window.devicePixelRatio || 1, q.pixelRatio);
+  const minRatio = Math.min(maxRatio, 0.6);
+  let ratio = maxRatio, slowFor = 0, fastFor = 0, cooldown = 0, ema = 16;
+  function setRatio(r, reason) {
+    const next = Math.max(minRatio, Math.min(maxRatio, Math.round(r * 100) / 100));
+    if (next === ratio) return false;
+    ratio = next;
+    renderer.setPixelRatio(ratio);
+    resize();
+    fire('scaled', { ratio, max: maxRatio, reason });
+    return true;
+  }
+
+  renderer.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); contextLost = true; fire('lost'); });
+  renderer.domElement.addEventListener('webglcontextrestored', () => {
+    contextLost = false;
+    setRatio(ratio - 0.25, 'reset');
+    fire('restored', { ratio });
+  });
 
   function resize() {
     const w = container.clientWidth || window.innerWidth;
@@ -46,6 +68,18 @@ export function createRenderContext({ container, terrain, quality = 'high', veri
     critical: true,
     renderer, scene, rts, quality: q, qualityName: quality,
     get camera() { return rts.camera; },
+    on(kind, fn) { listeners[kind].push(fn); return () => { listeners[kind] = listeners[kind].filter((f) => f !== fn); }; },
+    /** Feed the real duration of each frame (ms); adapts the render resolution. */
+    govern(frameMs) {
+      if (verify || contextLost || !(frameMs > 0)) return;
+      ema += (Math.min(frameMs, 250) - ema) * 0.1;
+      const s = frameMs / 1000;
+      cooldown = Math.max(0, cooldown - s);
+      if (ema > 45) { slowFor += s; fastFor = 0; } else if (ema < 22) { fastFor += s; slowFor = 0; } else { slowFor = 0; fastFor = 0; }
+      if (slowFor > 2.5 && cooldown <= 0) { if (setRatio(ratio - 0.15, 'slow')) cooldown = 4; slowFor = 0; }
+      else if (fastFor > 20 && ratio < maxRatio && cooldown <= 0) { if (setRatio(ratio + 0.1, 'fast')) cooldown = 8; fastFor = 0; }
+    },
+    get contextLost() { return contextLost; },
     draw() {
       if (contextLost) return;
       renderer.info.reset();
