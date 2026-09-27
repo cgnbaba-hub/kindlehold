@@ -14,7 +14,7 @@ export const PRESETS = [
   { name: 'enemy-raid', camera: 'raid', hour: 11, demo: 'raid', ticks: 160, perf: true },
   { name: 'winter-overview', camera: 'overview', hour: 11.5, demo: 'winter', ticks: 40 },
   { name: 'winter-settlement', camera: 'settlement-close', hour: 10.5, demo: 'winter', ticks: 40 },
-  { name: 'greyfen-hold', camera: 'greyfen', hour: 14, demo: 'midgame', ticks: 60 },
+  { name: 'greyfen-hold', camera: 'greyfen', hour: 14, demo: 'greyfen', ticks: 60 },
   { name: 'ui-1920', camera: 'settlement', hour: 11, demo: 'midgame', ticks: 40, ui: true, viewport: { width: 1920, height: 1080 } },
   { name: 'ui-1280', camera: 'settlement', hour: 11, demo: 'midgame', ticks: 40, ui: true, viewport: { width: 1280, height: 720 } },
 ];

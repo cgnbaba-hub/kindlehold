@@ -6,6 +6,7 @@ import { spawnUnit } from '../units/sim.js';
 import { spawnEnemy } from '../ai/index.js';
 import { all } from '../world/world.js';
 import { createBuildingEntity } from '../construction/index.js';
+import { reveal } from '../exploration/index.js';
 
 function playTo(sim, bot, tick) { while (sim.world.tick < tick && !sim.world.mission.result) { bot.step(); sim.step(); } }
 
@@ -21,6 +22,12 @@ export const DEMO_STATES = {
     const bot = createBot(sim);
     playTo(sim, bot, 10.5 * 1200);
     quietEnemy(sim);
+  },
+  /** the Greyfen hold in the north-western fens, scouted */
+  greyfen(sim) {
+    DEMO_STATES.midgame(sim);
+    const camp = sim.terrain.map.brigandCamp;
+    reveal(sim.world, sim.terrain.half, camp.x, camp.z + 8, 60);
   },
   /** several buildings under construction at different stages */
   construction(sim) {
