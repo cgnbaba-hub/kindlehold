@@ -106,6 +106,18 @@ während 280 Stein im Lager lagen. Die Banditen blieben dabei neutral. Das ist e
 Bots (er handelt nicht und baut Holzfäller nicht nach), keine Folge der neuen Partei.
 
 
+## Stufe 2.9: umgesetzt (erster Schritt zu den Figuren)
+
+| Punkt | Umsetzung |
+|---|---|
+| Figuren-Politur | Stahlhelme sitzen jetzt richtig (vorher verdeckte der Kopf den Helm), Kapuzen schließen, Schulterstücke aus Metall, Wappenröcke, wehende Umhänge für Maren, Vharek und Morwen. Speere werden beim Marschieren aufrecht getragen, Schilde nach außen gehalten. Waren tragen die Siedler auf dem Kopf. Dazu Zucken bei Treffern, Umschauen und Gewichtsverlagerung in Ruhe, Strohhüte für Bauern, Schürzen für Köche. Gefallene behalten ihre Größe. |
+| Veteranen | Soldaten sammeln Siege: nach 3 werden sie Veteran (+10 % Schaden und Leben), nach 8 Elite (+20 %). Goldene Sterne über dem Kopf, Anzeige im Auswahlfenster. Gilt auch für Gegner. |
+| Regen | Etwa alle fünf Minuten ein Sommerschauer von 75 s: Regenstreifen, grauer Himmel, Regengeräusch, keine Vögel. Felder wachsen bei Regen 35 % schneller. Der Boden bleibt eine Weile nass. |
+| Fischerhütte | Muss höchstens 30 m vom Harrow entfernt stehen. Der Fischer geht ans Ufer und wirft die Angel aus (3 Proviant pro Fang). Auf dem Eis im Winter geht es halb so schnell. |
+| Arbeiterverteilung | Zuerst bekommt jeder Betrieb einen Arbeiter, und zwar vorrangig dort, wo die erzeugte Ware am knappsten ist. Vorher kam ein nachgebauter Steinbruch zuletzt dran, und die Siedlung saß ohne Stein fest. |
+| Test-Bot | Handelt am Markt (verkauft Stein, kauft Holz, Eisen und Proviant) und baut einen Fischer. `npm run balance`: 7/8 gewonnen (Story, Normal 4/4, Hard 2/3). |
+| Fehlerbehebung Hänger | Siehe HANDOFF: GPU-Entlastung, automatische Auflösungsanpassung, Erholung nach einem Treiber-Reset, flackerfreie Knöpfe. |
+
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
 1. **Echte animierte Figuren (Variante B):** Modelle mit Skelett, z. B. aus CC0-Paketen,
