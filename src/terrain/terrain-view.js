@@ -60,7 +60,9 @@ export function createTerrainView({ scene, terrain, quality, world }) {
   wearTex.needsUpdate = true;
   const wearAcc = new Float32Array(WEAR_RES * WEAR_RES);
 
-  const geo = new THREE.PlaneGeometry(terrain.size, terrain.size, terrain.res, terrain.res);
+  // the mesh is capped at 256 segments per side (1.5 m on the large map) to stay within the triangle budget
+  const segs = Math.min(terrain.res, 256);
+  const geo = new THREE.PlaneGeometry(terrain.size, terrain.size, segs, segs);
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   // PlaneGeometry after rotateX: vertex order rows from -z (top) to +z; our heights index j from -half

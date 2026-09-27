@@ -1,5 +1,6 @@
 // Population: settlers arriving, housing capacity, meals (provisions), stability,
 // automatic worker assignment and fleeing from raiders.
+import { hostile } from '../diplomacy/index.js';
 import { EV, PLAYER, DT } from '../core/contracts.js';
 import { spawn, remove, all, emit, alert, worldRng } from '../world/world.js';
 import { BUILDINGS, doorOf, slotsOf, upgradeBonus, levelOf } from '../buildings/defs.js';
@@ -286,7 +287,7 @@ export function createPopulationModule() {
       // flee from nearby enemies (checked every 10 ticks)
       if (s.hidden) continue; // asleep indoors
       if ((world.tick + s.id) % 10 === 0 && spatial) {
-        spatial.query(s.x, s.z, 9, enemyBuf, (e) => e.kind === 'unit' && e.owner !== s.owner && !e.downed);
+        spatial.query(s.x, s.z, 9, enemyBuf, (e) => e.kind === 'unit' && hostile(world, s.owner, e.owner) && !e.downed);
         if (enemyBuf.length > 0 && keep) {
           if (!s.fleeing) {
             s.fleeing = world.tick + 120;

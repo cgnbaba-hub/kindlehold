@@ -1,5 +1,6 @@
 // Heroes: Maren Ashgrove's passive (Hearthlight), active abilities with cooldowns and
 // cast ranges, downed/recovery. Also Vharek's War Horn (enemy commander ability).
+import { hostile } from '../diplomacy/index.js';
 import { EV, PLAYER, DT } from '../core/contracts.js';
 import { all, emit } from '../world/world.js';
 
@@ -32,7 +33,7 @@ export function createHeroesModule() {
     if (ab.id === 'flare') {
       let hits = 0;
       for (const e of all(world, 'unit')) {
-        if (e.owner === hero.owner || e.downed) continue;
+        if (!hostile(world, hero.owner, e.owner) || e.downed) continue;
         if ((e.x - x) ** 2 + (e.z - z) ** 2 <= ab.radius ** 2) {
           e.dazzleUntil = world.tick + ab.dazzle * 20;
           dealDamage(world, hero, e, ab.damage, 'flare');

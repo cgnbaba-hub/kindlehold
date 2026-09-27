@@ -92,6 +92,9 @@ export const STYLE = {
   reaver: { torso: '#8c3b2a', head: 'cap', headColor: '#3a302a', right: 'axe', left: null, legs: '#3a302a', beard: true, beardColor: '#6a2e18' },
   slinger: { torso: '#7a5a3e', head: 'hood', headColor: '#5b2a20', right: 'sling', left: null, legs: '#3a302a' },
   brute: { torso: '#5b2a20', head: 'hornhelm', right: 'spear', left: 'shieldHide', leftColor: '#7a5a3e', legs: '#3a302a' },
+  brigand: { torso: '#5a6a44', head: 'hood', headColor: '#3e4a30', right: 'axe', left: 'shieldRound', leftColor: '#6e5037', legs: '#3a3428', beard: true, beardColor: '#5a4030' },
+  poacher: { torso: '#4a5638', head: 'hood', headColor: '#6a5a3a', right: null, left: 'bow', legs: '#3a3428' },
+  morwen: { torso: '#3e4a30', coat: true, head: 'hood', headColor: '#2e3a24', right: null, left: 'bow', legs: '#2a2a20', scale: 1.15 },
   vharek: { torso: '#3a302a', coat: true, head: 'hornhelm', right: 'greataxe', left: null, legs: '#2a2420', scale: 1.28, beard: true, beardColor: '#8c3b1f' },
 };
 

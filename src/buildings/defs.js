@@ -89,6 +89,16 @@ export const BUILDINGS = {
     desc: "Vharek's war-hall at the ford fort. Destroy it to free the March.",
     cost: {}, buildTime: 0, hp: 2400, radius: 7, navRadius: 6, territory: 30, door: [0, 7.2],
   },
+  brigandhall: {
+    id: 'brigandhall', name: 'Greyfen Hold', owner: 'p3', buildable: false,
+    desc: "The brigands' timber longhouse in the northern fens.",
+    cost: {}, buildTime: 0, hp: 1800, radius: 6.5, navRadius: 5.5, territory: 30, door: [0, 6.8],
+  },
+  brigandtower: {
+    id: 'brigandtower', name: 'Greyfen Watch', owner: 'p3', buildable: false,
+    desc: 'A brigand lookout with a keen-eyed poacher on top.',
+    cost: {}, buildTime: 0, hp: 450, radius: 2.6, navRadius: 2.2, attack: { damage: 11, range: 15, cooldown: 1.7 }, door: [0, 2.6],
+  },
   reavertower: {
     id: 'reavertower', name: 'Rustfang Lookout', owner: 'p2', buildable: false,
     desc: 'A crude lookout that pelts intruders with stones.',

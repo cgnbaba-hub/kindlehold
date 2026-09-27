@@ -5,7 +5,7 @@ import { DT } from '../core/contracts.js';
 import { distToPolyline } from '../world/terrain-data.js';
 
 export const DEER = { speed: 1.4, fleeSpeed: 5.2, fleeRadius: 7, roam: 11, maxPerHerd: 7, breedEvery: 50 * 20 };
-const HERDS = 6;
+const HERDS = 9;
 
 export function spawnDeer(world, herd, x, z) {
   return spawn(world, { kind: 'animal', type: 'deer', owner: 'none', x, z, heading: 0, hp: 1, herd: herd.id, goal: null, wait: 0, flee: 0, anim: 'graze', reservedBy: null });

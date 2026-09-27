@@ -181,7 +181,9 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
     return [splat[k], splat[k + 1], splat[k + 2], splat[k + 3]];
   };
   const decoTrees = [];
-  for (let i = 0; i < 3600 && decoTrees.length < 1150; i++) {
+  // the wider valley has more resource forests, so the decorative rim stays a little leaner
+  const rim = terrain.half * 0.75, camp = map.brigandCamp;
+  for (let i = 0; i < 3600 && decoTrees.length < 1000; i++) {
     const x = (rnd() - 0.5) * terrain.size * 0.98, z = (rnd() - 0.5) * terrain.size * 0.98;
     const edge = Math.max(Math.abs(x), Math.abs(z));
     const h = gh(x, z);
@@ -189,11 +191,12 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
     const dk = Math.hypot(x - map.playerStart.x, z - map.playerStart.z);
     const de = Math.hypot(x - map.enemyCamp.x, z - map.enemyCamp.z);
     if (dk < 52 || de < 34 || nearRoad(x, z, 3)) continue;
+    if (camp && Math.hypot(x - camp.x, z - camp.z) < 36) continue;
     // denser near the borders and on hills, sparse in the valley floor
-    const density = edge > 96 ? 0.9 : terrain.slope(x, z) > 0.25 ? 0.5 : 0.12;
+    const density = edge > rim ? 0.9 : terrain.slope(x, z) > 0.25 ? 0.5 : 0.12;
     if (rnd() > density) continue;
-    if (terrain.slope(x, z) > (edge > 100 ? 2.2 : 1.3)) continue;
-    decoTrees.push([x, z, rnd() < 0.7 ? 0 : 1, 0.8 + rnd() * 0.6, rnd() * 6.28]);
+    if (terrain.slope(x, z) > (edge > rim + 4 ? 2.2 : 1.3)) continue;
+    decoTrees.push([x, z, rnd() < 0.75 ? 0 : 1, 0.8 + rnd() * 0.6, rnd() * 6.28]);
   }
   const decoMesh = [make(geos.conifer, treeMat, decoTrees.length), make(geos.broadleaf, treeMat, decoTrees.length)];
   for (const [x, z, v, sc, rot] of decoTrees) {

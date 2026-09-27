@@ -16,6 +16,7 @@ export const CAMERA_PRESETS = {
   'levels': { x: -30, z: 52, yaw: 0.9, zoom: 44 },
   'wildlife': { x: -12, z: 50, yaw: 0.9, zoom: 24 },
   'figures': { x: -41, z: 57, yaw: 0.9, zoom: 17 },
+  'greyfen': { x: -112, z: -128, yaw: 0.7, zoom: 58 },
 };
 
 const MIN_ZOOM = 16, MAX_ZOOM = 170;

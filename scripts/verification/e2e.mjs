@@ -195,6 +195,18 @@ try {
     assert(/The Toll Is Broken/.test(await page.textContent('.end')), 'victory text');
   });
 
+  await test('diplomacy-gift', async (page) => {
+    await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    await page.evaluate(() => { window.__GAME__.world().players.p1.res.taler = 200; });
+    await page.getByRole('button', { name: 'Diplomacy' }).click();
+    await page.waitForSelector('.diplo-panel:not([hidden]) [data-faction="p3"]', { timeout: 10000 });
+    const before = await page.evaluate(() => window.__GAME__.world().diplomacy.rel['p1|p3']);
+    await page.locator('[data-faction="p3"] .diplo-btn').first().click();
+    await page.waitForFunction((b) => window.__GAME__.world().diplomacy.rel['p1|p3'] > b, before, { timeout: 10000 });
+    assert(await page.locator('[data-faction="p2"] .diplo-btn').count() === 1, 'toll offered to the Rustfang');
+  });
+
   await test('ui-1280x720-no-overlap', async (page) => {
     await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });

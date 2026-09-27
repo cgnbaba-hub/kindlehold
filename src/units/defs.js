@@ -27,6 +27,10 @@ export const UNITS = {
   reaver: { id: 'reaver', name: 'Reaver', owner: 'p2', cls: 'melee', hp: 120, armor: 1, damage: 14, range: 1.6, cooldown: 1.1, speed: 4.2, sight: 13, cost: {}, desc: 'Axe-raider of the Rustfang.' },
   slinger: { id: 'slinger', name: 'Slinger', owner: 'p2', cls: 'ranged', hp: 80, armor: 0, damage: 10, range: 13, cooldown: 1.7, speed: 3.8, sight: 15, cost: {}, desc: 'Hurls iron shot.' },
   brute: { id: 'brute', name: 'Brute', owner: 'p2', cls: 'defensive', hp: 180, armor: 4, damage: 10, range: 1.9, cooldown: 1.4, speed: 3.2, sight: 12, cost: {}, desc: 'Hide-shielded bruiser with a pike.' },
+  // Greyfen brigands (p3)
+  brigand: { id: 'brigand', name: 'Greyfen Brigand', owner: 'p3', cls: 'melee', hp: 115, armor: 1, damage: 13, range: 1.6, cooldown: 1.05, speed: 4.4, sight: 13, cost: {}, desc: 'Marsh outlaw with a hatchet and a quick temper.' },
+  poacher: { id: 'poacher', name: 'Greyfen Poacher', owner: 'p3', cls: 'ranged', hp: 80, armor: 0, damage: 11, range: 15, cooldown: 1.6, speed: 3.9, sight: 16, cost: {}, desc: 'Deer-hunter turned outlaw. A keen shot.' },
+  morwen: { id: 'morwen', name: 'Morwen Greyfen', owner: 'p3', cls: 'commander', hp: 520, armor: 3, damage: 24, range: 15, cooldown: 1.5, speed: 4.2, sight: 16, cost: {}, desc: 'Chieftain of the Greyfen brigands. Proud, clever, and owes the Rustfang a blood debt.' },
   vharek: { id: 'vharek', name: 'Vharek the Tollbreaker', owner: 'p2', cls: 'commander', hp: 700, armor: 5, damage: 35, range: 2.4, cooldown: 1.8, speed: 3.8, sight: 14, cost: {}, desc: 'Former bridge-warden turned warlord.' },
 };
 

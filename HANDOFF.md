@@ -27,7 +27,7 @@ fasst zusammen, was eine neue Session (z. B. Claude Code im Web) wissen muss.
 ```bash
 npm ci && npx playwright install chromium   # einmalig
 npm run dev          # http://127.0.0.1:5180/  (?debug=1 stellt window.__GAME__ bereit)
-npm test             # 99 node:test-Tests (Unit, Integration, deterministische Simulation)
+npm test             # 107 node:test-Tests (Unit, Integration, deterministische Simulation)
 npm run build
 npm run verify -- --prod --nofps    # 12 Screenshot-Presets + JSON-Berichte (langsam)
 npm run test:e2e -- --only=<name>   # UI-Tests in Headless-Chromium, --only filtert
@@ -86,6 +86,17 @@ Bot: `npm run balance` (7/8 gewonnen). Tests: 91/91.
 
 Tempo-Menü, Bewohner-Übersicht (Tooltip + Fenster), Berater Osric mit Stimmung und Hinweisen,
 Drill Yard mit Armbrustschützen und Hellebardieren, Rationen, Festmahl. Tests: 99/99.
+
+## Stufe 2.8 „Das große Tal“
+
+Karte 384 × 384 m, zweite Partei (Greyfen-Banditen, `p3`, `src/brigands/`), Diplomatie
+(`src/diplomacy/`, Fenster über den Banner-Knopf an der Uhr), Marktpreise nach Angebot und
+Nachfrage, zweiter Händler. Wer gegen wen kämpft, entscheidet `hostile()` in
+`src/diplomacy/index.js`. Neue Parteien also dort eintragen, nicht `owner !== PLAYER` prüfen.
+Tests: 107/107. e2e 11/11 (neu: `diplomacy-gift`), Audio-Check ok, Dreiecke im Überblick
+1,436 M (Budget 1,5 M; dafür etwas weniger Deko-Wald). `npm run balance`: 6/8 (Hard 1/3, siehe
+Roadmap). Menüs setzen den Fokus jetzt sofort, sonst ging auf langsamen Rechnern das erste Esc
+verloren.
 
 ## Stufe 2.6
 

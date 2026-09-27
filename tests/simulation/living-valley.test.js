@@ -74,7 +74,7 @@ test('places of interest: the trader trades once found, the ruin pays out, Millb
   sim.issue({ type: 'rekindle' });
   sim.step();
   const pois = all(sim.world, 'poi');
-  assert.deepEqual(pois.map((p) => p.type).sort(), ['cairn', 'hamlet', 'ruin', 'trader']);
+  for (const t of ['cairn', 'hamlet', 'ruin', 'trader']) assert.ok(pois.some((p) => p.type === t), t);
   const trader = pois.find((p) => p.type === 'trader');
   const p = sim.world.players.p1;
   p.res.taler = 100;
@@ -106,5 +106,5 @@ test('places of interest: the trader trades once found, the ruin pays out, Millb
   assert.equal(hamlet.state, 'done');
   assert.ok(sim.world.mission.flags.millbrookAllied);
   const loaded = deserializeWorld(serializeWorld(sim.world)).world;
-  assert.equal(Object.values(loaded.entities).filter((e) => e.kind === 'poi').length, 4);
+  assert.equal(Object.values(loaded.entities).filter((e) => e.kind === 'poi').length, pois.length);
 });
