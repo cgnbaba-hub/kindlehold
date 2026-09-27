@@ -8,6 +8,7 @@ import { followPath, formationSlots } from '../navigation/index.js';
 import { isIdleLabourer } from '../population/index.js';
 import { walkTo, stopWalking } from '../navigation/agent.js';
 import { soldierMods, TECH_EFFECTS } from '../technology/defs.js';
+import { hostile } from '../diplomacy/index.js';
 
 export const MAX_QUEUE = 5;
 export const LEASH = 22;
@@ -280,7 +281,7 @@ export function createUnitsModule() {
   function kite(world, u) {
     const spatial = ctx.services.spatial;
     if (!spatial) return false;
-    spatial.query(u.x, u.z, 3.4, threatBuf, (e) => e.kind === 'unit' && e.owner !== u.owner && !e.downed && UNITS[e.type].cls !== 'ranged');
+    spatial.query(u.x, u.z, 3.4, threatBuf, (e) => e.kind === 'unit' && hostile(world, u.owner, e.owner) && !e.downed && UNITS[e.type].cls !== 'ranged');
     if (!threatBuf.length) return false;
     let dx = 0, dz = 0;
     for (const e of threatBuf) { const d = Math.hypot(u.x - e.x, u.z - e.z) || 0.1; dx += (u.x - e.x) / d; dz += (u.z - e.z) / d; }

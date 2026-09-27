@@ -5,7 +5,7 @@ import { h, icon, portrait, clear, setText, fmtTime } from './dom.js';
 import { portraitKey } from './portraits.js';
 import { seasonAt } from '../weather/index.js';
 import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf } from '../population/index.js';
-import { POI_INFO, TRADES } from '../pois/index.js';
+import { POI_INFO, TRADES, poiName, priceOf } from '../pois/index.js';
 import { createMinimap } from './minimap.js';
 import { all } from '../world/world.js';
 import { PLAYER, EV, RESOURCES } from '../core/contracts.js';
@@ -449,7 +449,7 @@ export function createHud({ root, session, input, settings, actions }) {
     if (e.kind === 'poi') {
       const info = POI_INFO[e.type];
       const status = { found: e.type === 'hamlet' ? 'Send Maren here to win the hamlet over.' : e.type === 'trader' ? 'Open for trade: see the buttons on the right.' : 'Send anyone here to see what it holds.', done: { cairn: 'Climbed — the view is mapped.', ruin: 'The cache has been recovered.', hamlet: 'Allied: families joined Kindlehold; a tithe comes every payday.', trader: '' }[e.type] }[e.state] || '';
-      selPanel.append(head(e.type === 'trader' ? 'taler' : e.type === 'hamlet' ? 'cottage' : e.type === 'ruin' ? 'stone' : 'objective', info.name, info.desc));
+      selPanel.append(head(e.type === 'trader' ? 'taler' : e.type === 'hamlet' ? 'cottage' : e.type === 'ruin' ? 'stone' : 'objective', poiName(session.sim.terrain.map, e), info.desc));
       if (status) selPanel.append(h('div.sel-row.small', { text: status }));
       return;
     }
@@ -493,10 +493,13 @@ export function createHud({ root, session, input, settings, actions }) {
     }
     if (one && one.kind === 'poi' && one.type === 'trader' && one.state !== 'hidden' && cmdMode !== 'build') {
       setText(cmdTitle, 'Trade');
-      for (const d of TRADES) {
+      for (const base of TRADES) {
+        const d = priceOf(w, session.sim.terrain.map, one, base);
         const afford = canAfford(w, PLAYER, d.give);
         const got = Object.entries(d.get).map(([r, n]) => `${n} ${RES_NAMES[r].toLowerCase()}`).join(', ');
-        cmdGrid.append(cmdButton({ ic: Object.keys(d.get)[0], label: d.label, tipTitle: d.label, tip: afford ? `You receive ${got}.` : `Not enough to trade. You would receive ${got}.`, cost: d.give, disabled: !afford, onClick: () => input.issue({ type: 'trade', id: one.id, deal: d.id }) }));
+        const m = (w.market && w.market[base.good]) || 1;
+        const trend = m > 1.05 ? ' Prices are high right now.' : m < 0.95 ? ' Prices are low right now.' : '';
+        cmdGrid.append(cmdButton({ ic: base.give.taler ? Object.keys(d.get)[0] : 'taler', label: base.label, tipTitle: base.label, tip: (afford ? `You receive ${got}.` : `Not enough to trade. You would receive ${got}.`) + trend, cost: d.give, disabled: !afford, onClick: () => input.issue({ type: 'trade', id: one.id, deal: base.id }) }));
       }
       return;
     }

@@ -338,6 +338,27 @@ const MODELS = {
     for (let i = 0; i < 4; i++) body.push(...barrel(-5.5 + i * 0.8, -4.2));
     return { body, glow, height: 9 };
   },
+  brigandhall(rnd) {
+    const body = [], glow = [];
+    body.push(b(11.4, 0.5, 6.4, C.stoneDark, P.stone, { y: 0.25 }));
+    body.push(b(11, 3.0, 6, '#6e5037', P.planks, { y: 2 }));
+    body.push(paintGradient(place(gable(7.4, 12.4, 4.2), { y: 3.5, ry: Math.PI / 2 }), '#4f5a3a', '#6f7a4a', P.thatch));
+    body.push(...door(2.0, 2.6, 3.05));
+    for (const x of [-3.6, 3.6]) glow.push(win(0.8, 0.5, { x, y: 2.8, z: 3.06 }));
+    // antler gable, green banners, drying racks and a fire pit
+    for (const s of [-1, 1]) { body.push(beam(0, 7.4, 6.3, s * 0.9, 8.4, 6.5, 0.08, C.bone)); body.push(beam(0, 7.4, -6.3, s * 0.9, 8.4, -6.5, 0.08, C.bone)); }
+    body.push(...banner(-4.8, 0.5, 3.6, '#4f6a3a', rnd, 2.4), ...banner(4.8, 0.5, 3.6, '#4f6a3a', rnd, 2.4));
+    body.push(beam(-6.6, 0, -1.5, -6.6, 2.0, -1.5, 0.1), beam(-6.6, 0, 1.5, -6.6, 2.0, 1.5, 0.1), beam(-6.6, 1.9, -1.6, -6.6, 1.9, 1.6, 0.08));
+    body.push(b(0.06, 1.0, 1.2, C.hide, P.cloth, { x: -6.62, y: 1.3 }));
+    body.push(paint(place(cyl(0.9, 1.0, 0.3, 10), { x: 6.8, y: 0.15, z: 1.5 }), C.stoneDark, 0, null, P.stone));
+    glow.push(place(ico(0.35, 0), { x: 6.8, y: 0.5, z: 1.5 }));
+    return { body, glow, height: 8.5 };
+  },
+  brigandtower(rnd) {
+    const m = MODELS.reavertower(rnd);
+    m.body[m.body.length - 2] = paintGradient(place(cone(2.3, 2.2, 7), { y: 8.4 }), '#4f5a3a', '#6f7a4a', P.thatch);
+    return m;
+  },
   reavertower(rnd) {
     const body = [];
     for (const [x, z] of [[-1.2, -1.2], [1.2, -1.2], [-1.2, 1.2], [1.2, 1.2]]) body.push(beam(x * 1.2, 0, z * 1.2, x, 6.2, z, 0.26, C.timberDark));

@@ -12,6 +12,7 @@ export const HARROWMERE_SCENARIO = {
     osric: { name: 'Osric Tallow', role: 'Reeve of Kindlehold' },
     wren: { name: 'Wren Fenmore', role: 'Scout' },
     vharek: { name: 'Vharek the Tollbreaker', role: 'Rustfang warlord' },
+    morwen: { name: 'Morwen Greyfen', role: 'Chieftain of the Greyfen brigands' },
   },
   intro: [
     { speaker: 'osric', text: 'Seven winters cold, Warden. The hall still stands, but nobody will stay while the hearth is dark.' },

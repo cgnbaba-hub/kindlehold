@@ -18,12 +18,28 @@ export const POI_INFO = {
   hamlet: { name: 'Millbrook', desc: 'A hamlet of river folk who hid through the Long Frost. Maren could win them over.', radius: 9 },
 };
 
+// Base trades; prices move with supply and demand (see priceOf) and relax back over time.
 export const TRADES = [
-  { id: 'buyTimber', label: 'Buy 20 timber', give: { taler: 30 }, get: { timber: 20 } },
-  { id: 'buyIron', label: 'Buy 10 iron', give: { taler: 45 }, get: { iron: 10 } },
-  { id: 'buyFood', label: 'Buy 20 provisions', give: { taler: 25 }, get: { provisions: 20 } },
-  { id: 'sellStone', label: 'Sell 20 stone', give: { stone: 20 }, get: { taler: 18 } },
+  { id: 'buyTimber', label: 'Buy 20 timber', good: 'timber', give: { taler: 30 }, get: { timber: 20 } },
+  { id: 'buyStone', label: 'Buy 20 stone', good: 'stone', give: { taler: 34 }, get: { stone: 20 } },
+  { id: 'buyIron', label: 'Buy 10 iron', good: 'iron', give: { taler: 45 }, get: { iron: 10 } },
+  { id: 'buyFood', label: 'Buy 20 provisions', good: 'provisions', give: { taler: 25 }, get: { provisions: 20 } },
+  { id: 'sellTimber', label: 'Sell 20 timber', good: 'timber', give: { timber: 20 }, get: { taler: 18 } },
+  { id: 'sellStone', label: 'Sell 20 stone', good: 'stone', give: { stone: 20 }, get: { taler: 18 } },
+  { id: 'sellIron', label: 'Sell 10 iron', good: 'iron', give: { iron: 10 }, get: { taler: 28 } },
 ];
+export const MARKET = { buyStep: 1.12, sellStep: 0.9, min: 0.5, max: 2.5, relaxPer10s: 0.02 };
+
+export function ensureMarket(world) { return world.market || (world.market = { timber: 1, stone: 1, iron: 1, provisions: 1 }); }
+
+/** Current terms of a deal at a trader: Taler scale with the market price of the good. */
+export function priceOf(world, map, poi, deal) {
+  const m = ensureMarket(world)[deal.good] || 1;
+  const disc = (poiDef(map, poi).discount) || 1;
+  const buying = !!deal.give.taler;
+  if (buying) return { give: { taler: Math.max(1, Math.round(deal.give.taler * m * disc)) }, get: deal.get };
+  return { give: deal.give, get: { taler: Math.max(1, Math.round(deal.get.taler * m / disc)) } };
+}
 
 export const HAMLET_TITHE = { provisions: 8, taler: 10 };
 
@@ -43,13 +59,31 @@ function say(world, speaker, text) {
   emit(world, EV.MISSION_MESSAGE, msg);
 }
 
+/** The map's definition of a point of interest (custom name, discovery line, reward). */
+export function poiDef(map, poi) { return (map.pois && map.pois[poi.mapIndex]) || {}; }
+export function poiName(map, poi) { return poiDef(map, poi).label || POI_INFO[poi.type].name; }
+
 export function setupPois(world, services) {
-  if (world.poisPlaced || all(world, 'poi').length) return;
-  world.poisPlaced = true;
-  for (const d of services.terrain.map.pois || []) {
-    const p = services.nav.nearestWalkablePoint(d.x, d.z, 8) || d;
-    spawn(world, { kind: 'poi', type: d.type, owner: 'none', x: p.x, z: p.z, state: 'hidden' });
+  if (world.poisPlaced || all(world, 'poi').length) {
+    // saves from the smaller valley: add the places of the wider map that are missing
+    const map = services.terrain.map;
+    if (!world.poisWide && map.pois) {
+      world.poisWide = true;
+      const have = all(world, 'poi');
+      map.pois.forEach((d, i) => {
+        if (have.some((p) => p.mapIndex === i || (p.mapIndex == null && Math.hypot(p.x - d.x, p.z - d.z) < 10))) return;
+        const p = services.nav.nearestWalkablePoint(d.x, d.z, 8) || d;
+        spawn(world, { kind: 'poi', type: d.type, owner: 'none', x: p.x, z: p.z, state: 'hidden', mapIndex: i });
+      });
+    }
+    return;
   }
+  world.poisWide = true;
+  world.poisPlaced = true;
+  (services.terrain.map.pois || []).forEach((d, i) => {
+    const p = services.nav.nearestWalkablePoint(d.x, d.z, 8) || d;
+    spawn(world, { kind: 'poi', type: d.type, owner: 'none', x: p.x, z: p.z, state: 'hidden', mapIndex: i });
+  });
 }
 
 export function createPoisModule() {
@@ -70,9 +104,10 @@ export function createPoisModule() {
       if (poi.state === 'hidden' && isExplored(world, half, poi.x, poi.z)) {
         poi.state = 'found';
         emit(world, 'poi:found', { id: poi.id, type: poi.type });
-        const line = FOUND_LINES[poi.type];
+        const map = ctx.services.terrain.map;
+        const line = poiDef(map, poi).line || FOUND_LINES[poi.type];
         if (line) say(world, line[0], line[1]);
-        alert(world, 'info', `Discovered: ${POI_INFO[poi.type].name}.`, poi.x, poi.z);
+        alert(world, 'info', `Discovered: ${poiName(map, poi)}.`, poi.x, poi.z);
       }
       if (poi.state !== 'found') continue;
       if (poi.type === 'cairn' && visitor(world, poi, false)) {
@@ -82,10 +117,10 @@ export function createPoisModule() {
         emit(world, 'poi:done', { id: poi.id, type: poi.type });
       } else if (poi.type === 'ruin' && visitor(world, poi, false)) {
         poi.state = 'done';
-        addRes(world, PLAYER, 'taler', 120, 'treasure');
-        addRes(world, PLAYER, 'iron', 25, 'treasure');
-        world.stats.produced.taler = (world.stats.produced.taler || 0) + 120;
-        say(world, 'osric', 'The wardens\' pay chest — still sealed! One hundred and twenty Taler and good bar iron. Grandfather was right.');
+        const reward = poiDef(ctx.services.terrain.map, poi).reward || { taler: 120, iron: 25 };
+        for (const r in reward) addRes(world, PLAYER, r, reward[r], 'treasure');
+        world.stats.produced.taler = (world.stats.produced.taler || 0) + (reward.taler || 0);
+        say(world, 'osric', `A sealed chest — still full! ${reward.taler || 0} Taler${reward.iron ? ` and ${reward.iron} bars of iron` : ''}.`);
         emit(world, 'poi:done', { id: poi.id, type: poi.type });
       } else if (poi.type === 'hamlet' && visitor(world, poi, true)) {
         poi.state = 'done';
@@ -103,11 +138,15 @@ export function createPoisModule() {
     if (cmd.type !== 'trade') return;
     const world = ctx.world;
     const poi = world.entities[cmd.id];
-    const deal = TRADES.find((t) => t.id === cmd.deal);
-    if (!poi || poi.kind !== 'poi' || poi.type !== 'trader' || poi.state === 'hidden' || !deal) return;
+    const base = TRADES.find((t) => t.id === cmd.deal);
+    if (!poi || poi.kind !== 'poi' || poi.type !== 'trader' || poi.state === 'hidden' || !base) return;
+    const deal = priceOf(world, ctx.services.terrain.map, poi, base);
     if (!canAfford(world, PLAYER, deal.give)) { emit(world, EV.COMMAND_REJECTED, { type: 'trade', reason: 'Not enough to trade' }); return; }
     pay(world, PLAYER, deal.give, 'trade');
     for (const r in deal.get) addRes(world, PLAYER, r, deal.get[r], 'trade');
+    // demand moves the price: buying makes a good dearer, selling floods the market
+    const m = ensureMarket(world);
+    m[base.good] = Math.max(MARKET.min, Math.min(MARKET.max, (m[base.good] || 1) * (base.give.taler ? MARKET.buyStep : MARKET.sellStep)));
     emit(world, 'poi:trade', { id: poi.id, deal: deal.id });
   }
 
@@ -125,7 +164,13 @@ export function createPoisModule() {
         for (const r in HAMLET_TITHE) addRes(ctx.world, PLAYER, r, HAMLET_TITHE[r], 'tithe');
       }));
     },
-    update({ tick }) { if (tick % 10 === 6) step(ctx.world); },
+    update({ tick }) {
+      if (tick % 10 === 6) step(ctx.world);
+      if (tick % 200 === 17) { // prices relax towards normal
+        const m = ensureMarket(ctx.world);
+        for (const g in m) m[g] = m[g] > 1 ? Math.max(1, m[g] - MARKET.relaxPer10s) : Math.min(1, m[g] + MARKET.relaxPer10s);
+      }
+    },
     dispose() { unsub.forEach((u) => u()); unsub.length = 0; },
   };
 }

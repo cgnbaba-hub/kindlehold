@@ -24,6 +24,8 @@ import { createExplorationModule } from '../exploration/index.js';
 import { createDailyModule } from '../population/daily.js';
 import { createWildlifeModule } from '../wildlife/index.js';
 import { createPoisModule } from '../pois/index.js';
+import { createDiplomacyModule } from '../diplomacy/index.js';
+import { createBrigandsModule } from '../brigands/index.js';
 
 const terrainCache = new Map();
 export const NIGHT_PACE = 6;
@@ -42,7 +44,9 @@ export const SIM_MODULE_FACTORIES = [
   createWorldServicesModule,
   createWeatherModule,
   createMissionsModule,
+  createDiplomacyModule,
   createAiModule,
+  createBrigandsModule,
   createTechnologyModule,
   createConstructionModule,
   createPopulationModule,

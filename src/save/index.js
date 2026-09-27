@@ -67,13 +67,13 @@ const entitySchema = (x, p) => {
     id: v.number({ min: 1, int: true }),
     kind: v.string({ oneOf: ENTITY_KINDS }),
     x: coord, z: coord, px: optNum({ min: -300, max: 300 }), pz: optNum({ min: -300, max: 300 }),
-    owner: v.string({ oneOf: ['p1', 'p2', 'none'] }),
+    owner: v.string({ oneOf: ['p1', 'p2', 'p3', 'none'] }),
   })(x, p);
   KIND_SCHEMAS[x.kind](x, p);
 };
 
 const playerFull = v.object({
-  id: v.string({ oneOf: ['p1', 'p2'] }),
+  id: v.string({ oneOf: ['p1', 'p2', 'p3'] }),
   res: stockSchema,
   techs: v.record(v.boolean(), { max: 16, keyPattern: /^(axes|bracing|blades|charter|mail|drill)$/ }),
   stability: v.number({ min: 0, max: 100 }),
@@ -93,8 +93,15 @@ const worldSchema = v.object({
     season: v.optional(v.string({ oneOf: ['summer', 'winter'] })), snow: v.optional(nonNeg(1)), frozen: v.optional(v.boolean()),
   }, { allowExtra: false })),
   herds: v.optional(v.array(v.object({ id: v.number({ min: 1, max: 64, int: true }), x: coord, z: coord, nextBirth: nonNeg(1e10) }, { allowExtra: false }), { max: 32 })),
+  market: v.optional(v.record(v.number({ min: 0.1, max: 5 }), { max: 8, keyPattern: /^(timber|stone|iron|provisions)$/ })),
   explored: v.optional(v.array(v.number({ min: 0, max: 4294967295, int: true }), { max: 128 })),
-  players: v.object({ p1: playerFull, p2: playerFull }, { allowExtra: false }),
+  players: v.object({ p1: playerFull, p2: playerFull, p3: v.optional(playerFull) }, { allowExtra: false }),
+  diplomacy: v.optional(v.object({
+    rel: v.record(v.number({ min: -100, max: 100 }), { max: 8, keyPattern: /^p[1-3]\|p[1-3]$/ }),
+    truceUntil: v.record(nonNeg(1e10), { max: 8, keyPattern: /^p[1-3]\|p[1-3]$/ }),
+    giftTick: v.record(v.number({ min: -1e10, max: 1e10 }), { max: 8, keyPattern: /^p[1-3]\|p[1-3]$/ }),
+  }, { allowExtra: false })),
+  brigands: v.optional(v.object({ raidIds: ids(64), helpIds: ids(64), trespassed: ids(400), spawned: nonNeg(1e4), nextSpawnTick: nonNeg(1e10) })),
   entities: v.record(entitySchema, { max: ENTITY_CAP, keyPattern: /^\d{1,9}$/ }),
   mission: v.object({
     objectives: v.array(v.object({ id: v.string({ max: 40 }), state: v.string({ oneOf: ['pending', 'active', 'done'] }) }), { max: 64 }),

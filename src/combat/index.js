@@ -5,6 +5,7 @@ import { all, emit, remove, alert } from '../world/world.js';
 import { UNITS, COUNTERS } from '../units/defs.js';
 import { BUILDINGS } from '../buildings/defs.js';
 import { TECH_EFFECTS, hasTech, soldierMods } from '../technology/defs.js';
+import { hostile, provoke } from '../diplomacy/index.js';
 import { isAlive, reachDistance } from '../units/sim.js';
 import { destroyBuilding } from '../construction/index.js';
 
@@ -44,6 +45,8 @@ function heroAuraProtects(world, target) {
  * Apply damage to any entity. Returns damage dealt.
  */
 export function dealDamage(world, attacker, target, amount, kind = 'melee') {
+  // striking a faction you are not at war with starts one
+  if (attacker && attacker.owner && target.owner && attacker.owner !== target.owner && !hostile(world, attacker.owner, target.owner)) provoke(world, attacker.owner, target.owner);
   if (!isAlive(target)) return 0;
   let dmg = amount;
   if (target.kind === 'unit') {
@@ -100,7 +103,7 @@ export function createCombatModule() {
   let ctx = null;
   const buf = [];
 
-  function hostileTo(owner) { return (e) => e.owner !== owner && e.owner !== 'none' && isAlive(e); }
+  function hostileTo(owner) { return (e) => hostile(ctx.world, owner, e.owner) && isAlive(e); }
 
   function acquire(world, u, radius) {
     const spatial = ctx.services.spatial;
