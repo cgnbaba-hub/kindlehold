@@ -47,6 +47,7 @@ const KIND_SCHEMAS = {
     hp: v.number({ min: -1e4, max: 1e5 }), maxHp: v.number({ min: 1, max: 1e5 }),
     order: v.object({ type: v.string({ oneOf: ['idle', 'move', 'attack', 'attackMove', 'patrol', 'hold', 'guard'] }) }),
     path, cd: optNum({ min: -1e4, max: 1e6 }),
+    xp: optNum({ min: 0, max: 1e5 }), rank: v.optional(v.number({ min: 0, max: 2, int: true })),
   }),
   settler: v.object({
     hp: v.number({ min: -1e4, max: 1e5 }), maxHp: v.number({ min: 1, max: 1e5 }),
@@ -89,8 +90,9 @@ const worldSchema = v.object({
   nextId: v.number({ min: 1, max: 1e8, int: true }),
   time: v.object({ hour: v.number({ min: 0, max: 24 }), dayLengthTicks: v.number({ min: 100, max: 1e7 }), running: v.boolean() }),
   weather: v.optional(v.object({
-    kind: v.string({ oneOf: ['clear', 'snow'] }), intensity: nonNeg(1),
+    kind: v.string({ oneOf: ['clear', 'snow', 'rain'] }), intensity: nonNeg(1),
     season: v.optional(v.string({ oneOf: ['summer', 'winter'] })), snow: v.optional(nonNeg(1)), frozen: v.optional(v.boolean()),
+    wet: v.optional(nonNeg(1)), rained: v.optional(v.boolean()),
   }, { allowExtra: false })),
   herds: v.optional(v.array(v.object({ id: v.number({ min: 1, max: 64, int: true }), x: coord, z: coord, nextBirth: nonNeg(1e10) }, { allowExtra: false }), { max: 32 })),
   market: v.optional(v.record(v.number({ min: 0.1, max: 5 }), { max: 8, keyPattern: /^(timber|stone|iron|provisions)$/ })),

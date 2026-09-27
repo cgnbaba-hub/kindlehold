@@ -19,6 +19,7 @@ import { ABILITIES } from '../heroes/index.js';
 import { STALL_TEXT, WORK } from '../production/index.js';
 import { scenarioOf } from '../missions/index.js';
 import { aiSettings } from '../ai/index.js';
+import { RANKS, rankOf } from '../combat/index.js';
 import { BRIGANDS, relation, stance, TRUCE, GIFT, PEACE, WAR_AT, ALLY_AT } from '../diplomacy/index.js';
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 
@@ -512,9 +513,15 @@ export function createHud({ root, session, input, settings, actions }) {
     if (e.kind === 'unit') {
       const def = UNITS[e.type];
       const counters = Object.keys((COUNTERS[def.cls] || {})).map((c) => CLS_NAMES[c]).join(', ');
-      selPanel.append(head(e.type, def.name, def.title ? `${def.title} · ${CLS_NAMES[def.cls]}` : `${CLS_NAMES[def.cls]}${e.owner !== PLAYER ? ' · Rustfang' : ''}`));
+      const side = e.owner !== PLAYER && w.players[e.owner] ? ` · ${w.players[e.owner].name}` : '';
+      const rank = rankOf(e);
+      selPanel.append(head(e.type, def.name, def.title ? `${def.title} · ${CLS_NAMES[def.cls]}` : `${rank ? `${RANKS[rank].name} ` : ''}${CLS_NAMES[def.cls]}${side}`));
+      if (!e.hero && !e.commander && e.owner === PLAYER) {
+        const next = RANKS[rank + 1];
+        selPanel.append(h('div.sel-row.small', { 'data-tip': 'Soldiers who win fights become Veterans (+10% damage and health) and then Elite (+20%).' }, [h('span', { text: `${'★'.repeat(rank) || '☆'} ${RANKS[rank].name}` }), h('span.muted', { text: next ? ` · ${e.xp || 0}/${next.kills} victories to ${next.name}` : ` · ${e.xp || 0} victories` })]));
+      }
       selPanel.append(h('div.sel-row', {}, [h('span', { text: e.downed ? 'Recovering…' : `Health ${Math.ceil(e.hp)}/${e.maxHp}` }), hpBar(e.hp / e.maxHp, 'health')]));
-      const dmg = def.damage * (e.owner === PLAYER && !e.hero && w.players[PLAYER].techs.blades ? 1.25 : 1);
+      const dmg = def.damage * (e.owner === PLAYER && !e.hero && w.players[PLAYER].techs.blades ? 1.25 : 1) * RANKS[rank].damage;
       selPanel.append(h('div.stats', {}, [
         h('span', { 'data-tip': 'Damage per hit' }, [icon('sword', 'icon icon-xs'), String(Math.round(dmg))]),
         h('span', { 'data-tip': 'Armour (subtracted from each hit)' }, [icon('hold', 'icon icon-xs'), String(def.armor)]),

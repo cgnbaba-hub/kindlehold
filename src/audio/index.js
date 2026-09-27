@@ -207,7 +207,16 @@ export function createAudio({ bus, world, settings, getListener }) {
       const vf = ctx.createBiquadFilter(); vf.type = 'bandpass'; vf.frequency.value = 380; vf.Q.value = 1.8;
       const vg = ctx.createGain(); vg.gain.value = 0;
       village.connect(vf); vf.connect(vg); vg.connect(buses.ambience); village.start(0, 1.3);
-      amb = { wf, wg, rg, vg, nextCritter: 0 };
+      // rain: a soft high hiss plus a low patter, silent until a shower starts
+      const rain = ctx.createBufferSource(); rain.buffer = noiseBuf; rain.loop = true;
+      const raf = ctx.createBiquadFilter(); raf.type = 'highpass'; raf.frequency.value = 2400;
+      const rag = ctx.createGain(); rag.gain.value = 0;
+      rain.connect(raf); raf.connect(rag); rag.connect(buses.ambience); rain.start(0, 0.4);
+      const patter = ctx.createBufferSource(); patter.buffer = noiseBuf; patter.loop = true;
+      const paf = ctx.createBiquadFilter(); paf.type = 'bandpass'; paf.frequency.value = 700; paf.Q.value = 0.7;
+      const pag = ctx.createGain(); pag.gain.value = 0;
+      patter.connect(paf); paf.connect(pag); pag.connect(buses.ambience); patter.start(0, 1.1);
+      amb = { wf, wg, rg, vg, rag, pag, nextCritter: 0 };
     } catch (err) { log.warn('audio', `ambience failed: ${err.message}`); }
   }
 
@@ -228,10 +237,13 @@ export function createAudio({ bus, world, settings, getListener }) {
     amb.rg.gain.setTargetAtTime(frozen ? 0 : riverNear * 0.1, t, 1);
     const keepNear = Math.max(0, 1 - Math.hypot(L.x + 46, L.z - 50) / 60) * (w.players[PLAYER] ? Math.min(1, w.players[PLAYER].pop / 20) : 0);
     amb.vg.gain.setTargetAtTime(keepNear * 0.05, t, 1);
+    const rain = w.weather && w.weather.kind === 'rain' ? w.weather.intensity : 0;
+    amb.rag.gain.setTargetAtTime(rain * 0.09, t, 1.2);
+    amb.pag.gain.setTargetAtTime(rain * 0.05, t, 1.2);
     amb.nextCritter -= dt;
     if (amb.nextCritter <= 0) {
       amb.nextCritter = night ? 0.35 + rand() * 0.5 : 1.2 + rand() * 3;
-      if (snow > 0.5) { /* silent winter */ } else if (night) { // crickets
+      if (snow > 0.5 || rain > 0.4) { /* silent winter, birds shelter from the rain */ } else if (night) { // crickets
         const f = 4200 + rand() * 500;
         for (let i = 0; i < 3; i++) tone(buses.ambience, { t: t + i * 0.06, freq: f, dur: 0.03, gain: 0.02 });
       } else { // bird call

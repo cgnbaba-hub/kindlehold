@@ -18,6 +18,16 @@ export const SEASON = Object.freeze({
   crackWarning: 20 * 20,   // warning before the ice breaks
 });
 export const WINTER_GROWTH = 0.5; // crops grow at half speed in winter
+// Summer showers: a fixed rhythm (deterministic), a little over a minute of rain every five.
+export const RAIN = Object.freeze({ every: 5 * MIN, offset: 2 * MIN, length: 75 * 20, fade: 12 * 20, notBefore: 3 * MIN, growth: 1.35 });
+
+/** Rain intensity (0..1) at a tick: pure function, no rain in winter or in the first minutes. */
+export function rainAt(tick) {
+  if (tick < RAIN.notBefore || seasonAt(tick).winter) return 0;
+  const t = (tick + RAIN.offset) % RAIN.every;
+  if (t >= RAIN.length) return 0;
+  return Math.min(1, t / RAIN.fade, (RAIN.length - t) / RAIN.fade);
+}
 export const THAW_DAMAGE = 0.25;  // fraction of max HP lost when caught on breaking ice
 
 /** Season at a tick: { winter, sinceStart, untilEnd, untilNext } (pure function of the tick). */
@@ -36,8 +46,12 @@ export function ensureWeather(world) {
 }
 
 export function isWinter(world) { return !!(world.weather && world.weather.season === 'winter'); }
-/** Crop growth multiplier for the current season. */
-export function growthFactor(world) { return isWinter(world) ? WINTER_GROWTH : 1; }
+/** Crop growth multiplier for the current season and weather: fields drink up the rain. */
+export function growthFactor(world) {
+  if (isWinter(world)) return WINTER_GROWTH;
+  const w = world.weather;
+  return w && w.kind === 'rain' ? 1 + (RAIN.growth - 1) * w.intensity : 1;
+}
 
 function say(world, speaker, text) {
   const sc = scenarioOf(world);
@@ -95,6 +109,19 @@ export function createWeatherModule() {
         w.season = 'summer'; w.kind = 'clear'; w.intensity = 0;
         emit(world, 'weather:season', { season: 'summer' });
       }
+      // summer showers
+      if (w.season !== 'winter') {
+        const r = rainAt(tick);
+        if (r > 0 && w.kind !== 'rain') {
+          w.kind = 'rain';
+          if (!w.rained) { w.rained = true; say(world, 'osric', 'Rain at last! The fields will drink deep, Warden — crops grow faster while it pours.'); }
+          emit(world, 'weather:rain', { on: true });
+        } else if (r === 0 && w.kind === 'rain') { w.kind = 'clear'; emit(world, 'weather:rain', { on: false }); }
+        w.intensity = w.kind === 'rain' ? Math.round(r * 1000) / 1000 : 0;
+      }
+      // the ground stays wet for a while after a shower
+      w.wet = Math.max(0, Math.min(1, (w.wet || 0) + (w.kind === 'rain' ? w.intensity / (20 * 20) : -1 / (60 * 20))));
+      w.wet = Math.round(w.wet * 10000) / 10000;
 
       // snow cover builds up and melts smoothly
       if (w.season === 'winter') w.snow = Math.min(1, w.snow + 1 / SEASON.snowIn);

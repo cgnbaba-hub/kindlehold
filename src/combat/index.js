@@ -79,6 +79,31 @@ export function dealDamage(world, attacker, target, amount, kind = 'melee') {
   return dmg;
 }
 
+// Veterans: soldiers who survive and win become stronger. Kills needed for each rank.
+export const RANKS = [
+  { name: 'Recruit', kills: 0, damage: 1, hp: 1 },
+  { name: 'Veteran', kills: 3, damage: 1.1, hp: 1.1 },
+  { name: 'Elite', kills: 8, damage: 1.2, hp: 1.2 },
+];
+
+export function rankOf(u) { return (u && u.rank) || 0; }
+
+/** Credit a kill to the attacker; promote when it has earned the next rank. */
+export function creditKill(world, attacker) {
+  if (!attacker || attacker.kind !== 'unit' || attacker.hero || attacker.commander || !isAlive(attacker)) return;
+  attacker.xp = (attacker.xp || 0) + 1;
+  const r = rankOf(attacker);
+  const next = RANKS[r + 1];
+  if (!next || attacker.xp < next.kills) return;
+  attacker.rank = r + 1;
+  // more health, and the gain is healed at once
+  const grow = next.hp / RANKS[r].hp;
+  const add = Math.round(attacker.maxHp * grow) - attacker.maxHp;
+  attacker.maxHp += add; attacker.hp += add;
+  emit(world, 'unit:promoted', { id: attacker.id, type: attacker.type, owner: attacker.owner, rank: attacker.rank, x: attacker.x, z: attacker.z });
+  if (attacker.owner === PLAYER) alert(world, 'success', `A ${UNITS[attacker.type].name} has become ${next.name === 'Elite' ? 'one of the Elite' : 'a Veteran'}!`, attacker.x, attacker.z);
+}
+
 function kill(world, target, attacker) {
   if (target.kind === 'building') { destroyBuilding(world, target, attacker && attacker.owner); return; }
   if (target.kind === 'unit' && target.hero) {
@@ -95,6 +120,7 @@ function kill(world, target, attacker) {
   if (target.kind === 'settler') emit(world, 'settler:killed', { id: target.id, entity: target });
   if (target.owner === PLAYER) world.stats.unitsLost++;
   else if (attacker && attacker.owner === PLAYER) world.stats.enemiesDefeated++;
+  if (target.kind === 'unit') creditKill(world, attacker);
   emit(world, EV.UNIT_DIED, info);
   remove(world, target.id, 'killed');
 }
@@ -130,6 +156,7 @@ export function createCombatModule() {
     let m = 1;
     if (u.owner === PLAYER && !u.hero && hasTech(world, PLAYER, 'blades')) m *= TECH_EFFECTS.damage;
     if (u.rallyUntil > world.tick) m *= 1.2;
+    m *= RANKS[rankOf(u)].damage;
     return m;
   }
 
