@@ -28,6 +28,12 @@ export const CAMERA_PRESETS = {
   'chapterhouse': { x: 120, z: -30, yaw: 0.2, zoom: 52 },
   'stag-outpost': { x: 76, z: -116, yaw: 0.6, zoom: 36 },
   'stag-figures': { x: -63, z: 50, yaw: 0.1, zoom: 21 },
+  // Iron March (chapter six)
+  'stonewatch': { x: -102, z: 100, yaw: 0.7, zoom: 64 },
+  'ironmarch': { x: -6, z: 0, yaw: 0.5, zoom: 168 },
+  'morrow-hold': { x: 108, z: -88, yaw: 0.3, zoom: 54 },
+  'delvholm': { x: -46, z: 30, yaw: 0.8, zoom: 40 },
+  'iron-figures': { x: -67, z: 66, yaw: 0.1, zoom: 21 },
   'greyfen': { x: -112, z: -128, yaw: 0.7, zoom: 58 },
 };
 

@@ -92,6 +92,18 @@ ${FACE('#dcb99a', '#a8826a')}${EYES('#26302a')}
 <path d="M28.5 35.5c2-.6 5-.6 7 0" stroke="#5a4a44" stroke-width="1.3" fill="none" stroke-linecap="round"/>
 <path d="M20 22c2-6 7-9 12-9s10 3 12 9c-4-2-8-3-12-3s-8 1-12 3z" fill="#b9bec4" stroke="#5a5e64" stroke-width=".8"/>`, ['#3a4a3e', '#0e1410']),
 
+  // Lady Ismay Morrow: black hair in a coil, a gold circlet, black iron gorget, a gold-and-black mantle
+  ismay: P('ismay', `<path d="M6 64c2-15 11-21 26-21s24 6 26 21z" fill="#26262c"/>
+<path d="M14 64c2-10 8-15 18-15s16 5 18 15z" fill="#34343a"/>
+<path d="M22 46c3 3 7 4 10 4s7-1 10-4l-2 6H24z" fill="#4a4a52" stroke="#1a1a1e" stroke-width=".8"/>
+<path d="M27 56l5-4 5 4-5 6z" fill="#d0a030"/>
+${FACE('#dcb99a', '#a8826a')}${EYES('#1e2226')}
+<path d="M25.5 25.2l4.4-.9M34.1 24.3l4.4.9" stroke="#1e1a18" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M29.2 35.6c2 .3 3.6.3 5.6 0" stroke="#8a3a38" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M20 30c0-11 5-17 12-17s12 6 12 17c-2-7-6-10-12-10s-10 3-12 10z" fill="#1e1a18"/>
+<circle cx="32" cy="12" r="4" fill="#1e1a18"/>
+<path d="M21 21c3-2 7-3 11-3s8 1 11 3" stroke="#d0a030" stroke-width="2" fill="none"/>`, ['#3a3226', '#0e0c0a']),
+
   // Hild of Millbrook, elder of the river folk: white braids, blue-grey shawl, a reed charm
   hild: P('hild', `<path d="M8 64c2-14 10-20 24-20s22 6 24 20z" fill="#4a5a68"/>
 <path d="M14 64c1-10 6-16 18-18 12 2 17 8 18 18z" fill="#5d7080"/>
@@ -112,3 +124,35 @@ export function portraitKey(msg) {
   for (const k of Object.keys(PORTRAITS)) if (n.includes(k)) return k;
   return null;
 }
+
+// Osric's advisor avatar: a bust with separate parts the HUD animates (breathing, blinking, a
+// talking mouth, a raised finger for urgent advice). Static project markup only.
+export const OSRIC_AVATAR = `<svg class="av" viewBox="13 8 54 60" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" aria-hidden="true">
+<defs><radialGradient id="av-bg" cx="50%" cy="35%" r="75%"><stop offset="0" stop-color="#7a6448"/><stop offset="1" stop-color="#1e1914"/></radialGradient>
+<linearGradient id="av-robe" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7e4430"/><stop offset="1" stop-color="#4a2418"/></linearGradient></defs>
+<rect width="80" height="88" fill="url(#av-bg)"/>
+<path d="M4 88c0-8 3-14 8-17l2 17z" fill="#3a2a1e" opacity=".6"/>
+<g class="av-body">
+  <path d="M8 88c2-17 13-25 32-25s30 8 32 25z" fill="url(#av-robe)"/>
+  <path d="M30 63l10 12 10-12" fill="#e8dcc0" stroke="#b8a888" stroke-width=".8"/>
+  <path d="M20 70c6 7 13 10 20 10s14-3 20-10" stroke="#d9b45a" stroke-width="2.2" fill="none" stroke-dasharray="2.4 1.6"/>
+  <circle cx="40" cy="81" r="3.2" fill="#e3c26b" stroke="#6a4a1a"/>
+  <g class="av-ledger"><rect x="52" y="70" width="17" height="13" rx="1.5" fill="#5a3a24" stroke="#2a1a10" transform="rotate(-12 60 76)"/><path d="M55 73l12-2.5" stroke="#d8ccb0" stroke-width="1" transform="rotate(-12 60 76)"/></g>
+  <g class="av-finger"><g transform="translate(-3 -14)"><path d="M58 88V70c0-2 1-3 2.5-3s2.5 1 2.5 3v-8c0-1.6 1-2.6 2.2-2.6s2.2 1 2.2 2.6V88z" fill="#e0bf9a" stroke="#8a6040" stroke-width=".8"/><path d="M54 88c0-8 2-12 6-13l8 0c2 2 3 6 3 13z" fill="#6e3a2a"/></g></g>
+</g>
+<g class="av-head">
+  <path d="M28 34c0-10 5.5-15 12-15s12 5 12 15c0 10-5.5 17-12 17s-12-7-12-17z" fill="#e0bf9a"/>
+  <path d="M28.4 38c1 7 5.5 13 11.6 13s10.6-6 11.6-13c-2 4-6.5 7-11.6 7s-9.6-3-11.6-7z" fill="#a8805e" opacity=".45"/>
+  <path d="M27.6 33c-1.6 0-2.4 1.6-2 3.6s1.6 3 2.8 2.6M52.4 33c1.6 0 2.4 1.6 2 3.6s-1.6 3-2.8 2.6" fill="#d4a884"/>
+  <path d="M29 42c1.4 10 5 15 11 15s9.6-5 11-15c-2.6 3.4-6.4 4.6-11 4.6s-8.4-1.2-11-4.6z" fill="#cfc9c0"/>
+  <g class="av-eyes"><ellipse cx="34.5" cy="35" rx="1.6" ry="1.3" fill="#2a2018"/><ellipse cx="45.5" cy="35" rx="1.6" ry="1.3" fill="#2a2018"/><circle cx="35" cy="34.5" r=".45" fill="#fff" opacity=".8"/><circle cx="46" cy="34.5" r=".45" fill="#fff" opacity=".8"/></g>
+  <path class="av-brows" d="M31.5 31.6l5-.8M43.5 30.8l5 .8" stroke="#8a8680" stroke-width="1.9" stroke-linecap="round"/>
+  <path d="M40 36.5c-.8 2.2-1.4 3.6-.6 4.4.8.4 1.6.4 2.2 0" stroke="#a8805e" stroke-width="1" fill="none"/>
+  <path d="M34.6 44.4c3-1.5 7.8-1.5 10.8 0" stroke="#aaa39a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path class="av-mouth-closed" d="M37 46.2c2 .6 4 .6 6 0" stroke="#7a4a3a" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+  <ellipse class="av-mouth-open" cx="40" cy="46.6" rx="2.6" ry="1.6" fill="#5a2a22"/>
+  <path d="M26 28c0-8 6-12 14-12s14 4 14 12c-5-2-9-2.6-14-2.6S31 26 26 28z" fill="#5a4030"/>
+  <path d="M25 28.4h30" stroke="#3a2a1e" stroke-width="2.4"/>
+  <path d="M30 17c2-4 6-6 10-6s8 2 10 6" fill="#5a4030"/>
+</g>
+</svg>`;

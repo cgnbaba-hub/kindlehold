@@ -315,7 +315,7 @@ export function createAudio({ bus, world, settings, getListener, terrain = null 
   on(EV.COMBAT_SHOT, (d) => { if (allowed('shot', 70)) (d.kind === 'arrow' ? sfx.arrow : sfx.sling)(d.fx, d.fz); });
   on(EV.BUILDING_DESTROYED, (d) => sfx.collapse(d.x, d.z));
   on(EV.BUILDING_COMPLETED, (d) => { const b = world().entities[d.id]; if (b && d.owner === PLAYER) sfx.complete(b.x, b.z); });
-  on(EV.HERO_ABILITY, (d) => { if (d.ability === 'flare') sfx.flare(d.x, d.z); else if (d.ability === 'kindle') sfx.kindle(d.x, d.z); else if (d.ability === 'horn') sfx.horn(); });
+  on(EV.HERO_ABILITY, (d) => { if (d.ability === 'flare') sfx.flare(d.x, d.z); else if (d.ability === 'kindle') sfx.kindle(d.x, d.z); else if (d.ability === 'volley') { sfx.arrow(d.x, d.z); } else if (d.ability === 'mark') sfx.kindle(d.x, d.z); else if (d.ability === 'horn') sfx.horn(); });
   on(EV.UNIT_ORDER, (d) => { if (d.owner !== PLAYER || !allowed('ack', 400)) return; const w = world(); const hero = d.ids.some((id) => w.entities[id] && w.entities[id].hero); sfx.ack(hero && d.ids.length === 1 ? 'hero' : d.order === 'attack' || d.order === 'attackMove' ? 'attack' : 'ok'); });
   on(EV.UNIT_RECRUITED, () => sfx.ack('ok'));
   on(EV.MISSION_OBJECTIVE, (d) => { if (d.state === 'done') sfx.objective(); });

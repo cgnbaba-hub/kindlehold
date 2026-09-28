@@ -42,6 +42,7 @@ export function createBot(sim, { aggressive = true } = {}) {
   // the scripted layout was drawn for Harrowmere (keep at -46,50): shift it to this map's town
   const home = services.terrain.map.playerStart;
   const rel = ([x, z]) => [x + 46 + home.x, z - 50 + home.z];
+  const abs = (x, z) => [x - 46 - home.x, z + 50 - home.z]; // world position -> layout coordinates for place()
 
   /** Fallback search centre: next to the nearest deposit the building needs, or the nearest water. */
   function fallbackCentre(world, type) {
@@ -78,7 +79,8 @@ export function createBot(sim, { aggressive = true } = {}) {
 
   const count = (type) => all(w(), 'building').filter((b) => b.owner === PLAYER && b.type === type && b.state !== 'destroyed').length;
   const soldiers = () => all(w(), 'unit').filter((u) => u.owner === PLAYER && !u.hero);
-  const hero = () => all(w(), 'unit').find((u) => u.owner === PLAYER && u.hero);
+  const hero = () => all(w(), 'unit').find((u) => u.owner === PLAYER && u.type === 'maren');
+  const wren = () => all(w(), 'unit').find((u) => u.owner === PLAYER && u.type === 'wren');
 
   function economyStep() {
     const world = w();
@@ -101,6 +103,13 @@ export function createBot(sim, { aggressive = true } = {}) {
     if (count('saltworks') < 2 && all(world, 'deposit').some((d) => d.type === 'salt')) { place('saltworks'); return; }
     if (count('cottage') < 2) { place('cottage', [-58, 30]); return; }
     if (count('mine') < 1) { place('mine'); return; }
+    if (count('mine') < 2 && isActive(world, 'foothold')) {
+      // the second mine goes to the next free iron vein
+      const taken = all(world, 'building').filter((b) => b.owner === PLAYER && b.type === 'mine');
+      const vein = all(world, 'deposit').filter((d) => d.type === 'iron' && d.amount > 0 && taken.every((m) => Math.hypot(m.x - d.x, m.z - d.z) > 14))
+        .sort((a, b) => Math.hypot(a.x - home.x, a.z - home.z) - Math.hypot(b.x - home.x, b.z - home.z))[0];
+      if (vein) { place('mine', abs(vein.x, vein.z)); return; }
+    }
     if (count('farm') < 2) { place('farm', [-60, 78]); return; }
     if (count('hunter') < 1) { place('hunter', [-72, 30]); return; }
     if (count('cottage') < 3) { place('cottage', [-40, 74]); return; }
@@ -119,6 +128,21 @@ export function createBot(sim, { aggressive = true } = {}) {
         const tree = k && all(world, 'deposit').filter((d) => d.type === 'tree' && d.amount > 0).sort((a, b) => Math.hypot(a.x - k.x, a.z - k.z) - Math.hypot(b.x - k.x, b.z - k.z))[0];
         if (tree) sim.issue({ type: 'gather', ids: free.slice(0, 2).map((x) => x.id), target: tree.id });
       } else if (p.res.timber > 90 && gatherers.length) sim.issue({ type: 'release', ids: gatherers.map((x) => x.id) });
+      // stone crisis (quarry exhausted and too little stone to move it): break rock by hand
+      const quarryDead = all(world, 'building').some((b) => b.owner === PLAYER && b.type === 'quarry' && b.state === 'active' && b.stall === 'noDeposit')
+        && !all(world, 'building').some((b) => b.owner === PLAYER && b.type === 'quarry' && b.stall !== 'noDeposit');
+      if (quarryDead && p.res.stone < 25 && gatherers.length < 3 && free.length >= 3) {
+        const k = keepOf(world, PLAYER);
+        const rock = k && all(world, 'deposit').filter((d) => d.type === 'rock' && d.amount > 0).sort((a, b) => Math.hypot(a.x - k.x, a.z - k.z) - Math.hypot(b.x - k.x, b.z - k.z))[0];
+        if (rock) sim.issue({ type: 'gather', ids: free.slice(0, 2).map((x) => x.id), target: rock.id });
+      }
+    }
+    // an exhausted quarry moves to the nearest rock outcrop that is still standing
+    const deadQ = all(world, 'building').find((b) => b.owner === PLAYER && b.type === 'quarry' && b.state === 'active' && b.stall === 'noDeposit');
+    if (deadQ && canAfford(world, PLAYER, buildCost(world, PLAYER, 'quarry'))) {
+      const rock = all(world, 'deposit').filter((d) => d.type === 'rock' && d.amount > 0 && Math.hypot(d.x - deadQ.x, d.z - deadQ.z) > 14)
+        .sort((a, b) => Math.hypot(a.x - home.x, a.z - home.z) - Math.hypot(b.x - home.x, b.z - home.z))[0];
+      if (rock && place('quarry', abs(rock.x, rock.z))) sim.issue({ type: 'demolish', id: deadQ.id });
     }
     // the market: turn surplus stone and Taler into timber when the forests cannot keep up
     if (world.tick % 400 === 0) {
@@ -153,7 +177,7 @@ export function createBot(sim, { aggressive = true } = {}) {
       let best = null, bd = Infinity;
       const trees = all(world, 'deposit').filter((d) => d.type === 'tree' && d.amount > 0);
       for (const d of trees) { if (trees.filter((o) => Math.hypot(o.x - d.x, o.z - d.z) < 18).length < 8) continue; const dd = Math.hypot(d.x - home.x, d.z - home.z); if (dd < bd) { bd = dd; best = d; } }
-      if (best && place('lodge', [best.x, best.z])) sim.issue({ type: 'demolish', id: dead.id });
+      if (best && place('lodge', abs(best.x, best.z))) sim.issue({ type: 'demolish', id: dead.id });
     }
   }
 
@@ -179,6 +203,7 @@ export function createBot(sim, { aggressive = true } = {}) {
 
   // campaign chores: Maren's visit to Millbrook, gifts for the Greyfen, occupied villages
   let heroErrand = false;
+  let wrenErrand = false;
   let villageTarget = null;
   function storyStep() {
     const world = w();
@@ -191,11 +216,23 @@ export function createBot(sim, { aggressive = true } = {}) {
     }
     // Whitehart: free the villages one by one (nearest first) — the army clears the outpost, Maren follows
     villageTarget = null;
-    if ((active('ashby') || active('villages')) && world.ai.state !== 'raid') {
+    if ((active('ashby') || active('villages') || active('delvholm')) && world.ai.state !== 'raid') {
       const open = all(world, 'poi').filter((x) => x.type === 'hamlet' && x.state !== 'done').sort((a, b) => Math.hypot(a.x - home.x, a.z - home.z) - Math.hypot(b.x - home.x, b.z - home.z));
       const next = open[0];
-      if (next && occupiedBy(world, next)) villageTarget = next;
+      if (next && occupiedBy(world, next)) {
+        // march on the nearest occupier (a bastion can stand beyond sight of the village square)
+        const occ = [...all(world, 'unit'), ...all(world, 'building')].filter((e) => e.owner === ENEMY && !e.downed && e.state !== 'destroyed' && Math.hypot(e.x - next.x, e.z - next.z) < 24)
+          .sort((a, b) => Math.hypot(a.x - home.x, a.z - home.z) - Math.hypot(b.x - home.x, b.z - home.z))[0];
+        villageTarget = occ || next;
+      }
       else if (next && h && !h.downed) { heroErrand = true; if (Math.hypot(h.x - next.x, h.z - next.z) > 4 && (!h.order || h.order.type !== 'move')) sim.issue({ type: 'move', ids: [h.id], x: next.x, z: next.z }); }
+    }
+    // the Iron March: Wren lights the border beacons, nearest first
+    wrenErrand = false;
+    const wr = wren();
+    if (active('beacons') && wr && !wr.downed && world.ai.state !== 'raid') {
+      const beacon = all(world, 'poi').filter((x) => x.type === 'cairn' && x.state !== 'done').sort((a, b) => Math.hypot(a.x - wr.x, a.z - wr.z) - Math.hypot(b.x - wr.x, b.z - wr.z))[0];
+      if (beacon) { wrenErrand = true; if (Math.hypot(wr.x - beacon.x, wr.z - beacon.z) > 4 && (!wr.order || wr.order.type !== 'move' || Math.hypot(wr.order.x - beacon.x, wr.order.z - beacon.z) > 2)) sim.issue({ type: 'move', ids: [wr.id], x: beacon.x, z: beacon.z }); }
     }
     if (active('greyfen') && world.players[PLAYER].res.taler >= 50 && world.tick % 600 === 50) sim.issue({ type: 'gift', to: 'p3' });
   }
@@ -204,7 +241,8 @@ export function createBot(sim, { aggressive = true } = {}) {
     const world = w();
     const army = soldiers();
     const h = hero();
-    const ids = army.map((u) => u.id).concat(h && !h.downed && !heroErrand ? [h.id] : []);
+    const wr = wren();
+    const ids = army.map((u) => u.id).concat(h && !h.downed && !heroErrand ? [h.id] : [], wr && !wr.downed && !wrenErrand ? [wr.id] : []);
     const raidOn = world.ai.state === 'raid';
     const hall = warhallOf(world);
     if (raidOn) {
@@ -224,10 +262,10 @@ export function createBot(sim, { aggressive = true } = {}) {
         sim.issue({ type: 'attackMove', ids, x: villageTarget.x, z: villageTarget.z });
         lastAct = world.tick;
       }
-    } else if (world.meta.scenarioId === 'whitestag' && !isActive(world, 'chapterhouse')) {
+    } else if ((world.meta.scenarioId === 'whitestag' && !isActive(world, 'chapterhouse')) || (world.meta.scenarioId === 'irondebt' && !isActive(world, 'hold'))) {
       // the chapterhouse walls wait for the villages and the Sappers
       if (world.tick - lastAct > 400) { const [gx, gz] = rel([-26, 30]); sim.issue({ type: 'move', ids, x: gx, z: gz }); lastAct = world.tick; }
-    } else if (phase === 'defend' || (world.ai.wave >= 1 && aggressive) || isActive(world, 'chapterhouse')) {
+    } else if (phase === 'defend' || (world.ai.wave >= 1 && aggressive) || isActive(world, 'chapterhouse') || (world.meta.scenarioId === 'irondebt' && isActive(world, 'hold'))) {
       phase = 'assault';
       if (hall && army.length >= 12 && world.tick - lastAct > 200) {
         sim.issue({ type: 'attackMove', ids, x: hall.x - 6, z: hall.z + 8 });
@@ -250,6 +288,17 @@ export function createBot(sim, { aggressive = true } = {}) {
       }
       if (near && nd < ABILITIES.flare.range && abilityReady(world, h, 'flare')) sim.issue({ type: 'ability', heroId: h.id, ability: 'flare', x: near.x, z: near.z });
       if (near && nd < 8 && abilityReady(world, h, 'kindle')) sim.issue({ type: 'ability', heroId: h.id, ability: 'kindle' });
+    }
+    // Wren: mark the nearest enemy group, then rain arrows on it
+    if (wr && !wr.downed) {
+      let near = null, nd = Infinity;
+      for (const u of all(world, 'unit')) {
+        if (u.owner !== ENEMY || u.downed) continue;
+        const d = Math.hypot(u.x - wr.x, u.z - wr.z);
+        if (d < nd) { nd = d; near = u; }
+      }
+      if (near && nd < ABILITIES.mark.range && abilityReady(world, wr, 'mark')) sim.issue({ type: 'ability', heroId: wr.id, ability: 'mark', x: near.x, z: near.z });
+      else if (near && nd < ABILITIES.volley.range && abilityReady(world, wr, 'volley')) sim.issue({ type: 'ability', heroId: wr.id, ability: 'volley', x: near.x, z: near.z });
     }
   }
 

@@ -3,6 +3,15 @@
 // (hall, towers, muster cycle, commander, wording) lives here.
 
 export const FACTIONS = {
+  morrow: {
+    id: 'morrow', name: 'House Morrow', short: 'Morrow', color: '#d0a030',
+    hall: 'morrowhold', tower: 'morrowtower', hallName: 'Hold', fort: 'hold',
+    cycle: ['ironguard', 'delver', 'arbalest', 'delver', 'ironguard', 'arbalest'],
+    garrison: ['ironguard', 'ironguard', 'arbalest', 'delver', 'arbalest', 'ironguard'],
+    commander: 'ismay', leader: 'Lady Ismay Morrow', leaderShort: 'Lady Ismay', portrait: 'ismay',
+    fighters: 'householders',
+    truceNote: 'House Morrow calls it interest on the debt. Paid, it buys a few quiet minutes.',
+  },
   rustfang: {
     id: 'rustfang', name: 'Rustfang Reavers', short: 'Rustfang', color: '#8c3b2a',
     hall: 'warhall', tower: 'reavertower', hallName: 'Warhall', fort: 'ford fort',

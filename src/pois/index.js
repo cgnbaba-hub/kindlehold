@@ -99,7 +99,7 @@ export function createPoisModule() {
 
   function visitor(world, poi, heroOnly) {
     const r = POI_INFO[poi.type].radius;
-    for (const u of all(world, 'unit')) if (u.owner === PLAYER && !u.downed && (!heroOnly || u.hero) && Math.hypot(u.x - poi.x, u.z - poi.z) <= r) return u;
+    for (const u of all(world, 'unit')) if (u.owner === PLAYER && !u.downed && (!heroOnly || u.type === 'maren') && Math.hypot(u.x - poi.x, u.z - poi.z) <= r) return u;
     if (!heroOnly) for (const s of all(world, 'settler')) if (s.owner === PLAYER && !s.hidden && Math.hypot(s.x - poi.x, s.z - poi.z) <= r) return s;
     return null;
   }

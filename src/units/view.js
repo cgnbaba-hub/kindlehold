@@ -82,7 +82,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         f.style = u.type; f.scale = 1.3 * zk; f.tunic = null; f.tool = null; f.carry = null; f.lean = 0;
         f.t = tickTime + u.id * 0.29; f.phase = u.id;
         f.kneel = !!u.downed; f.fallen = 0; f.job = null; f.hit = u.downed ? 0 : hitAmount(u); f.rank = u.rank || 0;
-        f.ranged = def.cls === 'ranged';
+        f.ranged = def.cls === 'ranged' || !!def.ranged;
         f.bladeTint = u.owner === 'p1' && w.players.p1 && w.players.p1.techs.blades ? '#9fc4e8' : null;
         const sinceAttack = w.tick - (u.attackT || -999);
         const cdTicks = def.cooldown * 20;
@@ -90,7 +90,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         else if (sinceAttack >= 0 && sinceAttack < Math.min(cdTicks, 18)) { f.anim = 'attack'; f.attackPhase = (sinceAttack + alpha) / Math.min(cdTicks, 18); }
         else if (u.downed) f.anim = 'idle';
         else f.anim = u.moving ? (u.retreating ? 'run' : 'walk') : 'idle';
-        f.lanternOut = u.hero ? heroLantern : null;
+        f.lanternOut = u.type === 'maren' ? heroLantern : null;
         figs.draw(f);
       }
       // fallen bodies

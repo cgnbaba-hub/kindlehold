@@ -221,7 +221,7 @@ export async function startApp(params) {
     return;
   }
   // ?start=1 jumps straight into a game (tests, quick checks): no intro flight
-  if (params.get('start') === '1') { await startGame({ intro: false, scenarioId: ['greyfen', 'tollbreaker', 'saltroad', 'whitestag'].includes(params.get('chapter')) ? params.get('chapter') : 'harrowmere' }); return; }
+  if (params.get('start') === '1') { await startGame({ intro: false, scenarioId: ['greyfen', 'tollbreaker', 'saltroad', 'whitestag', 'irondebt'].includes(params.get('chapter')) ? params.get('chapter') : 'harrowmere' }); return; }
   showMain();
   markReady();
 }

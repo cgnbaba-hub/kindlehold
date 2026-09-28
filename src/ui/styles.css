@@ -113,16 +113,43 @@ button { font: inherit; color: inherit; }
 .people-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
 .people-bar > div { height: 100%; background: var(--brass); }
 .res[role="button"] { cursor: pointer; }
-.advisor { position: absolute; left: 12px; bottom: calc(238px * var(--ui-scale, 1)); width: min(300px, 26vw); display: flex; gap: 10px; align-items: center; padding: 8px 10px; cursor: pointer; }
-.advisor-portrait { flex: none; width: 54px; height: 54px; border-radius: 50%; overflow: hidden; border: 3px solid var(--ok, #8fbf73); box-shadow: 0 0 0 2px rgba(0,0,0,0.5); }
-.advisor[data-mood="mid"] .advisor-portrait { border-color: #c9c47a; } .advisor[data-mood="warn"] .advisor-portrait { border-color: var(--warn, #e0b04a); } .advisor[data-mood="bad"] .advisor-portrait { border-color: var(--bad, #d86a4f); }
-.advisor-portrait svg { display: block; }
-.advisor-body { min-width: 0; }
-.advisor-head { display: flex; gap: 8px; align-items: baseline; }
-.advisor-head strong { font-family: var(--serif); color: var(--brass); }
-.advisor-mood { font-size: 0.78em; color: var(--ink-dim); }
-.advisor-text { margin: 2px 0 0; font: 0.86em/1.3 var(--serif); }
+.advisor { position: absolute; left: 12px; bottom: calc(238px * var(--ui-scale, 1)); width: min(340px, 30vw); display: flex; gap: 10px; align-items: flex-end; padding: 8px 10px 8px 8px; cursor: pointer; }
+.advisor:hover, .advisor:focus-visible { border-color: var(--brass); }
+.advisor-frame { position: relative; flex: none; width: 76px; height: 84px; border-radius: 10px; overflow: hidden; border: 3px solid var(--ok, #8fbf73); box-shadow: 0 0 0 2px rgba(0,0,0,0.55), 0 4px 10px rgba(0,0,0,0.4); background: #1e1914; }
+.advisor[data-mood="mid"] .advisor-frame { border-color: #c9c47a; } .advisor[data-mood="warn"] .advisor-frame { border-color: var(--warn, #e0b04a); } .advisor[data-mood="bad"] .advisor-frame { border-color: var(--bad, #d86a4f); }
+.advisor-avatar, .advisor-avatar svg { display: block; width: 100%; height: 100%; }
+.advisor-badge { position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; border-radius: 50%; display: none; place-items: center; font: bold 12px/1 var(--sans, sans-serif); color: #fff; background: var(--bad, #d86a4f); box-shadow: 0 0 0 2px rgba(0,0,0,0.5); }
+.advisor[data-level="danger"] .advisor-badge { display: grid; animation: advPulse 1.2s ease-in-out infinite; }
+.advisor[data-level="warn"] .advisor-badge { display: grid; background: var(--warn, #e0b04a); color: #1a1410; }
+.advisor-body { min-width: 0; flex: 1; }
+.advisor-head { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.advisor-head strong { font-family: var(--serif); color: var(--brass); font-size: 1.05em; }
+.advisor-role { font-size: 0.72em; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+.advisor-mood { color: var(--ink-dim); }
+.advisor-bubble { position: relative; margin-top: 4px; padding: 6px 8px; border-radius: 8px; background: rgba(240, 228, 200, 0.1); border: 1px solid rgba(240, 228, 200, 0.18); min-height: 2.6em; }
+.advisor-bubble::before { content: ''; position: absolute; left: -7px; bottom: 10px; border: 6px solid transparent; border-right-color: rgba(240, 228, 200, 0.18); border-left: 0; }
+.advisor[data-level="danger"] .advisor-bubble { background: rgba(216, 106, 79, 0.16); border-color: rgba(216, 106, 79, 0.5); }
+.advisor[data-level="task"] .advisor-bubble { background: rgba(95, 179, 214, 0.12); border-color: rgba(95, 179, 214, 0.4); }
+.advisor-text { margin: 0; font: 0.86em/1.3 var(--serif); }
+.advisor-foot { display: flex; gap: 8px; margin-top: 3px; font-size: 0.72em; color: var(--ink-dim); } .advisor-next { margin-left: auto; }
+.advisor-next { color: var(--brass); opacity: 0.8; } .advisor:hover .advisor-next { opacity: 1; text-decoration: underline; }
 .advisor.flash { animation: msgIn 0.35s ease-out; }
+/* the bust: breathing, blinking, a talking mouth, a raised finger for urgent advice */
+.advisor-avatar .av-head { transform-origin: 40px 60px; animation: avBreathe 4.2s ease-in-out infinite; }
+.advisor-avatar .av-body { transform-origin: 40px 88px; animation: avBreatheBody 4.2s ease-in-out infinite; }
+.advisor-avatar .av-eyes { transform-origin: 40px 35px; animation: avBlink 5.3s infinite; }
+.advisor-avatar .av-mouth-open { opacity: 0; transform-origin: 40px 46.6px; }
+.advisor.talking .av-mouth-open { animation: avTalk 0.22s ease-in-out infinite alternate; }
+.advisor.talking .av-mouth-closed { opacity: 0; }
+.advisor-avatar .av-finger { opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s; }
+.advisor[data-level="danger"] .av-finger { opacity: 1; transform: none; }
+.advisor[data-level="danger"] .av-ledger { opacity: 0; }
+.advisor[data-level="danger"] .av-brows { transform: translateY(0.8px) rotate(0deg); }
+@keyframes avBreathe { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(0.9px) rotate(-1.2deg); } }
+@keyframes avBreatheBody { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.012); } }
+@keyframes avBlink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes avTalk { from { opacity: 1; transform: scaleY(0.35); } to { opacity: 1; transform: scaleY(1.1); } }
+@keyframes advPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
 .speed-menu { position: absolute; top: 58px; left: 50%; transform: translateX(40px); display: flex; flex-direction: column; padding: 4px; gap: 2px; z-index: 30; min-width: 110px; }
 .speed-menu[hidden] { display: none; }
 .speed-opt { text-align: left; padding: 6px 12px; background: transparent; border: 1px solid transparent; border-radius: 5px; color: inherit; font: 600 0.95em var(--sans); cursor: pointer; }
@@ -273,8 +300,8 @@ button { font: inherit; color: inherit; }
 @media (max-width: 1400px), (max-height: 800px) {
   .ui-root { font-size: calc(12.5px * var(--ui-scale, 1)); }
   .minimap-canvas { width: calc(150px * var(--ui-scale, 1)); height: calc(150px * var(--ui-scale, 1)); }
-  .advisor { bottom: calc(184px * var(--ui-scale, 1)); width: 250px; }
-  .advisor-portrait { width: 44px; height: 44px; }
+  .advisor { bottom: calc(184px * var(--ui-scale, 1)); width: 270px; }
+  .advisor-frame { width: 56px; height: 62px; }
   .commands { width: calc(290px * var(--ui-scale, 1)); }
   .objectives { width: calc(250px * var(--ui-scale, 1)); max-height: 38vh; }
   .selection { min-height: calc(120px * var(--ui-scale, 1)); }
@@ -289,9 +316,9 @@ button { font: inherit; color: inherit; }
 
 /* ------------------------------------------------------------------ reduced motion */
 .reduced-motion .cmd.pulse { animation: none; border-color: var(--ember); }
-.reduced-motion .msg, .reduced-motion .alert, .reduced-motion .toast { animation: none; }
+.reduced-motion .msg, .reduced-motion .alert, .reduced-motion .toast, .reduced-motion .advisor-avatar *, .reduced-motion .advisor-badge { animation: none; }
 .reduced-motion .bd-glow { animation: none; }
-@media (prefers-reduced-motion: reduce) { .cmd.pulse, .msg, .alert, .toast, .bd-glow { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .cmd.pulse, .msg, .alert, .toast, .bd-glow, .advisor-avatar *, .advisor-badge { animation: none !important; } }
 .showcase-tag { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); padding: 6px 14px; display: flex; gap: 10px; font-size: 13px; }
 .showcase-audio { position: absolute; left: 12px; top: 12px; padding: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .cmd-label { font-size: 0.66em; line-height: 1; color: var(--ink-dim); text-align: center; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

@@ -1,7 +1,7 @@
 // Tiny DOM helpers. Text is always set with textContent; the only innerHTML use is
 // for project-authored static SVG markup from icons.js and portraits.js (never user/scenario data).
 import { ICONS } from './icons.js';
-import { PORTRAITS } from './portraits.js';
+import { PORTRAITS, OSRIC_AVATAR } from './portraits.js';
 
 /**
  * h('div.card#id', { onclick, title, 'aria-label': ... }, [children | 'text'])
@@ -46,6 +46,15 @@ export function portrait(key, cls = 'msg-portrait') {
   span.setAttribute('aria-hidden', 'true');
   span.innerHTML = PORTRAITS[key] || ''; // static, project-authored markup only
   return span;
+}
+
+/** Osric's animated advisor bust (static, project-authored SVG). */
+export function osricAvatar(cls = 'advisor-avatar') {
+  const div = document.createElement('div');
+  div.className = cls;
+  div.setAttribute('aria-hidden', 'true');
+  div.innerHTML = OSRIC_AVATAR; // static, project-authored markup only
+  return div;
 }
 
 export function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); return el; }

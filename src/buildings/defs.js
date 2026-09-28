@@ -126,6 +126,16 @@ export const BUILDINGS = {
     desc: 'A white-stone tower with a longbowman on the parapet. Its walls stand firm against all but Sappers.',
     cost: {}, buildTime: 0, hp: 600, radius: 2.8, navRadius: 2.4, attack: { damage: 12, range: 18, cooldown: 1.8 }, door: [0, 2.8], walls: 0.5,
   },
+  morrowhold: {
+    id: 'morrowhold', name: 'Morrow Hold', owner: 'p2', buildable: false,
+    desc: 'The black-stone hold of House Morrow on its mountain shelf. Only Sappers break its walls quickly.',
+    cost: {}, buildTime: 0, hp: 3400, radius: 8, navRadius: 7, territory: 34, door: [0, 8.2], walls: 0.35,
+  },
+  morrowtower: {
+    id: 'morrowtower', name: 'Morrow Bastion', owner: 'p2', buildable: false,
+    desc: 'A squat black-stone bastion with an arbalest on the roof.',
+    cost: {}, buildTime: 0, hp: 650, radius: 2.9, navRadius: 2.5, attack: { damage: 14, range: 18, cooldown: 2.2 }, door: [0, 2.9], walls: 0.5,
+  },
   varrtower: {
     id: 'varrtower', name: 'Varr Watchtower', owner: 'p2', buildable: false,
     desc: 'A stone tower with a crossbowman behind its crenels.',

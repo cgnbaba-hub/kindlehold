@@ -1,7 +1,7 @@
 // In-game HUD (semantic HTML over the canvas): resources, population, stability,
 // clock, objectives + tutorial hints, dialogue, alerts, selection panel, command grid,
 // minimap, tooltips, placement banner, toasts.
-import { h, icon, portrait, clear, setText, fmtTime } from './dom.js';
+import { h, icon, portrait, osricAvatar, clear, setText, fmtTime } from './dom.js';
 import { portraitKey } from './portraits.js';
 import { seasonAt } from '../weather/index.js';
 import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf } from '../population/index.js';
@@ -15,7 +15,7 @@ import { TECHS, TECH_ORDER } from '../technology/defs.js';
 import { researchBlocker } from '../technology/index.js';
 import { buildCost, upgradeBlocker } from '../construction/index.js';
 import { canAfford } from '../economy/stock.js';
-import { ABILITIES } from '../heroes/index.js';
+import { ABILITIES, heroAbilities } from '../heroes/index.js';
 import { STALL_TEXT, WORK } from '../production/index.js';
 import { scenarioOf } from '../missions/index.js';
 import { aiSettings } from '../ai/index.js';
@@ -117,40 +117,75 @@ export function createHud({ root, session, input, settings, actions }) {
   }
 
   // --- advisor: Osric reports the mood of the people and what is needed -------------------
+  // Osric is a character, not a status line: an animated bust (breathes, blinks, talks while his
+  // words appear), a speech bubble, a clear role, a badge when the advice is urgent, and a
+  // "next advice" affordance.
   const advisorText = h('p.advisor-text', { text: '' });
   const advisorMood = h('span.advisor-mood', { text: '' });
-  const advisorPic = portrait('osric', 'advisor-portrait');
-  const advisor = h('section.advisor.panel', { 'aria-label': 'Advisor', 'aria-live': 'polite', role: 'button', tabindex: 0, 'data-tip': 'Osric, your reeve. Click for his next piece of advice.' }, [advisorPic, h('div.advisor-body', {}, [h('div.advisor-head', {}, [h('strong', { text: 'Osric' }), advisorMood]), advisorText])]);
+  const advisorCount = h('span.advisor-count', { text: '' });
+  const advisorBadge = h('span.advisor-badge', { text: '!', 'aria-hidden': 'true' });
+  const advisorPic = h('div.advisor-frame', {}, [osricAvatar(), advisorBadge]);
+  const advisor = h('section.advisor.panel', { 'aria-label': 'Osric, your advisor', 'aria-live': 'polite', role: 'button', tabindex: 0, 'data-tip-title': 'Osric Tallow — Reeve of Kindlehold', 'data-tip': 'Your advisor. He watches the stores, the people and the roads and tells you what needs doing. A red badge means something urgent. Click for his next piece of advice.' }, [
+    advisorPic,
+    h('div.advisor-body', {}, [
+      h('div.advisor-head', {}, [h('strong', { text: 'Osric' }), h('span.advisor-role', { text: 'Reeve · advisor' })]),
+      h('div.advisor-bubble', {}, [advisorText]),
+      h('div.advisor-foot', {}, [advisorMood, advisorCount, h('span.advisor-next', { text: 'Next advice ›' })]),
+    ]),
+  ]);
+  advisor.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); advisor.click(); } });
   hud.append(advisor);
+  // his words appear letter by letter while he talks (instant with reduced motion)
+  let typeText = '', typePos = 0, typeRaf = 0, typeLast = 0;
+  function typeStep(now) {
+    const dt = typeLast ? Math.min(0.1, (now - typeLast) / 1000) : 0;
+    typeLast = now;
+    typePos = Math.min(typeText.length, typePos + dt * 55);
+    setText(advisorText, typeText.slice(0, Math.ceil(typePos)));
+    if (typePos < typeText.length) typeRaf = requestAnimationFrame(typeStep);
+    else { typeRaf = 0; advisor.classList.remove('talking'); }
+  }
+  function sayAdvice(text) {
+    typeText = text;
+    if (typeRaf) cancelAnimationFrame(typeRaf);
+    if (document.documentElement.classList.contains('reduced-motion') || typeof requestAnimationFrame !== 'function') { setText(advisorText, text); advisor.classList.remove('talking'); return; }
+    typePos = 0; typeLast = 0; advisor.classList.add('talking');
+    typeRaf = requestAnimationFrame(typeStep);
+  }
   let adviceIdx = 0, adviceTimer = 0, lastAdvice = '';
   advisor.addEventListener('click', () => { adviceIdx++; adviceTimer = 0; updateAdvisor(true); });
   function adviceList() {
     const w = world(), p = w.players[PLAYER];
     const c = censusOf(w, PLAYER);
     const out = [];
+    const danger = (text) => out.push({ text, level: 'danger' });
+    const warn = (text) => out.push({ text, level: 'warn' });
     const has = (t) => all(w, 'building').some((b) => b.owner === PLAYER && b.type === t && b.state !== 'destroyed');
-    if (w.ai.state === 'gather' || w.ai.state === 'raid') out.push(`The ${enemyFaction(w).short} are on the march! Gather the soldiers near what they are after, Warden.`);
-    if (w.brigands && w.brigands.raidIds.length) out.push('Greyfen brigands are raiding us! Soldiers to the outskirts — or buy peace in the Diplomacy window.');
-    else if (w.players[BRIGANDS] && stance(w, PLAYER, BRIGANDS) === 'neutral' && relation(w, PLAYER, BRIGANDS) < -10) out.push('Morwen\'s patience wears thin, Warden. A gift to the Greyfen would soothe her.');
-    if (w.ai.harass) out.push('Plunderers are raiding our outlying workshops. A few soldiers there would send them running.');
-    if (p.lastMealFed < 1 || p.res.provisions + 2 < p.pop * 0.5) out.push('Our stores are nearly bare, Warden. We need farms, a hunter or a fisher, or smaller rations.');
-    if (p.res.timber < 15) out.push(has('lodge') ? 'Timber runs short, Warden. Another Woodcutter\'s Lodge, or send idle labourers to fell trees by hand.' : 'We have no woodcutters! Build a Woodcutter\'s Lodge near the forest.');
-    if (p.res.stone < 10 && w.tick > 3 * 1200) out.push(has('quarry') ? 'Stone is running low. A second quarry would help.' : 'We will need stone soon — build a Quarry by the rock outcrops.');
-    if (p.pop >= p.popCap) out.push('Every bed is taken. Build Cottages, or upgrade them to Stone Houses, so more folk can settle.');
-    if (c.labourers - c.asleep <= 1 && c.people > 4 && !(w.time.hour >= 22 || w.time.hour < 5)) out.push('No hands are free to carry goods or build. Pause a workplace or house more people.');
-    if (p.stability < 40) out.push('The people grumble, Warden. Lower the taxes, serve hot meals, give more rations or hold a feast.');
-    if (p.tax === 2 && p.stability < 60) out.push('High taxes weigh on the people.');
+    if (w.ai.state === 'gather' || w.ai.state === 'raid') danger(`The ${enemyFaction(w).short} are on the march! Gather the soldiers near what they are after, Warden.`);
+    if (w.brigands && w.brigands.raidIds.length) danger('Greyfen brigands are raiding us! Soldiers to the outskirts — or buy peace in the Diplomacy window.');
+    else if (w.players[BRIGANDS] && stance(w, PLAYER, BRIGANDS) === 'neutral' && relation(w, PLAYER, BRIGANDS) < -10) warn('Morwen\'s patience wears thin, Warden. A gift to the Greyfen would soothe her.');
+    if (w.ai.harass) danger('Plunderers are raiding our outlying workshops. A few soldiers there would send them running.');
+    if (p.lastMealFed < 1 || p.res.provisions + 2 < p.pop * 0.5) danger('Our stores are nearly bare, Warden. We need farms, a hunter or a fisher, or smaller rations.');
+    if (p.res.timber < 15) warn(has('lodge') ? 'Timber runs short, Warden. Another Woodcutter\'s Lodge, or send idle labourers to fell trees by hand.' : 'We have no woodcutters! Build a Woodcutter\'s Lodge near the forest.');
+    if (p.res.stone < 10 && w.tick > 3 * 1200) warn(has('quarry') ? 'Stone is running low. A second quarry would help.' : 'We will need stone soon — build a Quarry by the rock outcrops.');
+    if (p.pop >= p.popCap) warn('Every bed is taken. Build Cottages, or upgrade them to Stone Houses, so more folk can settle.');
+    if (c.labourers - c.asleep <= 1 && c.people > 4 && !(w.time.hour >= 22 || w.time.hour < 5)) warn('No hands are free to carry goods or build. Pause a workplace or house more people.');
+    if (p.stability < 40) warn('The people grumble, Warden. Lower the taxes, serve hot meals, give more rations or hold a feast.');
+    if (p.tax === 2 && p.stability < 60) warn('High taxes weigh on the people.');
     const ss = seasonAt(w.tick);
-    if (!ss.winter && ss.untilNext < 90 * 20) out.push('Winter is close. Fill the stores — the fields will grow slowly under the snow.');
-    if (has('barracks') && !c.soldierCount && w.tick > 8 * 1200) out.push(`A Barracks and no soldiers? Train a few before the ${enemyFaction(w).short} come.`);
-    if (w.mission.flags.raidWarned && c.soldierCount < 6) out.push('A raid is announced and our guard is thin. More soldiers, Warden!');
-    if (!out.length) {
+    if (!ss.winter && ss.untilNext < 90 * 20) warn('Winter is close. Fill the stores — the fields will grow slowly under the snow.');
+    if (has('barracks') && !c.soldierCount && w.tick > 8 * 1200) warn(`A Barracks and no soldiers? Train a few before the ${enemyFaction(w).short} come.`);
+    if (w.mission.flags.raidWarned && c.soldierCount < 6) danger('A raid is announced and our guard is thin. More soldiers, Warden!');
+    // what the story asks for right now: Osric reminds you of the task and how to do it
+    const task = (w.mission.objectives || []).map((o) => ({ o, d: (scenarioOf(w).objectives || []).find((x) => x.id === o.id) })).find(({ o, d }) => o.state === 'active' && d && !d.optional);
+    if (task && task.d.hint) out.push({ text: `${task.d.title}: ${task.d.hint}`, level: 'task' });
+    if (out.length <= (task && task.d.hint ? 1 : 0)) {
       const calm = [
         'All is well in Kindlehold. The hearth burns bright.',
         p.res.taler > 150 ? 'The treasury is full. Upgrades, a feast or the trader at the crossroads could use it.' : 'The treasury grows with every payday.',
         c.idle > 3 ? 'Some labourers stand idle. They could fell trees by hand — select them and right-click a tree.' : 'The people are busy and content.',
       ];
-      out.push(calm[Math.floor(w.tick / 400) % calm.length]);
+      out.push({ text: calm[Math.floor(w.tick / 400) % calm.length], level: 'calm' });
     }
     return out;
   }
@@ -162,10 +197,13 @@ export function createHud({ root, session, input, settings, actions }) {
     advisor.dataset.mood = mood[1];
     // keep the current advice until it rotates (every 12 s or on click) or no longer applies
     const list = adviceList();
-    const stillTrue = list.includes(lastAdvice);
-    if (!force && stillTrue && adviceTimer > 0) return;
-    const text = force || !stillTrue ? list[adviceIdx % list.length] : lastAdvice;
-    if (text !== lastAdvice) { lastAdvice = text; setText(advisorText, text); advisor.classList.remove('flash'); void advisor.offsetWidth; advisor.classList.add('flash'); }
+    const cur = list.find((a) => a.text === lastAdvice);
+    if (!force && cur && adviceTimer > 0) return;
+    const i = force || !cur ? adviceIdx % list.length : list.indexOf(cur);
+    const pick = list[i];
+    setText(advisorCount, list.length > 1 ? `${i + 1}/${list.length}` : '');
+    advisor.dataset.level = pick.level;
+    if (pick.text !== lastAdvice) { lastAdvice = pick.text; sayAdvice(pick.text); advisor.classList.remove('flash'); void advisor.offsetWidth; advisor.classList.add('flash'); }
   }
 
   // --- top-centre: clock + speed + menu ---------------------------------------------
@@ -534,7 +572,7 @@ export function createHud({ root, session, input, settings, actions }) {
       ]));
       if (counters) selPanel.append(h('div.sel-row.small', { text: `Strong against ${counters}` }));
       selPanel.append(h('div.sel-row.small.muted', { text: def.desc }));
-      if (e.hero) selPanel.append(h('div.sel-row.small', { text: 'Hearthlight: allies within 10 m regenerate and take 10% less damage.' }));
+      if (e.hero) selPanel.append(h('div.sel-row.small', { text: def.passive === 'hearthlight' ? 'Hearthlight: allies within 10 m regenerate and take 10% less damage.' : 'Eagle Eye: sees much further than anyone else, and shoots from 16 m.' }));
       return;
     }
     if (e.kind === 'settler') {
@@ -631,18 +669,18 @@ export function createHud({ root, session, input, settings, actions }) {
     }
     if (units.length) {
       const hero = units.find((u) => u.hero);
-      setText(cmdTitle, hero && units.length === 1 ? 'Maren Ashgrove' : 'Orders');
+      setText(cmdTitle, hero && units.length === 1 ? UNITS[hero.type].name : 'Orders');
       cmdGrid.append(cmdButton({ ic: 'move', label: 'Move', tip: 'Then left-click a destination (or simply right-click the ground). Groups keep formation.', onClick: () => input.beginTarget('move'), active: input.state.targetKind === 'move' }));
       cmdGrid.append(cmdButton({ ic: 'attackMove', label: 'Attack-move', key: bb.attackMove, tip: 'Move and fight anything met on the way. Then left-click a target point.', onClick: () => input.beginTarget('attackMove'), active: input.state.targetKind === 'attackMove' }));
       cmdGrid.append(cmdButton({ ic: 'patrol', label: 'Patrol', key: bb.patrol, tip: 'Walk back and forth, engaging enemies.', onClick: () => input.beginTarget('patrol'), active: input.state.targetKind === 'patrol' }));
       cmdGrid.append(cmdButton({ ic: 'stop', label: 'Stop', key: bb.stop, tip: 'Stop and guard the current spot.', onClick: () => input.issue({ type: 'stop', ids: units.map((u) => u.id) }) }));
       cmdGrid.append(cmdButton({ ic: 'hold', label: 'Hold position', key: bb.hold, tip: 'Never move; only strike enemies in reach.', onClick: () => input.issue({ type: 'hold', ids: units.map((u) => u.id) }) }));
       if (hero) {
-        for (const ab of [ABILITIES.flare, ABILITIES.kindle]) {
+        heroAbilities(hero).forEach((ab, i) => {
           const cd = Math.max(0, ((hero.abilityCd && hero.abilityCd[ab.id]) || 0) - w.tick) / 20;
-          const key = ab.id === 'flare' ? bb.abilityFlare : bb.abilityKindle;
-          cmdGrid.append(cmdButton({ ic: ab.id, label: ab.name, key, tipTitle: `${ab.name} (${ab.cooldown}s cooldown)`, tip: ab.desc, cooldown: cd > 0 ? cd : null, disabled: cd > 0, active: input.state.targetKind === ab.id, onClick: () => input.beginTarget(ab.id), highlight: hl === 'army' && cd <= 0 }));
-        }
+          const key = i === 0 ? bb.abilityFlare : bb.abilityKindle;
+          cmdGrid.append(cmdButton({ ic: ab.id, label: ab.name, key, tipTitle: `${ab.name} (${ab.cooldown}s cooldown)`, tip: ab.desc, cooldown: cd > 0 ? cd : null, disabled: cd > 0 || hero.downed, active: input.state.targetKind === ab.id, onClick: () => input.beginTarget(ab.id), highlight: hl === 'army' && cd <= 0 }));
+        });
       }
       return;
     }
@@ -736,7 +774,8 @@ export function createHud({ root, session, input, settings, actions }) {
       banner.classList.toggle('bad', !!reason);
     } else if (st.mode === 'target') {
       banner.hidden = false; banner.classList.remove('bad');
-      setText(banner, st.targetKind === 'flare' ? 'Beacon Flare — left-click where the lantern should burst (right-click to cancel)' : `${{ patrol: 'Patrol', move: 'Move', attackMove: 'Attack-move' }[st.targetKind] || 'Order'} — left-click a destination (right-click to cancel)`);
+      const AB_HINT = { flare: 'Beacon Flare — left-click where the lantern should burst', volley: 'Arrow Storm — left-click where the arrows should fall', mark: 'Hunter\'s Mark — left-click the enemies to mark' };
+      setText(banner, AB_HINT[st.targetKind] ? `${AB_HINT[st.targetKind]} (right-click to cancel)` : `${{ patrol: 'Patrol', move: 'Move', attackMove: 'Attack-move' }[st.targetKind] || 'Order'} — left-click a destination (right-click to cancel)`);
     } else banner.hidden = true;
     if (t < 0.2 && dt !== 0) return; // dt 0 = explicit redraw (e.g. frozen frame): refresh now
     t = 0;

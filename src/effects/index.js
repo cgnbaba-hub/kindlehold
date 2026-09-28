@@ -143,6 +143,13 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
       rings.push({ x: d.x, z: d.z, r: d.radius, t: 0, dur: 0.8, color: '#ffd27a' });
       rings.push({ x: d.x, z: d.z, r: d.radius * 1.1, t: 0, dur: 1.4, color: '#ffb35c', disc: true });
       flash.position.set(d.x, y + 3, d.z); flashT = 0.9;
+    } else if (d.ability === 'volley') {
+      rings.push({ x: d.x, z: d.z, r: d.radius, t: 0, dur: 1.2, color: '#e8e0cc' });
+      emit('dust', d.x, y + 0.4, d.z, 12, d.radius, [0, 0.6, 0], 1.5);
+    } else if (d.ability === 'mark') {
+      rings.push({ x: d.x, z: d.z, r: d.radius, t: 0, dur: 1.6, color: '#d86a4f' });
+      rings.push({ x: d.x, z: d.z, r: d.radius * 1.05, t: 0, dur: 2.2, color: '#f0a070', disc: true });
+      emit('glint', d.x, y + 1.2, d.z, 16, d.radius, [0, 1.2, 0], 1.2);
     } else if (d.ability === 'kindle') {
       emit('ward', d.x, y + 0.6, d.z, 40, d.radius * 1.6, [0, 1.2, 0], 1.2);
       rings.push({ x: d.x, z: d.z, r: d.radius, t: 0, dur: 1.2, color: '#8fd0ff' });

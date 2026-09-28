@@ -118,6 +118,7 @@ export const STYLE = {
   fletcher: { torso: '#4f6f4a', head: 'hood', headColor: '#3f5a3c', right: null, left: 'bow', legs: '#4d4338' },
   crossbow: { torso: '#3f5a6a', coat: true, head: 'helm', right: 'crossbow', left: null, legs: '#4d4338', tabard: '#e3d6b0' },
   halberd: { torso: '#2a5a7a', coat: true, head: 'helm', right: 'halberd', left: null, legs: '#3a3a3c', pauldrons: true, tabard: '#d1a54a' },
+  wren: { torso: '#5a6a3e', coat: true, head: 'hood', headColor: '#4a5a32', right: null, left: 'bow', legs: '#3a3028', cape: '#6a5a3a', hairColor: '#a8622e', scale: 1.1 },
   maren: { torso: '#384a5c', coat: true, head: 'hood', headColor: '#2c3a48', right: 'pole', left: null, legs: '#3a3028', lantern: true, cape: '#24505e' },
   reaver: { torso: '#8c3b2a', head: 'cap', headColor: '#3a302a', right: 'axe', left: null, legs: '#3a302a', beard: true, beardColor: '#6a2e18' },
   slinger: { torso: '#7a5a3e', head: 'hood', headColor: '#5b2a20', right: 'sling', left: null, legs: '#3a302a' },
@@ -134,6 +135,10 @@ export const STYLE = {
   stagarcher: { torso: '#3a5a3a', head: 'hood', headColor: '#2a4a30', right: null, left: 'bow', legs: '#3a3a30', tabard: '#e8e4d8' },
   stagwarden: { torso: '#4a6a52', coat: true, head: 'helm', right: 'sword', left: 'shieldKite', leftColor: '#e8e4d8', legs: '#2e3a30', pauldrons: '#6a8a70', tabard: '#e8e4d8', scale: 1.06 },
   vane: { torso: '#2e3a30', coat: true, head: 'helm', right: 'sword', left: 'shieldKite', leftColor: '#e8e4d8', legs: '#24282a', pauldrons: '#c8ccd0', tabard: '#2e5a3a', cape: '#e8e4d8', scale: 1.22, beard: true, beardColor: '#9a9088' },
+  ironguard: { torso: '#34343a', head: 'helm', right: 'spear', left: 'shieldKite', leftColor: '#2a2a30', legs: '#26262a', pauldrons: '#4a4a52', tabard: '#d0a030', scale: 1.05 },
+  arbalest: { torso: '#4a4038', coat: true, head: 'helm', right: 'crossbow', left: null, legs: '#2a2a2e', tabard: '#2e2e34' },
+  delver: { torso: '#5a4a36', head: 'cap', headColor: '#2e2e34', right: 'pick', left: null, legs: '#3a3028', beard: true, beardColor: '#3a2a1e', tabard: '#d0a030' },
+  ismay: { torso: '#2e2e34', coat: true, head: 'circlet', hairColor: '#1e1a18', right: 'sword', left: 'shieldKite', leftColor: '#2a2a30', legs: '#1e1e22', pauldrons: '#d0a030', cape: '#2e2e34', tabard: '#d0a030', scale: 1.2 },
   vharek: { torso: '#3a302a', coat: true, head: 'hornhelm', right: 'greataxe', left: null, legs: '#2a2420', scale: 1.28, beard: true, beardColor: '#8c3b1f', cape: '#6e2a1c', pauldrons: '#6a625a' },
 };
 

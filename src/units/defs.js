@@ -24,7 +24,11 @@ export const UNITS = {
   sapper: { id: 'sapper', name: 'Sapper', owner: 'p1', cls: 'melee', hp: 120, armor: 1, damage: 12, range: 1.7, cooldown: 1.4, speed: 3.8, sight: 12, requiresLevel: 2,
     vsBuildings: 4, cost: { timber: 20, iron: 10, provisions: 5 }, trainTime: 10, desc: 'Siege engineer with a heavy maul: breaks gates and walls four times faster than any soldier, but is no match for them in the field. Needs the Drill Yard.' },
   maren: { id: 'maren', name: 'Maren Ashgrove', title: 'Lantern Warden', owner: 'p1', cls: 'hero', hp: 420, armor: 4, damage: 20, range: 2.2, cooldown: 1.3, speed: 4.2, sight: 14,
+    abilities: ['flare', 'kindle'], passive: 'hearthlight',
     cost: {}, trainTime: 0, desc: 'Lamplighter of the old roads. Her lantern steadies allies and blinds foes.' },
+  wren: { id: 'wren', name: 'Wren Fenmore', title: 'Scout of the March', owner: 'p1', cls: 'hero', ranged: true, hp: 320, armor: 2, damage: 18, range: 16, cooldown: 1.3, speed: 4.6, sight: 18,
+    abilities: ['volley', 'mark'], passive: 'eagle',
+    cost: {}, trainTime: 0, desc: 'Scout of the valley since the Long Frost. Her longbow never misses twice.' },
   // Rustfang Reavers
   reaver: { id: 'reaver', name: 'Reaver', owner: 'p2', cls: 'melee', hp: 120, armor: 1, damage: 14, range: 1.6, cooldown: 1.1, speed: 4.2, sight: 13, cost: {}, desc: 'Axe-raider of the Rustfang.' },
   slinger: { id: 'slinger', name: 'Slinger', owner: 'p2', cls: 'ranged', hp: 80, armor: 0, damage: 10, range: 13, cooldown: 1.7, speed: 3.8, sight: 15, cost: {}, desc: 'Hurls iron shot.' },
@@ -43,6 +47,11 @@ export const UNITS = {
   stagarcher: { id: 'stagarcher', name: 'Stag Longbowman', owner: 'p2', cls: 'ranged', hp: 90, armor: 1, damage: 13, range: 17, cooldown: 1.7, speed: 3.8, sight: 17, cost: {}, desc: 'Forest archer with a yew longbow. Outranges every bow of the valley.' },
   stagwarden: { id: 'stagwarden', name: 'Warden of the Stag', owner: 'p2', cls: 'melee', hp: 200, armor: 5, damage: 17, range: 1.7, cooldown: 1.2, speed: 3.7, sight: 13, cost: {}, desc: 'Knight-brother of the Order in green enamel mail.' },
   vane: { id: 'vane', name: 'Master Edric Vane', owner: 'p2', cls: 'commander', hp: 800, armor: 6, damage: 28, range: 2.4, cooldown: 1.3, speed: 3.8, sight: 15, cost: {}, desc: 'Master of the Order of the White Stag. Every toll on every lowland road ends in his ledger.' },
+  // House Morrow of the Iron March (p2 in chapter six): highland miners and their household guard
+  ironguard: { id: 'ironguard', name: 'Morrow Ironguard', owner: 'p2', cls: 'defensive', hp: 230, armor: 6, damage: 12, range: 2.2, cooldown: 1.4, speed: 3.1, sight: 12, cost: {}, desc: 'Household guard in black iron plate behind a tower shield.' },
+  arbalest: { id: 'arbalest', name: 'Morrow Arbalest', owner: 'p2', cls: 'ranged', hp: 90, armor: 2, damage: 21, range: 18, cooldown: 2.7, speed: 3.3, sight: 18, pierce: 0.5, cost: {}, desc: 'A steel-bowed arbalest: slow to wind, deadly at long range.' },
+  delver: { id: 'delver', name: 'Morrow Delver', owner: 'p2', cls: 'melee', hp: 135, armor: 2, damage: 14, range: 1.7, cooldown: 1.2, speed: 4.0, sight: 13, vsBuildings: 3, cost: {}, desc: 'A miner with a war-pick: tears down walls and houses three times faster than any soldier.' },
+  ismay: { id: 'ismay', name: 'Lady Ismay Morrow', owner: 'p2', cls: 'commander', hp: 820, armor: 7, damage: 26, range: 2.4, cooldown: 1.3, speed: 3.8, sight: 15, cost: {}, desc: 'Heir of House Morrow. She has come to collect a debt a hundred years old.' },
   vharek: { id: 'vharek', name: 'Vharek the Tollbreaker', owner: 'p2', cls: 'commander', hp: 700, armor: 5, damage: 35, range: 2.4, cooldown: 1.8, speed: 3.8, sight: 14, cost: {}, desc: 'Former bridge-warden turned warlord.' },
 };
 

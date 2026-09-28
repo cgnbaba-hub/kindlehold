@@ -7,6 +7,7 @@ import { HARROWMERE_SCENARIO } from './scenarios/harrowmere.js';
 import { GREYFEN_SCENARIO, TOLLBREAKER_SCENARIO } from './scenarios/campaign.js';
 import { SALTROAD_SCENARIO } from './scenarios/saltroad.js';
 import { WHITESTAG_SCENARIO } from './scenarios/whitestag.js';
+import { IRONDEBT_SCENARIO } from './scenarios/irondebt.js';
 import { aiSettings, spawnEnemy } from '../ai/index.js';
 import { doorOf } from '../buildings/defs.js';
 import { addRes } from '../economy/stock.js';
@@ -14,9 +15,9 @@ import { reveal } from '../exploration/index.js';
 import { setRelation, relation } from '../diplomacy/index.js';
 import { enemyFaction } from '../ai/factions.js';
 
-export const SCENARIOS = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO, saltroad: SALTROAD_SCENARIO, whitestag: WHITESTAG_SCENARIO };
+export const SCENARIOS = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO, saltroad: SALTROAD_SCENARIO, whitestag: WHITESTAG_SCENARIO, irondebt: IRONDEBT_SCENARIO };
 /** The campaign in play order. */
-export const CAMPAIGN = ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad', 'whitestag'];
+export const CAMPAIGN = ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad', 'whitestag', 'irondebt'];
 
 export function scenarioOf(world) { const id = world.mission.scenarioId || world.meta.scenarioId; return Object.hasOwn(SCENARIOS, id) ? SCENARIOS[id] : HARROWMERE_SCENARIO; }
 
@@ -79,6 +80,18 @@ export function createMissionsModule() {
     alert(world, 'danger', spec.alert || 'An enemy host is marching on Kindlehold!', c ? c.x : at.x, c ? c.z : at.z);
   }
 
+  /** A late commander (e.g. Lady Ismay) steps out of the hall to defend it in person. */
+  function commanderAtHall(world) {
+    const fac = enemyFaction(world);
+    const hall = all(world, 'building').find((b) => b.type === fac.hall && b.owner === ENEMY && b.state !== 'destroyed');
+    if (!hall || all(world, 'unit').some((u) => u.type === fac.commander)) return;
+    const d = doorOf(hall);
+    const c = spawnEnemy(world, fac.commander, d.x, d.z + 1);
+    if (!c) return;
+    c.order = { type: 'guard', ax: d.x, az: d.z + 1, leash: 30 };
+    alert(world, 'danger', `${fac.leader} takes the field at the ${fac.hallName}!`, c.x, c.z);
+  }
+
   // scripted story beats: each fires once when its condition holds
   function runEvents(world) {
     const sc = scenarioOf(world);
@@ -95,6 +108,7 @@ export function createMissionsModule() {
         if (a.reveal) reveal(world, ctx.services.terrain.half, a.reveal[0], a.reveal[1], a.reveal[2]);
         if (a.relation) setRelation(world, PLAYER, a.relation[0], relation(world, PLAYER, a.relation[0]) + a.relation[1], 'story');
         if (a.spawnHost) spawnHost(world, a.spawnHost);
+        if (a.commanderAtHall) commanderAtHall(world);
         if (a.raidSoon && world.ai.state === 'build') world.ai.raidTick = Math.min(world.ai.raidTick ?? Infinity, world.tick + a.raidSoon * 20);
       }
       emit(world, 'mission:event', { id: ev.id });

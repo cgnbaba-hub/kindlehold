@@ -15,6 +15,7 @@ export const HEARTHLIGHT_RADIUS = 10;
 export const HEARTHLIGHT_REDUCTION = 0.1;
 export const RANGED_VS_BUILDING = 0.25;
 export const MELEE_VS_BUILDING = 0.5;
+export const MARKED_BONUS = 0.3;
 
 function classOf(e) {
   if (e.kind === 'unit') return UNITS[e.type].cls;
@@ -37,7 +38,7 @@ export function computeDamage({ base, attackerCls, defenderCls, armor = 0, damag
 function heroAuraProtects(world, target) {
   if (target.kind !== 'unit' || target.owner !== PLAYER) return false;
   for (const u of all(world, 'unit')) {
-    if (u.hero && !u.downed && u.owner === target.owner && (u.x - target.x) ** 2 + (u.z - target.z) ** 2 <= HEARTHLIGHT_RADIUS ** 2) return true;
+    if (u.hero && !u.downed && UNITS[u.type].passive === 'hearthlight' && u.owner === target.owner && (u.x - target.x) ** 2 + (u.z - target.z) ** 2 <= HEARTHLIGHT_RADIUS ** 2) return true;
   }
   return false;
 }
@@ -52,6 +53,8 @@ export function dealDamage(world, attacker, target, amount, kind = 'melee') {
   let dmg = amount;
   if (target.kind === 'unit') {
     if (heroAuraProtects(world, target)) dmg = Math.max(1, Math.round(dmg * (1 - HEARTHLIGHT_REDUCTION)));
+    // Hunter's Mark (Wren): marked enemies take more damage
+    if (target.markedUntil > world.tick) dmg = Math.round(dmg * (1 + MARKED_BONUS));
     if (target.ward > 0 && target.wardUntil > world.tick) {
       const absorbed = Math.min(target.ward, dmg);
       target.ward -= absorbed;
@@ -124,7 +127,8 @@ function kill(world, target, attacker) {
     target.target = null;
     target.path = null;
     emit(world, 'hero:downed', { id: target.id, x: target.x, z: target.z });
-    alert(world, 'danger', 'Maren has fallen! She will recover at the Keep.', target.x, target.z);
+    const first = UNITS[target.type].name.split(' ')[0];
+    alert(world, 'danger', `${first} has fallen! She will recover at the Keep.`, target.x, target.z);
     return;
   }
   const info = { id: target.id, type: target.type, kind: target.kind, owner: target.owner, x: target.x, z: target.z, heading: target.heading || 0, by: attacker ? attacker.owner : null };
@@ -182,7 +186,7 @@ export function createCombatModule() {
     const armor = t.kind === 'unit' ? (UNITS[t.type].armor + soldierMods(world, t).armor) * (1 - (def.pierce || 0)) : 0;
     let dmg = computeDamage({ base, attackerCls: def.cls, defenderCls: tcls, armor, damageMult: damageMult(world, u) });
     const strong = counterOf(def.cls, tcls) > 1;
-    if (def.cls === 'ranged') {
+    if (def.cls === 'ranged' || def.ranged) {
       if (t.kind === 'building') dmg = Math.max(1, Math.round(dmg * RANGED_VS_BUILDING));
       const dist = Math.hypot(t.x - u.x, t.z - u.z);
       const flight = Math.max(2, Math.round((dist / PROJECTILE_SPEED) * 20));
