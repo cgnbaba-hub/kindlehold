@@ -33,7 +33,7 @@ export const GREYFEN_SCENARIO = {
     buildings: TOWN,
   },
   ai: { reserves: 1.25, spawnInterval: 0.9, garrisonCap: 1.2 },
-  enemy: { extraTowers: [[-2, 24]], garrison: ['brute', 'reaver', 'reaver', 'slinger', 'slinger', 'reaver'] },
+  enemy: { hallBarred: true, extraTowers: [[-2, 24]], garrison: ['brute', 'reaver', 'reaver', 'slinger', 'slinger', 'reaver'] },
   cinematic: [
     { x: -46, z: 50, zoom: 70, yaw: 0.8, line: 0 },
     { x: 72, z: -70, zoom: 60, yaw: 3.6, line: 1 },
@@ -73,9 +73,9 @@ export const GREYFEN_SCENARIO = {
     {
       id: 'hold', title: 'Hold the river',
       text: 'Survive two Rustfang raids.',
-      hint: 'Veterans hit harder: keep your soldiers alive between raids. Watchtowers help at the river crossings.',
+      hint: 'Veterans hit harder: keep your soldiers alive between raids. Watchtowers help at the river crossings. The fort keeps its gates barred until its raiders are broken.',
       highlight: 'army', activeWhen: { flag: 'raidWarned' },
-      completeWhen: { raidsRepelled: 2 },
+      completeWhen: { any: [{ raidsRepelled: 2 }, { hostSpent: true }] },
       onComplete: [{ speaker: 'maren', text: 'Twice they came, twice they broke. The ford fort is next.' }],
     },
     {
@@ -102,7 +102,7 @@ export const GREYFEN_SCENARIO = {
     { id: 'allied', when: { stance: { with: 'p3', is: 'allied' } }, say: [{ speaker: 'morwen', text: 'You have kept your word. When the Rustfang horns blow, the Greyfen will ride with you.' }], actions: [{ flag: 'greyfenAllied' }] },
     { id: 'hold-fallen', when: { all: [{ destroyed: 'brigandhall' }, { minutes: 1 }] }, say: [{ speaker: 'maren', text: 'The Greyfen are scattered. It had to be done — but I will remember their fires.' }], actions: [{ flag: 'greyfenDefeated' }] },
     { id: 'tithe', when: { all: [{ completed: 'millbrook' }, { minutes: 14 }] }, say: [{ speaker: 'hild', text: 'Our boats brought you salted fish and what silver we could spare. Hold the river, Kindlehold.' }], actions: [{ grant: { provisions: 60, taler: 60 } }] },
-    { id: 'captains', when: { completed: 'hold' }, say: [{ speaker: 'wren', text: 'Two war-captains command the fort now. Vharek himself has ridden east to rally the hill clans. Strike before he returns.' }] },
+    { id: 'captains', when: { completed: 'hold' }, actions: [{ unflag: 'hallBarred' }], say: [{ speaker: 'wren', text: 'Two war-captains command the fort now. Vharek himself has ridden east to rally the hill clans. Strike before he returns.' }] },
   ],
   warning: [
     { speaker: 'wren', text: 'Rustfang horns at the ford! They are coming for the town — and they have more spears than last year.' },

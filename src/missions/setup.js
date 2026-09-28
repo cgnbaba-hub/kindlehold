@@ -107,7 +107,7 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   // Settlers and hero at the Keep
   const door = { x: keep.x + Math.sin(keep.rot) * 9, z: keep.z + Math.cos(keep.rot) * 9 };
   const settlers = st.settlers || 5;
-  for (let i = 0; i < settlers; i++) spawnSettler(world, PLAYER, door.x + ((i % 5) - 2) * 1.4, door.z + 1.5 + Math.floor(i / 5) * 1.3);
+  for (let i = 0; i < settlers; i++) spawnSettler(world, PLAYER, door.x + ((i % 5) - 2) * 1.4, door.z + 1.5 + (i < 5 ? i % 2 : Math.floor(i / 5) * 1.3));
   (st.soldiers || []).forEach((type, i) => {
     const u = spawnUnit(world, type, PLAYER, door.x - 4 + (i % 4) * 1.6, door.z + 5 + Math.floor(i / 4) * 1.6);
     if (u) u.order = { type: 'idle', ax: u.x, az: u.z };

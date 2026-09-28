@@ -7,6 +7,8 @@ const KEY = 'kindlehold.settings.v1';
 
 export const DEFAULT_SETTINGS = {
   quality: 'high',          // low | medium | high
+  unlockAllChapters: false,
+  cinematics: true,
   masterVolume: 0.6, musicVolume: 0.45, ambienceVolume: 0.7, effectsVolume: 0.8, voiceVolume: 0.7,
   muted: false,
   reducedMotion: false,

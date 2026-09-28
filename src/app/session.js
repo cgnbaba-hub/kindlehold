@@ -20,8 +20,8 @@ import { createAudio } from '../audio/index.js';
 import { createFrameStats } from '../telemetry/frame-stats.js';
 import { log } from '../core/logger.js';
 
-export async function createSession({ container, seed, quality = 'high', verify = false, onCritical, difficulty = 'normal', demo = null, settings = {}, world: loadedWorld = null, hooks = {} }) {
-  const sim = createSimulation({ seed, difficulty, onCritical });
+export async function createSession({ container, seed, quality = 'high', verify = false, onCritical, difficulty = 'normal', demo = null, settings = {}, world: loadedWorld = null, hooks = {}, scenarioId = 'harrowmere', campaign = null }) {
+  const sim = createSimulation({ seed, difficulty, onCritical, scenarioId, campaign });
   if (loadedWorld) sim.replaceWorld(loadedWorld);
   if (demo) applyDemoState(sim, demo);
   const rc = createRenderContext({ container, terrain: sim.terrain, quality, verify });
@@ -29,7 +29,9 @@ export async function createSession({ container, seed, quality = 'high', verify 
   views.register(rc);
   const sky = views.register(createSkyLight({ scene: rc.scene, renderer: rc.renderer, quality: rc.quality }));
   const world = () => sim.world;
-  const shroud = views.register(createShroud({ world, terrain: sim.terrain }));
+  // the fog of war lifts while a chapter intro flies over the valley
+  let showShroud = true;
+  const shroud = views.register(createShroud({ world, terrain: sim.terrain, enabled: () => showShroud }));
   shroud.snap();
   const terrainView = views.register(createTerrainView({ scene: rc.scene, terrain: sim.terrain, quality: rc.quality, world }));
   const water = views.register(createWater({ scene: rc.scene, terrain: sim.terrain }));
@@ -104,6 +106,7 @@ export async function createSession({ container, seed, quality = 'high', verify 
   const session = {
     sim, rc, stats, loop, firstFrame, effects, winter, unitsView, buildingsView, sky, settings, input, selectionView, audio, overlay, marker: (k, x, z) => selectionView.marker(k, x, z),
     get world() { return sim.world; },
+    setShroud(on) { showShroud = !!on; shroud.snap(); },
     start() { running = true; requestAnimationFrame(frame); },
     stop() { running = false; },
     lastPreset: null,

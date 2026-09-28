@@ -67,6 +67,18 @@ ${FACE('#d6b494', '#9a7654')}${EYES('#1e2a14')}
 <path d="M15 38c-1-15 6-25 17-25s18 10 17 25c-2-9-8-19-17-19s-15 10-17 19z" fill="#52693a"/>
 <path d="M20 50c4 3 8 4 12 4s8-1 12-4" stroke="#e8dcc0" stroke-width="2.2" fill="none"/>
 <path d="M26 53l-1 3M32 54v3M38 53l1 3" stroke="#e8dcc0" stroke-width="1.4"/>`, ['#4a5838', '#121810']),
+
+  // Hild of Millbrook, elder of the river folk: white braids, blue-grey shawl, a reed charm
+  hild: P('hild', `<path d="M8 64c2-14 10-20 24-20s22 6 24 20z" fill="#4a5a68"/>
+<path d="M14 64c1-10 6-16 18-18 12 2 17 8 18 18z" fill="#5d7080"/>
+${FACE('#dcb99a', '#a8826a')}${EYES('#2a2a30')}
+<path d="M25 27l4-.5M35 26.5l4 .5" stroke="#c9c4bc" stroke-width="1.1" stroke-linecap="round"/>
+<path d="M27 31.5c1 .6 2 .6 3 0M34 31.5c1 .6 2 .6 3 0" stroke="#b08a70" stroke-width=".8" fill="none"/>
+<path d="M29 35.5c2 .8 4 .8 6 0" stroke="#8a5a4a" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-2-5-6-8-11-8s-9 3-11 8z" fill="#e8e4dc"/>
+<path d="M21 26c-2 8-1 16 1 22M43 26c2 8 1 16-1 22" stroke="#ddd8ce" stroke-width="3.2" stroke-dasharray="3 1.4" fill="none"/>
+<path d="M26 52l6 6 6-6" stroke="#8ab0c0" stroke-width="1.6" fill="none"/>
+<circle cx="32" cy="58" r="2" fill="#c9b060"/>`, ['#50606a', '#141a1e']),
 };
 
 /** Portrait key from a message (explicit key, or matched by the speaker's name). */
