@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { createStructureMaterial, PATTERN as P } from '../render/structure-material.js';
 import { paint, paintGradient, place, merge, box, cyl, cone, sphere, ico } from '../render/geometry-kit.js';
 import { flushInstances } from '../render/instancing.js';
-import { computePose, lerpPose, neutralPose, weaponClass } from './poses.js';
+import { computePose, lerpPose, neutralPose, weaponClass, ackOverlay } from './poses.js';
 
 function g(parts) { return merge(parts); }
 /** A thin cloth shell visible from both sides: the shell plus a slightly smaller, flipped copy. */
@@ -89,7 +89,9 @@ export function buildParts() {
     // a longbow gripped at the middle of its stave: the stave runs along Z, the string sits +Y of the grip
     bow: g([place(paint(place(new THREE.TorusGeometry(0.9, 0.02, 4, 14, Math.PI * 0.45), { y: 0.9, rz: -Math.PI * 0.725 }), '#6b4a2f', 0, null, P.planks), { ry: -Math.PI / 2 }), paint(place(cyl(0.004, 0.004, 1.17, 3), { y: 0.216, rx: Math.PI / 2 }), '#e8e0cc', 0, null, P.plain), paint(place(cyl(0.03, 0.03, 0.12, 6), { rx: Math.PI / 2 }), '#3a2a1e', 0, null, P.plain)]),
     rake: g([paint(place(cyl(0.022, 0.025, 1.6, 5), { y: -0.5 }), '#8a6a44', 0, null, P.planks), B(0.5, 0.05, 0.06, '#6b4a2f', P.planks, { y: -1.3 })]),
-    rod: flip(g([paint(place(cyl(0.012, 0.022, 2.2, 4), { y: -0.6 }), '#8a6a44', 0, null, P.planks), paint(place(cyl(0.003, 0.003, 1.3, 3), { y: -1.6, z: 0.35, rx: -0.5 }), '#e8e0cc', 0, null, P.plain)])),
+    rod: flip(g([paint(place(cyl(0.012, 0.022, 2.2, 4), { y: -0.6 }), '#8a6a44', 0, null, P.planks)])),
+    // the fishing line hangs straight down from the rod tip (placed in world orientation)
+    line: g([paint(place(cyl(0.004, 0.004, 1.2, 3), { y: -0.6 }), '#e8e0cc', 0, null, P.plain), paint(place(sphere(0.03, 5, 3), { y: -0.95 }), '#c84a3a', 0, null, P.plain)]),
     pole: g([paint(place(cyl(0.03, 0.035, 2.3, 6), { y: -0.55 }), '#3e2c1f', 0, null, P.planks), paint(place(cyl(0.016, 0.016, 0.3, 4), { y: 0.72, z: 0.12, rx: 0.9 }), '#2f2f31', 0, null, P.metal)]),
     crossbow: flip(g([B(0.07, 0.7, 0.09, '#6b4a2f', P.planks, { y: -0.3 }), B(0.62, 0.05, 0.05, '#4a4a4c', P.metal, { y: -0.6 }), paint(place(cyl(0.004, 0.004, 0.6, 3), { y: -0.55, rz: Math.PI / 2 }), '#e8e0cc', 0, null, P.plain)])),
     halberd: flip(g([paint(place(cyl(0.024, 0.027, 2.3, 5), { y: -0.45 }), '#5a4030', 0, null, P.planks), B(0.05, 0.3, 0.26, '#b9bcc0', P.metal, { y: -1.45, z: 0.1 }), paint(place(cone(0.045, 0.3, 4), { y: -1.72, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)])),
@@ -123,6 +125,8 @@ export function buildParts() {
 
 const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', salter: 'rake', cook: null };
 const CARRY = { timber: 'log', stone: 'stone', provisions: 'sack', iron: 'ingot' };
+// where each good sits in the torso frame: x, y, z, pitch, yaw
+const CARRY_AT = { log: [0.25, 0.8, -0.05, 0.22, Math.PI / 2], sack: [-0.24, 0.76, -0.08, 0, 0.3], stone: [0, 0.3, 0.3, 0, 0], ingot: [0, 0.36, 0.28, 0, 0] };
 const SETTLER_TUNICS = ['#8a6f4e', '#6f7b5a', '#9b7c52', '#5f6f7a', '#7a5f4e', '#8e8a6a', '#8a4e4a', '#4e6a7a'];
 const HAIR = ['#4a3222', '#2a1e16', '#b8914e', '#8a4a24', '#6a5a4a', '#c8c0b0', '#3a2a1e'];
 const HAIR_LONG = ['hairLong', 'hairBun', 'hairBraids'];
@@ -130,7 +134,7 @@ const HAIR_LONG = ['hairLong', 'hairBun', 'hairBraids'];
 const SKIN = ['#e2b894', '#f0c8a4', '#d19a72', '#b57c55', '#8d5a3b', '#e8bf9a', '#c48a60'];
 const LEGS = ['#5b4b3c', '#4a4a3e', '#6a5a44', '#3e4652'];
 const MAIL = '#8d9096', GLOVE = '#5a4030';
-const NO_OUTLINE = new Set(['hand', 'star']);
+const NO_OUTLINE = new Set(['hand', 'star', 'line']);
 const POLE_ITEMS = new Set(['spear', 'pole', 'halberd']);
 const BLADES = new Set(['axe', 'pick', 'hammer', 'sword', 'greataxe', 'maul', 'sickle']);
 
@@ -261,6 +265,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
       const w = f.blendW * f.blendW * (3 - 2 * f.blendW);
       lerpPose(Pb, P, w, P);
     }
+    if (f.ack) ackOverlay(P, f.ack.kind, f.ack.k, f);
     // dying: the knees give way first, then the body tips over backwards (a little to one side)
     const fall = f.fallen || 0;
     const buckle = Math.min(1, fall / 0.3), tip = fall > 0.2 ? Math.min(1, (fall - 0.2) / 0.8) ** 2 : 0;
@@ -337,6 +342,11 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
         out.multiplyMatrices(foreRM, local(0, -0.29, 0.05, r, P.itemRoll));
       } else out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, 0, 0, 0));
       put(right, out, f.bladeTint && (right === 'sword' || right === 'axe' || right === 'spear') ? f.bladeTint : null);
+      if (right === 'rod' && f.anim === 'fish') {
+        v.set(0, 1.7, 0).applyMatrix4(out); // the tip
+        tmp.compose(v, q.identity(), scl.set(sc, sc, sc));
+        put('line', tmp, null);
+      }
     }
     // left hand item
     const left = st.left;
@@ -369,9 +379,10 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
         put('star', out, null);
       }
     }
-    // carried goods ride on the head, held up by both hands
+    // carried goods: a log on the right shoulder, a sack over the left, stone and iron in the arms
     if (f.carry && CARRY[f.carry]) {
-      out.multiplyMatrices(torsoFrame, local(0, 1.12, 0.02, 0));
+      const [px, py, pz, ax, ay] = CARRY_AT[CARRY[f.carry]];
+      out.multiplyMatrices(torsoFrame, local(px, py, pz, ax, ay));
       put(CARRY[f.carry], out, null);
     }
   }

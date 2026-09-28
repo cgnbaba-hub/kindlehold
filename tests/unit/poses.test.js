@@ -46,3 +46,16 @@ test('a settler figure stays within its triangle budget', () => {
   const settler = 2 * tris('thigh') + 2 * tris('shin') + tris('torso') + tris('head') + tris('hairLong') + 2 * tris('arm') + 2 * tris('forearm') + 2 * tris('hand') + tris('axe');
   assert.ok(settler < 1400, `settler ${settler} triangles`);
 });
+
+test('goods are carried by type, and idle neighbours chat', () => {
+  const log = computePose('carry', { walkPh: 1, carry: 'timber' }, {});
+  const sack = computePose('carry', { walkPh: 1, carry: 'provisions' }, {});
+  const stone = computePose('carryIdle', { t: 1, carry: 'stone' }, {});
+  assert.ok(log.armR < -1 && log.elbowR < -2, 'the right hand steadies the log on the shoulder');
+  assert.ok(sack.armL < -1 && sack.elbowL < -2, 'the left hand holds the sack');
+  assert.ok(stone.armL < -0.5 && stone.armR < -0.5 && Math.abs(stone.armL - stone.armR) < 1e-9, 'stone in both arms');
+  // talking takes turns: over a minute both speaking and listening poses occur
+  const armR = new Set();
+  for (let t = 0; t < 60; t += 0.5) armR.add(computePose('talk', { t, phase: 3 }, {}).armR.toFixed(1));
+  assert.ok(armR.size > 3);
+});

@@ -146,7 +146,13 @@ der Zeichner in `src/units/figures.js` setzt sie nur noch zusammen. Wichtig:
   Kettenhemd oder hochgekrempelt), runde Schuhe, drei lange Frisuren, sieben Hauttöne,
   Körperbau und Größe variieren. Hände und Sterne haben keinen Umriss (spart Dreiecke).
 - Kosten gemessen: ca. +1,7 % Dreiecke und +11 Draw Calls in Siedlungsansichten.
-Figuren-Studio: `?showcase=figures&group=settlers|army|enemies|leaders&anim=mix|idle|walk|run|attack|work|die`,
+- Tragen je Ware: Stamm auf der rechten Schulter, Sack über der linken, Stein und Eisen in den
+  Armen (`carryArms`, `CARRY_AT`). Wartende Nachbarn (≤ 3,6 m) wenden sich zu und plaudern
+  (`talk`, nur in der Ansicht), allein Wartende strecken sich ab und zu (`idleGesture`).
+  Die Angelschnur hängt beim Angeln senkrecht von der Rutenspitze.
+- Eigene Soldaten quittieren Befehle (`EV.UNIT_ORDER` → `ackOverlay`): Angriff = Waffe hoch,
+  sonst Nicken und kurzer Gruß.
+Figuren-Studio: `?showcase=figures&group=settlers|carriers|army|enemies|leaders&anim=mix|idle|talk|walk|run|attack|work|die`,
 `window.__STUDIO__.time(t)` hält die Uhr an (Einzelbilder für Bildfolgen).
 
 ## Grafik-Notbremse, Freies Spiel, Minenarbeiter (nach dem Grafik-Update)

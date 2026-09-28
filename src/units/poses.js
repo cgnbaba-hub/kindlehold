@@ -70,6 +70,28 @@ const KEYS = {
   },
 };
 const _a = neutralPose(), _b = neutralPose();
+
+/** Now and then someone idle stretches, wipes the brow or scratches the head (1.4 s every 9 s). */
+function idleGesture(P, t, ph0) {
+  const c = t % 9;
+  if (c > 1.4) return;
+  const k = Math.sin((c / 1.4) * Math.PI); // in and out
+  switch (Math.floor(t / 9 + ph0) % 3) {
+    case 0: P.armL += (-2.8 - P.armL) * k; P.armR += (-2.8 - P.armR) * k; P.armLz = -0.2 * k; P.armRz = 0.2 * k; P.elbowL = P.elbowR = -0.3; P.lean -= 0.12 * k; P.nod -= 0.2 * k; break; // stretch
+    case 1: P.armR += (-1.9 - P.armR) * k; P.elbowR = -0.2 - 2.0 * k; P.armRz = 0.3 * k; P.nod += 0.12 * k; break; // wipe the brow
+    default: P.armL += (-2.2 - P.armL) * k; P.elbowL = -0.2 - 2.1 * k; P.armLz = -0.45 * k; P.headYaw += 0.2 * k; // scratch the head
+  }
+}
+
+/**
+ * Arms for carrying goods: a log rests on the right shoulder, a sack over the left one (the
+ * other arm keeps swinging), stone and iron are held in both arms before the chest.
+ */
+function carryArms(P, good) {
+  if (good === 'timber') { P.armR = -1.35; P.armRz = 0.5; P.elbowR = -2.15; P.twist *= 0.5; }
+  else if (good === 'provisions') { P.armL = -1.35; P.armLz = -0.5; P.elbowL = -2.15; P.twist *= 0.5; }
+  else { P.armL = P.armR = -0.72; P.elbowL = P.elbowR = -1.3; P.armLz = 0.18; P.armRz = -0.18; P.lean -= 0.05; P.twist *= 0.3; }
+}
 function keyPose(cls, name, out) { neutralPose(out); Object.assign(out, KEYS[cls][name]); return out; }
 
 /**
@@ -100,14 +122,14 @@ export function computePose(anim, f, P) {
       P.twist = -P.legA * 0.22; // shoulders turn against the hips
       P.sway = s * 0.05; P.nod = 0.02 + Math.abs(s) * 0.04;
       if (run) { P.lean += 0.22; P.nod -= 0.05; }
-      if (anim === 'carry') { P.armL = -2.6; P.armR = -2.5; P.armLz = -0.3; P.armRz = 0.3; P.elbowL = P.elbowR = -1.1; P.twist *= 0.4; }
+      if (anim === 'carry') carryArms(P, f.carry);
       // soldiers march with the spear upright instead of swinging it about
       else if (f.pole) { P.armR = -0.35 + P.legA * 0.08; P.elbowR = -0.9; }
       else if (f.weapon === 'bow') { P.armL = -0.3 + s * 0.2; P.elbowL = -0.5; } // the bow is carried, not swung
       P.cape = (run ? 0.8 : 0.38) + Math.sin(ph * 2) * 0.06;
       break;
     }
-    case 'carryIdle': P.armL = -2.6; P.armR = -2.5; P.armLz = -0.3; P.armRz = 0.3; P.elbowL = P.elbowR = -1.1; P.nod = Math.sin(t * 1.3 + ph0) * 0.03; break;
+    case 'carryIdle': carryArms(P, f.carry); P.armL += 0; P.nod = Math.sin(t * 1.3 + ph0) * 0.03; P.bob = Math.sin(t * 1.6 + ph0) * 0.008; break;
     case 'chop': case 'pick': case 'hammer': {
       const hammer = anim === 'hammer';
       const c = (t * (hammer ? 2.2 : 1.45)) % 1;
@@ -153,6 +175,22 @@ export function computePose(anim, f, P) {
       break;
     }
     case 'cast': P.armR = -2.9; P.armL = -0.5; P.armLz = -0.35; P.lean = -0.1; P.elbowR = -0.15; P.elbowL = -0.4; P.nod = -0.15; P.kneeL = 0.2; P.kneeR = 0.1; P.hipR = 0.2; P.hipL = -0.1; P.cape = 0.3; P.itemT = 0.15; P.itemW = 1; break;
+    case 'talk': {
+      // two idle neighbours chatting: they take turns, the speaker gestures, the listener nods
+      const speaking = Math.sin(t * 0.45 + ph0 * 2.1) > 0;
+      if (speaking) {
+        const g = Math.sin(t * 2.6 + ph0);
+        P.armR = -0.75 + g * 0.3; P.elbowR = -1.25 - g * 0.3; P.armRz = 0.25 + Math.sin(t * 1.7) * 0.1;
+        P.armL = -0.25 + Math.max(0, -g) * 0.3; P.elbowL = -0.6; P.nod = Math.sin(t * 3.1 + ph0) * 0.06; P.headYaw = Math.sin(t * 0.9) * 0.15;
+      } else if (ph0 % 2) { // arms folded
+        P.armL = -0.55; P.armR = -0.55; P.elbowL = P.elbowR = -1.9; P.armLz = 0.32; P.armRz = -0.32; P.nod = Math.max(0, Math.sin(t * 2.2 + ph0)) * 0.12;
+      } else { // hands on the hips
+        P.armL = 0.1; P.armR = 0.1; P.armLz = -0.55; P.armRz = 0.55; P.elbowL = P.elbowR = -1.4; P.nod = Math.max(0, Math.sin(t * 1.9 + ph0)) * 0.1;
+      }
+      const shift = Math.sin(t * 0.3 + ph0);
+      P.sway = shift * 0.03; P.kneeL = 0.05 + Math.max(0, shift) * 0.12; P.kneeR = 0.05 + Math.max(0, -shift) * 0.12;
+      break;
+    }
     case 'cower': P.lean += 0.4; P.armL = -1.8; P.armR = -1.8; P.armLz = -0.4; P.armRz = 0.4; P.bob = -0.12; P.elbowL = P.elbowR = -1.6; P.kneeL = P.kneeR = 0.8; P.nod = 0.3; break;
     case 'attack': {
       const cls = f.weapon || 'slash', a = f.attack || { since: 9, until: 9, wind: 0.4 };
@@ -178,10 +216,30 @@ export function computePose(anim, f, P) {
       P.cape = 0.14 + Math.sin(t * 0.9 + ph0) * 0.04;
       if (f.pole) { P.armR = -0.35; P.elbowR = -0.9; }
       else if (f.weapon === 'bow') { P.armL = -0.25; P.elbowL = -0.45; }
+      else if (f.gestures) idleGesture(P, t + ph0 * 1.7, ph0);
     }
   }
   // struck: a short flinch backwards
   const hit = f.hit || 0;
   if (hit > 0) { P.lean -= 0.32 * hit; P.nod -= 0.3 * hit; P.armL -= 0.35 * hit; P.armLz -= 0.25 * hit; P.kneeL += 0.2 * hit; P.kneeR += 0.2 * hit; }
+  return P;
+}
+
+/**
+ * A soldier answers an order (k: 0..1..0 over half a second): weapons go up for an attack,
+ * a nod and a short salute for anything else (spears are lifted instead).
+ */
+export function ackOverlay(P, kind, k, f) {
+  if (!(k > 0)) return P;
+  if (kind === 'attack') {
+    P.armR += (-2.5 - P.armR) * k; P.elbowR += (-0.4 - P.elbowR) * k; P.nod -= 0.12 * k; P.lean -= 0.05 * k;
+    if (P.itemW > 0) P.itemW *= 1 - k;
+  } else if (f.pole) {
+    P.armR += (-0.95 - P.armR) * k; P.nod += 0.14 * k;
+  } else if (f.weapon === 'bow') {
+    P.armL += (-1.2 - P.armL) * k; P.nod += 0.14 * k;
+  } else {
+    P.armR += (-1.9 - P.armR) * k; P.elbowR += (-2.2 - P.elbowR) * k; P.armRz += (0.35 - P.armRz) * k; P.nod += 0.1 * k;
+  }
   return P;
 }

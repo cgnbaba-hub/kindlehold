@@ -204,6 +204,7 @@ Messung (Software-Rendering im Container, 1280×720, dieselbe Ansicht; nur relat
 | Übergänge | Zwischen Laufen, Stehen, Arbeiten und Kämpfen wird kurz überblendet statt umgeschaltet. |
 | Kampf | Eigene Bewegungen je Waffe: Schwert und Axt schlagen schräg, Speer und Hellebarde stoßen waagrecht, Streitkolben und Hacken holen über den Kopf aus, Bogenschützen spannen, Armbrustschützen legen an, Schleuderer wirbeln. Ausholen und Treffer passen zum Schadenszeitpunkt. |
 | Sterben | Die Knie knicken ein, dann fällt die Figur um, die Waffe fällt mit. |
+| Alltag | Waren je nach Art getragen (Stamm auf der Schulter, Sack über der Schulter, Stein und Eisen in den Armen), wartende Nachbarn plaudern miteinander, Einzelne strecken sich oder wischen sich die Stirn, Soldaten quittieren Befehle mit einer Geste. |
 | Modelle | Geformter Oberkörper, Hände, Ärmel, runde Schuhe, lange Frisuren (Zopf, Dutt, offen), verschiedene Hauttöne, Größe und Körperbau. Speere, Hellebarden, Armbrüste und Angeln wurden bisher verkehrt herum gehalten. |
 
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)

@@ -17,8 +17,16 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
   unsub.push(bus.on(EV.UNIT_DIED, (d) => {
     if (corpses.length > 60) corpses.shift();
     corpses.push({ ...d, t0: -1 });
-    headings.delete(d.id); lastHp.delete(d.id); hitAt.delete(d.id); motion.delete(d.id);
+    headings.delete(d.id); lastHp.delete(d.id); hitAt.delete(d.id); motion.delete(d.id); acks.delete(d.id);
   }));
+  // the player's soldiers answer orders with a short gesture
+  const acks = new Map();
+  unsub.push(bus.on(EV.UNIT_ORDER, (d) => {
+    if (d.owner !== 'p1') return;
+    const kind = d.order === 'attack' || d.order === 'attackMove' ? 'attack' : 'move';
+    d.ids.forEach((id, i) => acks.set(id, { t0: time + (i % 5) * 0.06, kind }));
+  }));
+  const ack = { kind: 'move', k: 0 };
   const f = { lanternOut: new THREE.Vector3() };
   const att = { since: 9, until: 9, wind: 0.4 };
   const heroLantern = new THREE.Vector3();
@@ -32,6 +40,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
   }
 
   const headings = new Map();
+  const talk = new Map(); // settler id -> heading towards a chatting neighbour (view only)
   // per figure: stride phase from the distance walked, and the animation cross-fade
   const motion = new Map();
   let prune = 0;
@@ -61,8 +70,8 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
     return k >= 1 ? 0 : Math.sin(k * Math.PI);
   }
 
-  function smoothHeading(e, dt) {
-    const target = e.heading || 0;
+  function smoothHeading(e, dt, override) {
+    const target = override !== undefined ? override : e.heading || 0;
     const cur = headings.has(e.id) ? headings.get(e.id) : target;
     const h = lerpAngle(cur, target, Math.min(1, dt * 12));
     headings.set(e.id, h);
@@ -81,13 +90,29 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
       const w = world();
       const tickTime = (w.tick + alpha) / 20;
       figs.begin();
+      // idle neighbours turn to each other and chat
+      const idle = [];
+      for (const s of all(w, 'settler')) if (!s.hidden && (s.anim || 'idle') === 'idle' && !s.carry) idle.push(s);
+      talk.clear();
+      for (let i = 0; i < idle.length; i++) {
+        const a = idle[i];
+        if (talk.has(a.id)) continue;
+        for (let j = i + 1; j < idle.length; j++) {
+          const b = idle[j];
+          if (talk.has(b.id) || (a.x - b.x) ** 2 + (a.z - b.z) ** 2 > 3.6 * 3.6) continue;
+          talk.set(a.id, Math.atan2(b.x - a.x, b.z - a.z)); talk.set(b.id, Math.atan2(a.x - b.x, a.z - b.z));
+          break;
+        }
+      }
       for (const s of all(w, 'settler')) {
         if (s.hidden) continue; // asleep indoors
         const x = s.px + (s.x - s.px) * alpha, z = s.pz + (s.z - s.pz) * alpha;
         f.x = x; f.z = z; f.y = terrain.height(x, z);
-        f.heading = smoothHeading(s, frame.dt);
+        const chat = talk.get(s.id);
+        f.heading = smoothHeading(s, frame.dt, chat);
         f.style = 'settler'; f.scale = 1.25 * zk; f.tunic = figs.tunicFor(s.id); f.capColor = null;
-        f.anim = s.anim || 'idle'; f.t = tickTime + s.id * 0.37; f.phase = s.id; f.job = s.job || null; f.hit = 0; f.rank = 0; f.attack = null;
+        f.ack = null;
+        f.anim = chat !== undefined ? 'talk' : s.anim || 'idle'; f.t = tickTime + s.id * 0.37; f.phase = s.id; f.job = s.job || null; f.hit = 0; f.rank = 0; f.attack = null; f.gestures = true;
         animate(s, x, z, f.anim, 1.25 * zk, frame.dt);
         f.tool = s.job ? figs.toolFor(s.job) : (s.anim === 'hammer' ? 'hammer' : null);
         f.carry = s.carry ? s.carry.res : null;
@@ -103,7 +128,13 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         f.style = u.type; f.scale = 1.3 * zk; f.tunic = null; f.tool = null; f.carry = null; f.lean = 0;
         f.t = tickTime + u.id * 0.29; f.phase = u.id;
         f.kneel = !!u.downed; f.fallen = 0; f.job = null; f.hit = u.downed ? 0 : hitAmount(u); f.rank = u.rank || 0;
-        f.ranged = def.cls === 'ranged' || !!def.ranged; f.attack = null;
+        f.ranged = def.cls === 'ranged' || !!def.ranged; f.attack = null; f.gestures = false; f.ack = null;
+        const a = acks.get(u.id);
+        if (a) {
+          const k = (time - a.t0) / 0.55;
+          if (k >= 1) acks.delete(u.id);
+          else if (k > 0) { ack.kind = a.kind; ack.k = Math.sin(k * Math.PI); f.ack = ack; }
+        }
         f.bladeTint = u.owner === 'p1' && w.players.p1 && w.players.p1.techs.blades ? '#9fc4e8' : null;
         const sinceAttack = w.tick - (u.attackT || -999);
         const cdTicks = def.cooldown * 20;
@@ -133,7 +164,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         f.heading = c.heading || 0; f.style = c.kind === 'settler' ? 'settler' : c.type; f.scale = (c.kind === 'settler' ? 1.25 : 1.3) * zk; f.job = null; f.hit = 0; f.rank = 0;
         f.tunic = c.kind === 'settler' ? figs.tunicFor(c.id) : null; f.tool = null; f.carry = null;
         f.anim = 'idle'; f.t = 0; f.kneel = false; f.lean = 0; f.ranged = false; f.bladeTint = null;
-        f.fallen = Math.min(1, age / 0.85); f.lanternOut = null; f.blendFrom = null; f.walkPh = 0; f.attack = null; f.phase = c.id || 0;
+        f.ack = null; f.fallen = Math.min(1, age / 0.85); f.lanternOut = null; f.blendFrom = null; f.walkPh = 0; f.attack = null; f.phase = c.id || 0;
         figs.draw(f);
       }
       figs.end();
