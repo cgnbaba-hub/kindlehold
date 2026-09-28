@@ -8,6 +8,7 @@ import { GREYFEN_SCENARIO, TOLLBREAKER_SCENARIO } from './scenarios/campaign.js'
 import { SALTROAD_SCENARIO } from './scenarios/saltroad.js';
 import { WHITESTAG_SCENARIO } from './scenarios/whitestag.js';
 import { IRONDEBT_SCENARIO } from './scenarios/irondebt.js';
+import { FREE_SCENARIOS, FREE_PLAY } from './scenarios/freeplay.js';
 import { aiSettings, spawnEnemy } from '../ai/index.js';
 import { doorOf } from '../buildings/defs.js';
 import { addRes } from '../economy/stock.js';
@@ -15,7 +16,9 @@ import { reveal } from '../exploration/index.js';
 import { setRelation, relation } from '../diplomacy/index.js';
 import { enemyFaction } from '../ai/factions.js';
 
-export const SCENARIOS = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO, saltroad: SALTROAD_SCENARIO, whitestag: WHITESTAG_SCENARIO, irondebt: IRONDEBT_SCENARIO };
+export const SCENARIOS = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO, saltroad: SALTROAD_SCENARIO, whitestag: WHITESTAG_SCENARIO, irondebt: IRONDEBT_SCENARIO, ...FREE_SCENARIOS };
+/** Free play: one map each, no story. */
+export { FREE_PLAY };
 /** The campaign in play order. */
 export const CAMPAIGN = ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad', 'whitestag', 'irondebt'];
 

@@ -16,7 +16,7 @@ export const WORK = {
   farmer: { res: 'provisions', perTrip: 4, sow: 2.5, harvest: 3.0, grow: 30, anim: 'farm' },
   miner: { res: 'iron', perCycle: 2, work: 8.0, provisionsPerCycle: 1, anim: 'mine' },
   hunter: { res: 'provisions', perTrip: 4, aim: 1.6, dress: 3.0, throwRange: 10, anim: 'cast' },
-  cook: { perCycle: 3, provisionsPerCycle: 2, work: 7.0, anim: 'mine' },
+  cook: { perCycle: 3, provisionsPerCycle: 2, work: 7.0, anim: 'stir' },
   salter: { res: 'taler', perTrip: 3, work: 8.0, strike: 1.2, anim: 'harvest' },
   fisher: { res: 'provisions', perTrip: 3, fish: 7.0, strike: 2.2, frozenSpeed: 0.5, anim: 'fish' },
 };

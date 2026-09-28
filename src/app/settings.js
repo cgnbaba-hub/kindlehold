@@ -67,3 +67,30 @@ export function saveSettings(s) {
 export function prefersReducedMotion() {
   try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
 }
+
+/**
+ * Starting quality for a first visit, from the graphics chip: software rendering gets Low,
+ * integrated and mobile chips get Medium (High's buffers can saturate them after a few minutes),
+ * everything else High. Returns null when the chip cannot be read.
+ */
+export function suggestedQuality() {
+  let name = '';
+  try {
+    const gl = document.createElement('canvas').getContext('webgl2');
+    if (!gl) return 'low';
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    name = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || '');
+    const lose = gl.getExtension('WEBGL_lose_context');
+    if (lose) lose.loseContext();
+  } catch { return null; }
+  return qualityForGpu(name);
+}
+
+export function qualityForGpu(name) {
+  const n = String(name || '').toLowerCase();
+  if (!n) return null;
+  if (/swiftshader|llvmpipe|softpipe|software|basic render/.test(n)) return 'low';
+  if (/nvidia|geforce|quadro|rtx|radeon rx|radeon pro|intel\(r\) arc|intel arc/.test(n)) return 'high';
+  if (/intel|mali|adreno|powervr|videocore|apple|radeon\(tm\) graphics|radeon graphics|vega \d/.test(n)) return 'medium';
+  return 'high';
+}

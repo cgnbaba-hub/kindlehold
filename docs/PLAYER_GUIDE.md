@@ -89,6 +89,21 @@ Winning a chapter opens the next. Chapter 3 remembers what you decided about the
 Each chapter starts with a short flight over the valley: click or press any key to skip it.
 Settings → Gameplay can unlock all chapters or turn the intros off.
 
+## Free play
+
+Choose **Free Play** in the main menu to build on any of the four lands without a story:
+Harrowmere Valley (Rustfang), the Saltmere (Legion of Varr), Whitehart Vale (Order of the White
+Stag) or the Iron March (House Morrow). The hearth already burns; grow as you like and win by
+destroying the enemy's seat. Two optional goals (30 people, find the ruin) give you something
+to aim for.
+
+## If the graphics card struggles
+
+When frames stay slow for a few seconds, Kindlehold first switches off the costliest effects
+(ambient occlusion, then glow and the miniature focus, then edge smoothing) and only then lowers
+the resolution. Settings → Graphics shows your graphics chip and what was switched off. On
+laptops with built-in graphics, **Medium** quality is the better choice.
+
 ## Veterans, rain and fish
 
 * **Veterans:** soldiers who win fights earn stars — a Veteran after 3 victories (+10% damage

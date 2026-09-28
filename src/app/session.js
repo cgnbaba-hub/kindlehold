@@ -100,7 +100,7 @@ export async function createSession({ container, seed, quality = 'high', verify 
     },
   });
 
-  let frozen = false;
+  let frozen = false, cpuMs = 0;
   function frame(now) {
     if (!running) return;
     requestAnimationFrame(frame); // schedule first: one throwing frame can never stop the game
@@ -108,8 +108,11 @@ export async function createSession({ container, seed, quality = 'high', verify 
     const dt = last ? (now - last) / 1000 : 0;
     last = now;
     stats.pushFrame(dt * 1000 || 16.7);
-    if (dt) rc.govern(dt * 1000);
+    if (dt) rc.govern(dt * 1000, cpuMs);
+    const t0 = performance.now();
+    rc.drawMs = 0;
     loop.advance(dt);
+    cpuMs = performance.now() - t0 - rc.drawMs; // simulation and HUD only
     frames++;
     if (frames === 2) resolveFirst();
   }

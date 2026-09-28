@@ -7,7 +7,7 @@ import { createPost, gfxFlags } from '../render/post.js';
 export const QUALITY = {
   low: { pixelRatio: 0.75, shadows: false, shadowSize: 0, antialias: false, particles: 300, grass: 0.25, post: null },
   medium: { pixelRatio: 1, shadows: true, shadowSize: 1024, antialias: true, particles: 700, grass: 0.6, post: { samples: 2, bloom: true, tilt: false } },
-  high: { pixelRatio: 1.5, shadows: true, shadowSize: 2048, antialias: true, particles: 1500, grass: 1, post: { samples: 4, bloom: true, tilt: true, ao: true } },
+  high: { pixelRatio: 1.25, shadows: true, shadowSize: 2048, antialias: true, particles: 1500, grass: 1, post: { samples: 4, bloom: true, tilt: true, ao: true } },
 };
 
 export function createRenderContext({ container, terrain, quality = 'high', verify = false }) {
@@ -33,35 +33,61 @@ export function createRenderContext({ container, terrain, quality = 'high', veri
 
   const scene = new THREE.Scene();
   const rts = createRtsCamera({ aspect: renderer.domElement.width / Math.max(1, renderer.domElement.height), terrain });
-  // supersampled (pixel ratio > 1.25) screens need no extra multisampling
-  const post = q.post ? createPost({ renderer, scene, getCamera: () => rts.camera, cfg: { ...q.post, samples: renderer.getPixelRatio() > 1.25 ? 0 : q.post.samples } }) : null;
+  // supersampled (pixel ratio > 1.1) screens need no extra multisampling
+  const post = q.post ? createPost({ renderer, scene, getCamera: () => rts.camera, cfg: { ...q.post, samples: renderer.getPixelRatio() > 1.1 ? 0 : q.post.samples } }) : null;
   const lastInfo = { calls: 0, triangles: 0, points: 0, lines: 0 };
   let contextLost = false;
   const listeners = { lost: [], restored: [], scaled: [] };
   const fire = (k, d) => { for (const f of listeners[k]) { try { f(d); } catch { /* ui only */ } } };
 
-  // Resolution governor: when the graphics card cannot keep up (long frames for a few
-  // seconds), render at a lower resolution instead of stalling the whole browser; creep back
-  // up once frames are quick again. A graphics driver reset also drops a step.
+  // Load governor: when the graphics card cannot keep up (long frames for a few seconds), first
+  // switch off the costliest effects (occlusion, then glow and miniature focus, then
+  // multisampling), and only then render at a lower resolution — instead of stalling the whole
+  // browser (a saturated card also makes the page's own text and icons flicker). Effects stay off
+  // for the session and the resolution never climbs back to a level that was too slow, so the
+  // governor cannot oscillate. A graphics driver reset also drops a step.
   const maxRatio = Math.min(window.devicePixelRatio || 1, q.pixelRatio);
   const minRatio = Math.min(maxRatio, 0.6);
-  let ratio = maxRatio, slowFor = 0, fastFor = 0, cooldown = 0, ema = 16;
+  let ratio = maxRatio, ceiling = maxRatio, slowFor = 0, fastFor = 0, cooldown = 0, ema = 16, cpuEma = 4;
+  const ladder = post ? [
+    ['ao', () => post.effects().ao && (post.setEffects({ ao: false }), true)],
+    ['glow', () => { const e = post.effects(); if (!e.bloom && !e.tilt) return false; post.setEffects({ bloom: false, tilt: false }); return true; }],
+    ['msaa', () => post.effects().samples > 0 && (post.setEffects({ msaa: false }), true)],
+  ] : [];
+  const reduced = [];
   function setRatio(r, reason) {
-    const next = Math.max(minRatio, Math.min(maxRatio, Math.round(r * 100) / 100));
+    const next = Math.max(minRatio, Math.min(ceiling, Math.round(r * 100) / 100));
     if (next === ratio) return false;
     ratio = next;
     renderer.setPixelRatio(ratio);
     resize();
-    fire('scaled', { ratio, max: maxRatio, reason });
+    fire('scaled', { ratio, max: maxRatio, reason, reduced: [...reduced] });
     return true;
+  }
+  function lighten() {
+    while (ladder.length) {
+      const [name, step] = ladder.shift();
+      if (step()) { reduced.push(name); fire('scaled', { ratio, max: maxRatio, reason: 'slow', reduced: [...reduced] }); return true; }
+    }
+    ceiling = Math.max(minRatio, Math.round((ratio - 0.05) * 100) / 100); // never back to the slow level
+    return setRatio(ratio - 0.15, 'slow');
   }
 
   renderer.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); contextLost = true; fire('lost'); });
   renderer.domElement.addEventListener('webglcontextrestored', () => {
     contextLost = false;
+    ceiling = Math.max(minRatio, Math.round((ratio - 0.25) * 100) / 100);
     setRatio(ratio - 0.25, 'reset');
     fire('restored', { ratio });
   });
+
+  function gpuName() {
+    try {
+      const gl = renderer.getContext();
+      const ext = gl.getExtension('WEBGL_debug_renderer_info');
+      return String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || '');
+    } catch { return ''; }
+  }
 
   function resize() {
     const w = container.clientWidth || window.innerWidth;
@@ -81,21 +107,33 @@ export function createRenderContext({ container, terrain, quality = 'high', veri
     setLook(look) { if (post) post.setLook(look); },
     get camera() { return rts.camera; },
     on(kind, fn) { listeners[kind].push(fn); return () => { listeners[kind] = listeners[kind].filter((f) => f !== fn); }; },
-    /** Feed the real duration of each frame (ms); adapts the render resolution. */
-    govern(frameMs) {
+    /**
+     * Feed the real duration of each frame and the script time spent in it (ms); adapts effects
+     * and resolution. Frames slowed by the simulation and the HUD (script time outside draw()) are not the graphics
+     * card's fault: cutting effects would not help there.
+     */
+    govern(frameMs, cpuMs = 0) {
       if (verify || contextLost || !(frameMs > 0)) return;
       ema += (Math.min(frameMs, 250) - ema) * 0.1;
+      cpuEma += (Math.min(cpuMs, 250) - cpuEma) * 0.1;
+      if (cpuEma > ema * 0.8) { slowFor = 0; fastFor = 0; return; }
       const s = frameMs / 1000;
       cooldown = Math.max(0, cooldown - s);
       if (ema > 45) { slowFor += s; fastFor = 0; } else if (ema < 22) { fastFor += s; slowFor = 0; } else { slowFor = 0; fastFor = 0; }
-      if (slowFor > 2.5 && cooldown <= 0) { if (setRatio(ratio - 0.15, 'slow')) cooldown = 4; slowFor = 0; }
-      else if (fastFor > 20 && ratio < maxRatio && cooldown <= 0) { if (setRatio(ratio + 0.1, 'fast')) cooldown = 8; fastFor = 0; }
+      if (slowFor > 2.5 && cooldown <= 0) { if (lighten()) cooldown = 4; slowFor = 0; }
+      else if (fastFor > 30 && ratio < ceiling && cooldown <= 0) { if (setRatio(ratio + 0.05, 'fast')) cooldown = 10; fastFor = 0; }
     },
     get contextLost() { return contextLost; },
+    /** What the governor has switched off so far (for the settings panel). */
+    load() { return { ratio, max: maxRatio, reduced: [...reduced], gpu: gpuName() }; },
+    /** Time spent in the last draw() (ms); it waits on the graphics card when that is saturated. */
+    drawMs: 0,
     draw() {
       if (contextLost) return;
+      const t0 = performance.now();
       renderer.info.reset();
       if (post) post.render(); else renderer.render(scene, rts.camera);
+      this.drawMs = performance.now() - t0;
       const r = renderer.info.render;
       lastInfo.calls = r.calls; lastInfo.triangles = r.triangles; lastInfo.points = r.points; lastInfo.lines = r.lines;
     },
