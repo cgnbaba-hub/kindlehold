@@ -152,6 +152,8 @@ der Zeichner in `src/units/figures.js` setzt sie nur noch zusammen. Wichtig:
   Die Angelschnur hängt beim Angeln senkrecht von der Rutenspitze.
 - Eigene Soldaten quittieren Befehle (`EV.UNIT_ORDER` → `ackOverlay`): Angriff = Waffe hoch,
   sonst Nicken und kurzer Gruß.
+- Köche rühren mit der Kelle in einem Kessel über kleinem Feuer (Teil `pot`, nur bei `stir`).
+  Wrens Pfeilhagel: Bogen schräg zum Himmel (`bowT` in der Pose).
 Figuren-Studio: `?showcase=figures&group=settlers|carriers|army|enemies|leaders&anim=mix|idle|talk|walk|run|attack|work|die`,
 `window.__STUDIO__.time(t)` hält die Uhr an (Einzelbilder für Bildfolgen).
 
