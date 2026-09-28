@@ -1,16 +1,23 @@
 // Renderer, scene and camera ownership (critical view module).
 import * as THREE from 'three';
 import { createRtsCamera } from '../camera/rts-camera.js';
+import { createPost, gfxFlags } from '../render/post.js';
 
+// post: multisampling of the HDR scene buffer, bloom and the miniature focus (see render/post.js)
 export const QUALITY = {
-  low: { pixelRatio: 0.75, shadows: false, shadowSize: 0, antialias: false, particles: 300, grass: 0.25 },
-  medium: { pixelRatio: 1, shadows: true, shadowSize: 1024, antialias: true, particles: 700, grass: 0.6 },
-  high: { pixelRatio: 1.5, shadows: true, shadowSize: 2048, antialias: true, particles: 1500, grass: 1 },
+  low: { pixelRatio: 0.75, shadows: false, shadowSize: 0, antialias: false, particles: 300, grass: 0.25, post: null },
+  medium: { pixelRatio: 1, shadows: true, shadowSize: 1024, antialias: true, particles: 700, grass: 0.6, post: { samples: 2, bloom: true, tilt: false } },
+  high: { pixelRatio: 1.5, shadows: true, shadowSize: 2048, antialias: true, particles: 1500, grass: 1, post: { samples: 4, bloom: true, tilt: true, ao: true } },
 };
 
 export function createRenderContext({ container, terrain, quality = 'high', verify = false }) {
-  const q = Object.hasOwn(QUALITY, quality) ? QUALITY[quality] : QUALITY.high;
-  const renderer = new THREE.WebGLRenderer({ antialias: q.antialias, powerPreference: 'high-performance', preserveDrawingBuffer: verify });
+  const base = Object.hasOwn(QUALITY, quality) ? QUALITY[quality] : QUALITY.high;
+  // ?post=off switches the post-processing off (comparisons, troubleshooting)
+  const postOff = typeof location !== 'undefined' && new URLSearchParams(location.search).get('post') === 'off';
+  const fx = gfxFlags();
+  const q = postOff ? { ...base, post: null } : base.post ? { ...base, post: { ...base.post, ao: base.post.ao && !fx.has('noao'), bloom: base.post.bloom && !fx.has('nobloom'), tilt: base.post.tilt && !fx.has('notilt') }, ibl: !fx.has('noibl'), clouds: !fx.has('noclouds') } : base;
+  // with post-processing the canvas itself needs no multisampling (the scene buffer has it)
+  const renderer = new THREE.WebGLRenderer({ antialias: q.antialias && !q.post, powerPreference: 'high-performance', preserveDrawingBuffer: verify });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.pixelRatio));
   renderer.setSize(container.clientWidth || window.innerWidth, container.clientHeight || window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -26,6 +33,8 @@ export function createRenderContext({ container, terrain, quality = 'high', veri
 
   const scene = new THREE.Scene();
   const rts = createRtsCamera({ aspect: renderer.domElement.width / Math.max(1, renderer.domElement.height), terrain });
+  // supersampled (pixel ratio > 1.25) screens need no extra multisampling
+  const post = q.post ? createPost({ renderer, scene, getCamera: () => rts.camera, cfg: { ...q.post, samples: renderer.getPixelRatio() > 1.25 ? 0 : q.post.samples } }) : null;
   const lastInfo = { calls: 0, triangles: 0, points: 0, lines: 0 };
   let contextLost = false;
   const listeners = { lost: [], restored: [], scaled: [] };
@@ -59,6 +68,7 @@ export function createRenderContext({ container, terrain, quality = 'high', veri
     const h = container.clientHeight || window.innerHeight;
     renderer.setSize(w, h);
     rts.setAspect(w / Math.max(1, h));
+    if (post) post.setSize();
   }
   window.addEventListener('resize', resize);
 
@@ -66,7 +76,9 @@ export function createRenderContext({ container, terrain, quality = 'high', veri
     id: 'renderer',
     kind: 'view',
     critical: true,
-    renderer, scene, rts, quality: q, qualityName: quality,
+    renderer, scene, rts, quality: q, qualityName: quality, post,
+    /** Look of the post-processing for this frame (no-op without post). */
+    setLook(look) { if (post) post.setLook(look); },
     get camera() { return rts.camera; },
     on(kind, fn) { listeners[kind].push(fn); return () => { listeners[kind] = listeners[kind].filter((f) => f !== fn); }; },
     /** Feed the real duration of each frame (ms); adapts the render resolution. */
@@ -83,7 +95,7 @@ export function createRenderContext({ container, terrain, quality = 'high', veri
     draw() {
       if (contextLost) return;
       renderer.info.reset();
-      renderer.render(scene, rts.camera);
+      if (post) post.render(); else renderer.render(scene, rts.camera);
       const r = renderer.info.render;
       lastInfo.calls = r.calls; lastInfo.triangles = r.triangles; lastInfo.points = r.points; lastInfo.lines = r.lines;
     },
@@ -123,6 +135,7 @@ export function createRenderContext({ container, terrain, quality = 'high', veri
     getHealthStatus() { return contextLost ? { status: 'degraded', detail: 'WebGL context lost' } : { status: 'ok' }; },
     dispose() {
       window.removeEventListener('resize', resize);
+      if (post) post.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     },

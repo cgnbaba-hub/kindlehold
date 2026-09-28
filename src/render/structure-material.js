@@ -8,12 +8,12 @@ import * as THREE from 'three';
 export const SNOW = { value: 0 };
 
 /** Shared exploration shroud (set by the environment view): texture of explored land. */
-export const SHROUD = { tex: { value: null }, half: { value: 128 }, on: { value: 0 } };
+export const SHROUD = { tex: { value: null }, half: { value: 128 }, on: { value: 0 }, linear: { value: 0 } };
 
 /** GLSL: brightness factor 0.1..1 from the shroud at a world position. Outside the map the
  * scenery keeps a dim, misty look instead of turning black. */
 export const SHROUD_GLSL = `
-uniform sampler2D tShroud; uniform float uShroudHalf; uniform float uShroudOn;
+uniform sampler2D tShroud; uniform float uShroudHalf; uniform float uShroudOn; uniform float uShroudLinear;
 float khShroudK(vec3 wp) {
   if (uShroudOn < 0.5) return 1.0;
   vec2 uv = (wp.xz + uShroudHalf) / (2.0 * uShroudHalf);
@@ -22,19 +22,82 @@ float khShroudK(vec3 wp) {
   e = max(e, smoothstep(0.0, 24.0, outside) * 0.45);
   return mix(0.07, 1.0, smoothstep(0.08, 0.92, e));
 }
-vec3 khShroud(vec3 col, vec3 wp) { float k = khShroudK(wp); return mix(vec3(0.018, 0.022, 0.03), col, k); }
+// display-referred output (Low quality): darken, then the fog lifts it into a misty dark
+vec3 khShroud(vec3 col, vec3 wp) {
+  if (uShroudLinear > 0.5) return col;
+  float k = khShroudK(wp);
+  return mix(vec3(0.018, 0.022, 0.03), col, k);
+}
+// linear output (post-processing): applied after the fog, on a perceptual scale, with a faint
+// haze of the fog colour so unexplored land looks as it did before (dark and misty, not black)
+vec3 khShroudLin(vec3 col, vec3 wp, vec3 fc, float ff) {
+  if (uShroudLinear < 0.5) return col;
+  float k = pow(khShroudK(wp), 1.8);
+  vec3 fg = mix(vec3(dot(fc, vec3(0.3, 0.5, 0.2))), fc, 0.5); // a greyer haze than the fog itself
+  return mix(vec3(0.006, 0.007, 0.009) + fg * (0.035 + ff * 0.2), col, k);
+}
+#ifdef USE_FOG
+#define KH_SHROUD_LIN(c, wp) khShroudLin(c, wp, fogColor, fogFactor)
+#else
+#define KH_SHROUD_LIN(c, wp) khShroudLin(c, wp, vec3(0.0), 0.0)
+#endif
 `;
+
+/** Shared image-based light flag (1 when the sky environment is baked; metals may then shine). */
+export const ENV = { on: { value: 0 } };
+
+/** Drifting cloud shadows: a small tileable noise texture scrolled over the land by the wind.
+ * Only direct sunlight is dimmed, the sky light stays. Strength 0 at night. */
+function makeCloudTexture(n = 128) {
+  const data = new Uint8Array(n * n);
+  let s = 90210;
+  const rnd = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+  const g = 16; // lattice cells per side (tileable)
+  const lat = new Float32Array(g * g).map(() => rnd());
+  const L = (x, y) => lat[((y % g + g) % g) * g + ((x % g + g) % g)];
+  const sm = (t) => t * t * (3 - 2 * t);
+  const noise = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = sm(x - xi), fy = sm(y - yi);
+    return (L(xi, yi) * (1 - fx) + L(xi + 1, yi) * fx) * (1 - fy) + (L(xi, yi + 1) * (1 - fx) + L(xi + 1, yi + 1) * fx) * fy; };
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const x = (i / n) * g, y = (j / n) * g;
+    // two octaves on the same lattice period stay tileable
+    const v = noise(x, y) * 0.65 + noise(x * 2, y * 2) * 0.35;
+    data[j * n + i] = Math.round(v * 255);
+  }
+  const tex = new THREE.DataTexture(data, n, n, THREE.RedFormat);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  return tex;
+}
+export const CLOUDS = { tex: { value: null }, time: { value: 0 }, strength: { value: 0 } };
+export function cloudTexture() { if (!CLOUDS.tex.value) CLOUDS.tex.value = makeCloudTexture(); return CLOUDS.tex.value; }
+export const CLOUD_GLSL = `
+uniform sampler2D tCloud; uniform float uCloudT; uniform float uCloudK;
+float khCloud(vec3 wp) {
+  if (uCloudK < 0.001) return 1.0;
+  vec2 uv = wp.xz * 0.0042 + vec2(uCloudT * 0.0036, uCloudT * 0.0014);
+  float n = texture2D(tCloud, uv).r * 0.7 + texture2D(tCloud, uv * 2.7 + vec2(0.37, 0.11)).r * 0.3;
+  return 1.0 - uCloudK * smoothstep(0.56, 0.7, n);
+}
+`;
+export function bindClouds(shader) {
+  shader.uniforms.tCloud = { value: cloudTexture() };
+  shader.uniforms.uCloudT = CLOUDS.time;
+  shader.uniforms.uCloudK = CLOUDS.strength;
+}
 
 export function bindShroud(shader) {
   shader.uniforms.tShroud = SHROUD.tex;
   shader.uniforms.uShroudHalf = SHROUD.half;
   shader.uniforms.uShroudOn = SHROUD.on;
+  shader.uniforms.uShroudLinear = SHROUD.linear;
 }
 
 export const PATTERN = { plain: 0, stone: 1, planks: 2, thatch: 3, shingles: 4, plaster: 5, cloth: 6, foliage: 7, metal: 8, rock: 9 };
 
 const GLSL_COMMON = `
-uniform float uSnow;
+uniform float uSnow; uniform float uEnvOn;
 varying float vPattern; varying vec3 vWPos; varying vec3 vWNormal;
 float khHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
 float khNoise(vec2 p) {
@@ -105,7 +168,7 @@ vec3 khPattern(float pat, vec3 wp, vec3 n) {
     khRough = 0.9;
     return vec3(0.72 + m * 0.5);
   }
-  if (pat < 8.5) { khRough = 0.42; khMetal = 0.3; return vec3(1.0 + grain * 0.15); } // no env map: keep metals mostly dielectric so they are not black
+  if (pat < 8.5) { khRough = 0.42; khMetal = mix(0.3, 0.65, uEnvOn); return vec3(1.0 + grain * 0.15); } // metals shine only with the sky light (else they turn black)
   // rock
   float r = khNoise(p * 1.3) * 0.5 + khNoise(p * 4.0) * 0.3 + khNoise(p * 12.0) * 0.2;
   khRough = 0.88;
@@ -115,7 +178,9 @@ vec3 khPattern(float pat, vec3 wp, vec3 n) {
 
 export function patchStructureShader(shader) {
   shader.uniforms.uSnow = SNOW;
+  shader.uniforms.uEnvOn = ENV.on;
   bindShroud(shader);
+  bindClouds(shader);
   shader.vertexShader = shader.vertexShader
     .replace('#include <common>', '#include <common>\nattribute float pattern;\nvarying float vPattern; varying vec3 vWPos; varying vec3 vWNormal;')
     .replace('#include <worldpos_vertex>', `#include <worldpos_vertex>
@@ -132,8 +197,9 @@ khN = mat3(instanceMatrix) * khN;
 #endif
 vWNormal = normalize(mat3(modelMatrix) * khN);`);
   shader.fragmentShader = shader.fragmentShader
-    .replace('#include <common>', '#include <common>\n' + GLSL_COMMON + SHROUD_GLSL)
-    .replace('#include <fog_fragment>', 'gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);\n#include <fog_fragment>')
+    .replace('#include <common>', '#include <common>\n' + GLSL_COMMON + SHROUD_GLSL + CLOUD_GLSL)
+    .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\n{ float khCl = khCloud(vWPos); reflectedLight.directDiffuse *= khCl; reflectedLight.directSpecular *= khCl; }')
+    .replace('#include <fog_fragment>', 'gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);\n#include <fog_fragment>\ngl_FragColor.rgb = KH_SHROUD_LIN(gl_FragColor.rgb, vWPos);')
     .replace('#include <color_fragment>', `#include <color_fragment>
 diffuseColor.rgb *= khPattern(vPattern, vWPos, normalize(vWNormal));
 if (uSnow > 0.001 && vPattern > 0.5 && vPattern < 9.5 && (vPattern < 5.5 || vPattern > 6.5) && (vPattern < 7.5 || vPattern > 8.5)) {

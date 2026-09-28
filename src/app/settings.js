@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS = {
   masterVolume: 0.6, musicVolume: 0.45, ambienceVolume: 0.7, effectsVolume: 0.8, voiceVolume: 0.7,
   muted: false,
   reducedMotion: false,
+  depthOfField: true,       // soft miniature focus at the top and bottom of the view (High quality)
   uiScale: 1,
   edgeScroll: false,
   cameraSpeed: 1,

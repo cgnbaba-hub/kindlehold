@@ -43,7 +43,38 @@ export function createSkyLight({ scene, renderer, quality }) {
   const hemi = new THREE.HemisphereLight('#ccd4dc', '#5f5a42', 0.8);
   scene.add(hemi);
 
-  scene.fog = new THREE.FogExp2('#c9d4dc', 0.0026);
+  // the post-processing pipeline mixes fog in linear light, where the same density reads hazier
+  scene.fog = new THREE.FogExp2('#c9d4dc', quality.post ? 0.0019 : 0.0026);
+
+  // image-based light (medium/high): a soft gradient dome in the day's sky, horizon and ground
+  // colours, baked into a prefiltered environment every quarter of a game hour. (The physical sky
+  // shader is far too bright and blue for this; a controlled gradient keeps the art direction.)
+  const ibl = !!quality.post && quality.ibl !== false;
+  const pmrem = ibl ? new THREE.PMREMGenerator(renderer) : null;
+  const envUniforms = { uTop: { value: new THREE.Color() }, uHorizon: { value: new THREE.Color() }, uBottom: { value: new THREE.Color() } };
+  const envDome = ibl ? new THREE.Mesh(new THREE.SphereGeometry(100, 32, 16), new THREE.ShaderMaterial({
+    uniforms: envUniforms, side: THREE.BackSide, depthWrite: false,
+    vertexShader: 'varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform vec3 uTop; uniform vec3 uHorizon; uniform vec3 uBottom; varying vec3 vDir;
+      void main() { float y = vDir.y; vec3 c = y > 0.0 ? mix(uHorizon, uTop, pow(smoothstep(0.0, 1.0, y), 0.6)) : mix(uHorizon, uBottom, smoothstep(0.0, 0.25, -y)); gl_FragColor = vec4(c, 1.0); }`,
+  })) : null;
+  const envScene = ibl ? new THREE.Scene() : null;
+  // the dome renders into a small cube map; the prefiltered result reuses one target (no new
+  // GPU textures every quarter hour)
+  const cubeRT = ibl ? new THREE.WebGLCubeRenderTarget(64, { type: THREE.HalfFloatType }) : null;
+  const cubeCam = ibl ? new THREE.CubeCamera(0.1, 400, cubeRT) : null;
+  if (ibl) envScene.add(envDome, cubeCam);
+  let envRT = null, envHour = -99;
+  function refreshEnv() {
+    if (!ibl || Math.abs(hour - envHour) < 0.25) return;
+    envHour = hour;
+    envUniforms.uTop.value.copy(hemi.color);
+    envUniforms.uHorizon.value.copy(scene.fog.color);
+    envUniforms.uBottom.value.copy(hemi.groundColor);
+    cubeCam.update(renderer, envScene);
+    envRT = pmrem.fromCubemap(cubeRT.texture, envRT);
+    scene.environment = envRT.texture;
+  }
 
   // stars (fixed seeded pattern, only visible at night)
   const starGeo = new THREE.BufferGeometry();
@@ -97,6 +128,8 @@ export function createSkyLight({ scene, renderer, quality }) {
     lerpColor(hemi.color, a[3], b[3], t);
     lerpColor(hemi.groundColor, a[4], b[4], t);
     hemi.intensity = a[5] + (b[5] - a[5]) * t;
+    // with sky lighting the hemisphere only fills in; the environment carries the soft light
+    if (ibl) { hemi.intensity *= 0.45; scene.environmentIntensity = 0.5 * (1 - nightFactor * 0.6); }
     lerpColor(scene.fog.color, a[6], b[6], t);
     renderer.toneMappingExposure = a[7] + (b[7] - a[7]) * t;
     starMat.opacity = nightFactor * 0.9;
@@ -106,6 +139,7 @@ export function createSkyLight({ scene, renderer, quality }) {
     // clear colour = fog colour, so anything beyond geometry blends into the haze
     scene.background = col2.copy(scene.fog.color);
     col.copy(scene.fog.color);
+    refreshEnv();
   }
 
   const api = {
@@ -115,6 +149,8 @@ export function createSkyLight({ scene, renderer, quality }) {
     get hour() { return hour; },
     get nightFactor() { return nightFactor; },
     setHour(h) { hour = ((h % 24) + 24) % 24; apply(); },
+    /** The baked sky light is lost with the graphics context: bake it again. */
+    invalidateEnv() { envHour = -99; },
     /** Keep the shadow camera fitted around the view target. */
     fitShadow(cx, cz, radius) {
       shadowCenter.set(cx, 0, cz);
@@ -137,6 +173,7 @@ export function createSkyLight({ scene, renderer, quality }) {
       sky.material.dispose(); sky.geometry.dispose();
       starGeo.dispose(); starMat.dispose();
       sun.dispose();
+      if (ibl) { if (envRT) envRT.dispose(); cubeRT.dispose(); pmrem.dispose(); envDome.material.dispose(); envDome.geometry.dispose(); scene.environment = null; }
     },
   };
   apply();
