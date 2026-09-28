@@ -53,7 +53,7 @@ const KIND_SCHEMAS = {
   }),
   settler: v.object({
     hp: v.number({ min: -1e4, max: 1e5 }), maxHp: v.number({ min: 1, max: 1e5 }),
-    job: v.optional(v.string({ oneOf: ['forester', 'quarrier', 'farmer', 'miner', 'hunter', 'fisher', 'cook'] })),
+    job: v.optional(v.string({ oneOf: ['forester', 'quarrier', 'farmer', 'miner', 'hunter', 'fisher', 'salter', 'cook'] })),
     sleep: v.optional(v.object({ home: v.number({ min: 1, max: 1e9, int: true }), in: v.boolean() }, { allowExtra: false })),
     hidden: v.optional(v.boolean()),
     carry: v.optional(v.object({ res: v.string({ oneOf: RESOURCES }), amt: nonNeg(1000) })),
@@ -62,7 +62,7 @@ const KIND_SCHEMAS = {
   }),
   poi: v.object({ type: v.string({ oneOf: ['trader', 'cairn', 'ruin', 'hamlet'] }), state: v.string({ oneOf: ['hidden', 'found', 'done'] }) }),
   animal: v.object({ type: v.string({ oneOf: ['deer'] }), herd: v.number({ min: 1, max: 64, int: true }), goal: v.optional(point) }),
-  deposit: v.object({ type: v.string({ oneOf: ['tree', 'rock', 'iron'] }), amount: v.number({ min: -1000, max: 1e5 }), maxAmount: v.number({ min: 1, max: 1e5 }) }),
+  deposit: v.object({ type: v.string({ oneOf: ['tree', 'rock', 'iron', 'salt'] }), amount: v.number({ min: -1000, max: 1e5 }), maxAmount: v.number({ min: 1, max: 1e5 }) }),
 };
 
 const entitySchema = (x, p) => {

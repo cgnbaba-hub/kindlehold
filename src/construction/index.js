@@ -64,7 +64,7 @@ export function checkPlacement(world, services, owner, type, x, z) {
   }
   if (def.waterRange && !services.terrain.nearestWater(x, z, def.waterRange)) return { ok: false, reason: `Needs open water within ${def.waterRange} m` };
   if (def.deposit && depositId == null) {
-    const what = { tree: 'trees', rock: 'a rock outcrop', iron: 'an iron vein' }[def.deposit];
+    const what = { tree: 'trees', rock: 'a rock outcrop', iron: 'an iron vein', salt: 'a salt pan' }[def.deposit];
     return { ok: false, reason: `Needs ${what} within ${def.depositRange} m` };
   }
   // hostile units nearby

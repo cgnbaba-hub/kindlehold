@@ -74,6 +74,7 @@ function buildParts() {
     sword: g([B(0.05, 0.75, 0.018, '#c9ccd0', P.metal, { y: -0.48 }), B(0.2, 0.035, 0.05, '#6b5a3a', P.metal, { y: -0.1 }), paint(place(cyl(0.02, 0.02, 0.12, 5), { y: -0.02 }), '#4a3526', 0, null, P.plain)]),
     spear: g([paint(place(cyl(0.022, 0.025, 2.0, 5), { y: -0.3 }), '#6b4a2f', 0, null, P.planks), paint(place(cone(0.05, 0.24, 4), { y: -1.42, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)]),
     bow: g([paint(place(new THREE.TorusGeometry(0.62, 0.018, 4, 12, Math.PI * 0.8), { y: -0.1, rz: Math.PI / 2 + 0.3 }), '#6b4a2f', 0, null, P.planks), paint(place(cyl(0.004, 0.004, 1.1, 3), { y: -0.1, x: -0.25 }), '#e8e0cc', 0, null, P.plain)]),
+    rake: g([paint(place(cyl(0.022, 0.025, 1.6, 5), { y: -0.5 }), '#8a6a44', 0, null, P.planks), B(0.5, 0.05, 0.06, '#6b4a2f', P.planks, { y: -1.3 })]),
     rod: g([paint(place(cyl(0.012, 0.022, 2.2, 4), { y: -0.6 }), '#8a6a44', 0, null, P.planks), paint(place(cyl(0.003, 0.003, 1.3, 3), { y: -1.6, z: 0.35, rx: -0.5 }), '#e8e0cc', 0, null, P.plain)]),
     pole: g([paint(place(cyl(0.03, 0.035, 2.3, 6), { y: -0.55 }), '#3e2c1f', 0, null, P.planks), paint(place(cyl(0.016, 0.016, 0.3, 4), { y: 0.72, z: 0.12, rx: 0.9 }), '#2f2f31', 0, null, P.metal)]),
     crossbow: g([B(0.07, 0.7, 0.09, '#6b4a2f', P.planks, { y: -0.3 }), B(0.62, 0.05, 0.05, '#4a4a4c', P.metal, { y: -0.6 }), paint(place(cyl(0.004, 0.004, 0.6, 3), { y: -0.55, rz: Math.PI / 2 }), '#e8e0cc', 0, null, P.plain)]),
@@ -104,7 +105,7 @@ function buildParts() {
   };
 }
 
-const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', cook: null };
+const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', salter: 'rake', cook: null };
 const CARRY = { timber: 'log', stone: 'stone', provisions: 'sack', iron: 'ingot' };
 const SETTLER_TUNICS = ['#8a6f4e', '#6f7b5a', '#9b7c52', '#5f6f7a', '#7a5f4e', '#8e8a6a', '#8a4e4a', '#4e6a7a'];
 const HAIR = ['#4a3222', '#2a1e16', '#b8914e', '#8a4a24', '#6a5a4a', '#c8c0b0', '#3a2a1e'];

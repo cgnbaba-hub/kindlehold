@@ -26,7 +26,7 @@ import { enemyFaction } from '../ai/factions.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler' };
 const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander' };
-const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner', hunter: 'Hunter', fisher: 'Fisher', cook: 'Cook' };
+const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner', hunter: 'Hunter', fisher: 'Fisher', salter: 'Salter', cook: 'Cook' };
 
 /**
  * Bring `target` in line with freshly rendered `fresh` children, replacing only the nodes that
@@ -91,7 +91,7 @@ export function createHud({ root, session, input, settings, actions }) {
     ['building', 'hammer', 'Building'], ['carrying', 'provisions', 'Carrying goods'], ['repairing', 'hammer', 'Repairing'], ['gathering', 'tree', 'Gathering by hand'],
     ['idle', 'idle', 'Idle'], ['asleep', 'moon', 'Asleep'], ['arriving', 'settler', 'Arriving'], ['training', 'barracks', 'Going to train'], ['fleeing', 'alertDanger', 'Fleeing'],
   ];
-  const JOB_ICONS = { forester: 'lodge', quarrier: 'quarry', farmer: 'farm', miner: 'mine', hunter: 'hunter', fisher: 'fisher', cook: 'canteen' };
+  const JOB_ICONS = { forester: 'lodge', quarrier: 'quarry', farmer: 'farm', miner: 'mine', hunter: 'hunter', fisher: 'fisher', salter: 'saltworks', cook: 'canteen' };
   function censusLines(c) {
     const lines = [];
     for (const [k, , label] of CENSUS_ROWS) if (c[k]) lines.push(`${c[k]} ${label.toLowerCase()}`);
@@ -560,8 +560,9 @@ export function createHud({ root, session, input, settings, actions }) {
       return;
     }
     if (e.kind === 'deposit') {
-      const name = { tree: 'Tree', rock: 'Rock outcrop', iron: 'Iron vein' }[e.type];
-      selPanel.append(head(e.type === 'iron' ? 'vein' : e.type, name, e.type === 'iron' ? 'Build an Iron Mine within 10 m.' : `${e.amount} ${e.type === 'tree' ? 'timber' : 'stone'} left`));
+      const name = { tree: 'Tree', rock: 'Rock outcrop', iron: 'Iron vein', salt: 'Salt pan' }[e.type];
+      const note = e.type === 'iron' ? 'Build an Iron Mine within 10 m.' : e.type === 'salt' ? 'Build a Salt Works within 12 m. Salt pans never run dry.' : `${e.amount} ${e.type === 'tree' ? 'timber' : 'stone'} left`;
+      selPanel.append(head(e.type === 'iron' ? 'vein' : e.type, name, note));
     }
   }
 
@@ -611,8 +612,10 @@ export function createHud({ root, session, input, settings, actions }) {
     }
     if (cmdMode === 'build' || (!items.length) || (serfs.length && serfs.length === items.length)) {
       setText(cmdTitle, 'Build');
+      const hasSalt = all(w, 'deposit').some((d) => d.type === 'salt');
       for (const type of PLAYER_BUILD_ORDER) {
         const def = BUILDINGS[type];
+        if (type === 'saltworks' && !hasSalt) continue; // only where the map has salt pans
         const cost = buildCost(w, PLAYER, type);
         const locked = def.requiresTech && !p.techs[def.requiresTech];
         const afford = canAfford(w, PLAYER, cost);

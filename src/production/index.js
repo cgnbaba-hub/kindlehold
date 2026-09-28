@@ -17,6 +17,7 @@ export const WORK = {
   miner: { res: 'iron', perCycle: 2, work: 8.0, provisionsPerCycle: 1, anim: 'mine' },
   hunter: { res: 'provisions', perTrip: 4, aim: 1.6, dress: 3.0, throwRange: 10, anim: 'cast' },
   cook: { perCycle: 3, provisionsPerCycle: 2, work: 7.0, anim: 'mine' },
+  salter: { res: 'taler', perTrip: 3, work: 8.0, strike: 1.2, anim: 'harvest' },
   fisher: { res: 'provisions', perTrip: 3, fish: 7.0, strike: 2.2, frozenSpeed: 0.5, anim: 'fish' },
 };
 
@@ -116,7 +117,7 @@ export function createProductionModule() {
       return;
     }
 
-    if (s.job === 'forester' || s.job === 'quarrier') {
+    if (s.job === 'forester' || s.job === 'quarrier' || s.job === 'salter') {
       const depType = def.deposit;
       switch (t.stage) {
         case 'start': {
@@ -136,7 +137,7 @@ export function createProductionModule() {
           t.deposit = d.id;
           // stand on the side of the deposit facing the workplace
           const dx = b.x - d.x, dz = b.z - d.z, len = Math.hypot(dx, dz) || 1;
-          const stand = d.type === 'tree' ? 1.1 : 2.2;
+          const stand = d.type === 'tree' ? 1.1 : d.type === 'salt' ? 2.6 : 2.2;
           t.spot = [d.x + (dx / len) * stand, d.z + (dz / len) * stand];
           t.stage = 'toDeposit';
           if (b.stall === 'noDeposit' || b.stall === 'noAccess') setStall(world, b, null);
@@ -160,8 +161,9 @@ export function createProductionModule() {
             emit(world, EV.WORK_STRIKE, { id: s.id, kind: s.job, x: d.x, z: d.z, deposit: d.id });
           }
           if (t.timer >= W.work) {
-            const amt = Math.min(W.perTrip, d.amount);
-            d.amount -= amt;
+            // salt pans never run dry
+            const amt = d.type === 'salt' ? W.perTrip : Math.min(W.perTrip, d.amount);
+            if (d.type !== 'salt') d.amount -= amt;
             d.reservedBy = null;
             s.carry = { res: W.res, amt };
             if (d.amount <= 0) {

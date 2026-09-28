@@ -31,6 +31,20 @@ function broadleaf(rnd) {
   return merge(parts);
 }
 
+/** A salt pan: a shallow clay-rimmed basin of brine with white salt heaps. */
+function saltPanGeo(rnd) {
+  const parts = [];
+  parts.push(paint(place(cyl(2.6, 2.8, 0.25, 14), { y: 0.1 }), '#8a7a60', 0, null, PATTERN.rock));
+  parts.push(paint(place(cyl(2.3, 2.3, 0.06, 14), { y: 0.24 }), '#cfe0e6', 0, null, PATTERN.plain));
+  for (let i = 0; i < 4; i++) {
+    const a = i * 1.7 + rnd() * 0.5, r = 1.2 + rnd() * 0.6;
+    const g = jitterVertices(ico(0.45 + rnd() * 0.25, 0), 0.08, rnd);
+    parts.push(paintGradient(place(g, { x: Math.cos(a) * r, y: 0.35, z: Math.sin(a) * r, sy: 0.7 }), '#dcdcd4', '#fbfbf6', PATTERN.rock));
+  }
+  parts.push(paint(place(cyl(0.05, 0.05, 1.6, 4), { x: 2.2, y: 0.8, z: 0.4, rz: 0.3 }), '#6b4a2f', 0, null, PATTERN.planks));
+  return merge(parts);
+}
+
 function stumpGeo() {
   return merge([
     paint(place(cyl(0.22, 0.28, 0.45, 8), { y: 0.22 }), '#5a3f2a', 0, null, PATTERN.planks),
@@ -146,7 +160,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
   grassMat.customProgramCacheKey = () => 'kh-grass';
   const rockMat = createStructureMaterial({ roughness: 0.9 });
 
-  const geos = { conifer: conifer(rnd), broadleaf: broadleaf(rnd), stump: stumpGeo(), rock: rockGeo(rnd, '#5d5e5b', '#9b9c96'), iron: rockGeo(rnd, '#5a3426', '#a0603c', true), grass: grassClump(rnd), reed: reedClump(rnd), bush: bush(rnd) };
+  const geos = { conifer: conifer(rnd), broadleaf: broadleaf(rnd), stump: stumpGeo(), salt: saltPanGeo(rnd), rock: rockGeo(rnd, '#5d5e5b', '#9b9c96'), iron: rockGeo(rnd, '#5a3426', '#a0603c', true), grass: grassClump(rnd), reed: reedClump(rnd), bush: bush(rnd) };
   const deps = all(world(), 'deposit');
   const counts = { tree0: 0, tree1: 0 };
   for (const d of deps) if (d.type === 'tree') counts['tree' + (d.variant || 0)]++;
@@ -166,6 +180,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
     stump: make(geos.stump, treeMat, 120),
     rock: make(geos.rock, rockMat, 40),
     iron: make(geos.iron, rockMat, 6),
+    salt: make(geos.salt, rockMat, 12),
   };
 
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), e = new THREE.Euler();
@@ -315,8 +330,8 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
         mesh.setColorAt(idx, col);
         if (d.reservedBy) animTrees.push({ d, mesh, index: idx, shake: true });
       } else {
-        const mesh = d.type === 'iron' ? meshes.iron : meshes.rock;
-        const frac = d.type === 'iron' ? 1 : 0.45 + 0.55 * Math.max(0, d.amount) / d.maxAmount;
+        const mesh = d.type === 'iron' ? meshes.iron : d.type === 'salt' ? meshes.salt : meshes.rock;
+        const frac = d.type === 'iron' || d.type === 'salt' ? 1 : 0.45 + 0.55 * Math.max(0, d.amount) / d.maxAmount;
         if (d.amount <= 0 && d.type === 'rock') continue;
         m4.compose(p.set(d.x, y - 0.2, d.z), q.setFromEuler(e.set(0, d.rot, 0)), s.set(frac * 1.1, frac, frac * 1.1));
         mesh.setMatrixAt(mesh.count++, m4);

@@ -75,6 +75,7 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
     }
     for (const d of all(w, 'deposit')) {
       if (d.type === 'tree' || d.amount <= 0 || !seen(d)) continue;
+      if (d.type === 'salt') { ctx.fillStyle = '#f4f4ec'; ctx.beginPath(); ctx.arc(toPx(d.x), toPx(d.z), 2.8, 0, Math.PI * 2); ctx.fill(); continue; }
       if (d.type === 'iron') { // iron: a bold rust dot with a light ring, easy to spot
         ctx.fillStyle = '#e07a3a'; ctx.beginPath(); ctx.arc(toPx(d.x), toPx(d.z), 3.2, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = 'rgba(255,230,200,0.9)'; ctx.lineWidth = 1; ctx.stroke();

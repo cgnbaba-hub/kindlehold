@@ -53,6 +53,10 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   // Deposits — iron veins and rock outcrops first (hand-placed), then forests
   const placed = [];
   const clearOf = (x, z, r) => placed.every((p) => (p.x - x) ** 2 + (p.z - z) ** 2 >= r * r);
+  for (const p of map.saltPans || []) {
+    spawn(world, { kind: 'deposit', type: 'salt', x: p.x, z: p.z, amount: 999, maxAmount: 999, variant: 0, rot: rng.range(0, Math.PI * 2), reservedBy: null });
+    placed.push({ x: p.x, z: p.z });
+  }
   for (const v of map.ironVeins) {
     spawn(world, { kind: 'deposit', type: 'iron', x: v.x, z: v.z, amount: 400, maxAmount: 400, variant: 0, rot: 0.6, reservedBy: null });
     placed.push({ x: v.x, z: v.z });

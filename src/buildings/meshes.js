@@ -13,6 +13,7 @@ const C = {
   glow: '#ffbf6a',
 };
 
+const sphere8 = (r) => new THREE.SphereGeometry(r, 8, 6);
 function b(w, h, d, color, pattern, at = {}, jitter = 0, rnd = null) { return paint(place(box(w, h, d), at), color, jitter, rnd, pattern); }
 function beam(x1, y1, z1, x2, y2, z2, t, color = C.timber) {
   const dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
@@ -277,6 +278,26 @@ const MODELS = {
     body.push(paint(place(new THREE.TorusGeometry(0.3, 0.1, 5, 10), { x: 2.3, y: 0.1, z: 1.4, rx: Math.PI / 2 }), '#8a7a5a', 0, null, P.cloth));
     body.push(paint(place(cyl(0.035, 0.035, 2.2, 4), { x: 1.9, y: 1.4, z: 1.5, rz: 0.5 }), C.timberDark, 0, null, P.planks));
     return { body, glow, height: 4.6 };
+  },
+  saltworks(rnd) {
+    const body = [], glow = [];
+    // boiling house: stone footing, timber walls, a steep shingle roof and a tall smoke stack
+    body.push(b(4.4, 0.4, 3.4, C.stoneDark, P.stone, { y: 0.2 }));
+    body.push(b(4, 2.2, 3, C.plank, P.planks, { y: 1.5 }));
+    body.push(...timberFrame(4, 2.0, 3, 0.4));
+    body.push(roof(4.8, 4.2, 2.2, C.slateDark, P.shingles, { y: 2.6 }));
+    body.push(...door(0.9, 1.7, 1.55));
+    body.push(...chimney(1.3, -0.6, 2.6, 2.6));
+    // open-air boiling pan on a stone hearth with the fire glowing beneath
+    body.push(paint(place(cyl(1.4, 1.5, 0.6, 12), { x: -3.3, y: 0.3, z: 0.6 }), C.stoneDark, 0, null, P.stone));
+    body.push(paint(place(cyl(1.3, 1.1, 0.25, 14), { x: -3.3, y: 0.72, z: 0.6 }), C.iron, 0, null, P.metal));
+    body.push(paint(place(cyl(1.15, 1.15, 0.04, 14), { x: -3.3, y: 0.83, z: 0.6 }), '#e8ece8', 0, null, P.plain));
+    glow.push(place(new THREE.BoxGeometry(1.0, 0.18, 0.1), { x: -3.3, y: 0.25, z: 2.02 }));
+    // sacks and a heap of white salt
+    for (let i = 0; i < 5; i++) body.push(paint(place(sphere8(0.32), { x: 2.6 + (i % 3) * 0.55, y: 0.3 + Math.floor(i / 3) * 0.45, z: 1.2 - (i % 2) * 0.3, sy: 1.1 }), '#e6e0cc', 0.05, rnd, P.cloth));
+    body.push(paintGradient(place(cone(0.9, 0.8, 8), { x: 2.8, y: 0.4, z: -1.0 }), '#d8d8d0', '#fbfbf6', P.rock));
+    glow.push(win(0.45, 0.45, { x: 1.0, y: 1.8, z: 1.52 }));
+    return { body, glow, height: 5.4 };
   },
   canteen(rnd) {
     const body = [], glow = [];
@@ -543,7 +564,7 @@ const LEVEL_EXTRAS = {
     },
   },
 };
-for (const t of ['lodge', 'quarry', 'farm', 'mine', 'hunter', 'fisher', 'canteen']) {
+for (const t of ['lodge', 'quarry', 'farm', 'mine', 'hunter', 'fisher', 'saltworks', 'canteen']) {
   LEVEL_EXTRAS[t] = { 2: (rnd) => ({ body: [...leanTo(-3.4, -1.6, rnd), ...hangingSign(1.9, 3.9, t === 'mine' ? C.rust : C.teal), ...barrel(-3.8, -1.2), ...barrel(-3.0, -2.1)], glow: [] }) };
 }
 
