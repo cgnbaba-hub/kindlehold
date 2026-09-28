@@ -196,10 +196,20 @@ Messung (Software-Rendering im Container, 1280×720, dieselbe Ansicht; nur relat
 | Freies Spiel | Alle vier Karten ohne Geschichte, jeweils gegen die Fraktion der Karte. Ziel: den Sitz des Gegners zerstören. |
 | Minenarbeiter, Köche | Ruhige Hackenschläge im Takt des Amboss-Klangs statt Zappeln; Köche rühren im Topf. |
 
+## Figuren, erster Schritt: natürlichere Bewegung und bessere Modelle
+
+| Punkt | Umsetzung |
+|---|---|
+| Gang | Arme schwingen gegengleich zu den Beinen (vorher Passgang), Schultern drehen gegen die Hüfte, der Schritt folgt der gelaufenen Strecke: keine rutschenden Füße mehr, auch bei doppeltem Tempo. |
+| Übergänge | Zwischen Laufen, Stehen, Arbeiten und Kämpfen wird kurz überblendet statt umgeschaltet. |
+| Kampf | Eigene Bewegungen je Waffe: Schwert und Axt schlagen schräg, Speer und Hellebarde stoßen waagrecht, Streitkolben und Hacken holen über den Kopf aus, Bogenschützen spannen, Armbrustschützen legen an, Schleuderer wirbeln. Ausholen und Treffer passen zum Schadenszeitpunkt. |
+| Sterben | Die Knie knicken ein, dann fällt die Figur um, die Waffe fällt mit. |
+| Modelle | Geformter Oberkörper, Hände, Ärmel, runde Schuhe, lange Frisuren (Zopf, Dutt, offen), verschiedene Hauttöne, Größe und Körperbau. Speere, Hellebarden, Armbrüste und Angeln wurden bisher verkehrt herum gehalten. |
+
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
-0. **Figuren und Animationen (vom Spieler als Nächstes gewünscht):** bessere Modelle und
-   flüssigere, passendere Bewegungen (siehe Punkt 1).
+0. **Figuren, nächste Schritte:** Gesichter mit Ausdruck, Kleidungsdetails (Gürteltaschen,
+   Mäntel mit Falten), Reittiere; langfristig Skelett-Modelle (Punkt 1).
 0b. **Grafik, weitere Schritte:** detailliertere Gebäude und Gelände (Materialien, Texturen,
    Vegetation), Figuren mit mehr Details bis hin zu animierten Modellen (Punkt 1), bessere
    Schatten auf großen Ansichten (Kaskaden), Wolken am Himmel, Morgennebel in den Tälern.

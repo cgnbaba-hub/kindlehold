@@ -126,6 +126,29 @@ Auflösung muss an Texelmitten des Tiefenpuffers abtasten und Normalen aus Nachb
 entstehen Streifen. (5) Schnelle Sichtprüfung ohne die langsamen Verify-Läufe: einmal
 `?verify=1&demo=midgame` laden und viele Kamera-Presets nacheinander fotografieren.
 
+## Figuren und Animationen (Stufe 3, Figuren-Teil 1)
+
+Posen stehen jetzt in `src/units/poses.js` (flache Gelenkwinkel, `computePose`, `lerpPose`),
+der Zeichner in `src/units/figures.js` setzt sie nur noch zusammen. Wichtig:
+- Gang: Der Schrittzyklus kommt aus der gelaufenen Strecke (`STRIDE` in `src/units/view.js`),
+  damit rutschen die Füße nicht, auch nicht bei 2×/3× Tempo. Vorher schwangen Arm und Bein
+  derselben Seite gemeinsam (Passgang) – behoben, Test in `tests/unit/poses.test.js`.
+- Übergänge: Wechselt eine Figur die Animation, wird 0,22 s überblendet (`BLEND`).
+- Angriffe je Waffe (`weaponClass`: slash, heavy, thrust, bow, crossbow, sling) aus drei
+  Schlüsselposen (Deckung, Ausholen, Treffer). Der Treffer liegt auf dem Tick, in dem der
+  Schaden fällt; das Ausholen läuft, während die Abklingzeit (`u.cd`) endet.
+- Gegenstände: `itemT/itemW` in der Pose steuern die Neigung in der Welt (waagrechter Speer,
+  Schwert in Deckung). Speer, Hellebarde, Armbrust und Angel waren zuvor verkehrt herum
+  modelliert (Spitze nach unten); sie werden jetzt mit `flip()` umgedreht gebaut. Der Bogen ist
+  neu (Griff in der Mitte der Wurfarme) und bleibt in der Welt senkrecht.
+- Sterben: erst knicken die Knie ein, dann kippt der Körper nach hinten; Waffen fallen mit.
+- Modelle: geformter Oberkörper (Lathe), Hände als eigenes Teil (Hautfarbe), Ärmel (Stoff,
+  Kettenhemd oder hochgekrempelt), runde Schuhe, drei lange Frisuren, sieben Hauttöne,
+  Körperbau und Größe variieren. Hände und Sterne haben keinen Umriss (spart Dreiecke).
+- Kosten gemessen: ca. +1,7 % Dreiecke und +11 Draw Calls in Siedlungsansichten.
+Figuren-Studio: `?showcase=figures&group=settlers|army|enemies|leaders&anim=mix|idle|walk|run|attack|work|die`,
+`window.__STUDIO__.time(t)` hält die Uhr an (Einzelbilder für Bildfolgen).
+
 ## Grafik-Notbremse, Freies Spiel, Minenarbeiter (nach dem Grafik-Update)
 
 Der Nutzer meldete nach ~7 Minuten einen Hänger mit dem Hinweis „Grafikkarte ausgelastet“.

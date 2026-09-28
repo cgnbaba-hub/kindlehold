@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { createStructureMaterial, PATTERN as P } from '../render/structure-material.js';
 import { paint, paintGradient, place, merge, box, cyl, cone, sphere, ico } from '../render/geometry-kit.js';
 import { flushInstances } from '../render/instancing.js';
+import { computePose, lerpPose, neutralPose, weaponClass } from './poses.js';
 
 function g(parts) { return merge(parts); }
 /** A thin cloth shell visible from both sides: the shell plus a slightly smaller, flipped copy. */
@@ -22,32 +23,39 @@ function twoSided(geo) {
   return merge([outer, inner]);
 }
 const B = (w, h, d, c, pat, at) => paint(place(box(w, h, d), at), c, 0, null, pat);
+/** Turn an item end for end (pole-type items are modelled pointing down; they are held pointing up). */
+const flip = (geo) => place(geo, { rz: Math.PI });
+/** A lathed body: profile [radius, y] pairs, flattened front to back like a real chest. */
+function body(profile, seg, depth, bottom, top, pattern) {
+  const geo = new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), seg);
+  return paintGradient(place(geo, { sz: depth }), bottom, top, pattern);
+}
 
 /** Part geometries (local to their pivot). Colours here are multiplied by instance colour. */
-function buildParts() {
+export function buildParts() {
   return {
     // jointed limbs: thigh (hip pivot) + shin with boot (knee pivot), upper arm + forearm with hand
     thigh: g([paint(place(cyl(0.09, 0.078, 0.47, 7), { y: -0.235 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.078, 5, 3), { y: -0.46 }), '#f2f2f2', 0, null, P.cloth)]),
-    shin: g([paint(place(cyl(0.076, 0.066, 0.34, 7), { y: -0.17 }), '#b8b0a6', 0, null, P.cloth), B(0.16, 0.1, 0.28, '#4a3526', P.plain, { y: -0.4, z: 0.045 }), paint(place(cyl(0.085, 0.08, 0.1, 7), { y: -0.3 }), '#5a4030', 0, null, P.plain)]),
+    shin: g([paint(place(cyl(0.076, 0.066, 0.3, 7), { y: -0.15 }), '#b8b0a6', 0, null, P.cloth), paint(place(cyl(0.084, 0.078, 0.16, 7), { y: -0.33 }), '#5a4030', 0, null, P.plain), paint(place(sphere(0.085, 6, 4), { y: -0.42, z: 0.05, sy: 0.62, sz: 1.65 }), '#4a3526', 0, null, P.plain)]),
     torso: g([
-      paintGradient(place(cyl(0.21, 0.24, 0.62, 10), { y: 0.31 }), '#e8e8e8', '#ffffff', P.cloth),
-      paint(place(cyl(0.255, 0.22, 0.2, 10), { y: -0.02 }), '#f0f0f0', 0, null, P.cloth),
-      B(0.5, 0.07, 0.4, '#5a4030', P.plain, { y: 0.1 }),
-      paint(place(sphere(0.1, 8, 6), { x: 0.25, y: 0.58 }), '#f4f4f4', 0, null, P.cloth),
-      paint(place(sphere(0.1, 8, 6), { x: -0.25, y: 0.58 }), '#f4f4f4', 0, null, P.cloth),
-      paint(place(cyl(0.07, 0.08, 0.1, 8), { y: 0.66 }), '#e2b894', 0, null, P.plain),
+      // hem flaring over the hips, a narrower waist, a broad chest, rounded shoulders
+      body([[0.27, -0.13], [0.255, 0.0], [0.222, 0.14], [0.218, 0.26], [0.246, 0.42], [0.25, 0.52], [0.2, 0.61], [0.1, 0.665], [0.06, 0.68]], 10, 0.8, '#dedede', '#ffffff', P.cloth),
+      paint(place(cyl(0.232, 0.232, 0.07, 10), { y: 0.13, sz: 0.82 }), '#5a4030', 0, null, P.plain),
+      B(0.07, 0.07, 0.03, '#b09050', P.metal, { y: 0.13, z: 0.19 }),
+      paint(place(sphere(0.105, 7, 4), { x: 0.24, y: 0.555 }), '#f4f4f4', 0, null, P.cloth),
+      paint(place(sphere(0.105, 7, 4), { x: -0.24, y: 0.555 }), '#f4f4f4', 0, null, P.cloth),
+      paint(place(cyl(0.068, 0.078, 0.12, 7), { y: 0.68 }), '#e2b894', 0, null, P.plain),
     ]),
     coat: g([
-      paintGradient(place(cyl(0.2, 0.36, 1.05, 10), { y: 0.0 }), '#dedede', '#ffffff', P.cloth),
+      paintGradient(place(cyl(0.2, 0.36, 1.05, 10), { y: 0.0, sz: 0.86 }), '#dedede', '#ffffff', P.cloth),
       B(0.46, 0.07, 0.36, '#5a4030', P.plain, { y: 0.1 }),
     ]),
     // a slightly large, friendly head with a readable face (eyes, brows, nose, mouth, ears)
     head: g([
       paint(place(sphere(0.17, 10, 7), { y: 0.17 }), '#e2b894', 0, null, P.plain),
-      B(0.05, 0.034, 0.02, '#f4efe4', P.plain, { x: 0.058, y: 0.19, z: 0.16 }),
-      B(0.05, 0.034, 0.02, '#f4efe4', P.plain, { x: -0.058, y: 0.19, z: 0.16 }),
-      B(0.026, 0.03, 0.02, '#1e1712', P.plain, { x: 0.058, y: 0.19, z: 0.168 }),
-      B(0.026, 0.03, 0.02, '#1e1712', P.plain, { x: -0.058, y: 0.19, z: 0.168 }),
+      // dark eyes (whites read as goggles at this size)
+      paint(place(sphere(0.022, 5, 4), { x: 0.058, y: 0.19, z: 0.158, sy: 1.3, sz: 0.6 }), '#1e1712', 0, null, P.plain),
+      paint(place(sphere(0.022, 5, 4), { x: -0.058, y: 0.19, z: 0.158, sy: 1.3, sz: 0.6 }), '#1e1712', 0, null, P.plain),
       B(0.06, 0.016, 0.02, '#5a3f2a', P.plain, { x: 0.06, y: 0.235, z: 0.158, rz: 0.12 }),
       B(0.06, 0.016, 0.02, '#5a3f2a', P.plain, { x: -0.06, y: 0.235, z: 0.158, rz: -0.12 }),
       paint(place(cone(0.028, 0.07, 4), { y: 0.15, z: 0.18, rx: Math.PI / 2 }), '#d4a884', 0, null, P.plain),
@@ -57,28 +65,34 @@ function buildParts() {
     ]),
     // hair and beard take their colour from the instance (varied per settler)
     hair: g([paint(place(sphere(0.176, 10, 5, 0, Math.PI * 2, 0, Math.PI * 0.46), { y: 0.18, z: -0.012 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.12, 6, 4), { y: 0.14, z: -0.09, sy: 1.1 }), '#ffffff', 0, null, P.cloth)]),
+    hairLong: g([paint(place(sphere(0.176, 9, 5, 0, Math.PI * 2, 0, Math.PI * 0.5), { y: 0.18, z: -0.012 }), '#ffffff', 0, null, P.cloth), paint(place(cyl(0.16, 0.19, 0.34, 8, 1, true, Math.PI * 0.55, Math.PI * 0.9), { y: 0.05, z: -0.01 }), '#f2f2f2', 0, null, P.cloth)]),
+    hairBun: g([paint(place(sphere(0.176, 9, 5, 0, Math.PI * 2, 0, Math.PI * 0.46), { y: 0.18, z: -0.012 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.078, 6, 4), { y: 0.31, z: -0.12 }), '#f2f2f2', 0, null, P.cloth)]),
+    hairBraids: g([paint(place(sphere(0.176, 9, 5, 0, Math.PI * 2, 0, Math.PI * 0.46), { y: 0.18, z: -0.012 }), '#ffffff', 0, null, P.cloth), paint(place(cyl(0.035, 0.028, 0.34, 5), { x: 0.13, y: 0.0, z: -0.06, rz: 0.12 }), '#f2f2f2', 0, null, P.cloth), paint(place(cyl(0.035, 0.028, 0.34, 5), { x: -0.13, y: 0.0, z: -0.06, rz: -0.12 }), '#f2f2f2', 0, null, P.cloth)]),
     beard: g([paint(place(sphere(0.1, 6, 4), { y: 0.07, z: 0.1, sy: 1.15, sx: 1.25 }), '#ffffff', 0, null, P.cloth)]),
     skirt: g([paintGradient(place(cyl(0.24, 0.34, 0.5, 10), { y: -0.2 }), '#e6e6e6', '#ffffff', P.cloth)]),
-    hood: g([paintGradient(place(cone(0.21, 0.4, 9), { y: 0.33, z: -0.02, rx: -0.14 }), '#cfcfcf', '#ffffff', P.cloth), paint(place(sphere(0.186, 10, 6), { y: 0.17, z: -0.04 }), '#ffffff', 0, null, P.cloth)]),
+    // open at the front so the face shows (the face itself sits inside)
+    hood: g([paintGradient(place(cone(0.2, 0.36, 9), { y: 0.36, z: -0.06, rx: -0.3 }), '#cfcfcf', '#ffffff', P.cloth), paint(place(sphere(0.205, 12, 6, Math.PI / 2 + 0.8, Math.PI * 2 - 1.6), { y: 0.17, z: -0.03 }), '#ffffff', 0, null, P.cloth), paint(place(cyl(0.2, 0.23, 0.1, 10, 1, true), { y: -0.0, z: -0.02 }), '#e8e8e8', 0, null, P.cloth)]),
     cap: g([paint(place(sphere(0.15, 10, 5), { y: 0.2, sy: 0.6 }), '#ffffff', 0, null, P.cloth)]),
     // helmets sit over the head sphere (radius 0.17) so no skin shows through
     helm: g([paint(place(sphere(0.192, 10, 5, 0, Math.PI * 2, 0, Math.PI * 0.42), { y: 0.2 }), '#b9bcc0', 0, null, P.metal), B(0.035, 0.12, 0.035, '#9a9da2', P.metal, { y: 0.2, z: 0.178 }), paint(place(cyl(0.197, 0.197, 0.035, 12), { y: 0.25 }), '#8f9296', 0, null, P.metal)]),
     hornhelm: g([paint(place(sphere(0.195, 10, 5, 0, Math.PI * 2, 0, Math.PI * 0.45), { y: 0.2 }), '#6a625a', 0, null, P.metal), paint(place(cone(0.05, 0.36, 6), { x: 0.2, y: 0.36, rz: -0.7 }), '#d8ccb0', 0, null, P.plain), paint(place(cone(0.05, 0.36, 6), { x: -0.2, y: 0.36, rz: 0.7 }), '#d8ccb0', 0, null, P.plain)]),
     arm: g([paint(place(cyl(0.068, 0.062, 0.31, 7), { y: -0.155 }), '#ffffff', 0, null, P.cloth), paint(place(sphere(0.062, 5, 3), { y: -0.3 }), '#f2f2f2', 0, null, P.cloth)]),
-    forearm: g([paint(place(cyl(0.058, 0.05, 0.26, 7), { y: -0.13 }), '#e2b894', 0, null, P.plain), paint(place(sphere(0.064, 5, 4), { y: -0.3, sz: 0.8 }), '#d4a884', 0, null, P.plain)]),
+    forearm: g([paint(place(cyl(0.06, 0.05, 0.25, 7), { y: -0.125 }), '#ffffff', 0, null, P.cloth), paint(place(cyl(0.058, 0.062, 0.04, 7), { y: -0.235 }), '#d8d8d8', 0, null, P.cloth)]),
+    hand: g([paint(place(sphere(0.056, 6, 4), { y: -0.3, sx: 0.85, sy: 1.15, sz: 0.72 }), '#ffffff', 0, null, P.plain), paint(place(sphere(0.022, 4, 3), { y: -0.275, z: 0.04, sy: 1.6 }), '#f0f0f0', 0, null, P.plain)]),
     // right-hand items: pivot at the hand, pointing along -Y when the arm hangs
     axe: g([paint(place(cyl(0.025, 0.03, 0.8, 5), { y: -0.2 }), '#6b4a2f', 0, null, P.planks), B(0.05, 0.16, 0.2, '#9fa3a8', P.metal, { y: -0.52, z: 0.09 })]),
     pick: g([paint(place(cyl(0.025, 0.03, 0.8, 5), { y: -0.2 }), '#6b4a2f', 0, null, P.planks), B(0.05, 0.06, 0.5, '#8c8f93', P.metal, { y: -0.58 })]),
     hammer: g([paint(place(cyl(0.022, 0.025, 0.5, 5), { y: -0.1 }), '#6b4a2f', 0, null, P.planks), B(0.1, 0.1, 0.18, '#7d7f82', P.metal, { y: -0.36 })]),
     sickle: g([paint(place(cyl(0.022, 0.025, 0.3, 5), { y: 0 }), '#6b4a2f', 0, null, P.planks), paint(place(new THREE.TorusGeometry(0.14, 0.015, 4, 10, Math.PI), { y: -0.18, z: 0.1, ry: Math.PI / 2 }), '#a6a9ad', 0, null, P.metal)]),
     sword: g([B(0.05, 0.75, 0.018, '#c9ccd0', P.metal, { y: -0.48 }), B(0.2, 0.035, 0.05, '#6b5a3a', P.metal, { y: -0.1 }), paint(place(cyl(0.02, 0.02, 0.12, 5), { y: -0.02 }), '#4a3526', 0, null, P.plain)]),
-    spear: g([paint(place(cyl(0.022, 0.025, 2.0, 5), { y: -0.3 }), '#6b4a2f', 0, null, P.planks), paint(place(cone(0.05, 0.24, 4), { y: -1.42, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)]),
-    bow: g([paint(place(new THREE.TorusGeometry(0.62, 0.018, 4, 12, Math.PI * 0.8), { y: -0.1, rz: Math.PI / 2 + 0.3 }), '#6b4a2f', 0, null, P.planks), paint(place(cyl(0.004, 0.004, 1.1, 3), { y: -0.1, x: -0.25 }), '#e8e0cc', 0, null, P.plain)]),
+    spear: flip(g([paint(place(cyl(0.022, 0.025, 2.0, 5), { y: -0.3 }), '#6b4a2f', 0, null, P.planks), paint(place(cone(0.05, 0.24, 4), { y: -1.42, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)])),
+    // a longbow gripped at the middle of its stave: the stave runs along Z, the string sits +Y of the grip
+    bow: g([place(paint(place(new THREE.TorusGeometry(0.9, 0.02, 4, 14, Math.PI * 0.45), { y: 0.9, rz: -Math.PI * 0.725 }), '#6b4a2f', 0, null, P.planks), { ry: -Math.PI / 2 }), paint(place(cyl(0.004, 0.004, 1.17, 3), { y: 0.216, rx: Math.PI / 2 }), '#e8e0cc', 0, null, P.plain), paint(place(cyl(0.03, 0.03, 0.12, 6), { rx: Math.PI / 2 }), '#3a2a1e', 0, null, P.plain)]),
     rake: g([paint(place(cyl(0.022, 0.025, 1.6, 5), { y: -0.5 }), '#8a6a44', 0, null, P.planks), B(0.5, 0.05, 0.06, '#6b4a2f', P.planks, { y: -1.3 })]),
-    rod: g([paint(place(cyl(0.012, 0.022, 2.2, 4), { y: -0.6 }), '#8a6a44', 0, null, P.planks), paint(place(cyl(0.003, 0.003, 1.3, 3), { y: -1.6, z: 0.35, rx: -0.5 }), '#e8e0cc', 0, null, P.plain)]),
+    rod: flip(g([paint(place(cyl(0.012, 0.022, 2.2, 4), { y: -0.6 }), '#8a6a44', 0, null, P.planks), paint(place(cyl(0.003, 0.003, 1.3, 3), { y: -1.6, z: 0.35, rx: -0.5 }), '#e8e0cc', 0, null, P.plain)])),
     pole: g([paint(place(cyl(0.03, 0.035, 2.3, 6), { y: -0.55 }), '#3e2c1f', 0, null, P.planks), paint(place(cyl(0.016, 0.016, 0.3, 4), { y: 0.72, z: 0.12, rx: 0.9 }), '#2f2f31', 0, null, P.metal)]),
-    crossbow: g([B(0.07, 0.7, 0.09, '#6b4a2f', P.planks, { y: -0.3 }), B(0.62, 0.05, 0.05, '#4a4a4c', P.metal, { y: -0.6 }), paint(place(cyl(0.004, 0.004, 0.6, 3), { y: -0.55, rz: Math.PI / 2 }), '#e8e0cc', 0, null, P.plain)]),
-    halberd: g([paint(place(cyl(0.024, 0.027, 2.3, 5), { y: -0.45 }), '#5a4030', 0, null, P.planks), B(0.05, 0.3, 0.26, '#b9bcc0', P.metal, { y: -1.45, z: 0.1 }), paint(place(cone(0.045, 0.3, 4), { y: -1.72, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)]),
+    crossbow: flip(g([B(0.07, 0.7, 0.09, '#6b4a2f', P.planks, { y: -0.3 }), B(0.62, 0.05, 0.05, '#4a4a4c', P.metal, { y: -0.6 }), paint(place(cyl(0.004, 0.004, 0.6, 3), { y: -0.55, rz: Math.PI / 2 }), '#e8e0cc', 0, null, P.plain)])),
+    halberd: flip(g([paint(place(cyl(0.024, 0.027, 2.3, 5), { y: -0.45 }), '#5a4030', 0, null, P.planks), B(0.05, 0.3, 0.26, '#b9bcc0', P.metal, { y: -1.45, z: 0.1 }), paint(place(cone(0.045, 0.3, 4), { y: -1.72, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)])),
     greataxe: g([paint(place(cyl(0.035, 0.04, 1.3, 6), { y: -0.4 }), '#3e2c1f', 0, null, P.planks), B(0.06, 0.4, 0.46, '#7a716a', P.metal, { y: -0.98, z: 0.2 })]),
     maul: g([paint(place(cyl(0.03, 0.035, 1.0, 6), { y: -0.3 }), '#5a4030', 0, null, P.planks), B(0.22, 0.2, 0.34, '#6a6c70', P.metal, { y: -0.82 }), B(0.24, 0.05, 0.36, '#4a4c50', P.metal, { y: -0.82 })]),
     sling: g([paint(place(cyl(0.008, 0.008, 0.6, 3), { y: -0.3 }), '#8a7050', 0, null, P.plain), paint(place(sphere(0.05, 6, 4), { y: -0.6 }), '#6a625a', 0, null, P.plain)]),
@@ -91,9 +105,10 @@ function buildParts() {
     cape: twoSided(paintGradient(place(new THREE.CylinderGeometry(0.27, 0.44, 1.02, 9, 3, true, Math.PI * 0.62, Math.PI * 0.76), { y: -0.51 }), '#c8c8c8', '#ffffff', P.cloth)),
     // metal shoulder guards (in the upper-arm frame) and a cloth tabard over the belt
     pauldron: g([paint(place(sphere(0.125, 8, 4, 0, Math.PI * 2, 0, Math.PI * 0.5), { y: 0.02, sx: 1.15, sz: 1.1 }), '#c4c7cb', 0, null, P.metal), paint(place(cyl(0.13, 0.14, 0.03, 8), { y: -0.01 }), '#8f9296', 0, null, P.metal)]),
-    tabard: g([B(0.3, 0.5, 0.03, '#ffffff', P.cloth, { y: 0.02, z: 0.27 }), B(0.3, 0.5, 0.03, '#f2f2f2', P.cloth, { y: 0.02, z: -0.27 }), B(0.1, 0.1, 0.035, '#d8d8d8', P.cloth, { y: 0.14, z: 0.29, rz: Math.PI / 4 })]),
+    // tabard: front and back panels curving round the body, a device on the chest
+    tabard: g([paint(place(cyl(0.208, 0.262, 0.52, 5, 1, true, -0.6, 1.2), { y: 0.02, sz: 0.84 }), '#ffffff', 0, null, P.cloth), paint(place(cyl(0.208, 0.262, 0.52, 5, 1, true, Math.PI - 0.6, 1.2), { y: 0.02, sz: 0.84 }), '#f2f2f2', 0, null, P.cloth), B(0.1, 0.1, 0.02, '#d8d8d8', P.cloth, { y: 0.15, z: 0.186, rz: Math.PI / 4, rx: -0.1 })]),
     strawhat: g([paint(place(cyl(0.3, 0.32, 0.025, 12), { y: 0.25 }), '#d9c07a', 0, null, P.cloth), paint(place(cyl(0.13, 0.16, 0.13, 10), { y: 0.32 }), '#cdb46c', 0, null, P.cloth), paint(place(cyl(0.162, 0.162, 0.03, 10), { y: 0.275 }), '#8a4a3a', 0, null, P.cloth)]),
-    apron: g([B(0.34, 0.62, 0.02, '#ece6d6', P.cloth, { y: -0.12, z: 0.245 }), B(0.2, 0.2, 0.02, '#ece6d6', P.cloth, { y: 0.3, z: 0.225 })]),
+    apron: g([paint(place(cyl(0.2, 0.25, 0.6, 5, 1, true, -0.55, 1.1), { y: -0.14, sz: 0.84 }), '#ece6d6', 0, null, P.cloth), paint(place(cyl(0.2, 0.2, 0.2, 5, 1, true, -0.4, 0.8), { y: 0.3, sz: 0.84 }), '#ece6d6', 0, null, P.cloth)]),
     // a thin gold circlet for nobility
     circlet: g([paint(place(new THREE.TorusGeometry(0.17, 0.022, 5, 16), { y: 0.26, rx: Math.PI / 2 - 0.12 }), '#e3c26b', 0, null, P.metal), paint(place(new THREE.OctahedronGeometry(0.04, 0), { y: 0.29, z: 0.17 }), '#c03040', 0, null, P.metal)]),
     // rank insignia floating over veterans (one) and elite soldiers (two)
@@ -110,6 +125,14 @@ const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle
 const CARRY = { timber: 'log', stone: 'stone', provisions: 'sack', iron: 'ingot' };
 const SETTLER_TUNICS = ['#8a6f4e', '#6f7b5a', '#9b7c52', '#5f6f7a', '#7a5f4e', '#8e8a6a', '#8a4e4a', '#4e6a7a'];
 const HAIR = ['#4a3222', '#2a1e16', '#b8914e', '#8a4a24', '#6a5a4a', '#c8c0b0', '#3a2a1e'];
+const HAIR_LONG = ['hairLong', 'hairBun', 'hairBraids'];
+// skin tones (the head is modelled in the first one and tinted to the others)
+const SKIN = ['#e2b894', '#f0c8a4', '#d19a72', '#b57c55', '#8d5a3b', '#e8bf9a', '#c48a60'];
+const LEGS = ['#5b4b3c', '#4a4a3e', '#6a5a44', '#3e4652'];
+const MAIL = '#8d9096', GLOVE = '#5a4030';
+const NO_OUTLINE = new Set(['hand', 'star']);
+const POLE_ITEMS = new Set(['spear', 'pole', 'halberd']);
+const BLADES = new Set(['axe', 'pick', 'hammer', 'sword', 'greataxe', 'maul', 'sickle']);
 
 export const STYLE = {
   settler: { torso: null, head: 'cap', skin: '#e2b894', legs: '#5b4b3c' },
@@ -156,7 +179,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
   };
   outlineMat.customProgramCacheKey = () => 'kh-figure-outline';
   const uOutline = { value: 0.03 };
-  const caps = { thigh: 2, shin: 2, arm: 2, forearm: 2 };
+  const caps = { thigh: 2, shin: 2, arm: 2, forearm: 2, hand: 2 };
   for (const k in parts) {
     const n = maxFigures * (caps[k] || 1);
     const m = new THREE.InstancedMesh(parts[k], k === 'lantern' ? mat : mat, n);
@@ -165,6 +188,8 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     scene.add(m);
     meshes[k] = m;
     // inverted-hull outline sharing the same instance matrices: crisp silhouettes at RTS zoom
+    // (not for hands and insignia: an outline would only blot them)
+    if (NO_OUTLINE.has(k)) continue;
     const o = new THREE.InstancedMesh(parts[k], outlineMat, n);
     o.instanceMatrix = m.instanceMatrix;
     o.count = 0; o.frustumCulled = false; o.castShadow = false;
@@ -191,7 +216,8 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     const i = counts[kind]++;
     if (i >= m.instanceMatrix.count) return;
     m.setMatrixAt(i, matrix);
-    if (color) { col.set(color); m.setColorAt(i, col); }
+    if (color && color.isColor) m.setColorAt(i, color);
+    else if (color) { col.set(color); m.setColorAt(i, col); }
     else { col.setRGB(1, 1, 1); m.setColorAt(i, col); }
   }
 
@@ -201,157 +227,134 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     return tmp.compose(v.set(px, py, pz), q, one);
   }
 
+  const P = neutralPose(), Pb = neutralPose();
+  const colCache = new Map();
+  /** A colour, darkened (k < 1) or tinted relative to the base skin (cached). */
+  function shade(hex, k) {
+    const key = hex + k;
+    let c = colCache.get(key);
+    if (!c) { c = new THREE.Color(hex).multiplyScalar(k); colCache.set(key, c); }
+    return c;
+  }
+  const SKIN_BASE = new THREE.Color('#e2b894');
+  const skinTints = SKIN.map((hex) => { const c = new THREE.Color(hex); return new THREE.Color(c.r / SKIN_BASE.r, c.g / SKIN_BASE.g, c.b / SKIN_BASE.b); });
+
   /**
    * Draw one figure.
-   * @param {object} f  { x, y, z, heading, scale, style, tunic, anim, t, tool, carry, fallen, kneel, lean }
+   * @param {object} f  { x, y, z, heading, scale, style, tunic, anim, t, tool, carry, fallen, kneel, lean,
+   *   walkPh (stride phase), blendFrom / blendW (cross-fade from the previous animation), attack }
    */
   function draw(f) {
     const st = STYLE[f.style] || STYLE.settler;
+    const settler = f.style === 'settler';
+    const ph = f.phase || 0;
+    // everyday folk and rank-and-file differ a little in height and build
+    const vary = !st.cape && !st.scale;
+    const bw = vary ? 0.93 + ((ph * 7) % 5) * 0.035 : 1, bh = vary ? 0.95 + ((ph * 3) % 5) * 0.025 : 1;
     const sc = (st.scale || 1) * (f.scale || 1);
     const t = f.t;
-    let legA = 0, armL = 0, armR = 0, armRz = 0, armLz = 0, bob = 0, lean = f.lean || 0, torsoTwist = 0, handItemA = 0;
-    // joints: knees bend backwards (+), elbows forwards (-); a little hip sway and head nod
-    let kneeL = 0.05, kneeR = 0.05, elbowL = -0.15, elbowR = -0.15, sway = 0, nod = 0, headYaw = 0, cape = 0.14;
-    let hipR = 0, hipL = 0; // a staggered stance (one foot forward)
-    const pole = st.right === 'spear' || st.right === 'pole' || st.right === 'halberd' || st.right === 'crossbow';
-    const walkF = f.anim === 'run' ? 11 : 8.5;
-    switch (f.anim) {
-      case 'walk': case 'run': case 'carry': {
-        const ph = t * walkF;
-        legA = Math.sin(ph) * (f.anim === 'run' ? 0.7 : 0.55); bob = Math.abs(Math.cos(ph)) * 0.05;
-        // the trailing leg folds at the knee as it swings through
-        kneeL = 0.1 + Math.max(0, Math.sin(ph + 1.2)) * (f.anim === 'run' ? 1.3 : 0.95);
-        kneeR = 0.1 + Math.max(0, Math.sin(ph + 1.2 + Math.PI)) * (f.anim === 'run' ? 1.3 : 0.95);
-        armL = -legA * 0.8; armR = legA * 0.8; elbowL = elbowR = f.anim === 'run' ? -1.3 : -0.35;
-        sway = Math.sin(ph) * 0.06; nod = Math.abs(Math.sin(ph)) * 0.06;
-        if (f.anim === 'carry') { armL = -2.6; armR = -2.5; armLz = -0.3; armRz = 0.3; elbowL = elbowR = -1.1; }
-        // soldiers march with the spear upright instead of swinging it about
-        else if (pole && !f.tool) { armR = -0.35 + legA * 0.1; elbowR = -0.9; }
-        cape = (f.anim === 'run' ? 0.75 : 0.38) + Math.sin(ph * 2) * 0.06;
-        break;
-      }
-      case 'carryIdle': armL = -2.6; armR = -2.5; armLz = -0.3; armRz = 0.3; elbowL = elbowR = -1.1; break;
-      case 'chop': case 'pick': case 'hammer': {
-        const c = (t * (f.anim === 'hammer' ? 2.2 : 1.45)) % 1;
-        const swing = c < 0.55 ? -2.7 * (c / 0.55) : -2.7 + 3.2 * Math.min(1, (c - 0.55) / 0.15);
-        armR = swing; armL = f.anim === 'hammer' ? -0.6 : swing * 0.9; lean = 0.18 + (c > 0.55 && c < 0.75 ? 0.15 : 0);
-        // wind up with bent elbows, strike with straight arms
-        elbowR = c < 0.55 ? -0.2 - 0.9 * (c / 0.55) : -0.15; elbowL = f.anim === 'hammer' ? -1.2 : elbowR;
-        kneeL = kneeR = 0.15 + (c > 0.55 && c < 0.75 ? 0.2 : 0); nod = lean * 0.4;
-        break;
-      }
-      case 'sow': case 'harvest': case 'farm': {
-        const c = Math.sin(t * 3.2);
-        lean = 0.55; armR = -0.9 + c * 0.5; armL = -0.5 - c * 0.3; elbowR = -0.5 + c * 0.3; elbowL = -0.7; kneeL = kneeR = 0.45; nod = 0.2;
-        break;
-      }
-      case 'mine': {
-        // at the rock face: feet planted in a wide stance, short two-handed pick strokes at chest
-        // height (one per anvil ring, 1.1 s), a slow wind-up, a quick blow, a moment's rest
-        const c = (t / 1.1) % 1;
-        const up = c < 0.55 ? Math.sin((c / 0.55) * Math.PI * 0.5) : c < 0.68 ? 1 - (c - 0.55) / 0.13 : 0;
-        armR = -0.95 - up * 1.25; armL = -0.85 - up * 1.15; elbowR = elbowL = -0.3 - up * 0.8;
-        const hitting = c >= 0.62 && c < 0.8 ? 1 - Math.abs(c - 0.68) / 0.12 : 0;
-        lean = 0.2 + hitting * 0.14 - up * 0.08; nod = 0.12 + hitting * 0.08;
-        hipR = 0.28; hipL = -0.22; kneeL = 0.3 + hitting * 0.08; kneeR = 0.18 + hitting * 0.08; bob = -0.03 * hitting;
-        break;
-      }
-      case 'stir': { // at the pot: the ladle turns slow circles, the other hand steadies the rim
-        const a = t * 2.4 + (f.phase || 0);
-        armR = -0.95 + Math.sin(a) * 0.14; armRz = 0.12 + Math.cos(a) * 0.14; elbowR = -0.95;
-        armL = -0.7; elbowL = -1.1; armLz = -0.1; lean = 0.18; nod = 0.18; kneeL = kneeR = 0.1;
-        sway = Math.sin(a) * 0.02;
-        break;
-      }
-      case 'attack': {
-        const c = f.attackPhase;
-        if (f.ranged) { armL = -1.4; armLz = -0.15; armR = -0.95 + c * 0.25; armRz = 0.55 - c * 0.3; torsoTwist = 0.6; elbowL = -0.05; elbowR = -1.4 + c * 0.6; }
-        else { armR = c < 0.4 ? -2.4 * (c / 0.4) : -2.4 + 3.4 * Math.min(1, (c - 0.4) / 0.2); armL = -0.7; lean = 0.15; torsoTwist = -0.3 * Math.sin(c * Math.PI); elbowR = c < 0.4 ? -1.0 : -0.1; elbowL = -1.0; }
-        kneeL = 0.25; kneeR = 0.15; legA = 0.18;
-        break;
-      }
-      case 'cast': armR = -3.0; armL = -0.4; lean = -0.1; elbowR = -0.1; nod = -0.1; break;
-      case 'fish': { // rod held out over the water, a patient twitch now and then
-        const tw = Math.max(0, Math.sin(t * 0.9 + (f.phase || 0))) ** 8;
-        armR = -1.0 - tw * 0.35; elbowR = -0.4; armL = -0.8; elbowL = -1.1; armLz = 0.25; kneeL = kneeR = 0.12; nod = 0.12;
-        break;
-      }
-      case 'cower': lean = 0.4; armL = -1.8; armR = -1.8; armLz = -0.4; armRz = 0.4; bob = -0.12; elbowL = elbowR = -1.6; kneeL = kneeR = 0.8; nod = 0.3; break;
-      default: {
-        const breathe = Math.sin(t * 1.6 + (f.phase || 0)) * 0.03;
-        armL = breathe; armR = -breathe; nod = Math.sin(t * 0.5 + (f.phase || 0)) * 0.05;
-        // now and then look around, and shift the weight from one leg to the other
-        headYaw = Math.pow(Math.sin(t * 0.31 + (f.phase || 0) * 1.7), 5) * 0.75;
-        sway = Math.sin(t * 0.23 + (f.phase || 0)) * 0.035;
-        cape = 0.14 + Math.sin(t * 0.9 + (f.phase || 0)) * 0.04;
-        if (pole) { armR = -0.35; elbowR = -0.9; }
-      }
+    f.pole = POLE_ITEMS.has(f.tool || st.right) || f.tool === 'rod'; // carried upright when not in use
+    f.weapon = st.weapon || weaponClass(st.right, st.left);
+    computePose(f.anim, f, P);
+    if (f.blendFrom && f.blendW < 1) {
+      computePose(f.blendFrom, f, Pb);
+      const w = f.blendW * f.blendW * (3 - 2 * f.blendW);
+      lerpPose(Pb, P, w, P);
     }
-    // struck: a short flinch backwards
-    if (f.hit > 0) { lean -= 0.32 * f.hit; nod -= 0.3 * f.hit; armL -= 0.35 * f.hit; armLz -= 0.25 * f.hit; kneeL += 0.2 * f.hit; kneeR += 0.2 * f.hit; }
-    // root
-    q.setFromEuler(e.set(f.fallen ? -Math.PI / 2 * f.fallen : 0, f.heading, 0, 'YXZ'));
-    root.compose(v.set(f.x, f.y + bob * sc - (f.kneel ? 0.45 * sc : 0) - (f.fallen ? 0.15 : 0), f.z), q, scl.set(sc, sc, sc));
+    // dying: the knees give way first, then the body tips over backwards (a little to one side)
+    const fall = f.fallen || 0;
+    const buckle = Math.min(1, fall / 0.3), tip = fall > 0.2 ? Math.min(1, (fall - 0.2) / 0.8) ** 2 : 0;
+    if (fall) {
+      P.kneeL = 0.2 + 1.1 * buckle * (1 - tip) + 0.3 * tip; P.kneeR = 0.2 + 0.9 * buckle * (1 - tip) + 0.1 * tip;
+      P.hipR = P.hipL = -0.5 * buckle * (1 - tip); P.legA = 0.1 * tip; P.lean = 0.35 * buckle * (1 - tip);
+      P.armLz = -0.3 - 0.6 * tip; P.armRz = 0.3 + 0.6 * tip; P.armL = P.armR = -0.5 * buckle * (1 - tip) - 0.3 * tip;
+      P.elbowL = P.elbowR = -0.4; P.nod = 0.3 * buckle * (1 - tip) - 0.25 * tip; P.twist = 0; P.headYaw = 0.4 * tip * (ph % 2 ? 1 : -1);
+    }
+    q.setFromEuler(e.set(fall ? -Math.PI / 2 * tip : 0, f.heading, fall ? (ph % 2 ? 0.25 : -0.25) * tip : 0, 'YXZ'));
+    root.compose(v.set(f.x, f.y + P.bob * sc - (f.kneel ? 0.45 * sc : 0) - (fall ? (0.4 * buckle * (1 - tip) - 0.17 * tip) * sc : 0), f.z), q, scl.set(sc * bw, sc * bh, sc * bw));
     const tunic = f.tunic || st.torso || '#8a6f4e';
+    const skinI = st.skinTone !== undefined ? st.skinTone : (ph * 5 + 1) % SKIN.length;
+    const skin = SKIN[skinI];
     // legs: thigh at the hip, shin at the knee
-    const hip = f.kneel ? [-1.2, 0.2] : [legA + hipR, -legA + hipL];
-    const knee = f.kneel ? [1.5, 0.3] : [kneeR, kneeL];
+    const hip = f.kneel ? [-1.2, 0.2] : [P.legA + P.hipR, -P.legA + P.hipL];
+    const knee = f.kneel ? [1.5, 0.3] : [P.kneeR, P.kneeL];
+    const legs = settler && ph % 3 === 2 ? LEGS[ph % LEGS.length] : st.legs;
     [0.1, -0.1].forEach((hx, i) => {
-      out.multiplyMatrices(root, local(hx, 0.9, 0, hip[i], 0, i ? -sway * 0.3 : sway * 0.3)); put('thigh', out, st.legs);
+      out.multiplyMatrices(root, local(hx, 0.9, 0, hip[i], 0, i ? -P.sway * 0.3 : P.sway * 0.3)); put('thigh', out, legs);
       tmp2.copy(out);
-      out.multiplyMatrices(tmp2, local(0, -0.46, 0, knee[i])); put('shin', out, st.legs);
+      out.multiplyMatrices(tmp2, local(0, -0.46, 0, knee[i])); put('shin', out, legs);
     });
     // torso frame (lean + twist + a little sway)
-    torsoFrame.multiplyMatrices(root, local(0, 0.88, 0, lean, torsoTwist, sway));
-    const settler = f.style === 'settler';
-    const skirt = settler && (f.phase || 0) % 2 === 0;
+    torsoFrame.multiplyMatrices(root, local(0, 0.88, 0, P.lean, P.twist, P.sway));
+    const skirt = settler && ph % 2 === 0;
     if (skirt) { out.multiplyMatrices(torsoFrame, local(0, 0.05, 0, 0)); put('skirt', out, tunic); }
     if (st.coat) { out.multiplyMatrices(torsoFrame, local(0, 0.08, 0, 0)); put('coat', out, tunic); }
     out.copy(torsoFrame); put('torso', out, tunic);
-    if (st.tabard) put('tabard', torsoFrame, st.tabard);
+    if (st.tabard) {
+      // over a coat the tabard hangs a little further out
+      if (st.coat) { tmp.makeScale(1.16, 1, 1.18); out.multiplyMatrices(torsoFrame, tmp); put('tabard', out, st.tabard); }
+      else put('tabard', torsoFrame, st.tabard);
+    }
     if (settler && f.job === 'cook') put('apron', torsoFrame, null);
     // the cloak hangs from the shoulders and trails behind when walking (it ignores the lean)
-    if (st.cape && !f.fallen) { out.multiplyMatrices(torsoFrame, local(0, 0.62, -0.06, cape - lean * 0.85)); put('cape', out, st.cape); }
-    // head: face, hair (varied), beard, headgear
-    headM.multiplyMatrices(torsoFrame, local(0, 0.68, 0, nod, headYaw));
-    put('head', headM, null);
-    const hairCol = HAIR[(f.phase || 0) % HAIR.length];
-    const headgear = settler && (f.job === 'farmer' || f.tool === 'sickle') ? 'strawhat' : st.head === 'cap' && settler ? ((f.phase || 0) % 3 === 0 ? 'cap' : null) : st.head;
+    if (st.cape && !fall) { out.multiplyMatrices(torsoFrame, local(0, 0.62, -0.06, P.cape - P.lean * 0.85)); put('cape', out, st.cape); }
+    // head: face (skin tone), hair (style and colour vary), beard, headgear
+    headM.multiplyMatrices(torsoFrame, local(0, 0.68, 0, P.nod, P.headYaw));
+    headM.scale(v.set(1.08, 1.08, 1.08)); // a slightly larger head reads better from the RTS camera
+    put('head', headM, skinTints[skinI]);
+    const hairCol = HAIR[ph % HAIR.length];
+    const headgear = settler && (f.job === 'farmer' || f.tool === 'sickle') ? 'strawhat' : st.head === 'cap' && settler ? (ph % 3 === 0 ? 'cap' : null) : st.head;
+    const bearded = (settler && !skirt && ph % 4 === 1) || st.beard;
+    const hairStyle = st.hair || (skirt ? HAIR_LONG[ph % HAIR_LONG.length] : 'hair');
     // hair shows under caps, hats and helmets (a hood covers it)
-    if (headgear !== 'hood') put('hair', headM, st.hairColor || hairCol);
-    if ((settler && (f.phase || 0) % 4 === 1) || st.beard) put('beard', headM, st.beardColor || hairCol);
+    if (headgear !== 'hood' && hairStyle) put(headgear && hairStyle === 'hairBun' ? 'hair' : hairStyle, headM, st.hairColor || hairCol);
+    if (bearded) put('beard', headM, st.beardColor || hairCol);
     if (headgear) put(headgear, headM, st.headColor || (headgear === 'cap' ? (f.capColor || tunic) : null));
-    // arms: upper arm at the shoulder, forearm at the elbow
-    armLM.multiplyMatrices(torsoFrame, local(-0.29, 0.58, 0, armL, 0, armLz));
-    put('arm', armLM, tunic);
+    // sleeves: rolled up (skin) for some workers, cloth or mail for everyone else; gloves on armour
+    const sleeve = st.sleeve || (settler ? (ph % 3 === 0 ? skin : shade(tunic, 0.85)) : st.pauldrons ? MAIL : shade(tunic, 0.85));
+    const hand = st.gloves || (st.pauldrons && !st.cape ? GLOVE : skin);
     const pauldron = st.pauldrons ? (st.pauldrons === true ? null : st.pauldrons) : undefined;
+    // arms: upper arm at the shoulder, forearm at the elbow, hand at the wrist
+    armLM.multiplyMatrices(torsoFrame, local(-0.29, 0.58, 0, P.armL, 0, P.armLz));
+    put('arm', armLM, tunic);
     if (pauldron !== undefined) put('pauldron', armLM, pauldron);
-    foreLM.multiplyMatrices(armLM, local(0, -0.3, 0, elbowL)); put('forearm', foreLM, null);
-    armRM.multiplyMatrices(torsoFrame, local(0.29, 0.58, 0, armR, 0, armRz));
+    foreLM.multiplyMatrices(armLM, local(0, -0.3, 0, P.elbowL)); put('forearm', foreLM, sleeve); put('hand', foreLM, hand);
+    armRM.multiplyMatrices(torsoFrame, local(0.29, 0.58, 0, P.armR, 0, P.armRz));
     put('arm', armRM, tunic);
     if (pauldron !== undefined) put('pauldron', armRM, pauldron);
-    foreRM.multiplyMatrices(armRM, local(0, -0.3, 0, elbowR)); put('forearm', foreRM, null);
-    // right hand item
+    foreRM.multiplyMatrices(armRM, local(0, -0.3, 0, P.elbowR)); put('forearm', foreRM, sleeve); put('hand', foreRM, hand);
+    // right hand item: pole-type items point up and forward, blades out of the fist; poses can
+    // steer the item's pitch in the world (a levelled spear, a sword on guard)
     const right = f.tool || st.right;
+    const chain = P.lean + P.armR + P.elbowR;
+    let poleR = 1.6;
     if (right && !(f.carry && f.anim !== 'hammer')) {
-      out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, right === 'bow' ? 0 : (right === 'spear' || right === 'pole' || right === 'halberd' || right === 'crossbow' || right === 'rod' ? 1.6 : 0), 0, 0));
-      if (right === 'axe' || right === 'pick' || right === 'hammer' || right === 'sword' || right === 'greataxe' || right === 'maul' || right === 'sickle') out.multiplyMatrices(foreRM, local(0, -0.29, 0.05, Math.PI * 0.5 + handItemA));
+      if (POLE_ITEMS.has(right) || right === 'crossbow' || right === 'rod') {
+        poleR = fall ? 1.6 * (1 - tip) : 1.6 + (P.itemT - chain - 1.6) * P.itemW; // the fallen let go
+        out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, poleR, 0, 0));
+      } else if (BLADES.has(right)) {
+        const r = fall ? Math.PI / 2 * (1 - tip) : Math.PI / 2 + (P.itemT - chain - Math.PI / 2) * P.itemW;
+        out.multiplyMatrices(foreRM, local(0, -0.29, 0.05, r, P.itemRoll));
+      } else out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, 0, 0, 0));
       put(right, out, f.bladeTint && (right === 'sword' || right === 'axe' || right === 'spear') ? f.bladeTint : null);
     }
     // left hand item
     const left = st.left;
     if (left && !f.carry) {
       // shields are held turned out to the side, so they read from the RTS camera
-      out.multiplyMatrices(foreLM, local(0, -0.25, 0.05, left === 'bow' ? 1.4 : 0, left === 'bow' ? 0 : -1.0));
+      // a bow is kept upright in the world whatever the arm does; shields turn out to the side
+      if (left === 'bow') out.multiplyMatrices(foreLM, local(0, -0.29, 0.0, -Math.PI / 2 - (P.lean + P.armL + P.elbowL)));
+      else out.multiplyMatrices(foreLM, local(0, -0.25, 0.05, 0, -1.0));
       put(left, out, st.leftColor || null);
     }
     // hero lantern hangs from the pole tip
     if (st.lantern) {
-      out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, 1.6));
+      out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, poleR));
       // pole top in pole-local space is +0.6 along y (pole points forward-up)
       tmp.makeTranslation(0, 0.72, 0.28);
       out.multiply(tmp);
-      tmp.makeRotationFromEuler(e.set(-1.6 - (armR + 0.35), 0, 0));
+      // keep the lantern hanging straight down whatever the arm does
+      tmp.makeRotationFromEuler(e.set(-1.6 - (P.armR + 0.35) - (poleR - 1.6) - (P.elbowR + 0.9) - P.lean, 0, 0));
       out.multiply(tmp);
       tmp.makeTranslation(0, -0.2, 0);
       out.multiply(tmp);
@@ -360,15 +363,14 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
       if (f.lanternOut) f.lanternOut.setFromMatrixPosition(out);
     }
     // veteran stars above the head, turning slowly
-    if (f.rank > 0 && !f.fallen) {
+    if (f.rank > 0 && !fall) {
       for (let i = 0; i < f.rank; i++) {
         out.multiplyMatrices(root, local(f.rank > 1 ? (i ? 0.13 : -0.13) : 0, 2.12 + Math.sin(t * 2 + i) * 0.03, 0, 0, t * 1.4 + i));
         put('star', out, null);
       }
     }
-    // carried goods on the shoulder
+    // carried goods ride on the head, held up by both hands
     if (f.carry && CARRY[f.carry]) {
-      // goods ride on the head, held up by both hands
       out.multiplyMatrices(torsoFrame, local(0, 1.12, 0.02, 0));
       put(CARRY[f.carry], out, null);
     }
@@ -378,7 +380,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     for (const k in meshes) {
       const m = meshes[k];
       m.count = Math.min(counts[k], m.instanceMatrix.count);
-      outlines[k].count = m.count;
+      if (outlines[k]) outlines[k].count = m.count;
       flushInstances(m);
     }
     flushInstances(glow);
@@ -390,7 +392,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     toolFor: (job) => TOOL[job] || null,
     tunicFor: (id) => SETTLER_TUNICS[id % SETTLER_TUNICS.length],
     dispose() {
-      for (const k in meshes) { scene.remove(meshes[k], outlines[k]); meshes[k].geometry.dispose(); }
+      for (const k in meshes) { scene.remove(meshes[k]); if (outlines[k]) scene.remove(outlines[k]); meshes[k].geometry.dispose(); }
       outlineMat.dispose();
       scene.remove(glow); glowGeo.dispose(); mat.dispose(); glowMat.dispose();
     },
