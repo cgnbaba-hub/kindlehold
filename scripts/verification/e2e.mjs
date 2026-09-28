@@ -39,7 +39,7 @@ try {
   await test('main-menu', async (page) => {
     await page.goto(url(), { waitUntil: 'load' });
     await page.waitForSelector('.main-menu .title', { timeout: 30000 });
-    for (const label of ['New Game', 'Continue', 'Load Game', 'Settings', 'How to Play', 'Credits & Licences']) {
+    for (const label of ['Campaign', 'Continue', 'Load Game', 'Settings', 'How to Play', 'Credits & Licences']) {
       assert(await page.getByRole('button', { name: label }).count() === 1, `missing menu button ${label}`);
     }
     await page.getByRole('button', { name: 'How to Play' }).click();
@@ -50,9 +50,15 @@ try {
 
   await test('new-game-tutorial-flow', async (page) => {
     await page.goto(url('?debug=1&quality=low'), { waitUntil: 'load' });
-    await page.getByRole('button', { name: 'New Game' }).click();
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.getByRole('button', { name: /Chapter 1/ }).click();
     await page.getByRole('radio', { name: /Normal/ }).click();
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    // the chapter opens with a flight over the valley; a click skips it
+    await page.waitForSelector('.cinematic', { timeout: 10000 });
+    assert(/Chapter 1/.test(await page.textContent('.cinematic')), 'chapter intro shown');
+    await page.mouse.click(640, 400);
+    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 5000 });
     await page.waitForSelector('.hud .objectives .obj-title');
     const first = await page.textContent('.objectives .obj-list');
     assert(/Rekindle the hearth/.test(first), 'first objective shown');
@@ -193,6 +199,25 @@ try {
     await game(page, () => { const g = window.__GAME__; const id = g.find('building', 'warhall')[0]; const b = g.world().entities[id]; b.hp = 0; b.state = 'destroyed'; g.runTicks(15); });
     await page.waitForSelector('.end.victory', { timeout: 15000 });
     assert(/The Toll Is Broken/.test(await page.textContent('.end')), 'victory text');
+  });
+
+  await test('campaign-chapter-two', async (page) => {
+    await page.goto(url('?debug=1&quality=low'), { waitUntil: 'load' });
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    assert(await page.getByRole('button', { name: /Chapter 2.*locked/ }).isDisabled(), 'chapter 2 is locked at first');
+    await page.getByRole('button', { name: 'Back' }).click();
+    // winning chapter one opens chapter two
+    await page.evaluate(() => localStorage.setItem('kindlehold.campaign.v1', JSON.stringify({ unlocked: 2, done: { harrowmere: true } })));
+    await page.getByRole('button', { name: 'Campaign' }).click();
+    await page.getByRole('button', { name: /Chapter 2/ }).click();
+    await page.getByRole('radio', { name: /Normal/ }).click();
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    await page.waitForSelector('.cinematic', { timeout: 10000 });
+    await page.keyboard.press('Space');
+    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 5000 });
+    await page.waitForFunction(() => /A town that feeds itself/.test(document.querySelector('.objectives').textContent), null, { timeout: 20000 });
+    const town = await page.evaluate(() => { const w = window.__GAME__.world(); return { id: w.meta.scenarioId, level: Object.values(w.entities).find((e) => e.type === 'keep').level }; });
+    assert(town.id === 'greyfen' && town.level === 2, 'chapter two starts in the castle town');
   });
 
   await test('diplomacy-gift', async (page) => {

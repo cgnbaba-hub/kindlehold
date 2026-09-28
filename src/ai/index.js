@@ -20,7 +20,22 @@ const SPAWN_CYCLE = ['reaver', 'reaver', 'slinger', 'brute', 'reaver', 'slinger'
 const TARGET_PRIORITY = { lodge: 0, farm: 0, quarry: 0, mine: 0, cottage: 1, barracks: 1, tower: 2, keep: 3 };
 const RETREAT_AT = 0.25;
 
-export function aiSettings(world) { return Object.hasOwn(AI_DIFFICULTY, world.meta.difficulty) ? AI_DIFFICULTY[world.meta.difficulty] : AI_DIFFICULTY.normal; }
+export function aiSettings(world) {
+  const base = Object.hasOwn(AI_DIFFICULTY, world.meta.difficulty) ? AI_DIFFICULTY[world.meta.difficulty] : AI_DIFFICULTY.normal;
+  const m = world.ai && world.ai.mods;
+  if (!m) return base;
+  // a chapter can field a stronger host: multipliers on the difficulty table
+  return {
+    ...base,
+    reserves: Math.round(base.reserves * (m.reserves || 1)),
+    hpMult: base.hpMult * (m.hpMult || 1),
+    spawnInterval: base.spawnInterval * (m.spawnInterval || 1),
+    waveInterval: base.waveInterval * (m.waveInterval || 1),
+    garrisonCap: Math.round(base.garrisonCap * (m.garrisonCap || 1)),
+    growth: base.growth + (m.growth || 0),
+    firstRaid: base.firstRaid + (m.firstRaid || 0),
+  };
+}
 
 export function warhallOf(world) { return all(world, 'building').find((b) => b.type === 'warhall' && b.owner === ENEMY && b.state !== 'destroyed') || null; }
 
@@ -67,7 +82,7 @@ export function createAiModule() {
 
   function garrison(world) {
     const h = world.ai.harass;
-    return all(world, 'unit').filter((u) => u.owner === ENEMY && !u.commander && !world.ai.raidIds.includes(u.id) && u.id !== world.ai.scoutId && !(h && h.ids.includes(u.id)));
+    return all(world, 'unit').filter((u) => u.owner === ENEMY && !u.commander && !u.host && !u.sentinel && !world.ai.raidIds.includes(u.id) && u.id !== world.ai.scoutId && !(h && h.ids.includes(u.id)));
   }
 
   /** Raids are formed only from the camp garrison (no units appear from nowhere), so

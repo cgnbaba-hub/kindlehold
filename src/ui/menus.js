@@ -4,6 +4,8 @@ import { h, icon, clear, fmtTime } from './dom.js';
 import { listSaves } from '../save/storage.js';
 import { DEFAULT_BINDINGS, BINDING_LABELS, keyLabel } from '../input/bindings.js';
 import { HARROWMERE_SCENARIO } from '../missions/scenarios/harrowmere.js';
+import { SCENARIOS, CAMPAIGN } from '../missions/index.js';
+import { loadProgress, isUnlocked } from '../app/campaign.js';
 
 function focusFirst(el) { const f = el.querySelector('button:not([disabled]), [tabindex="0"], input, select'); if (f) f.focus(); }
 
@@ -41,7 +43,7 @@ export function createMenus({ root, settings, onSettingsChange }) {
         h('h1.title', {}, ['Kindlehold']),
         h('p.subtitle', { text: 'The Rekindling of Harrowmere' }),
         h('nav.menu-list', { 'aria-label': 'Main menu' }, [
-          menuButton('New Game', () => difficultyPicker({ onPick: onNew, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { primary: true, ic: 'rekindle', sub: 'Lead the Hearthbound home to Harrowmere' }),
+          menuButton('Campaign', () => campaignMenu({ onPick: onNew, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { primary: true, ic: 'rekindle', sub: 'Three chapters: lead the Hearthbound home to Harrowmere' }),
           menuButton('Continue', onContinue, { disabled: !canContinue, tip: canContinue ? 'Load your most recent save' : 'No saved games yet', ic: 'play', sub: canContinue ? 'Pick up where you left off' : 'No saved games yet' }),
           menuButton('Load Game', () => loadDialog({ onLoad, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'save', sub: 'Quick, auto and three save slots' }),
           menuButton('Settings', () => settingsScreen({ onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'gear', sub: 'Graphics, sound, controls, interface' }),
@@ -54,7 +56,31 @@ export function createMenus({ root, settings, onSettingsChange }) {
     return show(el);
   }
 
-  function difficultyPicker({ onPick, onBack }) {
+  /** The campaign: chapters in order, each opened by winning the one before. */
+  function campaignMenu({ onPick, onBack }) {
+    const progress = loadProgress();
+    const list = h('div.chapter-list');
+    const back = () => campaignMenu({ onPick, onBack });
+    CAMPAIGN.forEach((id, i) => {
+      const sc = SCENARIOS[id];
+      const open = isUnlocked(id, progress, settings.unlockAllChapters);
+      const done = !!progress.done[id];
+      const b = h('button.chapter', { type: 'button', disabled: !open, 'aria-label': `Chapter ${i + 1}: ${sc.title}${open ? '' : ' (locked)'}` }, [
+        h('span.chapter-no', { text: String(i + 1) }),
+        h('span.chapter-text', {}, [h('strong', { text: sc.title }), h('span', { text: open ? sc.blurb : 'Win the previous chapter to continue the story.' })]),
+        h('span.chapter-state', { text: done ? '✓ Won' : open ? 'Play' : 'Locked' }),
+      ]);
+      if (open) b.addEventListener('click', () => difficultyPicker({ scenario: sc, onPick: (d) => onPick(d, id), onBack: back }));
+      list.append(b);
+    });
+    const memory = progress.greyfen ? h('p.muted', { text: progress.greyfen === 'allied' ? 'Your choice so far: the Greyfen are your allies.' : 'Your choice so far: the Greyfen Hold has fallen.' }) : null;
+    return show(screen('sub-menu', [backdrop(), h('div.menu-card.wide', {}, [
+      h('h2', { text: 'Campaign' }), h('p.lore', { text: 'Seven winters after the Long Frost, Maren Ashgrove leads the Hearthbound home to Kindlehold.' }),
+      list, memory, menuButton('Back', onBack),
+    ].filter(Boolean))], { onEsc: onBack }));
+  }
+
+  function difficultyPicker({ onPick, onBack, scenario = HARROWMERE_SCENARIO }) {
     const opts = [
       ['story', 'Story', 'Smaller raids, more starting goods. Relaxed pace.', 'cottage', ['Starting goods ×1.5', 'First raid: 6 raiders', 'Plunderers from minute 11']],
       ['normal', 'Normal', 'The intended challenge.', 'shield', ['Starting goods ×1', 'First raid: 9 raiders', 'Plunderers from minute 8']],
@@ -67,8 +93,8 @@ export function createMenus({ root, settings, onSettingsChange }) {
       list.append(b);
     }
     return show(screen('sub-menu', [backdrop(), h('div.menu-card.wide', {}, [
-      h('h2', { text: HARROWMERE_SCENARIO.title }),
-      h('p.lore', { text: HARROWMERE_SCENARIO.blurb }),
+      h('h2', { text: scenario.chapter ? `Chapter ${scenario.chapter}: ${scenario.title}` : scenario.title }),
+      h('p.lore', { text: scenario.blurb }),
       h('h3', { text: 'Choose difficulty' }), list, menuButton('Back', onBack),
     ])], { onEsc: onBack }));
   }
@@ -147,7 +173,7 @@ export function createMenus({ root, settings, onSettingsChange }) {
       } else if (tab === 'Audio') {
         body.append(slider('Master volume', 'masterVolume', 0, 1, 0.05), slider('Music', 'musicVolume', 0, 1, 0.05), slider('Ambience', 'ambienceVolume', 0, 1, 0.05), slider('Effects', 'effectsVolume', 0, 1, 0.05), slider('Voices', 'voiceVolume', 0, 1, 0.05), toggle('Mute all audio', 'muted'));
       } else if (tab === 'Gameplay') {
-        body.append(slider('Game speed', 'gameSpeed', 0.5, 2, 0.5, (v) => `${v}×`), toggle('Tutorial hints', 'tutorialHints', 'Show hints under objectives and highlight buttons'), choice('Default difficulty', 'difficulty', [['story', 'Story'], ['normal', 'Normal'], ['hard', 'Hard']]));
+        body.append(slider('Game speed', 'gameSpeed', 0.5, 2, 0.5, (v) => `${v}×`), toggle('Tutorial hints', 'tutorialHints', 'Show hints under objectives and highlight buttons'), toggle('Unlock all chapters', 'unlockAllChapters', 'Play any campaign chapter without winning the earlier ones'), toggle('Chapter intros', 'cinematics', 'Fly over the valley while the story is told when a chapter begins'), choice('Default difficulty', 'difficulty', [['story', 'Story'], ['normal', 'Normal'], ['hard', 'Hard']]));
       } else if (tab === 'Controls') {
         body.append(slider('Camera speed', 'cameraSpeed', 0.4, 2.5, 0.1, (v) => `${v.toFixed(1)}×`), toggle('Edge scrolling', 'edgeScroll', 'Move the camera when the mouse touches the screen edge'));
         const table = h('div.bindings', { role: 'list' });
@@ -216,8 +242,8 @@ export function createMenus({ root, settings, onSettingsChange }) {
     return show(screen('loading', [backdrop(), h('div.menu-card', { role: 'status' }, [h('h2', { text: 'Kindlehold' }), h('p', { text }), h('div.boot-bar', {}, [h('div.boot-bar-fill')])])]));
   }
 
-  function endScreen({ result, world, onMenu, onRestart }) {
-    const sc = HARROWMERE_SCENARIO;
+  function endScreen({ result, world, onMenu, onRestart, onNext = null }) {
+    const sc = SCENARIOS[world.meta.scenarioId] || HARROWMERE_SCENARIO;
     const txt = result === 'victory' ? sc.victory : sc.defeat;
     const st = world.stats;
     const stats = [
@@ -231,7 +257,11 @@ export function createMenus({ root, settings, onSettingsChange }) {
       h('h2', { text: txt.title }),
       h('p.lore', { text: txt.text }),
       h('dl.stats-list', {}, stats.flatMap(([k, v]) => [h('dt', { text: k }), h('dd', { text: String(v) })])),
-      h('nav.menu-list.row', {}, [menuButton('Play again', onRestart, { primary: true }), menuButton('Main menu', onMenu)]),
+      h('nav.menu-list.row', {}, [
+        onNext ? menuButton('Next chapter', onNext, { primary: true }) : null,
+        menuButton('Play again', onRestart, { primary: !onNext }), menuButton('Main menu', onMenu),
+      ].filter(Boolean)),
+      onNext ? null : result === 'victory' && sc.id === CAMPAIGN[CAMPAIGN.length - 1] ? h('p.muted', { text: 'You have finished the campaign. Thank you for playing — more chapters are coming.' }) : null,
     ])]));
   }
 

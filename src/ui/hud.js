@@ -201,6 +201,8 @@ export function createHud({ root, session, input, settings, actions }) {
   diploPanel.hidden = true;
   diploPanel.querySelector('.diplo-close').addEventListener('click', () => { diploPanel.hidden = true; });
   diploBtn.addEventListener('click', () => { diploPanel.hidden = !diploPanel.hidden; lastDiplo = ''; renderDiplomacy(); });
+  // an objective about the Greyfen points at the banner
+  function pulseDiplomacy(on) { diploBtn.classList.toggle('pulse', !!on); }
   hud.append(diploPanel);
   const STANCE_TEXT = { war: 'At war', neutral: 'Neutral', allied: 'Allied', truce: 'Truce' };
   let lastDiplo = '';
@@ -397,6 +399,7 @@ export function createHud({ root, session, input, settings, actions }) {
     const w = world();
     const sc = scenarioOf(w);
     clear(objList);
+    pulseDiplomacy(settings.tutorialHints && sc.objectives.some((d) => d.highlight === 'diplomacy' && (w.mission.objectives.find((o) => o.id === d.id) || {}).state === 'active'));
     for (const def of sc.objectives) {
       const st = w.mission.objectives.find((o) => o.id === def.id);
       if (!st || st.state === 'pending') continue;

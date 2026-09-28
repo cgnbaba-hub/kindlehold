@@ -214,6 +214,17 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
   3 provisions per 7-s catch, ×0.5 on ice; the spot is the dry bank nearest the hut.
 - **Job assignment:** workplaces without a worker first, then the scarcest output resource.
 
+## Campaign (Level 3)
+
+- `CAMPAIGN` in `src/missions/index.js`: harrowmere → greyfen → tollbreaker. Progress (unlocked,
+  won, the Greyfen choice) lives in localStorage (`src/app/campaign.js`), not in saves; the save
+  carries `meta.scenarioId` and `meta.campaign`.
+- Scenario fields: `setup` (keepLevel, keepLit, techs, settlers, soldiers, buildings placed with
+  `findSpot`), `ai` (multipliers on the difficulty table), `enemy` (extraTowers, garrison of
+  sentinels that never raid, commanderLate, hallBarred), `events` (one-shot: say, alert, grant,
+  flag/unflag, reveal, relation, raidSoon, spawnHost), `raidWarnAfter`, `winWhen`, `cinematic`.
+- New conditions: minutes, stance, poiDone, unitGone, veterans (+rank), winter, not, hostSpent.
+
 ## Controls (default)
 
 Camera: right-drag grabs and moves the map (a short right-click stays the context order), arrow keys pan, screen-edge scrolling is optional (off by default), Q/E or middle-drag rotate, mouse wheel zooms towards the cursor,

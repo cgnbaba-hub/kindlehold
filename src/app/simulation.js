@@ -9,7 +9,7 @@ import { HARROWMERE_MAP } from '../world/maps/harrowmere.js';
 import { worldHash } from '../world/hash.js';
 import { createNavigationModule } from '../navigation/index.js';
 import { createWorldServicesModule } from '../world/services-module.js';
-import { createMissionsModule } from '../missions/index.js';
+import { createMissionsModule, SCENARIOS } from '../missions/index.js';
 import { createAiModule } from '../ai/index.js';
 import { createTechnologyModule } from '../technology/index.js';
 import { createConstructionModule } from '../construction/index.js';
@@ -61,7 +61,7 @@ export const SIM_MODULE_FACTORIES = [
   createPoisModule,
 ];
 
-export function createSimulation({ seed = 1337, difficulty = 'normal', world = null, modules = SIM_MODULE_FACTORIES, onCritical = null, setup = true } = {}) {
+export function createSimulation({ seed = 1337, difficulty = 'normal', scenarioId = 'harrowmere', campaign = null, world = null, modules = SIM_MODULE_FACTORIES, onCritical = null, setup = true } = {}) {
   const bus = createEventBus();
   const host = createModuleHost({ bus, onCritical, now: () => (sim.world ? sim.world.tick * 50 : 0) });
   const terrain = terrainFor();
@@ -70,7 +70,7 @@ export function createSimulation({ seed = 1337, difficulty = 'normal', world = n
 
   const sim = {
     bus, host, terrain,
-    world: world || createWorld({ seed, difficulty }),
+    world: world || createWorld({ seed, difficulty, scenarioId: Object.hasOwn(SCENARIOS, scenarioId) ? scenarioId : 'harrowmere', title: (SCENARIOS[scenarioId] || SCENARIOS.harrowmere).title, campaign }),
     services: { terrain },
     commandLog,
     issue(cmd) {

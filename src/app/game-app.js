@@ -12,6 +12,9 @@ import { saveToSlot, loadFromSlot, latestSave, hasAnySave } from '../save/storag
 import { EV } from '../core/contracts.js';
 import { log } from '../core/logger.js';
 import { smokeTestWorld } from './load-check.js';
+import { recordVictory, campaignMemory } from './campaign.js';
+import { SCENARIOS, CAMPAIGN } from '../missions/index.js';
+import { playCinematic } from '../ui/cinematic.js';
 
 const SPEEDS = [0.5, 1, 2, 4, 8];
 
@@ -30,6 +33,7 @@ export async function startApp(params) {
   let session = null;
   let hud = null;
   let tutorial = null;
+  let cinematic = null;
   let menus = null;
   let paused = false;
   let ended = false;
@@ -49,6 +53,7 @@ export async function startApp(params) {
   menus = createMenus({ root: uiRoot, settings, onSettingsChange });
 
   function endSession() {
+    if (cinematic) { const c = cinematic; cinematic = null; c.skip(); }
     if (tutorial) { tutorial.dispose(); tutorial = null; }
     if (hud) { hud.dispose(); hud = null; }
     if (session) { session.dispose(); session = null; }
@@ -58,14 +63,14 @@ export async function startApp(params) {
   function showMain() {
     endSession();
     menus.mainMenu({
-      onNew: (difficulty) => startGame({ difficulty }),
+      onNew: (difficulty, scenarioId) => startGame({ difficulty, scenarioId }),
       onContinue: () => { const s = latestSave(); if (s) startGame({ slot: s.slot }); },
       onLoad: (slot) => startGame({ slot }),
       canContinue: hasAnySave(),
     });
   }
 
-  async function startGame({ difficulty = settings.difficulty, slot = null, seed = null, demo = null } = {}) {
+  async function startGame({ difficulty = settings.difficulty, slot = null, seed = null, demo = null, scenarioId = 'harrowmere', intro = true } = {}) {
     endSession();
     menus.loading(slot ? 'Unpacking your saved settlement…' : 'Rekindling the hearth…');
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
@@ -83,6 +88,7 @@ export async function startApp(params) {
       session = await createSession({
         container, seed: seed || (loaded ? loaded.meta.seed : String(Date.now() % 100000)), quality: ['low', 'medium', 'high'].includes(params.get('quality')) ? params.get('quality') : settings.quality, verify, settings,
         difficulty: loaded ? loaded.meta.difficulty : difficulty, world: loaded, demo,
+        scenarioId: loaded ? loaded.meta.scenarioId : scenarioId, campaign: loaded ? null : campaignMemory(),
         onCritical: (id, err) => showErrorOverlay({
           title: 'The game stopped unexpectedly',
           message: `A core system (${id}) failed. Your last save is safe.`,
@@ -102,7 +108,7 @@ export async function startApp(params) {
           onQuickSave: () => doSave('quick'),
           onQuickLoad: () => startGame({ slot: 'quick' }),
           onSpeed: (d) => { const sp = SPEEDS; const i = Math.max(0, Math.min(sp.length - 1, sp.indexOf(session.loop.getSpeed()) + d)); session.loop.setSpeed(sp[i]); },
-          onFrame: (dt) => { if (hud) hud.update(dt); if (tutorial) tutorial.update(dt); autosave(dt); },
+          onFrame: (dt) => { if (cinematic) { cinematic.update(dt); return; } if (hud) hud.update(dt); if (tutorial) tutorial.update(dt); autosave(dt); },
           onUiFailure: (err) => showErrorOverlay({ title: 'The interface stopped responding', message: 'The game is still running. Save and reload, or return to the menu.', detail: err && (err.stack || err.message), actions: [{ label: 'Save and reload', primary: true, run: () => { doSave('quick', true); location.reload(); } }, { label: 'Main menu', run: () => { hideErrorOverlay(); showMain(); } }] }),
         },
       });
@@ -130,21 +136,42 @@ export async function startApp(params) {
       scaledNotice = true;
       hud.toast(`Your graphics card is working hard: resolution lowered to ${Math.round((ratio / max) * 100)} %. Settings → Graphics → Quality can help too.`, 'info');
     });
-    if (!verify && !slot && !settings.tutorialDone) {
+    if (!verify && !slot && !settings.tutorialDone && session.world.meta.scenarioId === 'harrowmere') {
       tutorial = createTutorial({ root: uiRoot, session, settings, onFinish: () => { saveSettings(settings); tutorial = null; } });
     }
     session.sim.bus.on(EV.MISSION_ENDED, ({ result }) => {
       if (ended) return;
       ended = true;
+      const w = session.world;
+      if (result === 'victory' && !verify) recordVictory(w);
+      const next = result === 'victory' ? CAMPAIGN[CAMPAIGN.indexOf(w.meta.scenarioId) + 1] : null;
       setTimeout(() => {
         if (!session) return;
         session.loop.pause();
-        menus.endScreen({ result, world: session.world, onMenu: showMain, onRestart: () => startGame({ difficulty: session ? session.world.meta.difficulty : difficulty }) });
+        const diff = session.world.meta.difficulty, sid = session.world.meta.scenarioId;
+        menus.endScreen({ result, world: session.world, onMenu: showMain, onRestart: () => startGame({ difficulty: diff, scenarioId: sid }), onNext: next ? () => startGame({ difficulty: diff, scenarioId: next }) : null });
       }, 2500);
     });
     if (verify || debugApi || import.meta.env.DEV) installVerifyApi(Object.assign(session, { save: (s) => doSave(s || 'quick'), load: (s) => startGame({ slot: s || 'quick' }) }));
     menus.close();
     session.start();
+    // a new chapter opens with a flight over the valley while the intro is spoken
+    const sc = SCENARIOS[session.world.meta.scenarioId];
+    if (intro && !verify && !slot && !demo && sc && sc.cinematic && settings.cinematics !== false) {
+      session.loop.pause();
+      if (hud) hud.el.hidden = true;
+      if (tutorial && tutorial.el) tutorial.el.hidden = true;
+      session.setShroud(false);
+      const s = session;
+      cinematic = playCinematic({ root: uiRoot, rts: session.rc.rts, scenario: sc, reducedMotion: !!settings.reducedMotion, onDone: () => {
+        cinematic = null;
+        if (session !== s) return;
+        session.setShroud(true);
+        if (hud) hud.el.hidden = false;
+        if (tutorial && tutorial.el) tutorial.el.hidden = false;
+        if (!paused) session.loop.resume();
+      } });
+    }
     await session.firstFrame;
     markReady();
   }
@@ -181,7 +208,7 @@ export async function startApp(params) {
       onSave: (slot) => { doSave(slot); togglePause(); },
       onLoad: (slot) => startGame({ slot }),
       onQuit: () => showMain(),
-      onRestart: () => startGame({ difficulty: session.world.meta.difficulty }),
+      onRestart: () => startGame({ difficulty: session.world.meta.difficulty, scenarioId: session.world.meta.scenarioId }),
     });
   }
 
@@ -193,7 +220,8 @@ export async function startApp(params) {
     if (params.get('ui') !== '1' && hud) hud.el.hidden = true; // world-only screenshots
     return;
   }
-  if (params.get('start') === '1') { await startGame({}); return; }
+  // ?start=1 jumps straight into a game (tests, quick checks): no intro flight
+  if (params.get('start') === '1') { await startGame({ intro: false, scenarioId: ['greyfen', 'tollbreaker'].includes(params.get('chapter')) ? params.get('chapter') : 'harrowmere' }); return; }
   showMain();
   markReady();
 }

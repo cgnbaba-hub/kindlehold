@@ -56,6 +56,21 @@ Before the great raid, small **plunder parties** slip out of the ford fort to hi
 workshop and run home again (a war horn warns you). The main raids prefer buildings nobody
 guards — keep a few soldiers near your farms and mines.
 
+## The campaign
+
+Choose **Campaign** in the main menu. Three chapters tell the story of Kindlehold:
+
+1. **The Rekindling of Harrowmere:** light the hearth, build the town, break the Rustfang toll.
+2. **The Greyfen Question:** a year later. Visit Millbrook, then win Morwen's Greyfen as allies
+   (gifts) or destroy their hold, survive two raids and burn the rebuilt ford fort.
+3. **The Tollbreaker's Winter:** prepare for the snow, break Vharek's great host (his fort's
+   gates stay barred until you do), then face the Tollbreaker himself when he marches on
+   your town.
+
+Winning a chapter opens the next. Chapter 3 remembers what you decided about the Greyfen.
+Each chapter starts with a short flight over the valley: click or press any key to skip it.
+Settings → Gameplay can unlock all chapters or turn the intros off.
+
 ## Veterans, rain and fish
 
 * **Veterans:** soldiers who win fights earn stars — a Veteran after 3 victories (+10% damage

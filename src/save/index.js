@@ -7,6 +7,8 @@ import { MIGRATIONS } from './migrations.js';
 import { BUILDINGS } from '../buildings/defs.js';
 import { UNITS } from '../units/defs.js';
 import { TECHS } from '../technology/defs.js';
+import { HARROWMERE_SCENARIO } from '../missions/scenarios/harrowmere.js';
+import { GREYFEN_SCENARIO, TOLLBREAKER_SCENARIO } from '../missions/scenarios/campaign.js';
 
 export const SAVE_FORMAT = 'kindlehold-save';
 
@@ -84,7 +86,10 @@ const playerFull = v.object({
 
 const worldSchema = v.object({
   schemaVersion: v.number({ min: 1, max: SCHEMA_VERSION, int: true }),
-  meta: v.object({ scenarioId: v.string({ oneOf: ['harrowmere'] }), difficulty: v.string({ oneOf: ['story', 'normal', 'hard'] }) }),
+  meta: v.object({
+    scenarioId: v.string({ oneOf: ['harrowmere', 'greyfen', 'tollbreaker'] }), difficulty: v.string({ oneOf: ['story', 'normal', 'hard'] }),
+    campaign: v.optional(v.object({ greyfen: v.optional(v.string({ oneOf: ['allied', 'defeated', 'neutral'] })) }, { allowExtra: false })),
+  }),
   tick: v.number({ min: 0, max: 1e9, int: true }),
   rng: v.array(v.number({ min: 0, max: 4294967295, int: true }), { max: 4 }),
   nextId: v.number({ min: 1, max: 1e8, int: true }),
@@ -174,7 +179,8 @@ export function deserializeWorld(text) {
     if (String(e.id) !== k) throw new ValidationError(`entity key ${k} does not match id ${e.id}`);
     if (e.id >= doc.world.nextId) throw new ValidationError('entity id beyond nextId');
   }
-  const known = new Set(['rekindle', 'timber-food', 'growth', 'stone-iron', 'arms', 'survive', 'strike', 'charter']);
+  const sc = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO }[doc.world.meta.scenarioId] || HARROWMERE_SCENARIO;
+  const known = new Set(sc.objectives.map((o) => o.id));
   for (const o of doc.world.mission.objectives) if (!known.has(o.id)) throw new ValidationError(`unknown objective "${o.id}"`);
   markDirty(doc.world);
   return { world: doc.world, label: typeof doc.label === 'string' ? doc.label : '', migrated };

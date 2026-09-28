@@ -32,7 +32,10 @@ function say(world, text) {
 
 export function setupBrigands(world, terrain) {
   const camp = terrain.map.brigandCamp;
-  if (!camp || world.players[BRIGANDS]) return;
+  if (!camp || world.players[BRIGANDS] || world.brigandsGone) return;
+  // chapter three remembers chapter two: a fallen hold stays fallen
+  const past = scenarioOf(world).greyfen === 'campaign' ? ((world.meta.campaign && world.meta.campaign.greyfen) || 'neutral') : null;
+  if (past === 'defeated') { world.brigandsGone = true; return; }
   addPlayer(world, { id: BRIGANDS, name: 'Greyfen Brigands', faction: 'greyfen', color: '#4f6a3a', res: {}, stability: 100, ai: true });
   const start = terrain.map.playerStart;
   const rot = Math.atan2(start.x - camp.x, start.z - camp.z);
@@ -46,8 +49,9 @@ export function setupBrigands(world, terrain) {
     const u = spawnUnit(world, CYCLE[i], BRIGANDS, camp.x + rng.range(-8, 8), camp.z + 10 + rng.range(-3, 3));
     if (u) u.order = { type: 'guard', ax: u.x, az: u.z, leash: 26 };
   }
-  world.brigands = { spawned: 4, nextSpawnTick: world.tick + BRIGAND_AI.spawnInterval * 20, nextRaidTick: null, raidIds: [], helpIds: [], trespassed: [], met: false };
+  world.brigands = { spawned: 4, nextSpawnTick: world.tick + BRIGAND_AI.spawnInterval * 20, nextRaidTick: null, raidIds: [], helpIds: [], trespassed: [], met: past === 'allied' };
   ensureDiplomacy(world);
+  if (past === 'allied') world.diplomacy.rel[`${PLAYER}|${BRIGANDS}`] = 90;
 }
 
 export function createBrigandsModule() {

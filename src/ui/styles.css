@@ -362,3 +362,32 @@ button { font: inherit; color: inherit; }
 .diplo-btn.disabled { opacity: 0.45; filter: grayscale(0.6); cursor: not-allowed; }
 .diplo-btn .cost { font-weight: 400; }
 .diplo-foot { margin: 8px 0 0; font-size: 0.85em; }
+/* chapter intro */
+.cinematic { position: absolute; inset: 0; z-index: 60; display: flex; flex-direction: column; justify-content: space-between; pointer-events: auto; cursor: pointer; animation: cineIn 0.6s ease-out; }
+.cinematic.out { opacity: 0; transition: opacity 0.45s; }
+.cine-bar { background: #07090b; min-height: 13vh; display: flex; align-items: center; justify-content: center; gap: 24px; padding: 0 6vw; color: var(--ink); }
+.cine-bar.top { align-items: flex-end; padding-bottom: 14px; }
+.cine-title { display: flex; flex-direction: column; align-items: center; font-family: var(--serif); }
+.cine-title strong { font-size: 1.7em; color: var(--brass); letter-spacing: 0.04em; }
+.cine-chapter { font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.25em; color: var(--ink-dim); }
+.cine-bar.bottom { justify-content: space-between; min-height: 17vh; }
+.cine-line { display: flex; gap: 16px; align-items: center; max-width: 900px; font-family: var(--serif); animation: msgIn 0.4s ease-out; }
+.cine-line p { margin: 4px 0 0; font-size: 1.15em; line-height: 1.4; }
+.cine-line strong { color: var(--brass); }
+.cine-line span { color: var(--ink-dim); font-size: 0.9em; }
+.cine-portrait { flex: none; width: 76px; height: 76px; border-radius: 50%; overflow: hidden; border: 2px solid var(--brass); }
+.cine-portrait svg { display: block; }
+.cine-skip { font-size: 0.8em; color: var(--ink-dim); white-space: nowrap; }
+@keyframes cineIn { from { opacity: 0; } to { opacity: 1; } }
+/* campaign chapters */
+.chapter-list { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 14px; }
+.chapter { display: grid; grid-template-columns: 52px 1fr auto; gap: 14px; align-items: center; text-align: left; padding: 12px 16px; background: var(--slate-700); border: 1px solid var(--brass-dim); border-radius: 8px; color: var(--ink); cursor: pointer; font: inherit; }
+.chapter:hover:not([disabled]), .chapter:focus-visible { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass) inset; }
+.chapter[disabled] { opacity: 0.5; cursor: not-allowed; }
+.chapter-no { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font: 700 1.3em var(--serif); color: #1a1410; background: var(--brass); }
+.chapter[disabled] .chapter-no { background: var(--slate-600); color: var(--ink-dim); }
+.chapter-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.chapter-text strong { font: 600 1.12em var(--serif); color: var(--brass); }
+.chapter-text span { font-size: 0.86em; line-height: 1.35; color: var(--ink-dim); }
+.chapter-state { font: 600 0.85em var(--sans); color: var(--ink-dim); white-space: nowrap; }
+.btn-ghost.pulse { animation: pulse 1.4s ease-in-out infinite; border-radius: 6px; }

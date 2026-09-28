@@ -118,6 +118,23 @@ Bots (er handelt nicht und baut Holzfäller nicht nach), keine Folge der neuen P
 | Test-Bot | Handelt am Markt (verkauft Stein, kauft Holz, Eisen und Proviant) und baut einen Fischer. `npm run balance`: 7/8 gewonnen (Story, Normal 4/4, Hard 2/3). |
 | Fehlerbehebung Hänger | Siehe HANDOFF: GPU-Entlastung, automatische Auflösungsanpassung, Erholung nach einem Treiber-Reset, flackerfreie Knöpfe. |
 
+## Stufe 3 (erster Teil): die Kampagne
+
+Die Stufen sind Etappen, kein Endpunkt. Ziel ist ein Spiel, das über mehrere Stunden mit Story trägt.
+
+| Punkt | Umsetzung |
+|---|---|
+| Kampagne | Hauptmenü → „Campaign“: drei Kapitel, jedes wird durch den Sieg im vorigen freigeschaltet. Nach dem Sieg gibt es den Knopf „Next chapter“. In den Einstellungen lassen sich alle Kapitel freischalten. |
+| Kapitel 2: The Greyfen Question | Ein Jahr später: Kindlehold ist eine Stadt mit Burg und Betrieben. Maren muss Millbrook besuchen. Danach die Entscheidung: Morwen mit Geschenken gewinnen oder die Greyfen-Festung zerstören. Zwei Überfälle überstehen, dann die wieder aufgebaute Furtfestung brechen. Kleine Story-Momente (Rauch über Millbrook, Morwens Forderung, Hilds Fischlieferung). |
+| Kapitel 3: The Tollbreaker's Winter | Vharek eint die Bergclans. Vorräte und Wachtürme vor dem Schnee, dann drei Wellen eines großen Heeres. Solange das Heer ungebrochen ist, sind die Tore der Festung verrammelt. Danach zieht Vharek mit Leibgarde selbst über die Ostroad gegen Kindlehold. Sieg, wenn er fällt und seine Halle brennt. |
+| Kampagnen-Gedächtnis | Kapitel 3 weiß, wie Kapitel 2 ausging: Die Greyfen sind Verbündete oder ihre Festung ist verschwunden. |
+| Kapitel-Intros | Kamerafahrt mit Letterbox über das Tal, Porträt und Sprecherzeile, der Nebel ist ausgeblendet. Klick oder Taste überspringt, abschaltbar unter Gameplay → „Chapter intros“. |
+| Story-Werkzeuge | Szenarien bekommen einen Startzustand (Stadt, Techs, Soldaten), Gegnerstärke, eine feste Besatzung, einmalige Story-Ereignisse (Dialog, Hinweise, Geschenke, anrückende Heere) und eigene Siegbedingungen. Alles steht als Daten in `src/missions/scenarios/`. |
+
+Bot-Messung (`npm run balance -- greyfen:normal:7 tollbreaker:normal:7 …`): Kapitel 2 dauert 17–23 min,
+Kapitel 3 22–26 min, alle gemessenen Partien gewonnen. Kapitel 1: 7/8 (Hard 2/3). In Kapitel 2 und 3 bleiben die Festungstore verrammelt, bis die Überfälle bzw. das Heer gebrochen sind (sonst wäre ein früher Sturm eine Abkürzung durch die Story). Menschliche Spieler brauchen erfahrungsgemäß
+länger. Zusammen mit Kapitel 1 ergibt das etwa 2–3 Stunden Kampagne.
+
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
 1. **Echte animierte Figuren (Variante B):** Modelle mit Skelett, z. B. aus CC0-Paketen,

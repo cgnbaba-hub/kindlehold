@@ -3,6 +3,7 @@
 
 export const HARROWMERE_SCENARIO = {
   id: 'harrowmere',
+  chapter: 1,
   title: 'The Rekindling of Harrowmere',
   blurb: 'Seven winters after the Long Frost, the Hearthbound return to the burnt keep of Kindlehold. The Rustfang toll-raiders who hold the ford will not welcome them.',
   startResources: { timber: 80, stone: 60, iron: 0, provisions: 40, taler: 60 },
@@ -14,6 +15,12 @@ export const HARROWMERE_SCENARIO = {
     vharek: { name: 'Vharek the Tollbreaker', role: 'Rustfang warlord' },
     morwen: { name: 'Morwen Greyfen', role: 'Chieftain of the Greyfen brigands' },
   },
+  cinematic: [
+    { x: 20, z: -6, zoom: 120, yaw: 0.5, line: null },
+    { x: -46, z: 50, zoom: 48, yaw: 0.9, line: 0 },
+    { x: 72, z: -70, zoom: 62, yaw: 3.6, line: null },
+    { x: -46, z: 50, zoom: 60, yaw: 0.6, line: 1 },
+  ],
   intro: [
     { speaker: 'osric', text: 'Seven winters cold, Warden. The hall still stands, but nobody will stay while the hearth is dark.' },
     { speaker: 'maren', text: 'Then we light it. Once the fire burns, the valley folk will come home.' },
