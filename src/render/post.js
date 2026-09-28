@@ -119,7 +119,7 @@ export function createPost({ renderer, scene, getCamera, cfg }) {
     tScene: { value: target.texture },
     uTexel: { value: new THREE.Vector2(1 / size.x, 1 / size.y) },
     uTilt: { value: 0 }, uFocus: { value: 0.5 },
-    uVignette: { value: 0.55 }, uSat: { value: 1.1 }, uContrast: { value: 1.05 },
+    uVignette: { value: 0.55 }, uSat: { value: 1.2 }, uContrast: { value: 1.08 },
     uShadowTint: { value: new THREE.Color(0.97, 0.985, 1.03) }, uHighTint: { value: new THREE.Color(1.03, 1.0, 0.96) },
     uTime: { value: 0 }, uExposure: { value: 1.1 }, // occlusion and grading darken a little: give it back
     tAO: { value: aoTarget ? aoTarget.texture : null }, uAOTexel: { value: new THREE.Vector2(2 / size.x, 2 / size.y) }, uAO: { value: aoTarget ? (typeof location !== 'undefined' && /[?&]post=ao\b/.test(location.search) ? 2 : 1) : 0 },
@@ -146,7 +146,7 @@ export function createPost({ renderer, scene, getCamera, cfg }) {
       tiltWanted = cfg.tilt && tilt ? 1 : 0;
       // strong at close range (the diorama look), gone in the wide overview
       uniforms.uTilt.value = tiltWanted * THREE.MathUtils.clamp((110 - zoom) / 70, 0, 1) * 3.5;
-      if (bloom) { bloom.strength = 0.18 + night * 0.6; bloom.threshold = 1.05 - night * 0.35; }
+      if (bloom) { bloom.strength = 0.08 + night * 0.7; bloom.threshold = 1.1 - night * 0.4; }
       uniforms.uVignette.value = 0.5 + night * 0.25;
     },
     render() {
