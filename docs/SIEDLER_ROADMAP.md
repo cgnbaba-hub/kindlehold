@@ -188,9 +188,19 @@ Bot-Messung Kapitel 6: 8/8 (Story 23 min, Normal 25–28 min, Hard 25–28 min).
 
 Messung (Software-Rendering im Container, 1280×720, dieselbe Ansicht; nur relative Aussagen möglich): High mit Nachbearbeitung ca. 3,9 s pro Bild, High ohne ca. 5,4 s, Medium ca. 3,8 s. Die Schwankung ist größer als der Unterschied, im Software-Renderer ist also kein Mehraufwand messbar. Auf echten Grafikkarten ist der Aufwand nicht gemessen; erwartet wird ein kleiner einstelliger Millisekundenbetrag in Full HD (Schätzung). Draw Calls ~+15 (Nachbearbeitung), Dreiecke unverändert. GPU-Ressourcen (`gl-leaks`): kein Leck; neue Texturen entstehen nur, wenn der Auflösungsregler die Puffer an eine neue Auflösung anpasst (im Software-Renderer zweimal in den ersten Sekunden). Low bleibt ohne Nachbearbeitung. Zum Vergleichen: `?post=off` oder `?gfx=noao,nobloom,noibl,noclouds,notilt` in der Adresszeile.
 
+## Nachtrag: Grafik-Notbremse, Freies Spiel, Minenarbeiter
+
+| Punkt | Umsetzung |
+|---|---|
+| Grafik-Notbremse | Bei dauerhaft langsamen Frames schaltet das Spiel erst Effekte ab (Umgebungsverdeckung, dann Leuchten und Miniatur-Unschärfe, dann Kantenglättung) und senkt erst danach die Auflösung. Kein Pendeln mehr: Effekte bleiben aus, die Auflösung steigt nie auf eine zu langsame Stufe zurück. High mit höchstens 1,25-facher Pixeldichte. Beim ersten Start wählt das Spiel die Qualität nach dem Grafikchip. Einstellungen → Grafik zeigt Chip und Zustand. |
+| Freies Spiel | Alle vier Karten ohne Geschichte, jeweils gegen die Fraktion der Karte. Ziel: den Sitz des Gegners zerstören. |
+| Minenarbeiter, Köche | Ruhige Hackenschläge im Takt des Amboss-Klangs statt Zappeln; Köche rühren im Topf. |
+
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
-0. **Grafik, weitere Schritte:** detailliertere Gebäude und Gelände (Materialien, Texturen,
+0. **Figuren und Animationen (vom Spieler als Nächstes gewünscht):** bessere Modelle und
+   flüssigere, passendere Bewegungen (siehe Punkt 1).
+0b. **Grafik, weitere Schritte:** detailliertere Gebäude und Gelände (Materialien, Texturen,
    Vegetation), Figuren mit mehr Details bis hin zu animierten Modellen (Punkt 1), bessere
    Schatten auf großen Ansichten (Kaskaden), Wolken am Himmel, Morgennebel in den Tälern.
    Nächste Schritte gemeinsam mit dem Spieler festlegen, idealerweise mit Messwerten von

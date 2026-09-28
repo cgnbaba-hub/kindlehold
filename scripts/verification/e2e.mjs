@@ -39,7 +39,7 @@ try {
   await test('main-menu', async (page) => {
     await page.goto(url(), { waitUntil: 'load' });
     await page.waitForSelector('.main-menu .title', { timeout: 30000 });
-    for (const label of ['Campaign', 'Continue', 'Load Game', 'Settings', 'How to Play', 'Credits & Licences']) {
+    for (const label of ['Campaign', 'Free Play', 'Continue', 'Load Game', 'Settings', 'How to Play', 'Credits & Licences']) {
       assert(await page.getByRole('button', { name: label }).count() === 1, `missing menu button ${label}`);
     }
     await page.getByRole('button', { name: 'How to Play' }).click();

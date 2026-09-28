@@ -4,7 +4,7 @@ import { h, icon, clear, fmtTime } from './dom.js';
 import { listSaves } from '../save/storage.js';
 import { DEFAULT_BINDINGS, BINDING_LABELS, keyLabel } from '../input/bindings.js';
 import { HARROWMERE_SCENARIO } from '../missions/scenarios/harrowmere.js';
-import { SCENARIOS, CAMPAIGN } from '../missions/index.js';
+import { SCENARIOS, CAMPAIGN, FREE_PLAY } from '../missions/index.js';
 import { loadProgress, isUnlocked } from '../app/campaign.js';
 
 function focusFirst(el) { const f = el.querySelector('button:not([disabled]), [tabindex="0"], input, select'); if (f) f.focus(); }
@@ -31,7 +31,7 @@ function backdrop() {
   ]);
 }
 
-export function createMenus({ root, settings, onSettingsChange }) {
+export function createMenus({ root, settings, onSettingsChange, graphicsInfo = () => null }) {
   let current = null;
   function show(el) { close(); current = el; root.append(el); focusFirst(el); requestAnimationFrame(() => { if (!el.contains(document.activeElement)) focusFirst(el); }); return el; }
   function close() { if (current) { current.remove(); current = null; } }
@@ -43,7 +43,8 @@ export function createMenus({ root, settings, onSettingsChange }) {
         h('h1.title', {}, ['Kindlehold']),
         h('p.subtitle', { text: 'The Rekindling of Harrowmere' }),
         h('nav.menu-list', { 'aria-label': 'Main menu' }, [
-          menuButton('Campaign', () => campaignMenu({ onPick: onNew, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { primary: true, ic: 'rekindle', sub: 'Three chapters: lead the Hearthbound home to Harrowmere' }),
+          menuButton('Campaign', () => campaignMenu({ onPick: onNew, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { primary: true, ic: 'rekindle', sub: `${CAMPAIGN.length} chapters: the story of Maren and the Hearthbound` }),
+          menuButton('Free Play', () => freePlayMenu({ onPick: onNew, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'cottage', sub: 'Build freely on any map, no story' }),
           menuButton('Continue', onContinue, { disabled: !canContinue, tip: canContinue ? 'Load your most recent save' : 'No saved games yet', ic: 'play', sub: canContinue ? 'Pick up where you left off' : 'No saved games yet' }),
           menuButton('Load Game', () => loadDialog({ onLoad, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'save', sub: 'Quick, auto and three save slots' }),
           menuButton('Settings', () => settingsScreen({ onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'gear', sub: 'Graphics, sound, controls, interface' }),
@@ -78,6 +79,27 @@ export function createMenus({ root, settings, onSettingsChange }) {
       h('h2', { text: 'Campaign' }), h('p.lore', { text: 'Seven winters after the Long Frost, Maren Ashgrove leads the Hearthbound home to Kindlehold.' }),
       list, memory, menuButton('Back', onBack),
     ].filter(Boolean))], { onEsc: onBack }));
+  }
+
+  /** Free play: every campaign map, open from the start, without story. */
+  function freePlayMenu({ onPick, onBack }) {
+    const list = h('div.chapter-list');
+    const back = () => freePlayMenu({ onPick, onBack });
+    FREE_PLAY.forEach((id, i) => {
+      const sc = SCENARIOS[id];
+      const name = sc.title.replace(/^Free Play: /, '');
+      const b = h('button.chapter', { type: 'button', 'aria-label': `Free play: ${name}` }, [
+        h('span.chapter-no', { text: String(i + 1) }),
+        h('span.chapter-text', {}, [h('strong', { text: name }), h('span', { text: sc.blurb })]),
+        h('span.chapter-state', { text: 'Play' }),
+      ]);
+      b.addEventListener('click', () => difficultyPicker({ scenario: sc, onPick: (d) => onPick(d, id), onBack: back }));
+      list.append(b);
+    });
+    return show(screen('sub-menu', [backdrop(), h('div.menu-card.wide', {}, [
+      h('h2', { text: 'Free Play' }), h('p.lore', { text: 'Pick a land, build your settlement at your own pace and break the lord who holds it. Every building and technology is open to research.' }),
+      list, menuButton('Back', onBack),
+    ])], { onEsc: onBack }));
   }
 
   function difficultyPicker({ onPick, onBack, scenario = HARROWMERE_SCENARIO }) {
@@ -170,6 +192,12 @@ export function createMenus({ root, settings, onSettingsChange }) {
       if (tab === 'Graphics') {
         body.append(choice('Quality', 'quality', [['low', 'Low (no shadows, no post-processing)'], ['medium', 'Medium (glow, smooth edges)'], ['high', 'High (all effects)']]), toggle('Miniature focus', 'depthOfField', 'Softly blur the top and bottom of close views, like a model landscape (High quality)'));
         body.append(h('p.muted', { text: inGame ? 'Quality changes apply the next time a game is started or loaded.' : 'Quality applies when a game starts.' }));
+        const gi = graphicsInfo();
+        if (gi) {
+          const names = { ao: 'occlusion', glow: 'glow and miniature focus', msaa: 'edge smoothing' };
+          const load = gi.reduced.length ? `Switched off under load: ${gi.reduced.map((k) => names[k] || k).join(', ')}. ` : '';
+          body.append(h('p.muted.gfx-info', { text: `${load}Resolution ${Math.round((gi.ratio / gi.max) * 100)} %.${gi.gpu ? ` Graphics chip: ${gi.gpu}` : ''}` }));
+        }
       } else if (tab === 'Audio') {
         body.append(slider('Master volume', 'masterVolume', 0, 1, 0.05), slider('Music', 'musicVolume', 0, 1, 0.05), slider('Ambience', 'ambienceVolume', 0, 1, 0.05), slider('Effects', 'effectsVolume', 0, 1, 0.05), slider('Voices', 'voiceVolume', 0, 1, 0.05), toggle('Mute all audio', 'muted'));
       } else if (tab === 'Gameplay') {

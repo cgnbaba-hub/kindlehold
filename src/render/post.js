@@ -132,8 +132,19 @@ export function createPost({ renderer, scene, getCamera, cfg }) {
   const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
   let tiltWanted = cfg.tilt ? 1 : 0;
+  // effects the resolution governor may switch off at run time (no buffers are reallocated)
+  const on = { ao: !!aoTarget, bloom: !!bloom, tilt: !!cfg.tilt };
   return {
     target,
+    /** Which effects are running now. */
+    effects() { return { ...on, samples: target.samples }; },
+    /** Switch effects off (or back on) under load; multisampling off reallocates the scene buffer once. */
+    setEffects({ ao, bloom: b, tilt, msaa } = {}) {
+      if (ao !== undefined) { on.ao = !!ao && !!aoTarget; uniforms.uAO.value = on.ao ? Math.max(1, uniforms.uAO.value) : 0; }
+      if (b !== undefined) on.bloom = !!b && !!bloom;
+      if (tilt !== undefined) on.tilt = !!tilt && !!cfg.tilt;
+      if (msaa === false && target.samples > 0) { target.samples = 0; target.dispose(); }
+    },
     setSize() {
       renderer.getDrawingBufferSize(size);
       target.setSize(size.x, size.y);
@@ -143,7 +154,7 @@ export function createPost({ renderer, scene, getCamera, cfg }) {
     },
     /** Per frame look: night makes lights bloom harder; closer zoom focuses harder. */
     setLook({ night = 0, zoom = 60, tilt = true } = {}) {
-      tiltWanted = cfg.tilt && tilt ? 1 : 0;
+      tiltWanted = on.tilt && tilt ? 1 : 0;
       // strong at close range (the diorama look), gone in the wide overview
       uniforms.uTilt.value = tiltWanted * THREE.MathUtils.clamp((110 - zoom) / 70, 0, 1) * 3.5;
       if (bloom) { bloom.strength = 0.08 + night * 0.7; bloom.threshold = 1.1 - night * 0.4; }
@@ -153,14 +164,14 @@ export function createPost({ renderer, scene, getCamera, cfg }) {
       const camera = getCamera();
       renderer.setRenderTarget(target);
       renderer.render(scene, camera);
-      if (aoTarget) {
+      if (on.ao) {
         const u = aoMat.uniforms;
         u.uInvProj.value.copy(camera.projectionMatrixInverse);
         u.uProjScale.value.set(camera.projectionMatrix.elements[0] * 0.5, camera.projectionMatrix.elements[5] * 0.5);
         renderer.setRenderTarget(aoTarget);
         renderer.render(aoScene, quadCam);
       }
-      if (bloom) bloom.render(renderer, null, target, 0, false);
+      if (on.bloom) bloom.render(renderer, null, target, 0, false);
       uniforms.uTime.value = (uniforms.uTime.value + 1.618) % 97;
       renderer.setRenderTarget(null);
       renderer.render(quadScene, quadCam);

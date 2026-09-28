@@ -126,6 +126,30 @@ Auflösung muss an Texelmitten des Tiefenpuffers abtasten und Normalen aus Nachb
 entstehen Streifen. (5) Schnelle Sichtprüfung ohne die langsamen Verify-Läufe: einmal
 `?verify=1&demo=midgame` laden und viele Kamera-Presets nacheinander fotografieren.
 
+## Grafik-Notbremse, Freies Spiel, Minenarbeiter (nach dem Grafik-Update)
+
+Der Nutzer meldete nach ~7 Minuten einen Hänger mit dem Hinweis „Grafikkarte ausgelastet“.
+Danach flackerte die Seite, Ressourcenwerte sprangen, der Berater-Avatar zuckte, und Bau-Symbole
+sahen beim Überfahren anders aus. Das passt zu einer überlasteten GPU: Chrome zeichnet dann die
+HTML-Teile nicht mehr zuverlässig neu. Der alte Regler senkte nur die Auflösung und pendelte
+(runter, nach 20 s wieder hoch, wieder runter). Neu in `src/app/render-context.js` (`govern`):
+- Erst Effekte abschalten (Umgebungsverdeckung → Leuchten + Miniatur-Unschärfe →
+  Kantenglättung), erst danach Auflösung senken. `post.setEffects()` legt dafür keine Puffer
+  neu an (nur das Abschalten der Kantenglättung einmal).
+- Abgeschaltete Effekte bleiben für die Sitzung aus; die Auflösung steigt nie wieder auf eine
+  Stufe, die zu langsam war (`ceiling`). Damit kein Pendeln mehr.
+- Frames, die durch Simulation/HUD langsam sind (Skriptzeit außerhalb `draw()`), zählen nicht:
+  Effekte abschalten hilft dort nicht.
+- High rendert mit höchstens 1,25-facher Pixeldichte (vorher 1,5); ab 1,1 ohne MSAA.
+- Beim ersten Besuch wählt `suggestedQuality()` (`src/app/settings.js`) die Stufe nach dem
+  Grafikchip: Software → Low, integriert (Intel, Apple, AMD „Radeon Graphics“, Mobil) → Medium.
+- Einstellungen → Grafik zeigt im Spiel Grafikchip, Auflösung und was abgeschaltet wurde.
+Freies Spiel: `src/missions/scenarios/freeplay.js`, ein Szenario pro Karte gegen die dortige
+Fraktion (`free-harrowmere` usw.), Ziel: den Sitz des Gegners zerstören; Menüpunkt „Free Play“.
+Minenarbeiter: neue Animation `mine` (Hackenschläge im Amboss-Takt 1,1 s, fester Stand), Köche
+rühren (`stir`). Prüfen: `anim.mjs`-artiges Skript, das 8 Bilder eines arbeitenden Siedlers
+nebeneinanderlegt.
+
 ## Kapitel 6 „The Iron March“, Wren, Osric
 
 Karte `src/world/maps/ironmarch.js`, Haus Morrow (`morrow` in `src/ai/factions.js`),
@@ -183,7 +207,8 @@ braucht 0,1 ms pro Tick, der Speicherstand hat 195 KB. Gegenmaßnahmen:
 - Instanz-Puffer laden nur noch den genutzten Bereich hoch (`src/render/instancing.js`),
   etwa 10× weniger Upload pro Frame.
 - Auflösungs-Regler in `src/app/render-context.js` (`govern`): Bei dauerhaft langsamen Frames
-  sinkt die Auflösung stufenweise, bei schnellen Frames steigt sie langsam wieder.
+  sinkt die Auflösung stufenweise (inzwischen erst nach dem Abschalten von Effekten, siehe
+  „Grafik-Notbremse“).
 - WebGL-Kontextverlust: Das Spiel speichert automatisch, pausiert, zeigt einen Hinweis und
   läuft danach mit geringerer Auflösung weiter.
 - Befehls- und Auswahlfenster ersetzen nur noch geänderte Knöpfe (`patchChildren` in hud.js),

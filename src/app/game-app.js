@@ -4,7 +4,7 @@
 import { createSession } from './session.js';
 import { installVerifyApi, markReady } from '../debug/verify-api.js';
 import { showErrorOverlay, hideErrorOverlay } from './error-overlay.js';
-import { loadSettings, saveSettings, prefersReducedMotion } from './settings.js';
+import { loadSettings, saveSettings, prefersReducedMotion, suggestedQuality } from './settings.js';
 import { createMenus } from '../ui/menus.js';
 import { createHud } from '../ui/hud.js';
 import { createTutorial } from '../ui/tutorial.js';
@@ -25,6 +25,11 @@ export async function startApp(params) {
   const debugApi = params.get('debug') === '1'; // exposes window.__GAME__ for e2e tests
   const settings = loadSettings();
   if (prefersReducedMotion() && !localStorageHas('kindlehold.settings.v1')) settings.reducedMotion = true;
+  // first visit: pick a quality the graphics chip can carry (automated browsers keep the default)
+  if (!verify && !localStorageHas('kindlehold.settings.v1') && !(typeof navigator !== 'undefined' && navigator.webdriver)) {
+    const q = suggestedQuality();
+    if (q) settings.quality = q;
+  }
   const uiRoot = document.createElement('div');
   uiRoot.className = 'ui-root';
   container.append(uiRoot);
@@ -50,7 +55,7 @@ export async function startApp(params) {
     if (session) { session.audio.applyVolumes(); if (!paused) session.loop.setSpeed(settings.gameSpeed); }
   }
 
-  menus = createMenus({ root: uiRoot, settings, onSettingsChange });
+  menus = createMenus({ root: uiRoot, settings, onSettingsChange, graphicsInfo: () => (session ? session.rc.load() : null) });
 
   function endSession() {
     if (cinematic) { const c = cinematic; cinematic = null; c.skip(); }
@@ -131,10 +136,11 @@ export async function startApp(params) {
       if (hud) hud.toast('The graphics driver was reset. Your game was saved and paused.', 'warn');
     });
     session.rc.on('restored', () => { if (hud) hud.toast('Graphics recovered at a lower resolution. Resume when ready.', 'info'); });
-    session.rc.on('scaled', ({ ratio, max, reason }) => {
+    session.rc.on('scaled', ({ reason }) => {
       if (reason !== 'slow' || scaledNotice || !hud) return;
       scaledNotice = true;
-      hud.toast(`Your graphics card is working hard: resolution lowered to ${Math.round((ratio / max) * 100)} %. Settings → Graphics → Quality can help too.`, 'info');
+      const lower = settings.quality === 'high' ? ' Quality "Medium" (Settings → Graphics) keeps it lighter from the start.' : '';
+      hud.toast(`Your graphics card is at its limit: some effects were switched off to keep the game smooth.${lower}`, 'info');
     });
     if (!verify && !slot && !settings.tutorialDone && session.world.meta.scenarioId === 'harrowmere') {
       tutorial = createTutorial({ root: uiRoot, session, settings, onFinish: () => { saveSettings(settings); tutorial = null; } });
@@ -144,7 +150,7 @@ export async function startApp(params) {
       ended = true;
       const w = session.world;
       if (result === 'victory' && !verify) recordVictory(w);
-      const next = result === 'victory' ? CAMPAIGN[CAMPAIGN.indexOf(w.meta.scenarioId) + 1] : null;
+      const next = result === 'victory' && CAMPAIGN.includes(w.meta.scenarioId) ? CAMPAIGN[CAMPAIGN.indexOf(w.meta.scenarioId) + 1] : null;
       setTimeout(() => {
         if (!session) return;
         session.loop.pause();
@@ -221,7 +227,7 @@ export async function startApp(params) {
     return;
   }
   // ?start=1 jumps straight into a game (tests, quick checks): no intro flight
-  if (params.get('start') === '1') { await startGame({ intro: false, scenarioId: ['greyfen', 'tollbreaker', 'saltroad', 'whitestag', 'irondebt'].includes(params.get('chapter')) ? params.get('chapter') : 'harrowmere' }); return; }
+  if (params.get('start') === '1') { await startGame({ intro: false, scenarioId: Object.hasOwn(SCENARIOS, params.get('chapter') || '') ? params.get('chapter') : 'harrowmere' }); return; }
   showMain();
   markReady();
 }

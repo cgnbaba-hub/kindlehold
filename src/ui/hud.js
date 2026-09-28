@@ -70,7 +70,7 @@ export function createHud({ root, session, input, settings, actions }) {
   }
   const popVal = h('span.res-val', { text: '0/0' });
   const idleVal = h('span.res-rate', { text: '' });
-  const popEl = h('div.res', { 'data-tip': 'People / housing. Build Cottages for more housing. Idle = labourers free to haul and build.', tabindex: 0 }, [icon('pop'), h('div.res-text', {}, [popVal, idleVal])]);
+  const popEl = h('div.res', { 'data-tip-title': 'Your people', 'data-tip': 'People / housing. Build Cottages for more housing. Idle = labourers free to haul and build.', tabindex: 0 }, [icon('pop'), h('div.res-text', {}, [popVal, idleVal])]);
   const stabBar = h('div.meter-fill');
   const stabEl = h('div.res.stab', { 'data-tip': 'Stability: fed, housed people work faster. Below 30 no newcomers arrive.', tabindex: 0 }, [icon('stability'), h('div.meter', {}, [stabBar])]);
   ribbon.append(popEl, stabEl);
@@ -793,10 +793,11 @@ export function createHud({ root, session, input, settings, actions }) {
       setText(resEls[r].val, Math.floor(p.res[r]));
       const rt = Math.round(rates[r]);
       setText(resEls[r].rate, rt ? `${rt > 0 ? '+' : ''}${rt}/min` : '');
-      resEls[r].rate.className = `res-rate ${rt < 0 ? 'neg' : 'pos'}`;
+      const rc = `res-rate ${rt < 0 ? 'neg' : 'pos'}`;
+      if (resEls[r].rate.className !== rc) resEls[r].rate.className = rc; // untouched DOM is not repainted
     }
     setText(popVal, `${p.pop}/${p.popCap}`);
-    { const c = censusOf(w, PLAYER); popEl.setAttribute('data-tip', `${censusLines(c).join('\n')}\nClick for the full list.`); popEl.setAttribute('data-tip-title', 'Your people'); }
+    { const c = censusOf(w, PLAYER); const tip = `${censusLines(c).join('\n')}\nClick for the full list.`; if (popEl.getAttribute('data-tip') !== tip) popEl.setAttribute('data-tip', tip); }
     renderPeople();
     renderDiplomacy();
     adviceTimer += 0.25;

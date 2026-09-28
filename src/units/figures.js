@@ -212,6 +212,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     let legA = 0, armL = 0, armR = 0, armRz = 0, armLz = 0, bob = 0, lean = f.lean || 0, torsoTwist = 0, handItemA = 0;
     // joints: knees bend backwards (+), elbows forwards (-); a little hip sway and head nod
     let kneeL = 0.05, kneeR = 0.05, elbowL = -0.15, elbowR = -0.15, sway = 0, nod = 0, headYaw = 0, cape = 0.14;
+    let hipR = 0, hipL = 0; // a staggered stance (one foot forward)
     const pole = st.right === 'spear' || st.right === 'pole' || st.right === 'halberd' || st.right === 'crossbow';
     const walkF = f.anim === 'run' ? 11 : 8.5;
     switch (f.anim) {
@@ -244,7 +245,24 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
         lean = 0.55; armR = -0.9 + c * 0.5; armL = -0.5 - c * 0.3; elbowR = -0.5 + c * 0.3; elbowL = -0.7; kneeL = kneeR = 0.45; nod = 0.2;
         break;
       }
-      case 'mine': { const c = Math.sin(t * 4); armR = -1.3 + c * 0.35; armL = -1.3 + c * 0.35; elbowL = elbowR = -0.6 - c * 0.3; legA = c * 0.3; lean = 0.25; kneeL = kneeR = 0.3; break; }
+      case 'mine': {
+        // at the rock face: feet planted in a wide stance, short two-handed pick strokes at chest
+        // height (one per anvil ring, 1.1 s), a slow wind-up, a quick blow, a moment's rest
+        const c = (t / 1.1) % 1;
+        const up = c < 0.55 ? Math.sin((c / 0.55) * Math.PI * 0.5) : c < 0.68 ? 1 - (c - 0.55) / 0.13 : 0;
+        armR = -0.95 - up * 1.25; armL = -0.85 - up * 1.15; elbowR = elbowL = -0.3 - up * 0.8;
+        const hitting = c >= 0.62 && c < 0.8 ? 1 - Math.abs(c - 0.68) / 0.12 : 0;
+        lean = 0.2 + hitting * 0.14 - up * 0.08; nod = 0.12 + hitting * 0.08;
+        hipR = 0.28; hipL = -0.22; kneeL = 0.3 + hitting * 0.08; kneeR = 0.18 + hitting * 0.08; bob = -0.03 * hitting;
+        break;
+      }
+      case 'stir': { // at the pot: the ladle turns slow circles, the other hand steadies the rim
+        const a = t * 2.4 + (f.phase || 0);
+        armR = -0.95 + Math.sin(a) * 0.14; armRz = 0.12 + Math.cos(a) * 0.14; elbowR = -0.95;
+        armL = -0.7; elbowL = -1.1; armLz = -0.1; lean = 0.18; nod = 0.18; kneeL = kneeR = 0.1;
+        sway = Math.sin(a) * 0.02;
+        break;
+      }
       case 'attack': {
         const c = f.attackPhase;
         if (f.ranged) { armL = -1.4; armLz = -0.15; armR = -0.95 + c * 0.25; armRz = 0.55 - c * 0.3; torsoTwist = 0.6; elbowL = -0.05; elbowR = -1.4 + c * 0.6; }
@@ -276,7 +294,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     root.compose(v.set(f.x, f.y + bob * sc - (f.kneel ? 0.45 * sc : 0) - (f.fallen ? 0.15 : 0), f.z), q, scl.set(sc, sc, sc));
     const tunic = f.tunic || st.torso || '#8a6f4e';
     // legs: thigh at the hip, shin at the knee
-    const hip = f.kneel ? [-1.2, 0.2] : [legA, -legA];
+    const hip = f.kneel ? [-1.2, 0.2] : [legA + hipR, -legA + hipL];
     const knee = f.kneel ? [1.5, 0.3] : [kneeR, kneeL];
     [0.1, -0.1].forEach((hx, i) => {
       out.multiplyMatrices(root, local(hx, 0.9, 0, hip[i], 0, i ? -sway * 0.3 : sway * 0.3)); put('thigh', out, st.legs);
