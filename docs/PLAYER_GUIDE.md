@@ -122,6 +122,10 @@ banner button next to the clock:
 * **Rations** (at the Keep): half, normal or generous portions — less food or a better mood.
 * **Feast** (at the Keep): 80 Taler and 30 provisions for three minutes of high spirits.
 * **Game speed:** click the speed next to the clock to pick 0.5× to 8×.
+* **Graphics:** High has smooth edges, soft contact shadows (ambient occlusion), glowing
+  lights at night, sky lighting, drifting cloud shadows and a soft miniature focus in close
+  views (Settings → Graphics → "Miniature focus" turns only that off). Medium keeps the glow,
+  the sky light and the smooth edges; Low turns all post-processing off for weak computers.
 
 ## More soldiers
 

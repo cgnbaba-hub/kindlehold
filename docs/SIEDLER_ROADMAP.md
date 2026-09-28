@@ -174,13 +174,27 @@ Bot-Messung Kapitel 5: Story 1/1 (20 min), Normal 4/4 (24–34 min Bot-Zeit), Ha
 
 Bot-Messung Kapitel 6: 8/8 (Story 23 min, Normal 25–28 min, Hard 25–28 min). Nach den Bot-Korrekturen alle Kapitel erneut gemessen: Kapitel 1 6/8 (Hard 1/3, unverändert), Kapitel 2 und 3 unverändert gewonnen, Kapitel 4 Normal 3/3 (26–32 min; Hard Seed 7 unverändert offen), Kapitel 5 8/8 (Story 29, Normal 22–34, Hard 31–34 min). Die Kampagne hat damit sechs Kapitel, geschätzt 5–6 Stunden für menschliche Spieler (nicht gemessen).
 
+## Grafik, erster Schritt auf die nächste Stufe: Licht und Nachbearbeitung
+
+| Punkt | Umsetzung |
+|---|---|
+| Nachbearbeitung (`src/render/post.js`) | Die Szene rendert in einen HDR-Puffer mit 4×-Kantenglättung (Medium 2×). Ein einziger Abschlussdurchgang macht Tonemapping, Farbabstimmung (etwas mehr Sättigung und Kontrast, warme Lichter, kühle Schatten), Vignette, Dithering und eine weiche **Miniatur-Unschärfe** oben und unten im Bild. Die Unschärfe ist nur in Nahansichten aktiv und unter Einstellungen → Grafik „Miniature focus“ abschaltbar. |
+| Umgebungsverdeckung (High) | Eigene SAO-Variante nur aus dem Tiefenpuffer, in halber Auflösung, 12 Proben. Sie ergibt weiche Kontaktschatten an Hauswänden, unter Dächern, an Figuren und zwischen Bäumen, ohne die Szene ein zweites Mal zu zeichnen. |
+| Leuchten (Medium/High) | Bloom in Viertelauflösung: Bei Nacht glühen Laternen, Fenster und Feuer, am Tag bleibt es fast unsichtbar. |
+| Himmelslicht (Medium/High) | Umgebungslicht aus einer Farbverlauf-Kuppel in den Himmels-, Horizont- und Bodenfarben der Tageszeit, vorgefiltert (PMREM) alle 15 Spielminuten, in wiederverwendeten Puffern. Metall darf damit glänzen, Wasser spiegelt den Himmel schärfer. |
+| Wolkenschatten (Medium/High) | Langsam ziehende Wolken dämpfen nur das direkte Sonnenlicht auf Gelände, Gebäuden, Figuren und Wasser. Bei Regen sind sie dichter, bei Nacht aus. Bewusst dezent, damit die Gebäudeschatten lesbar bleiben. |
+| Erdung (alle Stufen) | Gebäude, Baustellen, Bäume und Felsen dunkeln den Boden direkt um sich weich ab (Textur über der Karte, wird nur bei Änderungen neu berechnet). |
+| Kleinigkeiten | Rauch und Staub dunkeln nachts ab (sonst leuchten sie im Bloom). Unerkundetes Land bleibt auch in linearem Licht dunkel. |
+
+Messung (Software-Rendering im Container, 1280×720, dieselbe Ansicht; nur relative Aussagen möglich): High mit Nachbearbeitung ca. 3,9 s pro Bild, High ohne ca. 5,4 s, Medium ca. 3,8 s. Die Schwankung ist größer als der Unterschied, im Software-Renderer ist also kein Mehraufwand messbar. Auf echten Grafikkarten ist der Aufwand nicht gemessen; erwartet wird ein kleiner einstelliger Millisekundenbetrag in Full HD (Schätzung). Draw Calls ~+15 (Nachbearbeitung), Dreiecke unverändert. Low bleibt ohne Nachbearbeitung. Zum Vergleichen: `?post=off` oder `?gfx=noao,nobloom,noibl,noclouds,notilt` in der Adresszeile.
+
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
-0. **Grafik auf die nächste Stufe (Wunsch des Spielers, nächstes großes Paket):** bessere
-   Beleuchtung und Schatten, detailliertere Gebäude und Gelände (Materialien, Texturen,
-   Vegetation, Wasser), Figuren mit mehr Details bis hin zu animierten Modellen (Punkt 1),
-   Nachbearbeitung (Farbabstimmung, Umgebungsverdeckung, Tiefenschärfe im Nahbereich) —
-   mit Blick auf das Leistungsbudget. Gemeinsam mit dem Spieler angehen.
+0. **Grafik, weitere Schritte:** detailliertere Gebäude und Gelände (Materialien, Texturen,
+   Vegetation), Figuren mit mehr Details bis hin zu animierten Modellen (Punkt 1), bessere
+   Schatten auf großen Ansichten (Kaskaden), Wolken am Himmel, Morgennebel in den Tälern.
+   Nächste Schritte gemeinsam mit dem Spieler festlegen, idealerweise mit Messwerten von
+   seiner Grafikkarte.
 1. **Echte animierte Figuren (Variante B):** Modelle mit Skelett, z. B. aus CC0-Paketen,
    mit Lauf-, Arbeits- und Kampfanimationen. Wegen der vielen Figuren sind dafür
    Leistungstricks nötig (Animation in Texturen vorberechnen, Detailstufen).

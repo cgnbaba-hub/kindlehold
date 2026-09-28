@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { hash2 } from '../core/rng.js';
 import { rawHeight } from '../world/terrain-data.js';
-import { SHROUD_GLSL, bindShroud } from '../render/structure-material.js';
+import { SHROUD_GLSL, bindShroud, CLOUD_GLSL, bindClouds, ENV } from '../render/structure-material.js';
 
 function makeNormalTexture(size = 256) {
   // tileable height from summed periodic sines + hash noise, converted to a normal map
@@ -71,6 +71,7 @@ export function createWater({ scene, terrain }) {
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     bindShroud(shader);
+    bindClouds(shader);
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nattribute float depth;\nvarying float vDepth;\nvarying vec3 vWPos;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvDepth = depth;\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
@@ -78,7 +79,9 @@ export function createWater({ scene, terrain }) {
       .replace('#include <common>', `#include <common>
 uniform float uTime; uniform sampler2D tNormal; uniform vec3 uSky; uniform float uNight; uniform float uIce;
 varying float vDepth; varying vec3 vWPos;
-${SHROUD_GLSL}`)
+${SHROUD_GLSL}
+${CLOUD_GLSL}`)
+      .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\n{ float khCl = khCloud(vWPos); reflectedLight.directDiffuse *= khCl; reflectedLight.directSpecular *= khCl; }')
       .replace('#include <fog_fragment>', 'gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);\n#include <fog_fragment>')
       .replace('#include <color_fragment>', `#include <color_fragment>
 float d = clamp(vDepth, 0.0, 2.5);
@@ -113,7 +116,7 @@ normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);`)
 float fres = clamp(pow(1.0 - abs(dot(normalize(-vViewPosition), normal)), 3.0), 0.0, 1.0);
 totalEmissiveRadiance += uSky * fres * mix(0.55, 0.25, uIce) * (1.0 - uNight * 0.7);`);
   };
-  mat.customProgramCacheKey = () => 'kh-water-v3';
+  mat.customProgramCacheKey = () => 'kh-water-v4';
   const mesh = new THREE.Mesh(geo, mat);
   mesh.renderOrder = 2;
   mesh.name = 'water';
@@ -124,7 +127,8 @@ totalEmissiveRadiance += uSky * fres * mix(0.55, 0.25, uIce) * (1.0 - uNight * 0
     kind: 'view',
     mesh,
     render(alpha, frame) { uniforms.uTime.value = frame.time; },
-    setIce(v) { uniforms.uIce.value = v; mat.roughness = 0.34 + v * 0.3; },
+    // with the baked sky light the surface can be glossier: it mirrors the sky and catches the sun
+    setIce(v) { uniforms.uIce.value = v; mat.roughness = (ENV.on.value ? 0.2 : 0.34) + v * 0.3; },
     setSky(color, night) { uniforms.uSky.value.copy(color); uniforms.uNight.value = night; },
     dispose() { scene.remove(mesh); geo.dispose(); mat.dispose(); normalTex.dispose(); },
   };

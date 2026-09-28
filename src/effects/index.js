@@ -215,6 +215,8 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
     id: 'effects',
     kind: 'view',
     emit,
+    /** Smoke and dust are unlit sprites: dim them at night so they do not glow (fire stays bright). */
+    setNight(n) { layers.normal.mat.color.setScalar(1 - n * 0.78); },
     render(alpha, frame) {
       const dt = reducedMotion() ? frame.dt * 0.5 : frame.dt;
       continuous(frame.dt);

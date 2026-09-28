@@ -168,7 +168,7 @@ export function createMenus({ root, settings, onSettingsChange }) {
       clear(body);
       for (const b of tabBar.children) b.setAttribute('aria-selected', b.textContent === tab ? 'true' : 'false');
       if (tab === 'Graphics') {
-        body.append(choice('Quality', 'quality', [['low', 'Low (no shadows, fewer particles)'], ['medium', 'Medium'], ['high', 'High']]));
+        body.append(choice('Quality', 'quality', [['low', 'Low (no shadows, no post-processing)'], ['medium', 'Medium (glow, smooth edges)'], ['high', 'High (all effects)']]), toggle('Miniature focus', 'depthOfField', 'Softly blur the top and bottom of close views, like a model landscape (High quality)'));
         body.append(h('p.muted', { text: inGame ? 'Quality changes apply the next time a game is started or loaded.' : 'Quality applies when a game starts.' }));
       } else if (tab === 'Audio') {
         body.append(slider('Master volume', 'masterVolume', 0, 1, 0.05), slider('Music', 'musicVolume', 0, 1, 0.05), slider('Ambience', 'ambienceVolume', 0, 1, 0.05), slider('Effects', 'effectsVolume', 0, 1, 0.05), slider('Voices', 'voiceVolume', 0, 1, 0.05), toggle('Mute all audio', 'muted'));

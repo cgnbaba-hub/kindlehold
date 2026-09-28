@@ -3,6 +3,7 @@ import { createFixedLoop } from '../core/loop.js';
 import { createSimulation } from './simulation.js';
 import { createRenderContext } from './render-context.js';
 import { createSkyLight } from '../environment/sky-light.js';
+import { CLOUDS, ENV, SHROUD } from '../render/structure-material.js';
 import { createTerrainView } from '../terrain/terrain-view.js';
 import { createWater } from '../environment/water.js';
 import { createVegetation } from '../environment/vegetation.js';
@@ -28,6 +29,9 @@ export async function createSession({ container, seed, quality = 'high', verify 
   const views = sim.host; // views share the module host for health reporting
   views.register(rc);
   const sky = views.register(createSkyLight({ scene: rc.scene, renderer: rc.renderer, quality: rc.quality }));
+  rc.on('restored', () => sky.invalidateEnv());
+  ENV.on.value = rc.quality.post && rc.quality.ibl !== false ? 1 : 0;
+  SHROUD.linear.value = rc.quality.post ? 1 : 0;
   const world = () => sim.world;
   // the fog of war lifts while a chapter intro flies over the valley
   let showShroud = true;
@@ -74,9 +78,15 @@ export async function createSession({ container, seed, quality = 'high', verify 
       rc.rts.update(frameDt);
       sky.setHour(sim.world.time.hour);
       water.setSky(rc.scene.fog.color, sky.nightFactor);
+      effects.setNight(sky.nightFactor);
       selectionView.setNight(sky.nightFactor);
       const st = rc.rts.state;
       sky.fitShadow(st.x, st.z, Math.min(120, 30 + st.zoom * 0.8));
+      rc.setLook({ night: sky.nightFactor, zoom: st.zoom, tilt: settings.depthOfField !== false });
+      // drifting cloud shadows by day (denser before and during a shower); none on Low quality
+      const wx = sim.world.weather;
+      CLOUDS.time.value = sim.world.tick / 20;
+      CLOUDS.strength.value = rc.quality.post && rc.quality.clouds !== false ? (0.2 + (wx && wx.kind === 'rain' ? 0.2 * (wx.intensity || 1) : 0)) * (1 - sky.nightFactor) : 0;
       buildingsView.cameraTarget.x = st.x; buildingsView.cameraTarget.z = st.z;
       views.render(alpha, { dt: frameDt, time: sim.world.tick / 20 });
       if (hooks.onFrame) {

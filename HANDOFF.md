@@ -109,6 +109,23 @@ die Wegstation muss erreichbar sein: Holz, Stein, Eisen und (hier) Salz innerhal
 Territorium. Presets: `saltmere-town`, `saltmere-lake`, `saltmere-manor`, `saltmere-pans`
 (Parameter `chapter`).
 
+## Grafik-Stufe: Licht und Nachbearbeitung
+
+`src/render/post.js` (HDR-Puffer mit MSAA, SAO aus dem Tiefenpuffer, Bloom, Abschlusspass mit
+Tonemapping, Farbabstimmung, Vignette und Miniatur-Unschärfe), Qualitätsstufen in
+`QUALITY.*.post` (`src/app/render-context.js`). Himmelslicht und Wolken: `src/environment/sky-light.js`,
+`CLOUDS`/`ENV`/`SHROUD.linear` in `src/render/structure-material.js`. Erdung: AO-Textur in
+`src/terrain/terrain-view.js`. Vergleichen: `?post=off`, `?gfx=noao,nobloom,noibl,noclouds,notilt`,
+`?post=ao` zeigt nur die Umgebungsverdeckung.
+Lehren: (1) Mit Nachbearbeitung mischen die Materialien den Nebel in linearem Licht, das wirkt
+dunstiger (Dichte 0,0019 statt 0,0026), und das Abdunkeln von unerkundetem Land muss in
+linearem Licht stärker sein (`pow(k, 2.2)`). (2) Der physikalische Himmel als Umgebungslicht
+ist viel zu hell und zu blau, deshalb die Farbverlauf-Kuppel. (3) Wolkenschatten schlucken den
+Schattenkontrast, wenn eine Wolke über der Siedlung liegt; also dezent halten. (4) SAO in halber
+Auflösung muss an Texelmitten des Tiefenpuffers abtasten und Normalen aus Nachbarn bilden, sonst
+entstehen Streifen. (5) Schnelle Sichtprüfung ohne die langsamen Verify-Läufe: einmal
+`?verify=1&demo=midgame` laden und viele Kamera-Presets nacheinander fotografieren.
+
 ## Kapitel 6 „The Iron March“, Wren, Osric
 
 Karte `src/world/maps/ironmarch.js`, Haus Morrow (`morrow` in `src/ai/factions.js`),

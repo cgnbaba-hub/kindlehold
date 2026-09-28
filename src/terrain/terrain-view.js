@@ -4,11 +4,13 @@ import * as THREE from 'three';
 import { generateGroundTexture, generateMacroTexture } from './textures.js';
 import { distToPolyline, rawHeight, sceneryRelief } from '../world/terrain-data.js';
 import { all } from '../world/world.js';
-import { SHROUD_GLSL, bindShroud } from '../render/structure-material.js';
+import { BUILDINGS } from '../buildings/defs.js';
+import { SHROUD_GLSL, bindShroud, CLOUD_GLSL, bindClouds } from '../render/structure-material.js';
 
 function smoothstep(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
 
 const WEAR_RES = 128;
+const AO_RES = 512; // ground occlusion around buildings and trees (0.75 m per texel on the large maps)
 
 export function computeSplat(terrain) {
   const map = terrain.map;
@@ -59,6 +61,12 @@ export function createTerrainView({ scene, terrain, quality, world }) {
   wearTex.magFilter = THREE.LinearFilter; wearTex.minFilter = THREE.LinearFilter;
   wearTex.needsUpdate = true;
   const wearAcc = new Float32Array(WEAR_RES * WEAR_RES);
+  // grounding: soft darkening of the ground right around walls and trunks, so nothing floats
+  const aoData = new Uint8Array(AO_RES * AO_RES).fill(255);
+  const aoTex = new THREE.DataTexture(aoData, AO_RES, AO_RES, THREE.RedFormat);
+  aoTex.magFilter = THREE.LinearFilter; aoTex.minFilter = THREE.LinearFilter;
+  aoTex.needsUpdate = true;
+  const aoAcc = new Float32Array(AO_RES * AO_RES);
 
   // the mesh is capped at 256 segments per side (1.5 m on the large map) to stay within the triangle budget
   const segs = Math.min(terrain.res, 256);
@@ -85,19 +93,21 @@ export function createTerrainView({ scene, terrain, quality, world }) {
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, metalness: 0 });
   const uniforms = {
     tGrass: { value: tex.grass }, tDirt: { value: tex.dirt }, tRock: { value: tex.rock }, tMud: { value: tex.mud },
-    tWear: { value: wearTex }, tMacro: { value: tex.macro }, uHalf: { value: terrain.half }, uSize: { value: terrain.size }, uSnow: { value: 0 },
+    tWear: { value: wearTex }, tAO: { value: aoTex }, tMacro: { value: tex.macro }, uHalf: { value: terrain.half }, uSize: { value: terrain.size }, uSnow: { value: 0 },
   };
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     bindShroud(shader);
+    bindClouds(shader);
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec4 splat;\nvarying vec4 vSplat;\nvarying vec3 vWPos;\nvarying vec3 vWNrm;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvSplat = splat;\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWNrm = normalize(mat3(modelMatrix) * objectNormal);');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
-uniform sampler2D tGrass; uniform sampler2D tDirt; uniform sampler2D tRock; uniform sampler2D tMud; uniform sampler2D tWear; uniform sampler2D tMacro;
+uniform sampler2D tGrass; uniform sampler2D tDirt; uniform sampler2D tRock; uniform sampler2D tMud; uniform sampler2D tWear; uniform sampler2D tMacro; uniform sampler2D tAO;
 uniform float uHalf; uniform float uSize; uniform float uSnow;
 ${SHROUD_GLSL}
+${CLOUD_GLSL}
 varying vec4 vSplat; varying vec3 vWPos; varying vec3 vWNrm;
 vec4 sampleAT(sampler2D t, vec2 p) {
   // two scales to hide tiling
@@ -167,6 +177,10 @@ if (uSnow > 0.001) {
 diffuseColor.rgb *= ground;
 `)
       .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = kRough;')
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+{ float khCl = khCloud(vWPos); reflectedLight.directDiffuse *= khCl; reflectedLight.directSpecular *= khCl;
+  float khAO = texture2D(tAO, (vWPos.xz + uHalf) / uSize).r;
+  reflectedLight.indirectDiffuse *= khAO; reflectedLight.directDiffuse *= mix(1.0, khAO, 0.4); }`)
       .replace('#include <fog_fragment>', `gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);
 #include <fog_fragment>
 #ifdef USE_FOG
@@ -183,7 +197,7 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(6.0, 70.0, vWPos.y
   normal = normalize(abs(det) * normal - grad * 0.12);
 }`);
   };
-  mat.customProgramCacheKey = () => 'kh-terrain-v5';
+  mat.customProgramCacheKey = () => 'kh-terrain-v6';
 
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
@@ -222,6 +236,46 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(6.0, 70.0, vWPos.y
   skirt.name = 'terrain-scenery';
   scene.add(skirt);
 
+  // occlusion stamps: recomputed when buildings or trees change (checked every two seconds)
+  let aoTimer = 2, aoKey = '';
+  function stamp(x, z, r0, r1, dark) {
+    const s = AO_RES / terrain.size;
+    const i0 = Math.max(0, Math.floor((x - r1 + terrain.half) * s)), i1 = Math.min(AO_RES - 1, Math.ceil((x + r1 + terrain.half) * s));
+    const j0 = Math.max(0, Math.floor((z - r1 + terrain.half) * s)), j1 = Math.min(AO_RES - 1, Math.ceil((z + r1 + terrain.half) * s));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const px = (i + 0.5) / s - terrain.half, pz = (j + 0.5) / s - terrain.half;
+      const d = Math.hypot(px - x, pz - z);
+      if (d >= r1) continue;
+      const k = j * AO_RES + i;
+      aoAcc[k] = Math.max(aoAcc[k], dark * (1 - smoothstep(r0, r1, d)));
+    }
+  }
+  function updateAO(dt) {
+    aoTimer += dt;
+    if (aoTimer < 2) return;
+    aoTimer = 0;
+    const w = world();
+    let key = '';
+    for (const b of all(w, 'building')) key += `${b.id}${b.state[0]}`;
+    let trees = 0;
+    for (const d of all(w, 'deposit')) if (d.type === 'tree' && d.amount > 0) trees++;
+    key += `|${trees}`;
+    if (key === aoKey) return;
+    aoKey = key;
+    aoAcc.fill(0);
+    for (const b of all(w, 'building')) {
+      if (b.state === 'destroyed') continue;
+      const r = (BUILDINGS[b.type] && BUILDINGS[b.type].radius) || 3;
+      stamp(b.x, b.z, r * 0.7, r + (b.state === 'site' ? 1.5 : 3.2), b.state === 'site' ? 0.2 : 0.42);
+    }
+    for (const d of all(w, 'deposit')) {
+      if (d.type === 'tree' && d.amount > 0) stamp(d.x, d.z, 0.4, 2.6 * (d.scale || 1), 0.3);
+      else if (d.type === 'rock') stamp(d.x, d.z, 0.8, 3.2, 0.3);
+    }
+    for (let i = 0; i < aoAcc.length; i++) aoData[i] = Math.round((1 - Math.min(0.8, aoAcc[i])) * 255);
+    aoTex.needsUpdate = true;
+  }
+
   let wearTimer = 0;
   function updateWear(dt) {
     wearTimer += dt;
@@ -244,7 +298,7 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(6.0, 70.0, vWPos.y
     id: 'terrain-view',
     kind: 'view',
     mesh,
-    render(alpha, frame) { updateWear(frame.dt); },
+    render(alpha, frame) { updateWear(frame.dt); updateAO(frame.dt); },
     setSnow(v) { uniforms.uSnow.value = v; },
     /** Pre-wear paths (used for deterministic screenshot presets that fast-forward). */
     seedWear(amount = 0.4) {
@@ -260,7 +314,7 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(6.0, 70.0, vWPos.y
       scene.remove(mesh, skirt);
       geo.dispose(); mat.dispose(); skirtGeo.dispose();
       for (const k in tex) tex[k].dispose();
-      wearTex.dispose();
+      wearTex.dispose(); aoTex.dispose();
     },
   };
 }
