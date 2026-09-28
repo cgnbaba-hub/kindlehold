@@ -67,8 +67,9 @@ export function createNavigationModule() {
      */
     requestPath(e, tx, tz) {
       if (budget <= 0) return 'wait';
-      budget--;
-      const r = nav.findPath(e.x, e.z, tx, tz);
+      // the ford retry costs up to two more searches: only when the budget still has room for them
+      const r = nav.findPath(e.x, e.z, tx, tz, { retry: budget >= 3 });
+      budget -= (r && r.searches) || 1;
       if (!r) { e.path = null; return 'fail'; }
       e.path = r.points;
       e.pathI = 0;

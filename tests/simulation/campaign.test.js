@@ -13,7 +13,7 @@ log.setConsoleLevel('error');
 const chapter = (id, extra = {}) => createSimulation({ seed: 7, difficulty: 'normal', scenarioId: id, ...extra });
 
 test('the campaign has four chapters with objectives and endings', () => {
-  assert.deepEqual(CAMPAIGN, ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad']);
+  assert.deepEqual(CAMPAIGN, ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad', 'whitestag']);
   for (const id of CAMPAIGN) {
     const sc = SCENARIOS[id];
     assert.ok(sc.objectives.length >= 3, id);

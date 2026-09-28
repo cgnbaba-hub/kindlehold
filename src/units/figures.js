@@ -80,6 +80,7 @@ function buildParts() {
     crossbow: g([B(0.07, 0.7, 0.09, '#6b4a2f', P.planks, { y: -0.3 }), B(0.62, 0.05, 0.05, '#4a4a4c', P.metal, { y: -0.6 }), paint(place(cyl(0.004, 0.004, 0.6, 3), { y: -0.55, rz: Math.PI / 2 }), '#e8e0cc', 0, null, P.plain)]),
     halberd: g([paint(place(cyl(0.024, 0.027, 2.3, 5), { y: -0.45 }), '#5a4030', 0, null, P.planks), B(0.05, 0.3, 0.26, '#b9bcc0', P.metal, { y: -1.45, z: 0.1 }), paint(place(cone(0.045, 0.3, 4), { y: -1.72, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)]),
     greataxe: g([paint(place(cyl(0.035, 0.04, 1.3, 6), { y: -0.4 }), '#3e2c1f', 0, null, P.planks), B(0.06, 0.4, 0.46, '#7a716a', P.metal, { y: -0.98, z: 0.2 })]),
+    maul: g([paint(place(cyl(0.03, 0.035, 1.0, 6), { y: -0.3 }), '#5a4030', 0, null, P.planks), B(0.22, 0.2, 0.34, '#6a6c70', P.metal, { y: -0.82 }), B(0.24, 0.05, 0.36, '#4a4c50', P.metal, { y: -0.82 })]),
     sling: g([paint(place(cyl(0.008, 0.008, 0.6, 3), { y: -0.3 }), '#8a7050', 0, null, P.plain), paint(place(sphere(0.05, 6, 4), { y: -0.6 }), '#6a625a', 0, null, P.plain)]),
     // left-hand items
     shieldRound: g([paint(place(cyl(0.34, 0.34, 0.05, 12), { rx: Math.PI / 2, y: -0.2, z: 0.06 }), '#ffffff', 0, null, P.planks), paint(place(sphere(0.07, 6, 4), { y: -0.2, z: 0.1 }), '#b0a070', 0, null, P.metal)]),
@@ -128,6 +129,11 @@ export const STYLE = {
   brigand: { torso: '#5a6a44', head: 'hood', headColor: '#3e4a30', right: 'axe', left: 'shieldRound', leftColor: '#6e5037', legs: '#3a3428', beard: true, beardColor: '#5a4030' },
   poacher: { torso: '#4a5638', head: 'hood', headColor: '#6a5a3a', right: null, left: 'bow', legs: '#3a3428' },
   morwen: { torso: '#3e4a30', coat: true, head: 'hood', headColor: '#2e3a24', right: null, left: 'bow', legs: '#2a2a20', scale: 1.15, cape: '#44582e' },
+  sapper: { torso: '#6e5a40', coat: true, head: 'cap', headColor: '#4a3a2a', right: 'maul', left: null, legs: '#4d4338', tabard: '#2f6f8f', beard: true, beardColor: '#5a4030' },
+  staghalberd: { torso: '#2e5a3a', head: 'helm', right: 'halberd', left: null, legs: '#3a3a30', pauldrons: true, tabard: '#e8e4d8' },
+  stagarcher: { torso: '#3a5a3a', head: 'hood', headColor: '#2a4a30', right: null, left: 'bow', legs: '#3a3a30', tabard: '#e8e4d8' },
+  stagwarden: { torso: '#4a6a52', coat: true, head: 'helm', right: 'sword', left: 'shieldKite', leftColor: '#e8e4d8', legs: '#2e3a30', pauldrons: '#6a8a70', tabard: '#e8e4d8', scale: 1.06 },
+  vane: { torso: '#2e3a30', coat: true, head: 'helm', right: 'sword', left: 'shieldKite', leftColor: '#e8e4d8', legs: '#24282a', pauldrons: '#c8ccd0', tabard: '#2e5a3a', cape: '#e8e4d8', scale: 1.22, beard: true, beardColor: '#9a9088' },
   vharek: { torso: '#3a302a', coat: true, head: 'hornhelm', right: 'greataxe', left: null, legs: '#2a2420', scale: 1.28, beard: true, beardColor: '#8c3b1f', cape: '#6e2a1c', pauldrons: '#6a625a' },
 };
 
@@ -306,7 +312,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     const right = f.tool || st.right;
     if (right && !(f.carry && f.anim !== 'hammer')) {
       out.multiplyMatrices(foreRM, local(0, -0.31, 0.02, right === 'bow' ? 0 : (right === 'spear' || right === 'pole' || right === 'halberd' || right === 'crossbow' || right === 'rod' ? 1.6 : 0), 0, 0));
-      if (right === 'axe' || right === 'pick' || right === 'hammer' || right === 'sword' || right === 'greataxe' || right === 'sickle') out.multiplyMatrices(foreRM, local(0, -0.29, 0.05, Math.PI * 0.5 + handItemA));
+      if (right === 'axe' || right === 'pick' || right === 'hammer' || right === 'sword' || right === 'greataxe' || right === 'maul' || right === 'sickle') out.multiplyMatrices(foreRM, local(0, -0.29, 0.05, Math.PI * 0.5 + handItemA));
       put(right, out, f.bladeTint && (right === 'sword' || right === 'axe' || right === 'spear') ? f.bladeTint : null);
     }
     // left hand item

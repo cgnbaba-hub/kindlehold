@@ -111,6 +111,15 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
     createBuildingEntity(world, { type: fac.tower, owner: ENEMY, x: ec.x + dx, z: ec.z + dz, rot: hallRot, state: 'active' });
   }
   if (scenario.ai) world.ai.mods = { ...scenario.ai };
+  // outposts: a tower and a standing guard holding a village (they never join the raids)
+  for (const op of (scenario.enemy && scenario.enemy.outposts) || []) {
+    for (const [dx, dz] of op.towers || [[0, 0]]) createBuildingEntity(world, { type: fac.tower, owner: ENEMY, x: op.x + dx, z: op.z + dz, rot: 0, state: 'active' });
+    op.guards.forEach((type, i) => {
+      const a = (i / op.guards.length) * Math.PI * 2;
+      const u = spawnEnemy(world, type, op.x + Math.sin(a) * 5, op.z + Math.cos(a) * 5);
+      if (u) { u.order = { type: 'guard', ax: u.x, az: u.z, leash: 16 }; u.sentinel = true; }
+    });
+  }
   if (scenario.enemy && scenario.enemy.hallBarred) world.mission.flags.hallBarred = true;
 
   // Settlers and hero at the Keep

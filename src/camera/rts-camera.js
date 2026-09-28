@@ -22,6 +22,12 @@ export const CAMERA_PRESETS = {
   'saltmere': { x: 10, z: 34, yaw: 0.5, zoom: 165 },
   'varr-manor': { x: 116, z: -62, yaw: 0.35, zoom: 60 },
   'brine-pools': { x: -84, z: 48, yaw: 0.9, zoom: 34 },
+  // Whitehart (chapter five)
+  'hartsgate': { x: -112, z: 30, yaw: 0.7, zoom: 64 },
+  'whitehart': { x: 6, z: 10, yaw: 0.45, zoom: 168 },
+  'chapterhouse': { x: 120, z: -30, yaw: 0.2, zoom: 52 },
+  'stag-outpost': { x: 76, z: -116, yaw: 0.6, zoom: 36 },
+  'stag-figures': { x: -63, z: 50, yaw: 0.1, zoom: 21 },
   'greyfen': { x: -112, z: -128, yaw: 0.7, zoom: 58 },
 };
 

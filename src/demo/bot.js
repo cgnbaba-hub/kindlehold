@@ -11,6 +11,7 @@ import { countBuilt, soldierCount } from '../missions/conditions.js';
 import { UNITS } from '../units/defs.js';
 import { ABILITIES, abilityReady } from '../heroes/index.js';
 import { warhallOf } from '../ai/index.js';
+import { occupiedBy } from '../pois/index.js';
 
 /** Spiral search for a valid building spot near (x,z). */
 export function findSpot(world, services, type, x, z, maxR = 34) {
@@ -28,6 +29,8 @@ export function findSpot(world, services, type, x, z, maxR = 34) {
 const SITES = {
   lodge: [-66, 40], farm: [-36, 66], cottage: [-54, 64], quarry: [-28, 68], mine: [-73, 62], barracks: [-34, 38], tower: [-30, 30],
 };
+
+const isActive = (world, id) => (world.mission.objectives.find((o) => o.id === id) || {}).state === 'active';
 
 export function createBot(sim, { aggressive = true } = {}) {
   const w = () => sim.world;
@@ -86,8 +89,14 @@ export function createBot(sim, { aggressive = true } = {}) {
     if (count('lodge') < 1) { place('lodge'); return; }
     if (count('farm') < 1) { place('farm'); return; }
     if (count('cottage') < 1) { place('cottage'); return; }
+    if (count('fisher') < 1 && isActive(world, 'hartsgate') && place('fisher', [-44, 14])) return;
     if (count('lodge') < 2) { place('lodge', [-70, 26]); return; }
     if (count('quarry') < 1) { place('quarry'); return; }
+    // the Drill Yard, once the story asks for Sappers (stone is saved up for it)
+    if (isActive(world, 'sappers')) {
+      const bk = all(world, 'building').find((x) => x.owner === PLAYER && x.type === 'barracks' && x.state === 'active' && !x.upgrade && (x.level || 1) === 1);
+      if (bk) { if (canAfford(world, PLAYER, UPGRADES.barracks[2].cost)) sim.issue({ type: 'upgrade', id: bk.id }); else if (p.res.stone < 30 || p.res.taler < 60) return; }
+    }
     // where the map has salt pans, salt works pay for everything else
     if (count('saltworks') < 2 && all(world, 'deposit').some((d) => d.type === 'salt')) { place('saltworks'); return; }
     if (count('cottage') < 2) { place('cottage', [-58, 30]); return; }
@@ -122,6 +131,8 @@ export function createBot(sim, { aggressive = true } = {}) {
         // a full treasury buys what the army and the table lack
         if (p.res.taler > 150 && p.res.iron < 25) sim.issue({ type: 'trade', id: trader.id, deal: 'buyIron' });
         if (p.res.taler > 150 && p.res.provisions < 40) sim.issue({ type: 'trade', id: trader.id, deal: 'buyFood' });
+        // the Drill Yard needs stone and silver: buy the stone, keep the silver
+        if (isActive(world, 'sappers') && p.res.stone < 30 && p.res.taler > 100) sim.issue({ type: 'trade', id: trader.id, deal: 'buyStone' });
       }
     }
     // upgrade workshops once the treasury allows (mine first: iron gates the army)
@@ -155,16 +166,20 @@ export function createBot(sim, { aggressive = true } = {}) {
     const queued = barracks.queue.length;
     // keep a few labourers free: without carriers the whole economy stalls
     const carriers = all(world, 'settler').filter((s) => s.owner === PLAYER && !s.job && !s.order && !s.enlisting).length;
-    if (queued < 2 && idle > 1 && carriers > 4 && soldiers().length < 20) {
+    // Sappers for the Order's walls: four of them, as soon as the Drill Yard stands (even past the usual army size)
+    const sappers = soldiers().filter((u) => u.type === 'sapper').length + barracks.queue.filter((q) => q.unitType === 'sapper').length;
+    const wantSapper = (barracks.level || 1) >= 2 && sappers < 4 && (isActive(world, 'sappers') || isActive(world, 'chapterhouse'));
+    if (queued < 2 && idle > 1 && carriers > (wantSapper ? 2 : 4) && soldiers().length < (wantSapper ? 26 : 20)) {
       const n = soldiers().length + queued;
-      const type = ['shield', 'blade', 'fletcher', 'fletcher', 'blade', 'shield'][n % 6];
+      const type = wantSapper ? 'sapper' : ['shield', 'blade', 'fletcher', 'fletcher', 'blade', 'shield'][n % 6];
       if (canAfford(world, PLAYER, UNITS[type].cost)) sim.issue({ type: 'recruit', building: barracks.id, unitType: type });
     }
     void p;
   }
 
-  // campaign chores: Maren's visit to Millbrook, gifts for the Greyfen
+  // campaign chores: Maren's visit to Millbrook, gifts for the Greyfen, occupied villages
   let heroErrand = false;
+  let villageTarget = null;
   function storyStep() {
     const world = w();
     const active = (id) => (world.mission.objectives.find((o) => o.id === id) || {}).state === 'active';
@@ -173,6 +188,14 @@ export function createBot(sim, { aggressive = true } = {}) {
     if ((active('millbrook') || active('pannholt')) && h && !h.downed && world.ai.state !== 'raid') {
       const ham = all(world, 'poi').find((x) => x.type === 'hamlet');
       if (ham) { heroErrand = true; if (Math.hypot(h.x - ham.x, h.z - ham.z) > 4 && (!h.order || h.order.type !== 'move')) sim.issue({ type: 'move', ids: [h.id], x: ham.x, z: ham.z }); }
+    }
+    // Whitehart: free the villages one by one (nearest first) — the army clears the outpost, Maren follows
+    villageTarget = null;
+    if ((active('ashby') || active('villages')) && world.ai.state !== 'raid') {
+      const open = all(world, 'poi').filter((x) => x.type === 'hamlet' && x.state !== 'done').sort((a, b) => Math.hypot(a.x - home.x, a.z - home.z) - Math.hypot(b.x - home.x, b.z - home.z));
+      const next = open[0];
+      if (next && occupiedBy(world, next)) villageTarget = next;
+      else if (next && h && !h.downed) { heroErrand = true; if (Math.hypot(h.x - next.x, h.z - next.z) > 4 && (!h.order || h.order.type !== 'move')) sim.issue({ type: 'move', ids: [h.id], x: next.x, z: next.z }); }
     }
     if (active('greyfen') && world.players[PLAYER].res.taler >= 50 && world.tick % 600 === 50) sim.issue({ type: 'gift', to: 'p3' });
   }
@@ -194,7 +217,17 @@ export function createBot(sim, { aggressive = true } = {}) {
         else { const [gx, gz] = rel([-30, 34]); sim.issue({ type: 'move', ids, x: gx, z: gz }); }
         lastAct = world.tick;
       }
-    } else if (phase === 'defend' || (world.ai.wave >= 1 && aggressive)) {
+    } else if (villageTarget) {
+      // march on the occupied village once the company is big enough (the later ones are better held)
+      const freed = all(world, 'poi').filter((x) => x.type === 'hamlet' && x.state === 'done').length;
+      if (army.length >= (freed ? 14 : 8) && world.tick - lastAct > 200) {
+        sim.issue({ type: 'attackMove', ids, x: villageTarget.x, z: villageTarget.z });
+        lastAct = world.tick;
+      }
+    } else if (world.meta.scenarioId === 'whitestag' && !isActive(world, 'chapterhouse')) {
+      // the chapterhouse walls wait for the villages and the Sappers
+      if (world.tick - lastAct > 400) { const [gx, gz] = rel([-26, 30]); sim.issue({ type: 'move', ids, x: gx, z: gz }); lastAct = world.tick; }
+    } else if (phase === 'defend' || (world.ai.wave >= 1 && aggressive) || isActive(world, 'chapterhouse')) {
       phase = 'assault';
       if (hall && army.length >= 12 && world.tick - lastAct > 200) {
         sim.issue({ type: 'attackMove', ids, x: hall.x - 6, z: hall.z + 8 });

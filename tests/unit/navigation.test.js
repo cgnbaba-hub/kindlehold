@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createNavGrid } from '../../src/navigation/nav-grid.js';
 import { createTerrainData } from '../../src/world/terrain-data.js';
 import { HARROWMERE_MAP } from '../../src/world/maps/harrowmere.js';
+import { WHITEHART_MAP } from '../../src/world/maps/whitehart.js';
 import { formationSlots } from '../../src/navigation/index.js';
 
 const terrain = createTerrainData(HARROWMERE_MAP);
@@ -44,7 +45,19 @@ test('unreachable targets return partial paths within the expansion budget', () 
   const r = nav.findPath(-45, 40, 90, -90);
   assert.ok(r);
   assert.equal(r.partial, true);
-  assert.ok(nav.stats.expansions <= 520);
+  // one direct search, then at most one retry through a ford (two more searches)
+  assert.ok(nav.stats.expansions <= 3 * 520, `bounded (${nav.stats.expansions})`);
+});
+
+test('a search that runs out of budget at a river is retried through a ford', () => {
+  const nav = createNavGrid(createTerrainData(WHITEHART_MAP), { maxExpansions: 1500 });
+  // from the western camp to the chapterhouse: too far for one budget-limited search
+  const r = nav.findPath(-100, 30, 119, -32);
+  assert.ok(r && !r.partial, 'the route reaches the far bank');
+  assert.equal(nav.stats.partial, 1, 'the direct search alone came up short');
+  const end = r.points[r.points.length - 1];
+  assert.ok(Math.hypot(end[0] - 119, end[1] + 32) < 3);
+  assert.ok(nav.stats.expansions <= 3 * 1500 + 20, 'still bounded');
 });
 
 test('formation slots are distinct and centred on the target', () => {

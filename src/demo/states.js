@@ -28,6 +28,20 @@ export const DEMO_STATES = {
     DEMO_STATES.midgame(sim);
     reveal(sim.world, sim.terrain.half, 0, 0, sim.terrain.half * 1.5);
   },
+  /** chapter five close-up: Hearthbound Sappers facing a line of the White Stag (held apart, not fighting) */
+  stagline(sim) {
+    DEMO_STATES.midgame(sim);
+    // two small squares side by side, 8 m apart: close enough to face each other, too far to fight
+    const square = (types, owner, x0) => types.forEach((t, i) => {
+      const x = x0 + (i % 3) * 1.9, z = 48 + Math.floor(i / 3) * 2.2;
+      const u = owner === 'p1' ? spawnUnit(sim.world, t, 'p1', x, z) : spawnEnemy(sim.world, t, x, z);
+      if (!u) return;
+      u.order = { type: 'hold', ax: u.x, az: u.z };
+      u.cd = 1e9; u.sentinel = true;
+    });
+    square(['sapper', 'halberd', 'sapper', 'crossbow', 'sapper', 'shield'], 'p1', -72);
+    square(['stagwarden', 'vane', 'staghalberd', 'stagarcher', 'staghalberd', 'stagarcher'], 'p2', -58.5);
+  },
   /** a summer shower over the settlement (rain follows a fixed rhythm: see RAIN) */
   rain(sim) {
     const bot = createBot(sim);

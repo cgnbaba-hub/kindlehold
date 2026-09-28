@@ -71,6 +71,8 @@ export function dealDamage(world, attacker, target, amount, kind = 'melee') {
     const bdef = BUILDINGS[target.type];
     if (kind === 'melee' || kind === 'strong') dmg *= MELEE_VS_BUILDING;
     if (bdef.damageTaken) dmg *= bdef.damageTaken;
+    // stone walls: only siege work (Sappers) gets through them properly
+    if (bdef.walls && kind !== 'siege') dmg *= bdef.walls;
     dmg = Math.max(1, Math.round(dmg));
     target.lastHitTick = world.tick;
     if (target.owner === PLAYER && (!target.lastAlertTick || world.tick - target.lastAlertTick > 400)) {
@@ -188,7 +190,8 @@ export function createCombatModule() {
       emit(world, EV.COMBAT_SHOT, { from: u.id, to: t.id, fx: u.x, fz: u.z, tx: t.x, tz: t.z, flightTicks: flight, kind: u.owner === PLAYER ? 'arrow' : 'stone' });
     } else {
       emit(world, 'combat:swing', { id: u.id, target: t.id });
-      dealDamage(world, u, t, dmg, strong ? 'strong' : 'melee');
+      if (t.kind === 'building' && def.vsBuildings) dealDamage(world, u, t, dmg * def.vsBuildings, 'siege');
+      else dealDamage(world, u, t, dmg, strong ? 'strong' : 'melee');
     }
   }
 

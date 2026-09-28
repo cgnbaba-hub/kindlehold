@@ -148,6 +148,19 @@ länger. Zusammen mit Kapitel 1 ergibt das etwa 2–3 Stunden Kampagne.
 Bot-Messung Kapitel 4: Story 1/1, Normal 3/3 (24–35 min Bot-Zeit), Hard 1/3 innerhalb von 40 min. Kapitel 1 auf Hard seit der Fischer-Umstellung 1/3 (vorher 2/3), gleiches Spiel, anderer chaotischer Bot-Verlauf. Die Kampagne hat damit vier Kapitel,
 etwa 3–4 Stunden für menschliche Spieler (geschätzt, nicht gemessen).
 
+## Stufe 3 (dritter Teil): Kapitel 5 „The White Stag“
+
+| Punkt | Umsetzung |
+|---|---|
+| Neue Karte „Whitehart“ | Ein Waldtal südöstlich der Salzniederung: der breite Fluss Varrow von Nord nach Süd mit drei Furten, das Lager Hartsgate am Weiher Hart's Mere im Westen, drei Dörfer am Fluss (Ashby, Thornwick, Coldwell), das Gasthaus „Hart & Hound“, die Gruft der alten Abtei, das Ordenshaus auf den östlichen Downs. |
+| Neuer Gegner | Der **Orden vom Weißen Hirsch** unter **Meister Edric Vane**: Hellebardiere, Langbogenschützen (größere Reichweite als die Fletcher), Hirsch-Ritter. Weiße Wappenröcke, eigene Türme und ein ummauertes Ordenshaus, eigenes Porträt. |
+| Besetzte Dörfer | Jedes Dorf hält ein Außenposten (Turm und feste Wache). Solange Ordenssoldaten oder -türme in der Nähe stehen, redet das Dorf nicht mit Maren. Befreite Dörfer schicken Siedler, und jedes zahlt seinen Anteil am Zehnt. |
+| Pioniere | Neue Einheit **Sapper** (Drill Yard): vierfacher Schaden gegen Gebäude. Steinmauern (Ordenshaus, Ordenstürme) nehmen von Schwertern und Pfeilen nur einen Bruchteil an Schaden, von Pionieren den vollen. |
+| Story | Die Siegel aus Kapitel 4 führen zum Orden. Vane schreibt Briefe, ein Überläufer bringt den Plan des Tors, nach dem dritten Dorf schickt der Orden seine Wächter. Das Ende deutet auf einen noch älteren Gläubiger. |
+| Technik | Wegfindung: Läuft eine Suche an einem Fluss ins Suchlimit, wird sie einmal über die beste Furt wiederholt (höchstens drei Suchen pro Anfrage). Neue Bedingung `units` (Anzahl eines Einheitentyps), `poiDone` mit `count`, Außenposten im Szenario (`enemy.outposts`). |
+
+Bot-Messung Kapitel 5: Story 1/1 (20 min), Normal 4/4 (24–34 min Bot-Zeit), Hard 3/3 (je etwa 30 min) innerhalb von 40 min. Kapitel 1–4 nach der Wegfindungs-Änderung erneut gemessen: Kapitel 1 6/8 (Hard 1/3, wie vorher), Kapitel 2, 3 und 4 auf Normal alle gewonnen, Kapitel 4 Hard Seed 7 unentschieden wie schon vor der Änderung (gleicher Verlauf auf `main` gemessen). Die Kampagne hat damit fünf Kapitel, geschätzt 4–5 Stunden für menschliche Spieler (nicht gemessen).
+
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
 1. **Echte animierte Figuren (Variante B):** Modelle mit Skelett, z. B. aus CC0-Paketen,

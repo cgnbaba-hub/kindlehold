@@ -59,6 +59,13 @@ function say(world, speaker, text) {
   emit(world, EV.MISSION_MESSAGE, msg);
 }
 
+/** Enemy (p2) soldiers or buildings within r metres of a village: it is occupied. */
+export function occupiedBy(world, poi, r = 24) {
+  for (const u of all(world, 'unit')) if (u.owner === 'p2' && !u.downed && Math.hypot(u.x - poi.x, u.z - poi.z) < r) return true;
+  for (const b of all(world, 'building')) if (b.owner === 'p2' && b.state !== 'destroyed' && Math.hypot(b.x - poi.x, b.z - poi.z) < r) return true;
+  return false;
+}
+
 /** The map's definition of a point of interest (custom name, discovery line, reward). */
 export function poiDef(map, poi) { return (map.pois && map.pois[poi.mapIndex]) || {}; }
 export function poiName(map, poi) { return poiDef(map, poi).label || POI_INFO[poi.type].name; }
@@ -123,9 +130,18 @@ export function createPoisModule() {
         say(world, 'osric', `A sealed chest — still full! ${reward.taler || 0} Taler${reward.iron ? ` and ${reward.iron} bars of iron` : ''}.`);
         emit(world, 'poi:done', { id: poi.id, type: poi.type });
       } else if (poi.type === 'hamlet' && visitor(world, poi, true)) {
+        // an occupied village cannot side with Kindlehold while enemy soldiers or towers stand in it
+        if (occupiedBy(world, poi)) {
+          if (!poi.occupiedNotice || world.tick - poi.occupiedNotice > 900) {
+            poi.occupiedNotice = world.tick;
+            say(world, 'maren', `Enemy soldiers still hold ${poiName(ctx.services.terrain.map, poi)}. Drive them out first — nobody will speak to us while their tower stands.`);
+          }
+          continue;
+        }
         poi.state = 'done';
         world.mission.flags.millbrookAllied = true;
-        say(world, 'maren', 'Millbrook stands with Kindlehold. Their families may settle with us, and they will send a share of every harvest.');
+        const name = poiName(ctx.services.terrain.map, poi);
+        say(world, 'maren', `${name} stands with ${world.meta.scenarioId === 'harrowmere' || world.meta.scenarioId === 'greyfen' || world.meta.scenarioId === 'tollbreaker' ? 'Kindlehold' : 'us'}. Their families may settle with us, and they will send a share of every harvest.`);
         const free = Math.max(0, housingCap(world, PLAYER) - populationOf(world, PLAYER));
         for (let i = 0; i < Math.min(3, free); i++) spawnSettler(world, PLAYER, poi.x + i * 1.2, poi.z + 1.5, { arriving: true });
         addRes(world, PLAYER, 'provisions', 30, 'gift');
@@ -161,7 +177,9 @@ export function createPoisModule() {
       // Millbrook's tithe arrives with every payday
       unsub.push(c.bus.on('population:payday', ({ owner }) => {
         if (owner !== PLAYER || !ctx.world.mission.flags.millbrookAllied) return;
-        for (const r in HAMLET_TITHE) addRes(ctx.world, PLAYER, r, HAMLET_TITHE[r], 'tithe');
+        // every allied village sends its share
+        const villages = Math.max(1, all(ctx.world, 'poi').filter((p) => p.type === 'hamlet' && p.state === 'done').length);
+        for (const r in HAMLET_TITHE) addRes(ctx.world, PLAYER, r, HAMLET_TITHE[r] * villages, 'tithe');
       }));
     },
     update({ tick }) {

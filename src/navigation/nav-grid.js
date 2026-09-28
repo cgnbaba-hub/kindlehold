@@ -97,11 +97,26 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
   }
 
   const stats = { requests: 0, expansions: 0, partial: 0, failed: 0 };
+  const fords = (terrain.map && terrain.map.river && terrain.map.river.fords) || [];
 
   /**
    * @returns {{points:number[][], partial:boolean}|null} null when no route at all
    */
-  function findPath(sx, sz, tx, tz) {
+  function findPath(sx, sz, tx, tz, { retry = true } = {}) {
+    const r = search(sx, sz, tx, tz);
+    if (!r || !r.partial || !fords.length || !retry) return r;
+    // long detours around a river exhaust the search: try once more through the best ford
+    // (at most three searches per request, so the per-tick path budget still holds)
+    let f = null, fd = Infinity;
+    for (const o of fords) { const d = Math.hypot(o.x - sx, o.z - sz) + Math.hypot(o.x - tx, o.z - tz); if (d < fd) { fd = d; f = o; } }
+    const a = search(sx, sz, f.x, f.z);
+    if (!a || a.partial) return { ...r, searches: 2 };
+    const b = search(f.x, f.z, tx, tz);
+    const miss = (p) => { const e = p.points[p.points.length - 1]; return Math.hypot(e[0] - tx, e[1] - tz); };
+    return b && (!b.partial || miss(b) < miss(r)) ? { points: a.points.concat(b.points), partial: b.partial, searches: 3 } : { ...r, searches: 3 };
+  }
+
+  function search(sx, sz, tx, tz) {
     stats.requests++;
     const si = cellOf(sx), sj = cellOf(sz);
     let start = nearestWalkable(si, sj, 4);

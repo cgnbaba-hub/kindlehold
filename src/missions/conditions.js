@@ -29,6 +29,7 @@ export function evaluate(world, cond, owner = PLAYER) {
   if (cond.pop !== undefined) return world.players[owner].pop >= cond.pop;
   if (cond.stock) return (world.players[owner].res[cond.stock] || 0) >= cond.amount;
   if (cond.produced) return (world.stats.produced[cond.produced] || 0) >= cond.amount;
+  if (cond.units) return all(world, 'unit').filter((u) => u.owner === owner && u.type === cond.units && !u.downed).length >= (cond.count || 1);
   if (cond.soldiers !== undefined) return soldierCount(world, owner) >= cond.soldiers;
   if (cond.tech) return !!world.players[owner].techs[cond.tech];
   if (cond.raidsRepelled !== undefined) return (world.ai.wave || 0) >= cond.raidsRepelled;
@@ -36,7 +37,7 @@ export function evaluate(world, cond, owner = PLAYER) {
   if (cond.tickAtLeast !== undefined) return world.tick >= cond.tickAtLeast;
   if (cond.minutes !== undefined) return world.tick >= cond.minutes * 1200;
   if (cond.stance) return stance(world, owner, cond.stance.with) === cond.stance.is;
-  if (cond.poiDone) return all(world, 'poi').some((p) => p.type === cond.poiDone && p.state === 'done');
+  if (cond.poiDone) return all(world, 'poi').filter((p) => p.type === cond.poiDone && p.state === 'done').length >= (cond.count || 1);
   if (cond.unitGone) return !all(world, 'unit').some((u) => u.type === cond.unitGone && !u.downed);
   if (cond.veterans !== undefined) return all(world, 'unit').filter((u) => u.owner === owner && (u.rank || 0) >= (cond.rank || 1)).length >= cond.veterans;
   if (cond.winter !== undefined) return !!(world.weather && world.weather.season === 'winter') === cond.winter;
