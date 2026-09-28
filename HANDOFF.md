@@ -121,6 +121,13 @@ späten Anführer am Tor erscheinen (`enemy.commanderLate`). Osrics Avatar: `OSR
 Animationen in `styles.css` (`.advisor-*`, `av*`-Keyframes). Presets: `ironmarch-fort`,
 `-vale`, `-hold`, `-delvholm`, `-figures` (Demo `ironline`). Nächster großer Wunsch des
 Spielers: Grafik auf die nächste Stufe (Roadmap Punkt 0), gemeinsam angehen.
+Stand: Tests 130/130, e2e 16/16, Presets `ironmarch-*` grün (1,32–1,36 M Dreiecke),
+`npm run balance` Kapitel 6 8/8.
+Lehre aus dem e2e `graphics-reset-recovers`: keine Endlos-CSS-Animationen im HUD (Osrics
+Atmen hat nach einem Grafik-Reset den Haupt-Thread unter Software-GL ~15 s blockiert; gemessen
+über verzögerte Toast-Timer). Einmalige Animationen und seltene Klassenwechsel sind in Ordnung.
+Getippten Text nicht in einem `aria-live`-Bereich aktualisieren (Screenreader bekommen den Satz
+einmal über ein `.sr-only`-Element).
 
 ## Kapitel 5 „The White Stag“
 

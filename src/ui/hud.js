@@ -120,35 +120,41 @@ export function createHud({ root, session, input, settings, actions }) {
   // Osric is a character, not a status line: an animated bust (breathes, blinks, talks while his
   // words appear), a speech bubble, a clear role, a badge when the advice is urgent, and a
   // "next advice" affordance.
-  const advisorText = h('p.advisor-text', { text: '' });
+  // the typed text is decoration (aria-hidden); screen readers get the whole sentence once
+  const advisorText = h('p.advisor-text', { text: '', 'aria-hidden': 'true' });
+  const advisorSpoken = h('span.sr-only', { 'aria-live': 'polite', text: '' });
   const advisorMood = h('span.advisor-mood', { text: '' });
   const advisorCount = h('span.advisor-count', { text: '' });
   const advisorBadge = h('span.advisor-badge', { text: '!', 'aria-hidden': 'true' });
   const advisorPic = h('div.advisor-frame', {}, [osricAvatar(), advisorBadge]);
-  const advisor = h('section.advisor.panel', { 'aria-label': 'Osric, your advisor', 'aria-live': 'polite', role: 'button', tabindex: 0, 'data-tip-title': 'Osric Tallow — Reeve of Kindlehold', 'data-tip': 'Your advisor. He watches the stores, the people and the roads and tells you what needs doing. A red badge means something urgent. Click for his next piece of advice.' }, [
+  const advisor = h('section.advisor.panel', { 'aria-label': 'Osric, your advisor', role: 'button', tabindex: 0, 'data-tip-title': 'Osric Tallow — Reeve of Kindlehold', 'data-tip': 'Your advisor. He watches the stores, the people and the roads and tells you what needs doing. A red badge means something urgent. Click for his next piece of advice.' }, [
     advisorPic,
     h('div.advisor-body', {}, [
       h('div.advisor-head', {}, [h('strong', { text: 'Osric' }), h('span.advisor-role', { text: 'Reeve · advisor' })]),
-      h('div.advisor-bubble', {}, [advisorText]),
+      h('div.advisor-bubble', {}, [advisorText, advisorSpoken]),
       h('div.advisor-foot', {}, [advisorMood, advisorCount, h('span.advisor-next', { text: 'Next advice ›' })]),
     ]),
   ]);
   advisor.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); advisor.click(); } });
   hud.append(advisor);
   // his words appear letter by letter while he talks (instant with reduced motion)
-  let typeText = '', typePos = 0, typeRaf = 0, typeLast = 0;
+  let typeText = '', typePos = 0, typeRaf = 0, typeLast = 0, blinkTick = 0;
   function typeStep(now) {
-    const dt = typeLast ? Math.min(0.1, (now - typeLast) / 1000) : 0;
+    // at most ~20 updates a second: cheap even on slow machines
+    if (typeLast && now - typeLast < 48) { typeRaf = requestAnimationFrame(typeStep); return; }
+    const dt = typeLast ? Math.min(0.15, (now - typeLast) / 1000) : 0;
     typeLast = now;
     typePos = Math.min(typeText.length, typePos + dt * 55);
     setText(advisorText, typeText.slice(0, Math.ceil(typePos)));
+    advisor.classList.toggle('mouth', Math.floor(now / 110) % 2 === 0);
     if (typePos < typeText.length) typeRaf = requestAnimationFrame(typeStep);
-    else { typeRaf = 0; advisor.classList.remove('talking'); }
+    else { typeRaf = 0; advisor.classList.remove('talking', 'mouth'); }
   }
   function sayAdvice(text) {
     typeText = text;
+    setText(advisorSpoken, text);
     if (typeRaf) cancelAnimationFrame(typeRaf);
-    if (document.documentElement.classList.contains('reduced-motion') || typeof requestAnimationFrame !== 'function') { setText(advisorText, text); advisor.classList.remove('talking'); return; }
+    if (document.documentElement.classList.contains('reduced-motion') || typeof requestAnimationFrame !== 'function') { setText(advisorText, text); advisor.classList.remove('talking', 'mouth'); return; }
     typePos = 0; typeLast = 0; advisor.classList.add('talking');
     typeRaf = requestAnimationFrame(typeStep);
   }
@@ -794,6 +800,9 @@ export function createHud({ root, session, input, settings, actions }) {
     renderPeople();
     renderDiplomacy();
     adviceTimer += 0.25;
+    // Osric blinks now and then (one quarter-second tick every few seconds)
+    blinkTick = (blinkTick + 1) % 19;
+    advisor.classList.toggle('blink', blinkTick === 0 && !document.documentElement.classList.contains('reduced-motion'));
     if (adviceTimer >= 12) { adviceTimer = 0; adviceIdx++; updateAdvisor(true); } else updateAdvisor();
     const idle = all(w, 'settler').filter((s) => s.owner === PLAYER && !s.job).length;
     setText(idleVal, `${idle} labourers`);
