@@ -118,7 +118,8 @@ Karte Whitehart (`src/world/maps/whitehart.js`), Orden vom Weißen Hirsch (`stag
 Flüsse auf neuen Karten: Ufer nicht zu steil machen (`bankWidth` reichlich), sonst sind die
 Furten Sackgassen. Prüfen mit einem Walkability-Raster über `createNavGrid`. Presets:
 `whitehart-camp`, `whitehart-vale`, `whitehart-chapterhouse`, `whitehart-outpost`,
-`whitehart-figures` (Demo `stagline`).
+`whitehart-figures` (Demo `stagline`). Stand: Tests 125/125, e2e 15/15, die fünf neuen Presets
+grün (Dreiecke 1,44–1,49 M), `npm run balance` Kapitel 5 8/8.
 
 ## Stufe 3 (erster Teil): Kampagne
 
