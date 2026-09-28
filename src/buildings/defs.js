@@ -68,7 +68,7 @@ export const BUILDINGS = {
   },
   fisher: {
     id: 'fisher', name: "Fisher's Hut", owner: 'p1', buildable: true,
-    desc: 'A fisher casts a line in the river for fish (provisions). Must stand within 30 m of the Harrow; slower when the river is frozen.',
+    desc: 'A fisher casts a line in the river for fish (provisions). Must stand within 30 m of a river or lake; slower when the water is frozen.',
     cost: { timber: 20, stone: 5 }, buildTime: 14, hp: 280, radius: 3.2, navRadius: 2.6, slots: 1, job: 'fisher',
     waterRange: 30, outCap: 8, door: [0, 3.2],
   },

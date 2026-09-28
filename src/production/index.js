@@ -68,22 +68,14 @@ function findDeposit(world, b, type, range, workerId) {
 
 /** Where the fisher stands: the dry bank closest to the hut, facing the water. */
 export function fishingSpot(services, b) {
-  const map = services.terrain.map, nav = services.nav;
-  const pts = map.river.points;
-  let best = null, bd = Infinity;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const [ax, az] = pts[i], [bx, bz] = pts[i + 1];
-    const vx = bx - ax, vz = bz - az, l2 = vx * vx + vz * vz || 1;
-    const k = Math.max(0, Math.min(1, ((b.x - ax) * vx + (b.z - az) * vz) / l2));
-    const px = ax + vx * k, pz = az + vz * k, d = Math.hypot(b.x - px, b.z - pz);
-    if (d < bd) { bd = d; best = [px, pz]; }
-  }
-  if (!best) return null;
-  // walk from mid-river towards the hut until the ground is dry and walkable
-  const [wx, wz] = best, len = bd || 1;
-  for (let s = 0; s <= bd; s += 0.5) {
-    const x = wx + ((b.x - wx) / len) * s, z = wz + ((b.z - wz) / len) * s;
-    if (services.terrain.waterDepth(x, z) <= 0 && nav.walkable(x, z)) return { x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10, wx: Math.round(wx * 10) / 10, wz: Math.round(wz * 10) / 10 };
+  const terrain = services.terrain, nav = services.nav;
+  const w = terrain.nearestWater(b.x, b.z, BUILDINGS[b.type].waterRange + 12);
+  if (!w) return null;
+  // walk from the water towards the hut until the ground is dry and walkable
+  const len = Math.hypot(b.x - w.x, b.z - w.z) || 1;
+  for (let s = 0; s <= len; s += 0.5) {
+    const x = w.x + ((b.x - w.x) / len) * s, z = w.z + ((b.z - w.z) / len) * s;
+    if (terrain.waterDepth(x, z) <= 0 && nav.walkable(x, z)) return { x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10, wx: Math.round(w.x * 10) / 10, wz: Math.round(w.z * 10) / 10 };
   }
   return null;
 }

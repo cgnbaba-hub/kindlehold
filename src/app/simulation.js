@@ -6,6 +6,7 @@ import { log } from '../core/logger.js';
 import { createWorld, attachBus, worldRng, syncRngState } from '../world/world.js';
 import { createTerrainData } from '../world/terrain-data.js';
 import { HARROWMERE_MAP } from '../world/maps/harrowmere.js';
+import { mapById } from '../world/maps/index.js';
 import { worldHash } from '../world/hash.js';
 import { createNavigationModule } from '../navigation/index.js';
 import { createWorldServicesModule } from '../world/services-module.js';
@@ -64,7 +65,9 @@ export const SIM_MODULE_FACTORIES = [
 export function createSimulation({ seed = 1337, difficulty = 'normal', scenarioId = 'harrowmere', campaign = null, world = null, modules = SIM_MODULE_FACTORIES, onCritical = null, setup = true } = {}) {
   const bus = createEventBus();
   const host = createModuleHost({ bus, onCritical, now: () => (sim.world ? sim.world.tick * 50 : 0) });
-  const terrain = terrainFor();
+  // the scenario (or the loaded save's scenario) decides which map is played
+  const sid = world ? world.meta.scenarioId : scenarioId;
+  const terrain = terrainFor(mapById((SCENARIOS[sid] || SCENARIOS.harrowmere).map || 'harrowmere'));
   const pending = [];
   const commandLog = [];
 
