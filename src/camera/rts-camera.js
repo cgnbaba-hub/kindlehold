@@ -17,6 +17,11 @@ export const CAMERA_PRESETS = {
   'wildlife': { x: -12, z: 50, yaw: 0.9, zoom: 24 },
   'figures': { x: -41, z: 57, yaw: 0.9, zoom: 17 },
   'squad': { x: -29, z: 29, yaw: 0.8, zoom: 16 },
+  // Saltmere (chapter four)
+  'lanternford': { x: -104, z: 26, yaw: 0.7, zoom: 62 },
+  'saltmere': { x: 10, z: 34, yaw: 0.5, zoom: 165 },
+  'varr-manor': { x: 116, z: -62, yaw: 0.35, zoom: 60 },
+  'brine-pools': { x: -84, z: 48, yaw: 0.9, zoom: 34 },
   'greyfen': { x: -112, z: -128, yaw: 0.7, zoom: 58 },
 };
 

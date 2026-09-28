@@ -19,6 +19,8 @@ export const SALTROAD_SCENARIO = {
   },
   setup: {
     keepLit: false, techs: ['bracing', 'axes'], settlers: 10,
+    // the company brought tents enough for two cottages' worth of people
+    buildings: [['cottage', -120, 38], ['cottage', -94, 36]],
     soldiers: [['shield', 1], 'shield', ['fletcher', 1], 'fletcher', 'blade'],
   },
   // legionaries are tougher than reavers: fewer of them per attack
@@ -43,8 +45,8 @@ export const SALTROAD_SCENARIO = {
   objectives: [
     {
       id: 'waystation', title: 'Light the waystation',
-      text: 'Select the Waystation and rekindle its hearth: settlers from the valley will follow the light.',
-      hint: 'Left-click the waystation (the round hall), then press "Rekindle the Hearth".',
+      text: 'Select the waystation\'s Keep and rekindle its hearth: settlers from the valley will follow the light.',
+      hint: 'Left-click the Keep (the round stone hall), then press "Rekindle the Hearth".',
       highlight: 'keep', activeWhen: { always: true }, completeWhen: { keepLit: true },
       onComplete: [{ speaker: 'maren', text: 'The lantern burns over Lanternford. Now — timber, bread and salt.' }],
     },

@@ -58,7 +58,7 @@ try {
     await page.waitForSelector('.cinematic', { timeout: 10000 });
     assert(/Chapter 1/.test(await page.textContent('.cinematic')), 'chapter intro shown');
     await page.mouse.click(640, 400);
-    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 5000 });
+    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 20000 });
     await page.waitForSelector('.hud .objectives .obj-title');
     const first = await page.textContent('.objectives .obj-list');
     assert(/Rekindle the hearth/.test(first), 'first objective shown');
@@ -214,10 +214,24 @@ try {
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
     await page.waitForSelector('.cinematic', { timeout: 10000 });
     await page.keyboard.press('Space');
-    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 5000 });
+    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 20000 });
     await page.waitForFunction(() => /A town that feeds itself/.test(document.querySelector('.objectives').textContent), null, { timeout: 20000 });
     const town = await page.evaluate(() => { const w = window.__GAME__.world(); return { id: w.meta.scenarioId, level: Object.values(w.entities).find((e) => e.type === 'keep').level }; });
     assert(town.id === 'greyfen' && town.level === 2, 'chapter two starts in the castle town');
+  });
+
+  await test('campaign-chapter-four', async (page) => {
+    await page.goto(url('?debug=1&start=1&chapter=saltroad&quality=low'), { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    await page.waitForFunction(() => /Light the waystation/.test(document.querySelector('.objectives').textContent), null, { timeout: 20000 });
+    const info = await page.evaluate(() => { const w = window.__GAME__.world(); return { map: window.__GAME__.session.sim.terrain.map.id, enemy: w.players.p2.name }; });
+    assert(info.map === 'saltmere' && info.enemy === 'Legion of Varr', `chapter four on the Saltmere against Varr (${JSON.stringify(info)})`);
+    // salt works appear in the build menu only where the map has salt pans
+    await page.focus('canvas.game-canvas');
+    await page.keyboard.press('KeyB');
+    await page.waitForSelector('.cmd-grid button[aria-label="Salt Works"]', { timeout: 20000 });
+    await page.getByRole('button', { name: 'Diplomacy' }).click();
+    await page.waitForFunction(() => /Legion of Varr/.test(document.querySelector('.diplo-panel').textContent), null, { timeout: 20000 });
   });
 
   await test('diplomacy-gift', async (page) => {

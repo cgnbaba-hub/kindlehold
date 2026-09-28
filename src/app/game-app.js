@@ -216,7 +216,7 @@ export async function startApp(params) {
   if (verify) {
     // deterministic verification session (no menu)
     const diff = ['story', 'normal', 'hard'].includes(params.get('difficulty')) ? params.get('difficulty') : 'normal';
-    await startGame({ seed: params.get('seed') || '1337', demo: params.get('demo') || null, difficulty: diff });
+    await startGame({ seed: params.get('seed') || '1337', demo: params.get('demo') || null, difficulty: diff, scenarioId: Object.hasOwn(SCENARIOS, params.get('chapter') || '') ? params.get('chapter') : 'harrowmere' });
     if (params.get('ui') !== '1' && hud) hud.el.hidden = true; // world-only screenshots
     return;
   }

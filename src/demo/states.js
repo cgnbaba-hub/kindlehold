@@ -23,6 +23,11 @@ export const DEMO_STATES = {
     playTo(sim, bot, 10.5 * 1200);
     quietEnemy(sim);
   },
+  /** a thriving settlement with the whole map scouted (landscape shots of other maps) */
+  scouted(sim) {
+    DEMO_STATES.midgame(sim);
+    reveal(sim.world, sim.terrain.half, 0, 0, sim.terrain.half * 1.5);
+  },
   /** a summer shower over the settlement (rain follows a fixed rhythm: see RAIN) */
   rain(sim) {
     const bot = createBot(sim);
