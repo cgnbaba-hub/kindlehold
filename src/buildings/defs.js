@@ -116,6 +116,16 @@ export const BUILDINGS = {
     desc: 'The Margravine\'s fortified manor on the eastern rise. Its legion guards the salt road.',
     cost: {}, buildTime: 0, hp: 2800, radius: 7.5, navRadius: 6.5, territory: 32, door: [0, 7.6],
   },
+  staghall: {
+    id: 'staghall', name: 'Chapterhouse of the White Stag', owner: 'p2', buildable: false,
+    desc: 'The Order\'s walled chapterhouse. Its walls shrug off swords and arrows — bring Sappers.',
+    cost: {}, buildTime: 0, hp: 3200, radius: 8, navRadius: 7, territory: 34, door: [0, 8.2], walls: 0.3,
+  },
+  stagtower: {
+    id: 'stagtower', name: 'Stag Watchtower', owner: 'p2', buildable: false,
+    desc: 'A white-stone tower with a longbowman on the parapet. Its walls stand firm against all but Sappers.',
+    cost: {}, buildTime: 0, hp: 600, radius: 2.8, navRadius: 2.4, attack: { damage: 12, range: 18, cooldown: 1.8 }, door: [0, 2.8], walls: 0.5,
+  },
   varrtower: {
     id: 'varrtower', name: 'Varr Watchtower', owner: 'p2', buildable: false,
     desc: 'A stone tower with a crossbowman behind its crenels.',
@@ -149,7 +159,7 @@ export const UPGRADES = {
   hunter: { 2: { ...WORKSHOP_L2, name: 'Hunting Lodge' } },
   fisher: { 2: { ...WORKSHOP_L2, name: 'Fishery' } },
   saltworks: { 2: { ...WORKSHOP_L2, name: 'Salt House' } },
-  barracks: { 2: { name: 'Drill Yard', cost: { timber: 40, stone: 30, iron: 20, taler: 60 }, time: 45, speed: 1.25, hp: 250, desc: 'Unlocks Crossbowmen and Halberdiers; training 25% faster.' } },
+  barracks: { 2: { name: 'Drill Yard', cost: { timber: 40, stone: 30, iron: 20, taler: 60 }, time: 45, speed: 1.25, hp: 250, desc: 'Unlocks Crossbowmen, Halberdiers and Sappers; training 25% faster.' } },
   canteen: { 2: { ...WORKSHOP_L2, name: 'Inn', desc: 'A second cook and 20% faster cooking.' } },
 };
 

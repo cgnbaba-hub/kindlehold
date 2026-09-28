@@ -433,6 +433,54 @@ const MODELS = {
     body.push(...door(1.0, 1.8, 1.72));
     return { body, glow, height: 11 };
   },
+  staghall(rnd) {
+    // the Chapterhouse: a pale curtain wall with four corner turrets, a gatehouse to the south
+    // and a steep-roofed chapter hall with a spire inside
+    const body = [], glow = [];
+    const WHITE = '#d8d4c8', WHITE2 = '#c4c0b4', GREEN = '#2e5a3a', ROOF = '#3e4e46';
+    body.push(b(16.4, 0.5, 16.4, C.stoneDark, P.stone, { y: 0.25 }));
+    for (const s of [-1, 1]) {
+      body.push(b(15, 3.4, 1.0, WHITE, P.stone, { y: 1.9, z: s * 7.2 }, 0.04, rnd));
+      body.push(b(1.0, 3.4, 15, WHITE, P.stone, { x: s * 7.2, y: 1.9 }, 0.04, rnd));
+      for (let i = 0; i < 6; i++) {
+        body.push(b(0.8, 0.6, 1.0, WHITE2, P.stone, { x: -5.5 + i * 2.2, y: 3.9, z: s * 7.2 }));
+        body.push(b(1.0, 0.6, 0.8, WHITE2, P.stone, { x: s * 7.2, y: 3.9, z: -5.5 + i * 2.2 }));
+      }
+    }
+    for (const [x, z] of [[-7.2, -7.2], [7.2, -7.2], [-7.2, 7.2], [7.2, 7.2]]) {
+      body.push(paint(place(cyl(1.5, 1.7, 5.6, 10), { x, y: 2.8, z }), WHITE, 0.04, rnd, P.stone));
+      body.push(paintGradient(place(cone(1.9, 2.4, 10), { x, y: 6.8, z }), '#2e3a34', ROOF, P.shingles));
+    }
+    // gatehouse on the south wall
+    body.push(b(4.6, 5.4, 2.2, WHITE, P.stone, { y: 2.7, z: 7.3 }, 0.04, rnd));
+    for (let i = 0; i < 4; i++) body.push(b(0.7, 0.7, 2.2, WHITE2, P.stone, { x: -1.7 + i * 1.14, y: 5.75, z: 7.3 }));
+    body.push(...door(2.2, 3.2, 8.42));
+    for (const x of [-1.8, 1.8]) body.push(b(1.0, 2.6, 0.06, GREEN, P.cloth, { x, y: 3.6, z: 8.44 }), b(0.5, 0.5, 0.07, WHITE, P.cloth, { x, y: 4.0, z: 8.46, rz: Math.PI / 4 }));
+    // chapter hall: long nave with a steep roof and a spire over the crossing
+    body.push(b(6, 6, 9, WHITE, P.stone, { y: 3.5, z: -1.4 }, 0.05, rnd));
+    body.push(paintGradient(place(gable(6.6, 9.4, 3.6), { y: 6.5, z: -1.4 }), '#2e3a34', ROOF, P.shingles));
+    body.push(b(2.6, 4, 2.6, WHITE, P.stone, { y: 8.4, z: -3.4 }));
+    body.push(paintGradient(place(cone(1.9, 4.6, 4), { y: 12.7, z: -3.4, ry: Math.PI / 4 }), '#2e3a34', ROOF, P.shingles));
+    body.push(...banner(0, 14.9, -3.4, GREEN, rnd, 2.2));
+    for (const x of [-3.02, 3.02]) for (const z of [-4.2, -1.4, 1.4]) glow.push(win(0.6, 1.4, { x, y: 4.2, z, ry: x < 0 ? -Math.PI / 2 : Math.PI / 2 }));
+    glow.push(win(1.2, 1.6, { y: 4.6, z: 3.12 }));
+    body.push(...banner(-7.2, 5.4, 7.2, GREEN, rnd, 1.8), ...banner(7.2, 5.4, 7.2, GREEN, rnd, 1.8));
+    body.push(...barrel(4.8, 4.4), ...barrel(5.5, 3.8), ...barrel(-5, -5));
+    return { body, glow, height: 16 };
+  },
+  stagtower(rnd) {
+    const body = [];
+    body.push(b(3.8, 0.5, 3.8, C.stoneDark, P.stone, { y: 0.25 }));
+    body.push(paint(place(cyl(2.0, 2.3, 7, 10), { y: 3.7 }), '#d8d4c8', 0.05, rnd, P.stone));
+    // a crenellated parapet with a small roofed lookout for the longbowman
+    body.push(paint(place(cyl(2.5, 2.3, 0.6, 12), { y: 7.4 }), '#c4c0b4', 0, null, P.stone));
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; body.push(b(0.6, 0.6, 0.45, '#d8d4c8', P.stone, { x: Math.sin(a) * 2.3, y: 8.0, z: Math.cos(a) * 2.3, ry: a })); }
+    body.push(paint(place(cyl(1.2, 1.2, 1.4, 8), { y: 8.4 }), '#d8d4c8', 0, null, P.stone));
+    body.push(paintGradient(place(cone(1.7, 1.9, 8), { y: 10.0 }), '#2e3a34', '#3e4e46', P.shingles));
+    body.push(...banner(1.8, 8.3, 1.8, '#2e5a3a', rnd, 1.6));
+    body.push(...door(1.0, 1.8, 2.2));
+    return { body, glow: [win(0.4, 0.8, { y: 5.4, z: 2.15 })], height: 11 };
+  },
   brigandtower(rnd) {
     const m = MODELS.reavertower(rnd);
     m.body[m.body.length - 2] = paintGradient(place(cone(2.3, 2.2, 7), { y: 8.4 }), '#4f5a3a', '#6f7a4a', P.thatch);

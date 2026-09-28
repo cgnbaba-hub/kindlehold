@@ -21,6 +21,15 @@ export const FACTIONS = {
     fighters: 'legionaries',
     truceNote: 'The Margravine calls it tribute. Paid, it keeps her legion behind the manor walls for a while.',
   },
+  stag: {
+    id: 'stag', name: 'Order of the White Stag', short: 'Stag', color: '#e8e4d8',
+    hall: 'staghall', tower: 'stagtower', hallName: 'Chapterhouse', fort: 'chapterhouse',
+    cycle: ['staghalberd', 'stagarcher', 'stagwarden', 'stagarcher', 'staghalberd', 'stagwarden'],
+    garrison: ['staghalberd', 'staghalberd', 'stagarcher', 'stagwarden', 'stagarcher', 'stagwarden'],
+    commander: 'vane', leader: 'Master Edric Vane', leaderShort: 'Master Vane', portrait: 'vane',
+    fighters: 'wardens',
+    truceNote: 'The Order sells peace like everything else: by the hour, paid in advance.',
+  },
 };
 
 export function enemyFaction(world) {

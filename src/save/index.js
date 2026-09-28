@@ -10,6 +10,7 @@ import { TECHS } from '../technology/defs.js';
 import { HARROWMERE_SCENARIO } from '../missions/scenarios/harrowmere.js';
 import { GREYFEN_SCENARIO, TOLLBREAKER_SCENARIO } from '../missions/scenarios/campaign.js';
 import { SALTROAD_SCENARIO } from '../missions/scenarios/saltroad.js';
+import { WHITESTAG_SCENARIO } from '../missions/scenarios/whitestag.js';
 
 export const SAVE_FORMAT = 'kindlehold-save';
 
@@ -88,7 +89,7 @@ const playerFull = v.object({
 const worldSchema = v.object({
   schemaVersion: v.number({ min: 1, max: SCHEMA_VERSION, int: true }),
   meta: v.object({
-    scenarioId: v.string({ oneOf: ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad'] }), difficulty: v.string({ oneOf: ['story', 'normal', 'hard'] }),
+    scenarioId: v.string({ oneOf: ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad', 'whitestag'] }), difficulty: v.string({ oneOf: ['story', 'normal', 'hard'] }),
     campaign: v.optional(v.object({ greyfen: v.optional(v.string({ oneOf: ['allied', 'defeated', 'neutral'] })) }, { allowExtra: false })),
   }),
   tick: v.number({ min: 0, max: 1e9, int: true }),
@@ -115,7 +116,7 @@ const worldSchema = v.object({
     objectives: v.array(v.object({ id: v.string({ max: 40 }), state: v.string({ oneOf: ['pending', 'active', 'done'] }) }), { max: 64 }),
     flags: v.record(v.any(), { max: 64 }), triggers: v.record(v.any(), { max: 64 }), messages: v.array(v.any(), { max: 200 }),
   }),
-  ai: v.object({ wave: nonNeg(1000), state: v.string({ oneOf: ['build', 'gather', 'raid', 'retreat'] }), raidIds: ids(400), nextSpawnTick: nonNeg(1e10), nextScoutTick: nonNeg(1e10), faction: v.optional(v.string({ oneOf: ['rustfang', 'varr'] })) }),
+  ai: v.object({ wave: nonNeg(1000), state: v.string({ oneOf: ['build', 'gather', 'raid', 'retreat'] }), raidIds: ids(400), nextSpawnTick: nonNeg(1e10), nextScoutTick: nonNeg(1e10), faction: v.optional(v.string({ oneOf: ['rustfang', 'varr', 'stag'] })) }),
   combat: v.object({ pending: v.array(v.object({ target: v.number({ min: 1, max: 1e9, int: true }), damage: nonNeg(1e5), arrive: nonNeg(1e10) }), { max: 4000 }) }),
   selection: v.object({ ids: v.array(num, { max: 2000 }), groups: v.record(ids(200), { max: 10, keyPattern: /^[1-9]$/ }) }),
   stats: v.object({ produced: stockSchema, consumed: stockSchema }),
@@ -180,7 +181,7 @@ export function deserializeWorld(text) {
     if (String(e.id) !== k) throw new ValidationError(`entity key ${k} does not match id ${e.id}`);
     if (e.id >= doc.world.nextId) throw new ValidationError('entity id beyond nextId');
   }
-  const sc = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO, saltroad: SALTROAD_SCENARIO }[doc.world.meta.scenarioId] || HARROWMERE_SCENARIO;
+  const sc = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO, saltroad: SALTROAD_SCENARIO, whitestag: WHITESTAG_SCENARIO }[doc.world.meta.scenarioId] || HARROWMERE_SCENARIO;
   const known = new Set(sc.objectives.map((o) => o.id));
   for (const o of doc.world.mission.objectives) if (!known.has(o.id)) throw new ValidationError(`unknown objective "${o.id}"`);
   markDirty(doc.world);

@@ -234,6 +234,22 @@ try {
     await page.waitForFunction(() => /Legion of Varr/.test(document.querySelector('.diplo-panel').textContent), null, { timeout: 20000 });
   });
 
+  await test('campaign-chapter-five', async (page) => {
+    await page.goto(url('?debug=1&start=1&chapter=whitestag&quality=low'), { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    await page.waitForFunction(() => /Make camp at Hartsgate/.test(document.querySelector('.objectives').textContent), null, { timeout: 20000 });
+    const info = await page.evaluate(() => { const w = window.__GAME__.world(); return { map: window.__GAME__.session.sim.terrain.map.id, enemy: w.players.p2.name, villages: Object.values(w.entities).filter((e) => e.type === 'hamlet').length }; });
+    assert(info.map === 'whitehart' && info.enemy === 'Order of the White Stag' && info.villages === 3, `chapter five in Whitehart against the Order (${JSON.stringify(info)})`);
+    // the Barracks offers Sappers, locked until the Drill Yard
+    const bkId = (await game(page, () => window.__GAME__.find('building', 'barracks')))[0];
+    const pos = await game(page, (id) => { const b = window.__GAME__.world().entities[id]; return window.__GAME__.project(b.x, b.z, 3); }, bkId);
+    await page.mouse.click(pos.x, pos.y);
+    await page.waitForFunction((id) => window.__GAME__.world().selection.ids.includes(id), bkId, { timeout: 20000 });
+    const sapper = page.getByRole('button', { name: 'Train Sapper' });
+    await sapper.waitFor({ timeout: 20000 });
+    assert(await sapper.isDisabled(), 'Sappers need the Drill Yard');
+  });
+
   await test('diplomacy-gift', async (page) => {
     await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });

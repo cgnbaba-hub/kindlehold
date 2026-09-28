@@ -80,6 +80,18 @@ ${FACE('#e2c2a4', '#aa8468')}${EYES('#26303a')}
 <path d="M21 20.5c3-2 7-3 11-3s8 1 11 3" stroke="#e3c26b" stroke-width="2" fill="none"/>
 <path d="M32 15.5l1.4 2.4h-2.8z" fill="#c03040" stroke="#e3c26b" stroke-width=".6"/>`, ['#5a2a30', '#140a0c']),
 
+  // Master Edric Vane of the White Stag: grey-bearded, steel coif, white mantle with a green stag
+  vane: P('vane', `<path d="M6 64c2-15 11-21 26-21s24 6 26 21z" fill="#d8d4c8"/>
+<path d="M14 64c2-10 8-15 18-15s16 5 18 15z" fill="#2e5a3a"/>
+<path d="M27 52l5-5 5 5-5 7z" fill="#e8e4d8" stroke="#1e2a20" stroke-width=".8"/>
+<path d="M28 50l-2-4M36 50l2-4" stroke="#e8e4d8" stroke-width="1.2"/>
+<path d="M18 40c0-18 6-27 14-27s14 9 14 27c-3-4-6-6-14-6s-11 2-14 6z" fill="#9aa0a6" stroke="#5a5e64" stroke-width=".8"/>
+${FACE('#dcb99a', '#a8826a')}${EYES('#26302a')}
+<path d="M25.5 25l4.4.4M34.1 25.4l4.4-.4" stroke="#8a8680" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M24 34c1 8 4 11 8 11s7-3 8-11c-2 2-5 3-8 3s-6-1-8-3z" fill="#a8a098"/>
+<path d="M28.5 35.5c2-.6 5-.6 7 0" stroke="#5a4a44" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M20 22c2-6 7-9 12-9s10 3 12 9c-4-2-8-3-12-3s-8 1-12 3z" fill="#b9bec4" stroke="#5a5e64" stroke-width=".8"/>`, ['#3a4a3e', '#0e1410']),
+
   // Hild of Millbrook, elder of the river folk: white braids, blue-grey shawl, a reed charm
   hild: P('hild', `<path d="M8 64c2-14 10-20 24-20s22 6 24 20z" fill="#4a5a68"/>
 <path d="M14 64c1-10 6-16 18-18 12 2 17 8 18 18z" fill="#5d7080"/>

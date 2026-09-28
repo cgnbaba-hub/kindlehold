@@ -58,7 +58,7 @@ guards — keep a few soldiers near your farms and mines.
 
 ## The campaign
 
-Choose **Campaign** in the main menu. Three chapters tell the story of Kindlehold:
+Choose **Campaign** in the main menu. Five chapters tell the story of Kindlehold:
 
 1. **The Rekindling of Harrowmere:** light the hearth, build the town, break the Rustfang toll.
 2. **The Greyfen Question:** a year later. Visit Millbrook, then win Morwen's Greyfen as allies
@@ -71,6 +71,13 @@ Choose **Campaign** in the main menu. Three chapters tell the story of Kindlehol
    win over the salters of Pannholt and decide whether to pay the Margravine of Varr's
    tribute. Her legion fights in formation: pikemen in front, crossbowmen behind (their bolts
    pierce armour), knights in mail. Break two attacks, then take her manor.
+5. **The White Stag:** the seals in the Margravine's letters lead into the forest vale of
+   Whitehart. The Order of the White Stag holds all three villages along the Varrow river with
+   a watchtower and a guard each. Break an outpost, then bring Maren to the village: it joins
+   you and pays a tithe (every freed village adds its share). Upgrade the Barracks to a Drill
+   Yard and train **Sappers**: their mauls break towers and walls four times faster than any
+   soldier, and the Order's stone walls barely notice swords and arrows. Stag longbows
+   outrange your Fletchers. Free all three villages, then break Master Vane's chapterhouse.
 
 Winning a chapter opens the next. Chapter 3 remembers what you decided about the Greyfen.
 Each chapter starts with a short flight over the valley: click or press any key to skip it.
@@ -111,7 +118,9 @@ banner button next to the clock:
 ## More soldiers
 
 Upgrade the Barracks to the **Drill Yard** to train **Crossbowmen** (their bolts pierce armour)
-and **Halberdiers** (heavily armoured elite with a long reach).
+and **Halberdiers** (heavily armoured elite with a long reach) and **Sappers** (siege engineers:
+four times the damage against buildings, and the only soldiers who get through stone walls
+properly; weak in the field).
 
 ## Seasons
 

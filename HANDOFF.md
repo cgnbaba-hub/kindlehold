@@ -27,7 +27,7 @@ fasst zusammen, was eine neue Session (z. B. Claude Code im Web) wissen muss.
 ```bash
 npm ci && npx playwright install chromium   # einmalig
 npm run dev          # http://127.0.0.1:5180/  (?debug=1 stellt window.__GAME__ bereit)
-npm test             # 119 node:test-Tests (Unit, Integration, deterministische Simulation)
+npm test             # 125 node:test-Tests (Unit, Integration, deterministische Simulation)
 npm run build
 npm run verify -- --prod --nofps    # 12 Screenshot-Presets + JSON-Berichte (langsam)
 npm run test:e2e -- --only=<name>   # UI-Tests in Headless-Chromium, --only filtert
@@ -108,6 +108,18 @@ Draufsicht als PNG mit einem kleinen Skript über `createTerrainData(mapById(id)
 die Wegstation muss erreichbar sein: Holz, Stein, Eisen und (hier) Salz innerhalb von 34 m
 Territorium. Presets: `saltmere-town`, `saltmere-lake`, `saltmere-manor`, `saltmere-pans`
 (Parameter `chapter`).
+
+## Kapitel 5 „The White Stag“
+
+Karte Whitehart (`src/world/maps/whitehart.js`), Orden vom Weißen Hirsch (`stag` in
+`src/ai/factions.js`), Kapitel-Daten in `src/missions/scenarios/whitestag.js`. Neu: Pioniere
+(`vsBuildings` an der Einheit, Schadensart `siege`), Mauern (`walls` am Gebäude), besetzte Dörfer
+(`occupiedBy` in `src/pois/index.js`), Außenposten (`enemy.outposts`), Bedingung `units`.
+Flüsse auf neuen Karten: Ufer nicht zu steil machen (`bankWidth` reichlich), sonst sind die
+Furten Sackgassen. Prüfen mit einem Walkability-Raster über `createNavGrid`. Presets:
+`whitehart-camp`, `whitehart-vale`, `whitehart-chapterhouse`, `whitehart-outpost`,
+`whitehart-figures` (Demo `stagline`). Stand: Tests 125/125, e2e 15/15, die fünf neuen Presets
+grün (Dreiecke 1,44–1,49 M), `npm run balance` Kapitel 5 8/8.
 
 ## Stufe 3 (erster Teil): Kampagne
 
