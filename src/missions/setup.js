@@ -140,6 +140,11 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   const maren = spawnUnit(world, 'maren', PLAYER, door.x + 2, door.z - 1.5);
   maren.order = { type: 'idle', ax: maren.x, az: maren.z };
   world.selection.ids = [maren.id];
+  // further heroes who join in later chapters (Wren from chapter six)
+  for (const type of st.heroes || []) {
+    const hh = spawnUnit(world, type, PLAYER, door.x + 3.5, door.z - 0.5);
+    if (hh) hh.order = { type: 'idle', ax: hh.x, az: hh.z };
+  }
 
   // Enemy garrison
   const hallDoor = { x: ec.x + Math.sin(hallRot) * 9, z: ec.z + Math.cos(hallRot) * 9 };

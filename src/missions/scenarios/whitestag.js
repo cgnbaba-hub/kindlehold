@@ -55,7 +55,7 @@ export const WHITESTAG_SCENARIO = {
     {
       id: 'hartsgate', title: 'Make camp at Hartsgate',
       text: 'Build a Woodcutter\'s Lodge, a Quarry, a Farm and a Fisher at Hart\'s Mere.',
-      hint: 'Your camp already has two cottages and a Barracks. The pond south-east of the Keep has fish.',
+      hint: 'Your camp already has four cottages and a Barracks. The pond south-east of the Keep has fish.',
       highlight: 'build:lodge', activeWhen: { always: true },
       completeWhen: { all: [{ built: 'lodge' }, { built: 'quarry' }, { built: 'farm' }, { built: 'fisher' }] },
       onComplete: [{ speaker: 'osric', text: 'Hartsgate stands. Bread, fish and timber — now we can think about the villages.' }],

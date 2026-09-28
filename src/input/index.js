@@ -6,6 +6,7 @@ import { all } from '../world/world.js';
 import { PLAYER } from '../core/contracts.js';
 import { BUILDINGS } from '../buildings/defs.js';
 import { DEFAULT_BINDINGS } from './bindings.js';
+import { ABILITIES, heroAbilities } from '../heroes/index.js';
 
 const DRAG_PX = 6;
 const PICK_PX = 22;
@@ -135,11 +136,16 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
     if (kind === 'move') {
       if (!units.length) return;
       state.mode = 'target'; state.targetKind = 'move';
-    } else if (kind === 'flare' || kind === 'kindle') {
-      const hero = units.find((u) => u.hero) || all(world(), 'unit').find((u) => u.hero && u.owner === PLAYER && !u.downed);
-      if (!hero) return;
-      if (kind === 'kindle') { issue({ type: 'ability', heroId: hero.id, ability: 'kindle' }); return; }
-      state.mode = 'target'; state.targetKind = 'flare'; state.heroId = hero.id;
+    } else if (kind === 'slot0' || kind === 'slot1' || ABILITIES[kind]) {
+      // F/G: the first or second ability of the selected hero (or of any hero who has it)
+      const mine = all(world(), 'unit').filter((u) => u.hero && u.owner === PLAYER && !u.downed);
+      const has = (u, id) => heroAbilities(u).some((a) => a.id === id);
+      let hero, ab;
+      if (ABILITIES[kind]) { hero = units.find((u) => u.hero && has(u, kind)) || mine.find((u) => has(u, kind)); ab = ABILITIES[kind]; }
+      else { hero = units.find((u) => u.hero) || mine[0]; ab = hero && heroAbilities(hero)[kind === 'slot0' ? 0 : 1]; }
+      if (!hero || !ab) return;
+      if (ab.target === 'self') { issue({ type: 'ability', heroId: hero.id, ability: ab.id }); return; }
+      state.mode = 'target'; state.targetKind = ab.id; state.heroId = hero.id;
     } else {
       if (!units.length) return;
       state.mode = 'target'; state.targetKind = kind;
@@ -160,8 +166,8 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
   function commitTarget(x, y) {
     const g = pickGround(x, y);
     if (!g) return;
-    if (state.targetKind === 'flare') {
-      issue({ type: 'ability', heroId: state.heroId, ability: 'flare', x: g.x, z: g.z });
+    if (ABILITIES[state.targetKind]) {
+      issue({ type: 'ability', heroId: state.heroId, ability: state.targetKind, x: g.x, z: g.z });
     } else {
       const ids = selectedUnits().map((u) => u.id);
       const t = pickEntity(x, y);
@@ -323,8 +329,8 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
       case b.patrol: beginTarget('patrol'); break;
       case b.stop: { const ids = selectedUnits().map((u) => u.id); if (ids.length) issue({ type: 'stop', ids }); break; }
       case b.hold: { const ids = selectedUnits().map((u) => u.id); if (ids.length) issue({ type: 'hold', ids }); break; }
-      case b.abilityFlare: beginTarget('flare'); break;
-      case b.abilityKindle: beginTarget('kindle'); break;
+      case b.abilityFlare: beginTarget('slot0'); break;
+      case b.abilityKindle: beginTarget('slot1'); break;
       case b.buildMenu: if (hooks.onBuildMenu) hooks.onBuildMenu(); break;
       case b.focusSelection: ev.preventDefault(); focusSelection(); break;
       case b.focusKeep: { const k = all(world(), 'building').find((x) => x.type === 'keep' && x.owner === PLAYER); if (k) cam.focus(k.x, k.z); break; }

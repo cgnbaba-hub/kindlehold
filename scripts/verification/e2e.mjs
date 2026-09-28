@@ -250,6 +250,25 @@ try {
     assert(await sapper.isDisabled(), 'Sappers need the Drill Yard');
   });
 
+  await test('campaign-chapter-six', async (page) => {
+    await page.goto(url('?debug=1&start=1&chapter=irondebt&quality=low'), { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    await page.waitForFunction(() => /Rekindle Stonewatch/.test(document.querySelector('.objectives').textContent), null, { timeout: 20000 });
+    const info = await page.evaluate(() => { const w = window.__GAME__.world(); return { map: window.__GAME__.session.sim.terrain.map.id, enemy: w.players.p2.name, heroes: Object.values(w.entities).filter((e) => e.hero).map((e) => e.type).sort().join(',') }; });
+    assert(info.map === 'ironmarch' && info.enemy === 'House Morrow' && info.heroes === 'maren,wren', `chapter six in the Iron March with two heroes (${JSON.stringify(info)})`);
+    // Osric, the advisor: a visible character with a speech bubble and a hint for the current task
+    await page.waitForFunction(() => { const a = document.querySelector('.advisor'); return a && a.querySelector('.advisor-avatar svg') && /Stonewatch|Keep/.test(a.textContent); }, null, { timeout: 20000 });
+    // select Wren: her own abilities appear on F and G
+    const wrenId = (await game(page, () => window.__GAME__.find('unit', 'wren')))[0];
+    await page.evaluate((id) => window.__GAME__.session.input.setSelection([id]), wrenId);
+    await page.waitForFunction((id) => window.__GAME__.world().selection.ids.includes(id), wrenId, { timeout: 20000 });
+    await page.getByRole('button', { name: /Arrow Storm/ }).waitFor({ timeout: 20000 });
+    await page.getByRole('button', { name: /Hunter's Mark/ }).waitFor({ timeout: 20000 });
+    await page.focus('canvas.game-canvas');
+    await page.keyboard.press('KeyF');
+    await page.waitForFunction(() => window.__GAME__.session.input.state.targetKind === 'volley', null, { timeout: 20000 });
+  });
+
   await test('diplomacy-gift', async (page) => {
     await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });

@@ -58,7 +58,7 @@ guards — keep a few soldiers near your farms and mines.
 
 ## The campaign
 
-Choose **Campaign** in the main menu. Five chapters tell the story of Kindlehold:
+Choose **Campaign** in the main menu. Six chapters tell the story of Kindlehold:
 
 1. **The Rekindling of Harrowmere:** light the hearth, build the town, break the Rustfang toll.
 2. **The Greyfen Question:** a year later. Visit Millbrook, then win Morwen's Greyfen as allies
@@ -78,6 +78,12 @@ Choose **Campaign** in the main menu. Five chapters tell the story of Kindlehold
    Yard and train **Sappers**: their mauls break towers and walls four times faster than any
    soldier, and the Order's stone walls barely notice swords and arrows. Stag longbows
    outrange your Fletchers. Free all three villages, then break Master Vane's chapterhouse.
+6. **The Iron March:** a hundred-year-old debt takes you up into the highlands. **Wren Fenmore**
+   fights at Maren's side from now on: select her (the hooded archer) and press **F** for
+   **Arrow Storm** (arrows rain on a circle) or **G** for **Hunter's Mark** (marked enemies take
+   30% more damage, and the land around is revealed). Light the three border beacons, free the
+   miners of Delvholm, and beware House Morrow's **Delvers**: they tear down buildings three
+   times faster than any soldier. Break the household host, then Morrow Hold.
 
 Winning a chapter opens the next. Chapter 3 remembers what you decided about the Greyfen.
 Each chapter starts with a short flight over the valley: click or press any key to skip it.
@@ -109,8 +115,10 @@ banner button next to the clock:
 
 * **Your people:** hover over the population in the ribbon to see who is building, carrying,
   asleep or working where; click it for the full list.
-* **Osric, your reeve** (bottom left) shows the mood of the people and tells you what is
-  missing. Click him for his next piece of advice.
+* **Osric, your advisor** (bottom left) watches the stores, the people and the roads. His
+  speech bubble says what is missing or what the current task needs (blue). A yellow **!**
+  is a warning, a red **!** (and a raised finger) means act now. Click him, or press Enter
+  while he is focused, for his next piece of advice.
 * **Rations** (at the Keep): half, normal or generous portions — less food or a better mood.
 * **Feast** (at the Keep): 80 Taler and 30 provisions for three minutes of high spirits.
 * **Game speed:** click the speed next to the clock to pick 0.5× to 8×.

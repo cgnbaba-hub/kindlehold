@@ -27,7 +27,7 @@ fasst zusammen, was eine neue Session (z. B. Claude Code im Web) wissen muss.
 ```bash
 npm ci && npx playwright install chromium   # einmalig
 npm run dev          # http://127.0.0.1:5180/  (?debug=1 stellt window.__GAME__ bereit)
-npm test             # 125 node:test-Tests (Unit, Integration, deterministische Simulation)
+npm test             # 130 node:test-Tests (Unit, Integration, deterministische Simulation)
 npm run build
 npm run verify -- --prod --nofps    # 12 Screenshot-Presets + JSON-Berichte (langsam)
 npm run test:e2e -- --only=<name>   # UI-Tests in Headless-Chromium, --only filtert
@@ -108,6 +108,26 @@ Draufsicht als PNG mit einem kleinen Skript über `createTerrainData(mapById(id)
 die Wegstation muss erreichbar sein: Holz, Stein, Eisen und (hier) Salz innerhalb von 34 m
 Territorium. Presets: `saltmere-town`, `saltmere-lake`, `saltmere-manor`, `saltmere-pans`
 (Parameter `chapter`).
+
+## Kapitel 6 „The Iron March“, Wren, Osric
+
+Karte `src/world/maps/ironmarch.js`, Haus Morrow (`morrow` in `src/ai/factions.js`),
+Kapitel-Daten `src/missions/scenarios/irondebt.js`. Mehrere Helden: Fähigkeiten und Passiv stehen
+an der Einheit (`abilities`, `passive` in `src/units/defs.js`), `heroAbilities()` in
+`src/heroes/index.js`; F/G (`abilityFlare`/`abilityKindle`) sind Platz 1/2 des gewählten Helden.
+Weitere Helden im Szenario über `setup.heroes`. Ereignis-Aktion `commanderAtHall` lässt einen
+späten Anführer am Tor erscheinen (`enemy.commanderLate`). Osrics Avatar: `OSRIC_AVATAR` in
+`src/ui/portraits.js`, Logik in `src/ui/hud.js` (Rat mit Stufe `danger`/`warn`/`task`/`calm`),
+Animationen in `styles.css` (`.advisor-*`, `av*`-Keyframes). Presets: `ironmarch-fort`,
+`-vale`, `-hold`, `-delvholm`, `-figures` (Demo `ironline`). Nächster großer Wunsch des
+Spielers: Grafik auf die nächste Stufe (Roadmap Punkt 0), gemeinsam angehen.
+Stand: Tests 130/130, e2e 16/16, Presets `ironmarch-*` grün (1,32–1,36 M Dreiecke),
+`npm run balance` Kapitel 6 8/8.
+Lehre aus dem e2e `graphics-reset-recovers`: keine Endlos-CSS-Animationen im HUD (Osrics
+Atmen hat nach einem Grafik-Reset den Haupt-Thread unter Software-GL ~15 s blockiert; gemessen
+über verzögerte Toast-Timer). Einmalige Animationen und seltene Klassenwechsel sind in Ordnung.
+Getippten Text nicht in einem `aria-live`-Bereich aktualisieren (Screenreader bekommen den Satz
+einmal über ein `.sr-only`-Element).
 
 ## Kapitel 5 „The White Stag“
 

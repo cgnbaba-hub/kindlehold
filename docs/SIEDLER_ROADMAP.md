@@ -161,8 +161,26 @@ etwa 3–4 Stunden für menschliche Spieler (geschätzt, nicht gemessen).
 
 Bot-Messung Kapitel 5: Story 1/1 (20 min), Normal 4/4 (24–34 min Bot-Zeit), Hard 3/3 (je etwa 30 min) innerhalb von 40 min. Kapitel 1–4 nach der Wegfindungs-Änderung erneut gemessen: Kapitel 1 6/8 (Hard 1/3, wie vorher), Kapitel 2, 3 und 4 auf Normal alle gewonnen, Kapitel 4 Hard Seed 7 unentschieden wie schon vor der Änderung (gleicher Verlauf auf `main` gemessen). Die Kampagne hat damit fünf Kapitel, geschätzt 4–5 Stunden für menschliche Spieler (nicht gemessen).
 
+## Stufe 3 (vierter Teil): Kapitel 6 „The Iron March“ und Osric als Berater
+
+| Punkt | Umsetzung |
+|---|---|
+| Neue Karte „Ironmarch“ | Hochland nördlich des Tals: der Gletscherbach Iceburn quer durch die Mark (drei Furten), die alte Grenzfeste Stonewatch im Südwesten, drei Grenzfeuer auf den Höhen, das Bergmannsdorf Delvholm unter den Klippen, die Tinker-Rast, die alte Münze und Morrow Hold auf einem Felsabsatz im Nordosten. Viel Eisen. |
+| Neuer Gegner | **Haus Morrow** unter **Lady Ismay**: Ironguard (schwere Schildträger), Arbalesten (weite, durchschlagende Bolzen) und **Delver**, die mit Spitzhacken Gebäude dreimal so schnell einreißen. Schwarz-goldene Wappen, eigene Burg und Bastionen (Mauern, Pioniere nötig), eigenes Porträt. Ismay tritt erst ans Tor, wenn ihr Heer gebrochen ist. |
+| Zweite Heldin | **Wren Fenmore** ist ab Kapitel 6 spielbar: Langbogen (16 m), weite Sicht, **Pfeilsturm** (F: Pfeile regnen auf einen Kreis, der Schaden fällt beim Einschlag) und **Jägermal** (G: markierte Feinde nehmen 30 % mehr Schaden, das Gelände wird aufgedeckt). Das Heldensystem ist dafür allgemein geworden: Fähigkeiten und Passiv je Held, F/G gehören dem ausgewählten Helden. |
+| Story | Die hundert Jahre alte Schuld aus Vanes Büchern: Grenzfeuer entzünden, Delvholm befreien, Zinsen zahlen oder standhalten, Morrows Hausheer brechen, die Burg nehmen. Das Ende führt zu den Syndici von Carrow, der Hafenstadt jenseits des Tieflands. |
+| Osric als Berater | Statt Bild und Text: eine lebendige Büste (nickt bei neuem Rat, blinzelt, bewegt beim Tippen den Mund; bewusst ohne Endlos-Animationen, die schwache Grafik belasten), Sprechblase, Rolle „Reeve · advisor“, rotes Ausrufezeichen und erhobener Finger bei dringendem Rat, gelbes bei Warnungen, blaue Blase mit dem Hinweis zur aktuellen Aufgabe, „Next advice ›“ und Zähler. Tastatur: Enter/Leertaste. Reduzierte Bewegung schaltet die Animation ab. |
+| Bot | Erschöpfte Steinbrüche werden umgesetzt, bei Steinnot bricht er Stein von Hand. Außerdem behoben: Beim Umsetzen von Holzfällern lagen die Koordinaten auf allen Karten außer Harrowmere daneben. |
+
+Bot-Messung Kapitel 6: 8/8 (Story 23 min, Normal 25–28 min, Hard 25–28 min). Nach den Bot-Korrekturen alle Kapitel erneut gemessen: Kapitel 1 6/8 (Hard 1/3, unverändert), Kapitel 2 und 3 unverändert gewonnen, Kapitel 4 Normal 3/3 (26–32 min; Hard Seed 7 unverändert offen), Kapitel 5 8/8 (Story 29, Normal 22–34, Hard 31–34 min). Die Kampagne hat damit sechs Kapitel, geschätzt 5–6 Stunden für menschliche Spieler (nicht gemessen).
+
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
+0. **Grafik auf die nächste Stufe (Wunsch des Spielers, nächstes großes Paket):** bessere
+   Beleuchtung und Schatten, detailliertere Gebäude und Gelände (Materialien, Texturen,
+   Vegetation, Wasser), Figuren mit mehr Details bis hin zu animierten Modellen (Punkt 1),
+   Nachbearbeitung (Farbabstimmung, Umgebungsverdeckung, Tiefenschärfe im Nahbereich) —
+   mit Blick auf das Leistungsbudget. Gemeinsam mit dem Spieler angehen.
 1. **Echte animierte Figuren (Variante B):** Modelle mit Skelett, z. B. aus CC0-Paketen,
    mit Lauf-, Arbeits- und Kampfanimationen. Wegen der vielen Figuren sind dafür
    Leistungstricks nötig (Animation in Texturen vorberechnen, Detailstufen).

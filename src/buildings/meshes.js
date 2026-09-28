@@ -481,6 +481,54 @@ const MODELS = {
     body.push(...door(1.0, 1.8, 2.2));
     return { body, glow: [win(0.4, 0.8, { y: 5.4, z: 2.15 })], height: 11 };
   },
+  morrowhold(rnd) {
+    // Morrow Hold: a squat black-stone keep on a plinth, a gatehouse with a gold portcullis,
+    // flanking bastions and a smithy chimney (the house lives on its mines)
+    const body = [], glow = [];
+    const DARK = '#5e5e66', DARK2 = '#4e4e56', GOLD = '#d0a030', ROOF = '#34343c';
+    body.push(b(17, 1.2, 15, C.stoneDark, P.stone, { y: 0.6 }));
+    body.push(b(14, 5, 1.2, DARK, P.stone, { y: 3.6, z: 6.6 }, 0.04, rnd));
+    body.push(b(14, 5, 1.2, DARK, P.stone, { y: 3.6, z: -6.6 }, 0.04, rnd));
+    for (const s of [-1, 1]) body.push(b(1.2, 5, 14, DARK, P.stone, { x: s * 6.6, y: 3.6 }, 0.04, rnd));
+    for (let i = 0; i < 6; i++) for (const s of [-1, 1]) {
+      body.push(b(0.8, 0.7, 1.2, DARK2, P.stone, { x: -5.5 + i * 2.2, y: 6.4, z: s * 6.6 }));
+      body.push(b(1.2, 0.7, 0.8, DARK2, P.stone, { x: s * 6.6, y: 6.4, z: -5.5 + i * 2.2 }));
+    }
+    // the great keep: a tall block with a steep slate roof and a gold banner
+    body.push(b(8, 10, 7, DARK, P.stone, { y: 6.2, z: -1.5 }, 0.05, rnd));
+    body.push(paintGradient(place(pyramid(8.6, 7.6, 4), { y: 11.2, z: -1.5 }), '#1e1e22', ROOF, P.shingles));
+    body.push(...banner(0, 15.2, -1.5, GOLD, rnd, 2.4));
+    for (const x of [-2.2, 0, 2.2]) glow.push(win(0.6, 1.4, { x, y: 8.6, z: 2.02 }));
+    // corner bastions
+    for (const [x, z] of [[-6.8, -6.8], [6.8, -6.8], [-6.8, 6.8], [6.8, 6.8]]) {
+      body.push(b(3.2, 7.4, 3.2, DARK2, P.stone, { x, y: 4.5, z }, 0.05, rnd));
+      for (let i = 0; i < 4; i++) body.push(b(0.7, 0.7, 0.7, DARK, P.stone, { x: x + (i % 2 ? 1.2 : -1.2), y: 8.6, z: z + (i < 2 ? 1.2 : -1.2) }));
+    }
+    // gatehouse
+    body.push(b(5, 7, 2.4, DARK2, P.stone, { y: 4.1, z: 7.2 }, 0.04, rnd));
+    body.push(...door(2.4, 3.6, 8.42));
+    for (let i = 0; i < 5; i++) body.push(b(0.08, 3.4, 0.08, GOLD, P.metal, { x: -1.0 + i * 0.5, y: 2.9, z: 8.48 }));
+    for (const x of [-1.9, 1.9]) body.push(b(1.0, 2.8, 0.06, GOLD, P.cloth, { x, y: 5.6, z: 8.44 }));
+    // smithy chimney with a glow
+    body.push(b(1.4, 6, 1.4, DARK2, P.stone, { x: 4.4, y: 7, z: -4 }));
+    glow.push(place(ico(0.4, 0), { x: 4.4, y: 10.2, z: -4 }));
+    body.push(...barrel(-4.6, 4.2), ...barrel(-5.2, 3.5));
+    return { body, glow, height: 16 };
+  },
+  morrowtower(rnd) {
+    const body = [];
+    const DARK = '#5e5e66', DARK2 = '#4e4e56';
+    body.push(b(4.4, 0.6, 4.4, C.stoneDark, P.stone, { y: 0.3 }));
+    body.push(b(4, 6.4, 4, DARK, P.stone, { y: 3.8 }, 0.06, rnd));
+    body.push(b(4.4, 0.5, 4.4, DARK2, P.stone, { y: 7.2 }));
+    for (let i = 0; i < 3; i++) for (const s of [-1, 1]) {
+      body.push(b(0.8, 0.8, 0.5, DARK, P.stone, { x: (i - 1) * 1.4, y: 7.8, z: s * 2 }));
+      body.push(b(0.5, 0.8, 0.8, DARK, P.stone, { x: s * 2, y: 7.8, z: (i - 1) * 1.4 }));
+    }
+    body.push(...banner(1.6, 7.6, 1.6, '#d0a030', rnd, 1.6));
+    body.push(...door(1.1, 1.9, 2.02));
+    return { body, glow: [win(0.4, 0.8, { y: 5, z: 2.02 })], height: 9.5 };
+  },
   brigandtower(rnd) {
     const m = MODELS.reavertower(rnd);
     m.body[m.body.length - 2] = paintGradient(place(cone(2.3, 2.2, 7), { y: 8.4 }), '#4f5a3a', '#6f7a4a', P.thatch);

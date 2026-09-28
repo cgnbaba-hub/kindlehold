@@ -42,6 +42,21 @@ export const DEMO_STATES = {
     square(['sapper', 'halberd', 'sapper', 'crossbow', 'sapper', 'shield'], 'p1', -72);
     square(['stagwarden', 'vane', 'staghalberd', 'stagarcher', 'staghalberd', 'stagarcher'], 'p2', -58.5);
   },
+  /** chapter six close-up: Maren, Wren and the veterans facing House Morrow (held apart, not fighting) */
+  ironline(sim) {
+    DEMO_STATES.midgame(sim);
+    const square = (types, owner, x0) => types.forEach((t, i) => {
+      const x = x0 + (i % 3) * 1.9, z = 64 + Math.floor(i / 3) * 2.2;
+      let u;
+      if (t === 'maren' || t === 'wren') { u = all(sim.world, 'unit').find((e) => e.type === t); if (u) { u.x = u.px = x; u.z = u.pz = z; } }
+      else u = owner === 'p1' ? spawnUnit(sim.world, t, 'p1', x, z) : spawnEnemy(sim.world, t, x, z);
+      if (!u) return;
+      u.order = { type: 'hold', ax: x, az: z };
+      u.cd = 1e9; u.sentinel = true; u.path = null;
+    });
+    square(['sapper', 'wren', 'halberd', 'crossbow', 'maren', 'shield'], 'p1', -76);
+    square(['ironguard', 'ismay', 'delver', 'arbalest', 'ironguard', 'delver'], 'p2', -62.5);
+  },
   /** a summer shower over the settlement (rain follows a fixed rhythm: see RAIN) */
   rain(sim) {
     const bot = createBot(sim);

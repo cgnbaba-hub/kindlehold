@@ -218,6 +218,7 @@ export function createMenus({ root, settings, onSettingsChange }) {
       ['research', 'Research at the Keep', 'Keen Axes, Braced Timber, Tempered Blades and the March Charter (which unlocks Watchtowers).'],
       ['shield', 'Soldiers', 'Shieldbearers beat blades, Bladesmen beat archers, Fletchers beat shields. Right-click to move or attack; A = attack-move.'],
       ['maren', 'Maren Ashgrove', 'F: Beacon Flare (damages and dazzles enemies). G: Kindle the Line (wards nearby allies). Allies near her heal.'],
+      ['wren', 'Wren Fenmore (from chapter 6)', 'F: Arrow Storm (arrows rain on a circle). G: Hunter\'s Mark (marked enemies take 30% more damage; reveals the land). She sees further than anyone.'],
       ['warhall', 'Win', 'Survive the Rustfang raid, then destroy the Warhall at the ford fort. Lose the Keep and the scenario is lost.'],
     ];
     return show(screen('sub-menu', [backdrop(), h('div.menu-card.wide', {}, [

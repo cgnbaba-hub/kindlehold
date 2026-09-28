@@ -276,9 +276,9 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
         if (overlay) overlay.placementReason = '';
       }
       // ability targeting preview
-      if (st.mode === 'target' && st.targetKind === 'flare' && g) {
+      if (st.mode === 'target' && ABILITIES[st.targetKind] && g) {
         const hero = w.entities[st.heroId];
-        const ab = ABILITIES.flare;
+        const ab = ABILITIES[st.targetKind];
         aoe.visible = true; aoe.position.set(g.x, terrain.height(g.x, g.z) + 0.18, g.z); aoe.scale.setScalar(ab.radius);
         if (hero) {
           const inRange = Math.hypot(g.x - hero.x, g.z - hero.z) <= ab.range;
