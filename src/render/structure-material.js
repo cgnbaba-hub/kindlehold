@@ -22,12 +22,25 @@ float khShroudK(vec3 wp) {
   e = max(e, smoothstep(0.0, 24.0, outside) * 0.45);
   return mix(0.07, 1.0, smoothstep(0.08, 0.92, e));
 }
+// display-referred output (Low quality): darken, then the fog lifts it into a misty dark
 vec3 khShroud(vec3 col, vec3 wp) {
+  if (uShroudLinear > 0.5) return col;
   float k = khShroudK(wp);
-  // with post-processing the colour is still linear here: darken on the same perceptual scale
-  if (uShroudLinear > 0.5) return mix(vec3(0.0012, 0.0015, 0.0022), col, pow(k, 2.2)); // the haze on top lifts it as before
   return mix(vec3(0.018, 0.022, 0.03), col, k);
 }
+// linear output (post-processing): applied after the fog, on a perceptual scale, with a faint
+// haze of the fog colour so unexplored land looks as it did before (dark and misty, not black)
+vec3 khShroudLin(vec3 col, vec3 wp, vec3 fc, float ff) {
+  if (uShroudLinear < 0.5) return col;
+  float k = pow(khShroudK(wp), 1.8);
+  vec3 fg = mix(vec3(dot(fc, vec3(0.3, 0.5, 0.2))), fc, 0.5); // a greyer haze than the fog itself
+  return mix(vec3(0.006, 0.007, 0.009) + fg * (0.035 + ff * 0.2), col, k);
+}
+#ifdef USE_FOG
+#define KH_SHROUD_LIN(c, wp) khShroudLin(c, wp, fogColor, fogFactor)
+#else
+#define KH_SHROUD_LIN(c, wp) khShroudLin(c, wp, vec3(0.0), 0.0)
+#endif
 `;
 
 /** Shared image-based light flag (1 when the sky environment is baked; metals may then shine). */
@@ -186,7 +199,7 @@ vWNormal = normalize(mat3(modelMatrix) * khN);`);
   shader.fragmentShader = shader.fragmentShader
     .replace('#include <common>', '#include <common>\n' + GLSL_COMMON + SHROUD_GLSL + CLOUD_GLSL)
     .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\n{ float khCl = khCloud(vWPos); reflectedLight.directDiffuse *= khCl; reflectedLight.directSpecular *= khCl; }')
-    .replace('#include <fog_fragment>', 'gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);\n#include <fog_fragment>')
+    .replace('#include <fog_fragment>', 'gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);\n#include <fog_fragment>\ngl_FragColor.rgb = KH_SHROUD_LIN(gl_FragColor.rgb, vWPos);')
     .replace('#include <color_fragment>', `#include <color_fragment>
 diffuseColor.rgb *= khPattern(vPattern, vWPos, normalize(vWNormal));
 if (uSnow > 0.001 && vPattern > 0.5 && vPattern < 9.5 && (vPattern < 5.5 || vPattern > 6.5) && (vPattern < 7.5 || vPattern > 8.5)) {

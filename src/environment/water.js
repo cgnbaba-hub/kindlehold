@@ -82,7 +82,7 @@ varying float vDepth; varying vec3 vWPos;
 ${SHROUD_GLSL}
 ${CLOUD_GLSL}`)
       .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\n{ float khCl = khCloud(vWPos); reflectedLight.directDiffuse *= khCl; reflectedLight.directSpecular *= khCl; }')
-      .replace('#include <fog_fragment>', 'gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);\n#include <fog_fragment>')
+      .replace('#include <fog_fragment>', 'gl_FragColor.rgb = khShroud(gl_FragColor.rgb, vWPos);\n#include <fog_fragment>\ngl_FragColor.rgb = KH_SHROUD_LIN(gl_FragColor.rgb, vWPos);')
       .replace('#include <color_fragment>', `#include <color_fragment>
 float d = clamp(vDepth, 0.0, 2.5);
 vec3 shallow = vec3(0.34, 0.44, 0.33);
@@ -116,7 +116,7 @@ normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);`)
 float fres = clamp(pow(1.0 - abs(dot(normalize(-vViewPosition), normal)), 3.0), 0.0, 1.0);
 totalEmissiveRadiance += uSky * fres * mix(0.55, 0.25, uIce) * (1.0 - uNight * 0.7);`);
   };
-  mat.customProgramCacheKey = () => 'kh-water-v4';
+  mat.customProgramCacheKey = () => 'kh-water-v5';
   const mesh = new THREE.Mesh(geo, mat);
   mesh.renderOrder = 2;
   mesh.name = 'water';

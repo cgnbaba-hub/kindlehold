@@ -186,7 +186,8 @@ diffuseColor.rgb *= ground;
 #ifdef USE_FOG
 // aerial perspective: distant high ground sinks into the haze, so the valley walls read as far mountains
 gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(6.0, 70.0, vWPos.y) * smoothstep(90.0, 300.0, vFogDepth) * 0.5);
-#endif`)
+#endif
+gl_FragColor.rgb = KH_SHROUD_LIN(gl_FragColor.rgb, vWPos);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
 { // procedural bump from the blended texture heights: pebbles, cracks and tufts catch the light
   vec3 dpdx = dFdx(-vViewPosition), dpdy = dFdy(-vViewPosition);
@@ -197,7 +198,7 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(6.0, 70.0, vWPos.y
   normal = normalize(abs(det) * normal - grad * 0.12);
 }`);
   };
-  mat.customProgramCacheKey = () => 'kh-terrain-v6';
+  mat.customProgramCacheKey = () => 'kh-terrain-v7';
 
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
