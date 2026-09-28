@@ -12,8 +12,8 @@ import { log } from '../../src/core/logger.js';
 log.setConsoleLevel('error');
 const chapter = (id, extra = {}) => createSimulation({ seed: 7, difficulty: 'normal', scenarioId: id, ...extra });
 
-test('the campaign has three chapters with objectives and endings', () => {
-  assert.deepEqual(CAMPAIGN, ['harrowmere', 'greyfen', 'tollbreaker']);
+test('the campaign has four chapters with objectives and endings', () => {
+  assert.deepEqual(CAMPAIGN, ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad']);
   for (const id of CAMPAIGN) {
     const sc = SCENARIOS[id];
     assert.ok(sc.objectives.length >= 3, id);

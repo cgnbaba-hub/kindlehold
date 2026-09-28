@@ -88,6 +88,8 @@ export function createBot(sim, { aggressive = true } = {}) {
     if (count('cottage') < 1) { place('cottage'); return; }
     if (count('lodge') < 2) { place('lodge', [-70, 26]); return; }
     if (count('quarry') < 1) { place('quarry'); return; }
+    // where the map has salt pans, salt works pay for everything else
+    if (count('saltworks') < 2 && all(world, 'deposit').some((d) => d.type === 'salt')) { place('saltworks'); return; }
     if (count('cottage') < 2) { place('cottage', [-58, 30]); return; }
     if (count('mine') < 1) { place('mine'); return; }
     if (count('farm') < 2) { place('farm', [-60, 78]); return; }
@@ -168,7 +170,7 @@ export function createBot(sim, { aggressive = true } = {}) {
     const active = (id) => (world.mission.objectives.find((o) => o.id === id) || {}).state === 'active';
     const h = hero();
     heroErrand = false;
-    if (active('millbrook') && h && !h.downed && world.ai.state !== 'raid') {
+    if ((active('millbrook') || active('pannholt')) && h && !h.downed && world.ai.state !== 'raid') {
       const ham = all(world, 'poi').find((x) => x.type === 'hamlet');
       if (ham) { heroErrand = true; if (Math.hypot(h.x - ham.x, h.z - ham.z) > 4 && (!h.order || h.order.type !== 'move')) sim.issue({ type: 'move', ids: [h.id], x: ham.x, z: ham.z }); }
     }

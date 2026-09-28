@@ -5,6 +5,7 @@ import { evaluate } from './conditions.js';
 import { setupScenario } from './setup.js';
 import { HARROWMERE_SCENARIO } from './scenarios/harrowmere.js';
 import { GREYFEN_SCENARIO, TOLLBREAKER_SCENARIO } from './scenarios/campaign.js';
+import { SALTROAD_SCENARIO } from './scenarios/saltroad.js';
 import { aiSettings, spawnEnemy } from '../ai/index.js';
 import { doorOf } from '../buildings/defs.js';
 import { addRes } from '../economy/stock.js';
@@ -12,9 +13,9 @@ import { reveal } from '../exploration/index.js';
 import { setRelation, relation } from '../diplomacy/index.js';
 import { enemyFaction } from '../ai/factions.js';
 
-export const SCENARIOS = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO };
+export const SCENARIOS = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO, saltroad: SALTROAD_SCENARIO };
 /** The campaign in play order. */
-export const CAMPAIGN = ['harrowmere', 'greyfen', 'tollbreaker'];
+export const CAMPAIGN = ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad'];
 
 export function scenarioOf(world) { const id = world.mission.scenarioId || world.meta.scenarioId; return Object.hasOwn(SCENARIOS, id) ? SCENARIOS[id] : HARROWMERE_SCENARIO; }
 

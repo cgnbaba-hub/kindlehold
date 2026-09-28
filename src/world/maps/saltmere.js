@@ -23,13 +23,14 @@ export const SALTMERE_MAP = Object.freeze({
   flats: [
     { x: -110, z: 20, r: 32, h: 3.4 },   // Lanternford waystation
     { x: 120, z: -70, r: 30, h: 6.2 },   // the Margravine's manor
-    { x: -150, z: 60, r: 14, h: 4.8 },   // iron terrace
+    { x: -136, z: 42, r: 13, h: 4.4 },   // iron terrace below the Westfold
     { x: -30, z: 132, r: 16, h: 1.6 },   // Pannholt on the southern shore
     { x: 0, z: -40, r: 14, h: 3.2 },     // Salt Road crossroads
   ],
   lakes: [
     { x: 40, z: 72, rx: 92, rz: 56, bed: -1.7 },   // the Saltmere
     { x: -150, z: 150, rx: 26, rz: 18, bed: -1.2 }, // Heron pool (south-west)
+    { x: -72, z: 58, rx: 12, rz: 9, bed: -1.1 },    // the Brine Pools by Lanternford
   ],
   islands: [
     { x: 58, z: 84, rx: 16, rz: 11, h: 1.5 },      // Gull isle
@@ -65,16 +66,17 @@ export const SALTMERE_MAP = Object.freeze({
     { x: -160, z: 120, r: 12, count: 16 },
   ],
   rocks: [
-    { x: -76, z: 42, count: 4, spread: 6 },
+    { x: -120, z: -8, count: 4, spread: 6 },
+    { x: -92, z: -14, count: 3, spread: 5 },
     { x: -150, z: 34, count: 3, spread: 5 },
     { x: -34, z: -64, count: 3, spread: 6 },
     { x: 60, z: -90, count: 4, spread: 7 },
     { x: 150, z: 96, count: 3, spread: 6 },
     { x: -100, z: -120, count: 3, spread: 6 },
   ],
-  ironVeins: [{ x: -154, z: 66 }, { x: -100, z: -86 }],
+  ironVeins: [{ x: -136, z: 42 }, { x: -100, z: -86 }],
   // salt pans on the lake shore: the Salt Works harvest them without end
-  saltPans: [{ x: -58, z: 64 }, { x: -50, z: 38 }, { x: -62, z: 92 }, { x: 62, z: 8 }, { x: 98, z: 22 }, { x: 120, z: 40 }],
+  saltPans: [{ x: -92, z: 42 }, { x: -85, z: 52 }, { x: -58, z: 72 }, { x: 62, z: 8 }, { x: 98, z: 22 }, { x: 120, z: 40 }],
   pois: [
     { type: 'trader', x: 4, z: -46, label: 'Salt Road Inn', line: ['wren', 'An inn at the Salt Road crossroads. The innkeeper buys and sells — and hears every rumour between the pass and the manor.'] },
     { type: 'cairn', x: -18, z: -118, label: 'Northreach Cairn' },

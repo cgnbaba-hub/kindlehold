@@ -10,6 +10,7 @@ import { spawnEnemy, aiSettings } from '../ai/index.js';
 import { distToPolyline } from '../world/terrain-data.js';
 import { HARROWMERE_SCENARIO } from './scenarios/harrowmere.js';
 import { enemyFaction } from '../ai/factions.js';
+import { RANKS } from '../combat/index.js';
 
 const DIFF_RES = { story: 1.5, normal: 1, hard: 0.8 };
 
@@ -116,9 +117,16 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   const door = { x: keep.x + Math.sin(keep.rot) * 9, z: keep.z + Math.cos(keep.rot) * 9 };
   const settlers = st.settlers || 5;
   for (let i = 0; i < settlers; i++) spawnSettler(world, PLAYER, door.x + ((i % 5) - 2) * 1.4, door.z + 1.5 + (i < 5 ? i % 2 : Math.floor(i / 5) * 1.3));
-  (st.soldiers || []).forEach((type, i) => {
+  // soldiers: 'type' or [type, rank] (veterans of earlier chapters keep their stars)
+  (st.soldiers || []).forEach((spec, i) => {
+    const [type, rank] = Array.isArray(spec) ? spec : [spec, 0];
     const u = spawnUnit(world, type, PLAYER, door.x - 4 + (i % 4) * 1.6, door.z + 5 + Math.floor(i / 4) * 1.6);
-    if (u) u.order = { type: 'idle', ax: u.x, az: u.z };
+    if (!u) return;
+    u.order = { type: 'idle', ax: u.x, az: u.z };
+    if (rank > 0) {
+      u.rank = rank; u.xp = RANKS[rank].kills;
+      u.maxHp = Math.round(u.maxHp * RANKS[rank].hp); u.hp = u.maxHp;
+    }
   });
   const maren = spawnUnit(world, 'maren', PLAYER, door.x + 2, door.z - 1.5);
   maren.order = { type: 'idle', ax: maren.x, az: maren.z };
