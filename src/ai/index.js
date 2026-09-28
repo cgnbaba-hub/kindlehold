@@ -8,6 +8,7 @@ import { all, emit, alert, worldRng } from '../world/world.js';
 import { doorOf, BUILDINGS } from '../buildings/defs.js';
 import { spawnUnit, isAlive } from '../units/sim.js';
 import { UNITS } from '../units/defs.js';
+import { enemyFaction } from './factions.js';
 
 export const AI_DIFFICULTY = {
   // harass: first plunder party (minutes), interval between parties (minutes), party size
@@ -16,7 +17,6 @@ export const AI_DIFFICULTY = {
   hard: { harassAt: 6, harassEvery: 3.5, harassSize: 3, firstRaid: 11, growth: 4, spawnInterval: 24, waveInterval: 210, garrisonCap: 16, hpMult: 1.1, raidDelay: 105, reserves: 40 },
 };
 
-const SPAWN_CYCLE = ['reaver', 'reaver', 'slinger', 'brute', 'reaver', 'slinger'];
 const TARGET_PRIORITY = { lodge: 0, farm: 0, quarry: 0, mine: 0, cottage: 1, barracks: 1, tower: 2, keep: 3 };
 const RETREAT_AT = 0.25;
 
@@ -37,7 +37,7 @@ export function aiSettings(world) {
   };
 }
 
-export function warhallOf(world) { return all(world, 'building').find((b) => b.type === 'warhall' && b.owner === ENEMY && b.state !== 'destroyed') || null; }
+export function warhallOf(world) { const hall = enemyFaction(world).hall; return all(world, 'building').find((b) => b.type === hall && b.owner === ENEMY && b.state !== 'destroyed') || null; }
 
 export function spawnEnemy(world, type, x, z) {
   const u = spawnUnit(world, type, ENEMY, x, z);
@@ -118,7 +118,8 @@ export function createAiModule() {
     ai.gatherUntil = world.tick + 20 * 20;
     ai.gatherPoint = [gx, gz];
     ai.raidTick = null;
-    alert(world, 'danger', `${raid.length} Rustfang raiders are gathering at the ford fort!`, gx, gz);
+    const fac = enemyFaction(world);
+    alert(world, 'danger', `${raid.length} ${fac.short} ${fac.fighters} are gathering at the ${fac.fort}!`, gx, gz);
     emit(world, 'ai:gather', { size: raid.length, x: gx, z: gz });
   }
 
@@ -146,7 +147,7 @@ export function createAiModule() {
       u.target = null; u.path = null; u.dest = null;
     });
     ai.harass = { ids: party.map((u) => u.id), target: best.id, until: world.tick + 75 * 20 }; // hit and run
-    alert(world, 'danger', `Rustfang plunderers are heading for your ${BUILDINGS[best.type].name}!`, best.x, best.z);
+    alert(world, 'danger', `${enemyFaction(world).short} plunderers are heading for your ${BUILDINGS[best.type].name}!`, best.x, best.z);
     emit(world, 'ai:harass', { size: party.length, target: best.id, x: best.x, z: best.z });
   }
 
@@ -172,7 +173,7 @@ export function createAiModule() {
     ai.raidStartedTick = world.tick;
     orderRaid(world, raid, target);
     emit(world, EV.AI_WAVE, { wave: ai.wave + 1, size: raid.length, target: target.id, x: target.x, z: target.z });
-    alert(world, 'danger', `Rustfang raid! ${raid.length} raiders are marching on your ${BUILDINGS[target.type].name}.`, target.x, target.z);
+    alert(world, 'danger', `${enemyFaction(world).short} attack! ${raid.length} ${enemyFaction(world).fighters} are marching on your ${BUILDINGS[target.type].name}.`, target.x, target.z);
   }
 
   function orderRaid(world, raid, target) {
@@ -199,7 +200,7 @@ export function createAiModule() {
           u.order = { type: 'move', x: ax, z: az, ax, az };
           u.target = null; u.retreating = true; u.path = null; u.dest = null;
         }
-        if (raid.length) alert(world, 'success', 'The raiders are breaking and fleeing back to the ford!');
+        if (raid.length) alert(world, 'success', `The ${enemyFaction(world).fighters} are breaking and fleeing back to the ${enemyFaction(world).fort}!`);
         emit(world, 'ai:retreat', { wave: ai.wave + 1, survivors: raid.length });
         return;
       }
@@ -244,7 +245,7 @@ export function createAiModule() {
     if (cmdr && cmdr.target == null && (hall.hp < hall.maxHp * 0.6 || bestD < 20) && intruder) {
       cmdr.order = { type: 'guard', ax: hall.x, az: hall.z + 8, leash: 36 };
       cmdr.target = intruder.id;
-      if (!ai.commanderEngaged) { ai.commanderEngaged = true; alert(world, 'danger', 'Vharek the Tollbreaker enters the fight!', cmdr.x, cmdr.z); }
+      if (!ai.commanderEngaged) { ai.commanderEngaged = true; alert(world, 'danger', `${enemyFaction(world).leader} enters the fight!`, cmdr.x, cmdr.z); }
     }
   }
 
@@ -265,7 +266,8 @@ export function createAiModule() {
         // the fort's reserves are finite, and nobody new musters while the Warhall burns
         if ((ai.spawned || 0) < cfg.reserves && hall.hp > hall.maxHp * 0.5 && g.length < cfg.garrisonCap + ai.wave * 2) {
           const d = doorOf(hall);
-          const type = SPAWN_CYCLE[(ai.spawned || 0) % SPAWN_CYCLE.length];
+          const cycle = enemyFaction(world).cycle;
+          const type = cycle[(ai.spawned || 0) % cycle.length];
           ai.spawned = (ai.spawned || 0) + 1;
           const u = spawnEnemy(world, type, d.x, d.z);
           if (u) guard(world, u, hall);
@@ -301,7 +303,7 @@ export function createAiModule() {
           ai.scoutStage = 'back';
           const [ax, az] = campAnchor(world, s, hall);
           s.order = { type: 'move', x: ax, z: az, ax, az };
-          if (world.tick > 60 * 20) alert(world, 'warn', 'A Rustfang scout was seen near your borders.', s.x, s.z);
+          if (world.tick > 60 * 20) alert(world, 'warn', `A ${enemyFaction(world).short} scout was seen near your borders.`, s.x, s.z);
         } else if (ai.scoutStage === 'back' && s.order.type !== 'move') { guard(world, s, hall); ai.scoutId = null; }
       }
       // plunder parties until the great raid is announced

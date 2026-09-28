@@ -92,6 +92,8 @@ function buildParts() {
     tabard: g([B(0.3, 0.5, 0.03, '#ffffff', P.cloth, { y: 0.02, z: 0.27 }), B(0.3, 0.5, 0.03, '#f2f2f2', P.cloth, { y: 0.02, z: -0.27 }), B(0.1, 0.1, 0.035, '#d8d8d8', P.cloth, { y: 0.14, z: 0.29, rz: Math.PI / 4 })]),
     strawhat: g([paint(place(cyl(0.3, 0.32, 0.025, 12), { y: 0.25 }), '#d9c07a', 0, null, P.cloth), paint(place(cyl(0.13, 0.16, 0.13, 10), { y: 0.32 }), '#cdb46c', 0, null, P.cloth), paint(place(cyl(0.162, 0.162, 0.03, 10), { y: 0.275 }), '#8a4a3a', 0, null, P.cloth)]),
     apron: g([B(0.34, 0.62, 0.02, '#ece6d6', P.cloth, { y: -0.12, z: 0.245 }), B(0.2, 0.2, 0.02, '#ece6d6', P.cloth, { y: 0.3, z: 0.225 })]),
+    // a thin gold circlet for nobility
+    circlet: g([paint(place(new THREE.TorusGeometry(0.17, 0.022, 5, 16), { y: 0.26, rx: Math.PI / 2 - 0.12 }), '#e3c26b', 0, null, P.metal), paint(place(new THREE.OctahedronGeometry(0.04, 0), { y: 0.29, z: 0.17 }), '#c03040', 0, null, P.metal)]),
     // rank insignia floating over veterans (one) and elite soldiers (two)
     star: g([paint(new THREE.OctahedronGeometry(0.11, 0), '#f0c858', 0, null, P.metal)]),
     // carried goods (on the shoulder)
@@ -118,6 +120,10 @@ export const STYLE = {
   reaver: { torso: '#8c3b2a', head: 'cap', headColor: '#3a302a', right: 'axe', left: null, legs: '#3a302a', beard: true, beardColor: '#6a2e18' },
   slinger: { torso: '#7a5a3e', head: 'hood', headColor: '#5b2a20', right: 'sling', left: null, legs: '#3a302a' },
   brute: { torso: '#5b2a20', head: 'hornhelm', right: 'spear', left: 'shieldHide', leftColor: '#7a5a3e', legs: '#3a302a', pauldrons: '#7a5a3e' },
+  varrspear: { torso: '#8a1c2c', head: 'helm', right: 'spear', left: 'shieldKite', leftColor: '#8a1c2c', legs: '#3a3a3c', pauldrons: true, tabard: '#d8d0c0' },
+  varrbow: { torso: '#6a2430', coat: true, head: 'helm', right: 'crossbow', left: null, legs: '#3a3a3c', tabard: '#d8d0c0' },
+  varrknight: { torso: '#5a5e66', coat: true, head: 'helm', right: 'sword', left: 'shieldKite', leftColor: '#8a1c2c', legs: '#2e3036', pauldrons: true, tabard: '#8a1c2c', scale: 1.06 },
+  ysolde: { torso: '#3a3e46', coat: true, head: 'circlet', hairColor: '#c8a060', right: 'sword', left: 'shieldKite', leftColor: '#8a1c2c', legs: '#2a2a30', pauldrons: true, cape: '#8a1c2c', scale: 1.2 },
   brigand: { torso: '#5a6a44', head: 'hood', headColor: '#3e4a30', right: 'axe', left: 'shieldRound', leftColor: '#6e5037', legs: '#3a3428', beard: true, beardColor: '#5a4030' },
   poacher: { torso: '#4a5638', head: 'hood', headColor: '#6a5a3a', right: null, left: 'bow', legs: '#3a3428' },
   morwen: { torso: '#3e4a30', coat: true, head: 'hood', headColor: '#2e3a24', right: null, left: 'bow', legs: '#2a2a20', scale: 1.15, cape: '#44582e' },

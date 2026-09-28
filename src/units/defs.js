@@ -31,6 +31,11 @@ export const UNITS = {
   brigand: { id: 'brigand', name: 'Greyfen Brigand', owner: 'p3', cls: 'melee', hp: 115, armor: 1, damage: 13, range: 1.6, cooldown: 1.05, speed: 4.4, sight: 13, cost: {}, desc: 'Marsh outlaw with a hatchet and a quick temper.' },
   poacher: { id: 'poacher', name: 'Greyfen Poacher', owner: 'p3', cls: 'ranged', hp: 80, armor: 0, damage: 11, range: 15, cooldown: 1.6, speed: 3.9, sight: 16, cost: {}, desc: 'Deer-hunter turned outlaw. A keen shot.' },
   morwen: { id: 'morwen', name: 'Morwen Greyfen', owner: 'p3', cls: 'commander', hp: 520, armor: 3, damage: 24, range: 15, cooldown: 1.5, speed: 4.2, sight: 16, cost: {}, desc: 'Chieftain of the Greyfen brigands. Proud, clever, and owes the Rustfang a blood debt.' },
+  // the Legion of Varr (p2 in chapter four): disciplined lowland troops
+  varrspear: { id: 'varrspear', name: 'Varr Pikeman', owner: 'p2', cls: 'defensive', hp: 170, armor: 4, damage: 11, range: 2.3, cooldown: 1.4, speed: 3.3, sight: 12, cost: {}, desc: 'A legion pikeman behind a crimson kite shield.' },
+  varrbow: { id: 'varrbow', name: 'Varr Crossbowman', owner: 'p2', cls: 'ranged', hp: 85, armor: 1, damage: 15, range: 14, cooldown: 2.2, speed: 3.6, sight: 15, pierce: 0.4, cost: {}, desc: 'Slow to reload; the bolts punch through armour.' },
+  varrknight: { id: 'varrknight', name: 'Knight of Varr', owner: 'p2', cls: 'melee', hp: 210, armor: 5, damage: 18, range: 1.7, cooldown: 1.3, speed: 3.6, sight: 13, cost: {}, desc: 'Mailed swordsman of the Margravine\'s household.' },
+  ysolde: { id: 'ysolde', name: 'Ysolde of Varr', owner: 'p2', cls: 'commander', hp: 760, armor: 6, damage: 30, range: 2.2, cooldown: 1.4, speed: 3.9, sight: 15, cost: {}, desc: 'Margravine of Varr. She believes every road leads to her treasury.' },
   vharek: { id: 'vharek', name: 'Vharek the Tollbreaker', owner: 'p2', cls: 'commander', hp: 700, armor: 5, damage: 35, range: 2.4, cooldown: 1.8, speed: 3.8, sight: 14, cost: {}, desc: 'Former bridge-warden turned warlord.' },
 };
 

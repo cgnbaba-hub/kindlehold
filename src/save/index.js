@@ -114,7 +114,7 @@ const worldSchema = v.object({
     objectives: v.array(v.object({ id: v.string({ max: 40 }), state: v.string({ oneOf: ['pending', 'active', 'done'] }) }), { max: 64 }),
     flags: v.record(v.any(), { max: 64 }), triggers: v.record(v.any(), { max: 64 }), messages: v.array(v.any(), { max: 200 }),
   }),
-  ai: v.object({ wave: nonNeg(1000), state: v.string({ oneOf: ['build', 'gather', 'raid', 'retreat'] }), raidIds: ids(400), nextSpawnTick: nonNeg(1e10), nextScoutTick: nonNeg(1e10) }),
+  ai: v.object({ wave: nonNeg(1000), state: v.string({ oneOf: ['build', 'gather', 'raid', 'retreat'] }), raidIds: ids(400), nextSpawnTick: nonNeg(1e10), nextScoutTick: nonNeg(1e10), faction: v.optional(v.string({ oneOf: ['rustfang', 'varr'] })) }),
   combat: v.object({ pending: v.array(v.object({ target: v.number({ min: 1, max: 1e9, int: true }), damage: nonNeg(1e5), arrive: nonNeg(1e10) }), { max: 4000 }) }),
   selection: v.object({ ids: v.array(num, { max: 2000 }), groups: v.record(ids(200), { max: 10, keyPattern: /^[1-9]$/ }) }),
   stats: v.object({ produced: stockSchema, consumed: stockSchema }),

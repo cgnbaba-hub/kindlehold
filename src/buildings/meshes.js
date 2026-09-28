@@ -374,6 +374,44 @@ const MODELS = {
     glow.push(place(ico(0.35, 0), { x: 6.8, y: 0.5, z: 1.5 }));
     return { body, glow, height: 8.5 };
   },
+  varrkeep(rnd) {
+    const body = [], glow = [];
+    const RED = '#8a1c2c', TILE = '#7a3a32';
+    body.push(b(13.4, 0.7, 8.4, C.stoneDark, P.stone, { y: 0.35 }));
+    // two-storey stone hall with a red-tiled roof
+    body.push(b(12, 5.6, 7, C.stone, P.stone, { y: 3.4 }, 0.05, rnd));
+    body.push(b(12.2, 0.4, 7.2, C.stoneDark, P.stone, { y: 6.2 }));
+    body.push(paintGradient(place(gable(8.2, 12.8, 3.8), { y: 6.4, ry: Math.PI / 2 }), '#5e2a24', TILE, P.shingles));
+    // square keep tower on the left with crenels and a banner
+    body.push(b(4.6, 12, 4.6, C.stone, P.stone, { x: -6.4, y: 6, z: -1 }, 0.05, rnd));
+    for (let i = 0; i < 4; i++) for (const s of [-1, 1]) {
+      body.push(b(0.8, 0.8, 0.5, C.stone, P.stone, { x: -6.4 + (i - 1.5) * 1.15, y: 12.4, z: -1 + s * 2.25 }));
+      body.push(b(0.5, 0.8, 0.8, C.stone, P.stone, { x: -6.4 + s * 2.25, y: 12.4, z: -1 + (i - 1.5) * 1.15 }));
+    }
+    body.push(...banner(-6.4, 12.4, -1, RED, rnd, 2.4));
+    // gatehouse porch with a pointed arch and two crimson hangings
+    body.push(b(4, 4.4, 1.6, C.stone, P.stone, { y: 2.2, z: 4.2 }));
+    body.push(paintGradient(place(gable(2.2, 4.2, 1.4), { y: 4.4, z: 4.2 }), '#5e2a24', TILE, P.shingles));
+    body.push(...door(2.0, 3.0, 5.02));
+    for (const x of [-3.6, 3.6]) body.push(b(1.2, 3.2, 0.06, RED, P.cloth, { x, y: 3.6, z: 3.54 }), b(1.2, 0.18, 0.07, C.gold, P.cloth, { x, y: 2.1, z: 3.55 }));
+    for (const x of [-3.6, 0, 3.6]) glow.push(win(0.7, 1.1, { x, y: 5.3, z: 3.52 }));
+    glow.push(win(0.6, 1.0, { x: -6.4, y: 9, z: 1.32 }));
+    body.push(...barrel(5.6, 4.6), ...barrel(6.3, 4.1));
+    return { body, glow, height: 14 };
+  },
+  varrtower(rnd) {
+    const body = [], glow = [];
+    body.push(b(3.8, 0.5, 3.8, C.stoneDark, P.stone, { y: 0.25 }));
+    body.push(b(3.4, 9, 3.4, C.stone, P.stone, { y: 4.7 }, 0.06, rnd));
+    for (let i = 0; i < 3; i++) for (const s of [-1, 1]) {
+      body.push(b(0.8, 0.8, 0.5, C.stone, P.stone, { x: (i - 1) * 1.2, y: 9.6, z: s * 1.6 }));
+      body.push(b(0.5, 0.8, 0.8, C.stone, P.stone, { x: s * 1.6, y: 9.6, z: (i - 1) * 1.2 }));
+    }
+    body.push(...banner(1.3, 9.2, 1.3, '#8a1c2c', rnd, 1.6));
+    glow.push(win(0.4, 0.8, { y: 6.5, z: 1.72 }));
+    body.push(...door(1.0, 1.8, 1.72));
+    return { body, glow, height: 11 };
+  },
   brigandtower(rnd) {
     const m = MODELS.reavertower(rnd);
     m.body[m.body.length - 2] = paintGradient(place(cone(2.3, 2.2, 7), { y: 8.4 }), '#4f5a3a', '#6f7a4a', P.thatch);

@@ -10,6 +10,7 @@ import { researchBlocker } from '../technology/index.js';
 import { countBuilt, soldierCount } from '../missions/conditions.js';
 import { UNITS } from '../units/defs.js';
 import { ABILITIES, abilityReady } from '../heroes/index.js';
+import { warhallOf } from '../ai/index.js';
 
 /** Spiral search for a valid building spot near (x,z). */
 export function findSpot(world, services, type, x, z, maxR = 34) {
@@ -180,7 +181,7 @@ export function createBot(sim, { aggressive = true } = {}) {
     const h = hero();
     const ids = army.map((u) => u.id).concat(h && !h.downed && !heroErrand ? [h.id] : []);
     const raidOn = world.ai.state === 'raid';
-    const hall = all(world, 'building').find((b) => b.type === 'warhall' && b.owner === ENEMY && b.state !== 'destroyed');
+    const hall = warhallOf(world);
     if (raidOn) {
       phase = 'defend';
       const raiders = world.ai.raidIds.map((id) => world.entities[id]).filter(Boolean);

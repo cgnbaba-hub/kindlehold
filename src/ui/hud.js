@@ -22,6 +22,7 @@ import { aiSettings } from '../ai/index.js';
 import { RANKS, rankOf } from '../combat/index.js';
 import { BRIGANDS, relation, stance, TRUCE, GIFT, PEACE, WAR_AT, ALLY_AT } from '../diplomacy/index.js';
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
+import { enemyFaction } from '../ai/factions.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler' };
 const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander' };
@@ -128,7 +129,7 @@ export function createHud({ root, session, input, settings, actions }) {
     const c = censusOf(w, PLAYER);
     const out = [];
     const has = (t) => all(w, 'building').some((b) => b.owner === PLAYER && b.type === t && b.state !== 'destroyed');
-    if (w.ai.state === 'gather' || w.ai.state === 'raid') out.push('The Rustfang are on the march! Gather the soldiers near what they are after, Warden.');
+    if (w.ai.state === 'gather' || w.ai.state === 'raid') out.push(`The ${enemyFaction(w).short} are on the march! Gather the soldiers near what they are after, Warden.`);
     if (w.brigands && w.brigands.raidIds.length) out.push('Greyfen brigands are raiding us! Soldiers to the outskirts — or buy peace in the Diplomacy window.');
     else if (w.players[BRIGANDS] && stance(w, PLAYER, BRIGANDS) === 'neutral' && relation(w, PLAYER, BRIGANDS) < -10) out.push('Morwen\'s patience wears thin, Warden. A gift to the Greyfen would soothe her.');
     if (w.ai.harass) out.push('Plunderers are raiding our outlying workshops. A few soldiers there would send them running.');
@@ -141,7 +142,7 @@ export function createHud({ root, session, input, settings, actions }) {
     if (p.tax === 2 && p.stability < 60) out.push('High taxes weigh on the people.');
     const ss = seasonAt(w.tick);
     if (!ss.winter && ss.untilNext < 90 * 20) out.push('Winter is close. Fill the stores — the fields will grow slowly under the snow.');
-    if (has('barracks') && !c.soldierCount && w.tick > 8 * 1200) out.push('A Barracks and no soldiers? Train a few before the Rustfang come.');
+    if (has('barracks') && !c.soldierCount && w.tick > 8 * 1200) out.push(`A Barracks and no soldiers? Train a few before the ${enemyFaction(w).short} come.`);
     if (w.mission.flags.raidWarned && c.soldierCount < 6) out.push('A raid is announced and our guard is thin. More soldiers, Warden!');
     if (!out.length) {
       const calm = [
@@ -188,7 +189,7 @@ export function createHud({ root, session, input, settings, actions }) {
   nightBtn.hidden = true;
   let skipping = null;
   nightBtn.addEventListener('click', () => { if (skipping == null) { skipping = session.loop.getSpeed(); session.loop.setSpeed(8); } });
-  const diploBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Diplomacy', 'data-tip': 'Diplomacy: relations with the Rustfang and the Greyfen brigands' }, [icon('banner', 'icon icon-sm')]);
+  const diploBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Diplomacy', 'data-tip': 'Diplomacy: relations with the other powers of the valley' }, [icon('banner', 'icon icon-sm')]);
   const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, diploBtn, pauseBtn]);
   hud.append(topbar, nightBtn, speedMenu);
 
@@ -225,11 +226,12 @@ export function createHud({ root, session, input, settings, actions }) {
     lastDiplo = key;
     // Rustfang: war, truces for a toll
     const rs = stance(w, PLAYER, 'p2');
+    const fac = enemyFaction(w);
     const truceLeft = d ? Math.max(0, ((d.truceUntil['p1|p2'] || 0) - w.tick) / 20) : 0;
     const marching = w.ai.state === 'raid' || w.ai.state === 'gather';
     rows.push({
-      id: 'p2', name: w.players.p2 ? w.players.p2.name : 'Rustfang', portrait: 'vharek', who: 'Vharek the Tollbreaker', st: rs, rel: relation(w, PLAYER, 'p2'),
-      note: rs === 'truce' ? `The toll is paid. No raids for ${fmtTime(truceLeft)}.` : 'Vharek never makes peace, but for a toll he keeps his reavers at home for a while.',
+      id: 'p2', name: w.players.p2 ? w.players.p2.name : fac.name, portrait: fac.portrait, who: fac.leader, st: rs, rel: relation(w, PLAYER, 'p2'),
+      note: rs === 'truce' ? `The toll is paid. No attacks for ${fmtTime(truceLeft)}.` : fac.truceNote,
       btns: [diploButton('Pay toll', 'taler', TRUCE.cost, `A truce of ${Math.round(TRUCE.duration / 1200)} minutes: no raids, no plunderers. Not while his warband is on the march.`, { type: 'truce', to: 'p2' }, rs !== 'truce' && !marching && p.res.taler >= TRUCE.cost.taler)],
     });
     // Greyfen brigands
@@ -241,13 +243,13 @@ export function createHud({ root, session, input, settings, actions }) {
       if (hallUp) {
         if (bs === 'war') btns.push(diploButton('Offer peace', 'handshake', PEACE.cost, 'Pay blood money to end the feud. They will be neutral again.', { type: 'peace', to: BRIGANDS }, p.res.taler >= PEACE.cost.taler));
         else {
-          btns.push(diploButton(cool > 0 ? `Gift (${Math.ceil(cool / 20)}s)` : 'Send a gift', 'gift', GIFT.cost, `Improves the relation by ${GIFT.gain}. At ${ALLY_AT} they become allies: they help against Rustfang raids and share game and timber every payday.`, { type: 'gift', to: BRIGANDS }, cool <= 0 && p.res.taler >= GIFT.cost.taler));
+          btns.push(diploButton(cool > 0 ? `Gift (${Math.ceil(cool / 20)}s)` : 'Send a gift', 'gift', GIFT.cost, `Improves the relation by ${GIFT.gain}. At ${ALLY_AT} they become allies: they help against enemy raids and share game and timber every payday.`, { type: 'gift', to: BRIGANDS }, cool <= 0 && p.res.taler >= GIFT.cost.taler));
           btns.push(diploButton('Declare war', 'sword', null, 'Break with the Greyfen. They will raid Kindlehold; their hold is full of plunder.', { type: 'declareWar', to: BRIGANDS }, true));
         }
       }
       rows.push({
         id: BRIGANDS, name: w.players[BRIGANDS].name, portrait: 'morwen', who: 'Morwen Greyfen', st: hallUp ? bs : 'gone', rel,
-        note: !hallUp ? 'The Greyfen Hold has fallen.' : bs === 'war' ? 'They raid Kindlehold every few minutes.' : bs === 'allied' ? 'Allies: they ride out against Rustfang raids and send game and timber every payday.' : 'They guard the northern fens. Do not build near their hold. Gifts win their friendship.',
+        note: !hallUp ? 'The Greyfen Hold has fallen.' : bs === 'war' ? 'They raid Kindlehold every few minutes.' : bs === 'allied' ? 'Allies: they ride out against enemy raids and send game and timber every payday.' : 'They guard the northern fens. Do not build near their hold. Gifts win their friendship.',
         btns,
       });
     }
@@ -774,13 +776,13 @@ export function createHud({ root, session, input, settings, actions }) {
     setText(speedBtn, session.loop.isPaused() ? 'II' : `${session.loop.getSpeed()}×`);
     // raid countdown
     if (w.ai.raidTick != null && w.ai.state === 'build' && w.mission.flags.raidWarned) {
-      raidTimer.hidden = false; setText(raidTimer, `Rustfang raid in ${fmtTime((w.ai.raidTick - w.tick) / 20)}`);
+      raidTimer.hidden = false; setText(raidTimer, `${enemyFaction(w).short} attack in ${fmtTime((w.ai.raidTick - w.tick) / 20)}`);
     } else if (w.ai.state === 'raid') { raidTimer.hidden = false; setText(raidTimer, 'Raid in progress!'); }
     else if (w.ai.wave >= 1) {
       const cfg = aiSettings(w);
       const left = Math.max(0, cfg.reserves - (w.ai.spawned || 0));
       raidTimer.hidden = false;
-      setText(raidTimer, left > 0 ? `Scouts: the Rustfang can still muster about ${left} more warriors` : 'Scouts: the Rustfang reserves are exhausted — strike now!');
+      setText(raidTimer, left > 0 ? `Scouts: the ${enemyFaction(w).short} can still muster about ${left} more warriors` : `Scouts: the ${enemyFaction(w).short} reserves are exhausted — strike now!`);
     } else raidTimer.hidden = true;
     // selection/commands refresh when content changes or twice per second
     const key = `${w.selection.ids.join(',')}|${cmdMode}|${st.mode}|${st.targetKind}`;

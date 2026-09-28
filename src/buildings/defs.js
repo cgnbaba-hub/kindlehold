@@ -105,6 +105,16 @@ export const BUILDINGS = {
     desc: 'A brigand lookout with a keen-eyed poacher on top.',
     cost: {}, buildTime: 0, hp: 450, radius: 2.6, navRadius: 2.2, attack: { damage: 11, range: 15, cooldown: 1.7 }, door: [0, 2.6],
   },
+  varrkeep: {
+    id: 'varrkeep', name: 'Manor of Varr', owner: 'p2', buildable: false,
+    desc: 'The Margravine\'s fortified manor on the eastern rise. Its legion guards the salt road.',
+    cost: {}, buildTime: 0, hp: 2800, radius: 7.5, navRadius: 6.5, territory: 32, door: [0, 7.6],
+  },
+  varrtower: {
+    id: 'varrtower', name: 'Varr Watchtower', owner: 'p2', buildable: false,
+    desc: 'A stone tower with a crossbowman behind its crenels.',
+    cost: {}, buildTime: 0, hp: 650, radius: 2.8, navRadius: 2.4, attack: { damage: 13, range: 16, cooldown: 1.9 }, door: [0, 2.8],
+  },
   reavertower: {
     id: 'reavertower', name: 'Rustfang Lookout', owner: 'p2', buildable: false,
     desc: 'A crude lookout that pelts intruders with stones.',

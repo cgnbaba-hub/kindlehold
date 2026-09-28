@@ -8,6 +8,7 @@
 import { all, emit, alert } from '../world/world.js';
 import { EV, PLAYER, ENEMY } from '../core/contracts.js';
 import { canAfford, pay } from '../economy/stock.js';
+import { enemyFaction } from '../ai/factions.js';
 
 export const BRIGANDS = 'p3';
 export const WAR_AT = -30;
@@ -77,16 +78,16 @@ export function createDiplomacyModule() {
     const reject = (reason) => emit(world, EV.COMMAND_REJECTED, { type: cmd.type, reason });
     const k = key(me, them);
     if (cmd.type === 'gift') {
-      if (them === ENEMY) return reject('The Rustfang take tolls, not gifts');
+      if (them === ENEMY) return reject(`The ${enemyFaction(world).short} take tolls, not gifts`);
       if (world.tick - (d.giftTick[k] || -1e9) < GIFT.cooldown) return reject('Your last gift is still on its way');
       if (!pay(world, me, GIFT.cost, 'gift')) return reject('Not enough Taler');
       d.giftTick[k] = world.tick;
       setRelation(world, me, them, relation(world, me, them) + GIFT.gain, 'gift');
       emit(world, 'diplomacy:gift', { from: me, to: them });
     } else if (cmd.type === 'truce') {
-      if (them !== ENEMY) return reject('Only the Rustfang sell truces');
+      if (them !== ENEMY) return reject(`Only the ${enemyFaction(world).short} sell truces`);
       if ((d.truceUntil[k] || 0) > world.tick) return reject('A truce is already in force');
-      if (world.ai && (world.ai.state === 'raid' || world.ai.state === 'gather')) return reject('Vharek will not bargain while his raiders are on the march');
+      if (world.ai && (world.ai.state === 'raid' || world.ai.state === 'gather')) return reject(`${enemyFaction(world).leaderShort} will not bargain while the ${enemyFaction(world).fighters} are on the march`);
       if (!pay(world, me, TRUCE.cost, 'toll')) return reject('Not enough Taler');
       d.truceUntil[k] = world.tick + TRUCE.duration;
       if (world.ai) {
@@ -96,7 +97,7 @@ export function createDiplomacyModule() {
       }
       emit(world, 'diplomacy:truce', { from: me, to: them, until: d.truceUntil[k] });
     } else if (cmd.type === 'peace') {
-      if (them === ENEMY) return reject('Vharek does not make peace — only truces');
+      if (them === ENEMY) return reject(`${enemyFaction(world).leaderShort} does not make peace — only truces`);
       if (stance(world, me, them) !== 'war') return reject('You are not at war');
       if (!pay(world, me, PEACE.cost, 'peace')) return reject('Not enough Taler');
       setRelation(world, me, them, WAR_AT + 5, 'peace');
