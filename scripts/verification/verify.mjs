@@ -41,7 +41,7 @@ try {
     const context = await browser.newContext({ viewport: vp, deviceScaleFactor: 1 });
     const page = await context.newPage();
     const diag = instrument(page);
-    const q = new URLSearchParams({ verify: '1', seed, quality, demo: preset.demo || '', ui: preset.ui ? '1' : '0' });
+    const q = new URLSearchParams({ verify: '1', seed, quality, demo: preset.demo || '', ui: preset.ui ? '1' : '0', chapter: preset.chapter || '' });
     const url = new URL(`?${q}`, server.url).toString();
     const report = { preset: preset.name, url, run, viewport: vp, seed, quality, startedAt: new Date().toISOString(), gates: {}, pass: false };
     const t0 = Date.now();

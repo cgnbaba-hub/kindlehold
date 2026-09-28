@@ -8,6 +8,7 @@ import { TECH_EFFECTS, hasTech, soldierMods } from '../technology/defs.js';
 import { hostile, provoke } from '../diplomacy/index.js';
 import { isAlive, reachDistance } from '../units/sim.js';
 import { destroyBuilding } from '../construction/index.js';
+import { enemyFaction } from '../ai/factions.js';
 
 export const PROJECTILE_SPEED = 26; // m/s
 export const HEARTHLIGHT_RADIUS = 10;
@@ -59,10 +60,10 @@ export function dealDamage(world, attacker, target, amount, kind = 'melee') {
   }
   if (target.kind === 'building') {
     // story: a barred fort (the last chapter) cannot be stormed before its host is broken
-    if (target.type === 'warhall' && world.mission.flags.hallBarred) {
+    if (target.type === enemyFaction(world).hall && target.owner !== PLAYER && world.mission.flags.hallBarred) {
       if (!target.barredNoticeTick || world.tick - target.barredNoticeTick > 600) {
         target.barredNoticeTick = world.tick;
-        if (attacker && attacker.owner === PLAYER) alert(world, 'warn', 'The Warhall\'s gates are barred and its walls manned. Break Vharek\'s host in the field first.', target.x, target.z);
+        if (attacker && attacker.owner === PLAYER) alert(world, 'warn', `The ${enemyFaction(world).hallName}'s gates are barred and its walls manned. Break the ${enemyFaction(world).short} host in the field first.`, target.x, target.z);
       }
       return 0;
     }

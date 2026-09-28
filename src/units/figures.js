@@ -74,6 +74,7 @@ function buildParts() {
     sword: g([B(0.05, 0.75, 0.018, '#c9ccd0', P.metal, { y: -0.48 }), B(0.2, 0.035, 0.05, '#6b5a3a', P.metal, { y: -0.1 }), paint(place(cyl(0.02, 0.02, 0.12, 5), { y: -0.02 }), '#4a3526', 0, null, P.plain)]),
     spear: g([paint(place(cyl(0.022, 0.025, 2.0, 5), { y: -0.3 }), '#6b4a2f', 0, null, P.planks), paint(place(cone(0.05, 0.24, 4), { y: -1.42, rx: Math.PI }), '#c2c5c9', 0, null, P.metal)]),
     bow: g([paint(place(new THREE.TorusGeometry(0.62, 0.018, 4, 12, Math.PI * 0.8), { y: -0.1, rz: Math.PI / 2 + 0.3 }), '#6b4a2f', 0, null, P.planks), paint(place(cyl(0.004, 0.004, 1.1, 3), { y: -0.1, x: -0.25 }), '#e8e0cc', 0, null, P.plain)]),
+    rake: g([paint(place(cyl(0.022, 0.025, 1.6, 5), { y: -0.5 }), '#8a6a44', 0, null, P.planks), B(0.5, 0.05, 0.06, '#6b4a2f', P.planks, { y: -1.3 })]),
     rod: g([paint(place(cyl(0.012, 0.022, 2.2, 4), { y: -0.6 }), '#8a6a44', 0, null, P.planks), paint(place(cyl(0.003, 0.003, 1.3, 3), { y: -1.6, z: 0.35, rx: -0.5 }), '#e8e0cc', 0, null, P.plain)]),
     pole: g([paint(place(cyl(0.03, 0.035, 2.3, 6), { y: -0.55 }), '#3e2c1f', 0, null, P.planks), paint(place(cyl(0.016, 0.016, 0.3, 4), { y: 0.72, z: 0.12, rx: 0.9 }), '#2f2f31', 0, null, P.metal)]),
     crossbow: g([B(0.07, 0.7, 0.09, '#6b4a2f', P.planks, { y: -0.3 }), B(0.62, 0.05, 0.05, '#4a4a4c', P.metal, { y: -0.6 }), paint(place(cyl(0.004, 0.004, 0.6, 3), { y: -0.55, rz: Math.PI / 2 }), '#e8e0cc', 0, null, P.plain)]),
@@ -92,6 +93,8 @@ function buildParts() {
     tabard: g([B(0.3, 0.5, 0.03, '#ffffff', P.cloth, { y: 0.02, z: 0.27 }), B(0.3, 0.5, 0.03, '#f2f2f2', P.cloth, { y: 0.02, z: -0.27 }), B(0.1, 0.1, 0.035, '#d8d8d8', P.cloth, { y: 0.14, z: 0.29, rz: Math.PI / 4 })]),
     strawhat: g([paint(place(cyl(0.3, 0.32, 0.025, 12), { y: 0.25 }), '#d9c07a', 0, null, P.cloth), paint(place(cyl(0.13, 0.16, 0.13, 10), { y: 0.32 }), '#cdb46c', 0, null, P.cloth), paint(place(cyl(0.162, 0.162, 0.03, 10), { y: 0.275 }), '#8a4a3a', 0, null, P.cloth)]),
     apron: g([B(0.34, 0.62, 0.02, '#ece6d6', P.cloth, { y: -0.12, z: 0.245 }), B(0.2, 0.2, 0.02, '#ece6d6', P.cloth, { y: 0.3, z: 0.225 })]),
+    // a thin gold circlet for nobility
+    circlet: g([paint(place(new THREE.TorusGeometry(0.17, 0.022, 5, 16), { y: 0.26, rx: Math.PI / 2 - 0.12 }), '#e3c26b', 0, null, P.metal), paint(place(new THREE.OctahedronGeometry(0.04, 0), { y: 0.29, z: 0.17 }), '#c03040', 0, null, P.metal)]),
     // rank insignia floating over veterans (one) and elite soldiers (two)
     star: g([paint(new THREE.OctahedronGeometry(0.11, 0), '#f0c858', 0, null, P.metal)]),
     // carried goods (on the shoulder)
@@ -102,7 +105,7 @@ function buildParts() {
   };
 }
 
-const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', cook: null };
+const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', salter: 'rake', cook: null };
 const CARRY = { timber: 'log', stone: 'stone', provisions: 'sack', iron: 'ingot' };
 const SETTLER_TUNICS = ['#8a6f4e', '#6f7b5a', '#9b7c52', '#5f6f7a', '#7a5f4e', '#8e8a6a', '#8a4e4a', '#4e6a7a'];
 const HAIR = ['#4a3222', '#2a1e16', '#b8914e', '#8a4a24', '#6a5a4a', '#c8c0b0', '#3a2a1e'];
@@ -118,6 +121,10 @@ export const STYLE = {
   reaver: { torso: '#8c3b2a', head: 'cap', headColor: '#3a302a', right: 'axe', left: null, legs: '#3a302a', beard: true, beardColor: '#6a2e18' },
   slinger: { torso: '#7a5a3e', head: 'hood', headColor: '#5b2a20', right: 'sling', left: null, legs: '#3a302a' },
   brute: { torso: '#5b2a20', head: 'hornhelm', right: 'spear', left: 'shieldHide', leftColor: '#7a5a3e', legs: '#3a302a', pauldrons: '#7a5a3e' },
+  varrspear: { torso: '#8a1c2c', head: 'helm', right: 'spear', left: 'shieldKite', leftColor: '#8a1c2c', legs: '#3a3a3c', pauldrons: true, tabard: '#d8d0c0' },
+  varrbow: { torso: '#6a2430', coat: true, head: 'helm', right: 'crossbow', left: null, legs: '#3a3a3c', tabard: '#d8d0c0' },
+  varrknight: { torso: '#5a5e66', coat: true, head: 'helm', right: 'sword', left: 'shieldKite', leftColor: '#8a1c2c', legs: '#2e3036', pauldrons: true, tabard: '#8a1c2c', scale: 1.06 },
+  ysolde: { torso: '#3a3e46', coat: true, head: 'circlet', hairColor: '#c8a060', right: 'sword', left: 'shieldKite', leftColor: '#8a1c2c', legs: '#2a2a30', pauldrons: true, cape: '#8a1c2c', scale: 1.2 },
   brigand: { torso: '#5a6a44', head: 'hood', headColor: '#3e4a30', right: 'axe', left: 'shieldRound', leftColor: '#6e5037', legs: '#3a3428', beard: true, beardColor: '#5a4030' },
   poacher: { torso: '#4a5638', head: 'hood', headColor: '#6a5a3a', right: null, left: 'bow', legs: '#3a3428' },
   morwen: { torso: '#3e4a30', coat: true, head: 'hood', headColor: '#2e3a24', right: null, left: 'bow', legs: '#2a2a20', scale: 1.15, cape: '#44582e' },

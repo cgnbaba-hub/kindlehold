@@ -7,7 +7,6 @@ import { stabilityFactor } from '../population/index.js';
 import { territorySources, territoryOwner } from '../world/territory.js';
 import { pay, refund } from '../economy/stock.js';
 import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
-import { distToPolyline } from '../world/terrain-data.js';
 
 export const MAX_BUILDERS = 3;
 export const CANCEL_REFUND_STARTED = 0.5;
@@ -63,12 +62,9 @@ export function checkPlacement(world, services, owner, type, x, z) {
     if (dd < clear) return { ok: false, reason: d.type === 'tree' ? 'Trees are in the way' : 'Rocks are in the way' };
     if (def.deposit && d.type === def.deposit && dd <= def.depositRange && dd < nearest) { nearest = dd; depositId = d.id; }
   }
-  if (def.waterRange) {
-    const river = services.terrain.map.river;
-    if (distToPolyline(x, z, river.points) - river.halfWidth > def.waterRange) return { ok: false, reason: `Needs the river within ${def.waterRange} m` };
-  }
+  if (def.waterRange && !services.terrain.nearestWater(x, z, def.waterRange)) return { ok: false, reason: `Needs open water within ${def.waterRange} m` };
   if (def.deposit && depositId == null) {
-    const what = { tree: 'trees', rock: 'a rock outcrop', iron: 'an iron vein' }[def.deposit];
+    const what = { tree: 'trees', rock: 'a rock outcrop', iron: 'an iron vein', salt: 'a salt pan' }[def.deposit];
     return { ok: false, reason: `Needs ${what} within ${def.depositRange} m` };
   }
   // hostile units nearby

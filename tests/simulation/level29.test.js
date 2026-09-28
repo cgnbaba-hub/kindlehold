@@ -76,7 +76,7 @@ test("the Fisher's Hut must stand by the river and brings in fish", async () => 
   sim.step();
   const far = checkPlacement(sim.world, sim.services, 'p1', 'fisher', -46, 62);
   assert.equal(far.ok, false);
-  assert.match(far.reason, /river/);
+  assert.match(far.reason, /water/);
   // a hut on the northern bank of the Harrow, staffed like any workshop
   const b = createBuildingEntity(sim.world, { type: 'fisher', owner: 'p1', x: -40, z: 2, rot: 0, state: 'active' });
   sim.services.nav.rebuildDynamic();

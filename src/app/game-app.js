@@ -216,12 +216,12 @@ export async function startApp(params) {
   if (verify) {
     // deterministic verification session (no menu)
     const diff = ['story', 'normal', 'hard'].includes(params.get('difficulty')) ? params.get('difficulty') : 'normal';
-    await startGame({ seed: params.get('seed') || '1337', demo: params.get('demo') || null, difficulty: diff });
+    await startGame({ seed: params.get('seed') || '1337', demo: params.get('demo') || null, difficulty: diff, scenarioId: Object.hasOwn(SCENARIOS, params.get('chapter') || '') ? params.get('chapter') : 'harrowmere' });
     if (params.get('ui') !== '1' && hud) hud.el.hidden = true; // world-only screenshots
     return;
   }
   // ?start=1 jumps straight into a game (tests, quick checks): no intro flight
-  if (params.get('start') === '1') { await startGame({ intro: false, scenarioId: ['greyfen', 'tollbreaker'].includes(params.get('chapter')) ? params.get('chapter') : 'harrowmere' }); return; }
+  if (params.get('start') === '1') { await startGame({ intro: false, scenarioId: ['greyfen', 'tollbreaker', 'saltroad'].includes(params.get('chapter')) ? params.get('chapter') : 'harrowmere' }); return; }
   showMain();
   markReady();
 }

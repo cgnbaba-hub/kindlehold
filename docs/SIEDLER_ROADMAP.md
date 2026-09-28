@@ -135,6 +135,19 @@ Bot-Messung (`npm run balance -- greyfen:normal:7 tollbreaker:normal:7 …`): Ka
 Kapitel 3 22–26 min, alle gemessenen Partien gewonnen. Kapitel 1: 7/8 (Hard 2/3). In Kapitel 2 und 3 bleiben die Festungstore verrammelt, bis die Überfälle bzw. das Heer gebrochen sind (sonst wäre ein früher Sturm eine Abkürzung durch die Story). Menschliche Spieler brauchen erfahrungsgemäß
 länger. Zusammen mit Kapitel 1 ergibt das etwa 2–3 Stunden Kampagne.
 
+## Stufe 3 (zweiter Teil): Kapitel 4 „The Salt Road“
+
+| Punkt | Umsetzung |
+|---|---|
+| Neue Karte „Saltmere“ | Eine Küstenniederung hinter dem östlichen Pass: großer Salzsee mit Möweninsel, Solebecken bei der Wegstation Lanternford, der Bach „Salt Run“ mit zwei Furten, die Salzstraße von West nach Ost, die Burg der Markgräfin auf der östlichen Anhöhe, dazu das Salzsiederdorf Pannholt, das Gasthaus an der Salzstraße, der Keller des Salzkönigs und zwei Steinmale. |
+| Neuer Gegner | Die **Legion von Varr** unter der Markgräfin **Ysolde**: Pikeniere (defensiv), Armbrustschützen (Bolzen durchschlagen Rüstung), Ritter (schwer gepanzert). Dazu Steinburg und Steintürme, rote Wappenröcke und ein eigenes Porträt. Legionäre sind stärker als Rustfang-Räuber, deshalb kommen weniger pro Angriff. |
+| Salz | **Salzpfannen** am Ufer versiegen nie. Die **Salzsiederei** (höchstens 12 m von einer Pfanne) recht Salz, das gegen Taler verkauft wird. Die Taler tragen die Träger zur Burg. Der Knopf erscheint nur auf Karten mit Salzpfannen. |
+| Story | Maren baut über dem Pass eine Wegstation. Das Salzsiederdorf Pannholt schließt sich an. Die Markgräfin fordert ein Drittel jedes Sacks: Tribut zahlen (fünf ruhige Minuten) oder den ersten Angriff zurückschlagen. Nach zwei gebrochenen Angriffen öffnet die Burg ihre Tore. Das Ende deutet auf einen Auftraggeber im Tiefland (Siegel mit weißem Hirsch). |
+| Technik | Karten-Register (Szenario → Karte, auch beim Laden), Seen und Inseln im Gelände, Fischer an jedem Gewässer, Kamera, Audio und Test-Bot kartenunabhängig, Gegner-Fraktionen (`src/ai/factions.js`), Veteranen aus früheren Kapiteln. |
+
+Bot-Messung Kapitel 4: Story 1/1, Normal 3/3 (24–35 min Bot-Zeit), Hard 1/3 innerhalb von 40 min. Kapitel 1 auf Hard seit der Fischer-Umstellung 1/3 (vorher 2/3), gleiches Spiel, anderer chaotischer Bot-Verlauf. Die Kampagne hat damit vier Kapitel,
+etwa 3–4 Stunden für menschliche Spieler (geschätzt, nicht gemessen).
+
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
 1. **Echte animierte Figuren (Variante B):** Modelle mit Skelett, z. B. aus CC0-Paketen,

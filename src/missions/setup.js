@@ -9,6 +9,8 @@ import { spawnUnit } from '../units/sim.js';
 import { spawnEnemy, aiSettings } from '../ai/index.js';
 import { distToPolyline } from '../world/terrain-data.js';
 import { HARROWMERE_SCENARIO } from './scenarios/harrowmere.js';
+import { enemyFaction } from '../ai/factions.js';
+import { RANKS } from '../combat/index.js';
 
 const DIFF_RES = { story: 1.5, normal: 1, hard: 0.8 };
 
@@ -29,7 +31,10 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   const res = {};
   for (const r in scenario.startResources) res[r] = Math.round(scenario.startResources[r] * mult);
   addPlayer(world, { id: PLAYER, name: 'Hearthbound', faction: 'hearthbound', color: '#2f6f8f', res, stability: 55 });
-  addPlayer(world, { id: ENEMY, name: 'Rustfang Reavers', faction: 'rustfang', color: '#8c3b2a', res: {}, stability: 100, ai: true });
+  // the enemy faction of this chapter (Rustfang by default)
+  if (scenario.enemy && scenario.enemy.faction) world.ai.faction = scenario.enemy.faction;
+  const fac = enemyFaction(world);
+  addPlayer(world, { id: ENEMY, name: fac.name, faction: fac.id, color: fac.color, res: {}, stability: 100, ai: true });
   world.mapEntry = { ...map.settlerEntry };
   world.enemyEntry = { ...map.reinforcementEntry };
   world.mission.scenarioId = scenario.id;
@@ -42,13 +47,17 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   // Enemy camp
   const ec = map.enemyCamp;
   const hallRot = Math.atan2(ks.x - ec.x, ks.z - ec.z);
-  createBuildingEntity(world, { type: 'warhall', owner: ENEMY, x: ec.x, z: ec.z, rot: hallRot, state: 'active' });
-  createBuildingEntity(world, { type: 'reavertower', owner: ENEMY, x: ec.x - 16, z: ec.z + 14, rot: hallRot, state: 'active' });
-  createBuildingEntity(world, { type: 'reavertower', owner: ENEMY, x: ec.x + 14, z: ec.z + 18, rot: hallRot, state: 'active' });
+  createBuildingEntity(world, { type: fac.hall, owner: ENEMY, x: ec.x, z: ec.z, rot: hallRot, state: 'active' });
+  createBuildingEntity(world, { type: fac.tower, owner: ENEMY, x: ec.x - 16, z: ec.z + 14, rot: hallRot, state: 'active' });
+  createBuildingEntity(world, { type: fac.tower, owner: ENEMY, x: ec.x + 14, z: ec.z + 18, rot: hallRot, state: 'active' });
 
   // Deposits — iron veins and rock outcrops first (hand-placed), then forests
   const placed = [];
   const clearOf = (x, z, r) => placed.every((p) => (p.x - x) ** 2 + (p.z - z) ** 2 >= r * r);
+  for (const p of map.saltPans || []) {
+    spawn(world, { kind: 'deposit', type: 'salt', x: p.x, z: p.z, amount: 999, maxAmount: 999, variant: 0, rot: rng.range(0, Math.PI * 2), reservedBy: null });
+    placed.push({ x: p.x, z: p.z });
+  }
   for (const v of map.ironVeins) {
     spawn(world, { kind: 'deposit', type: 'iron', x: v.x, z: v.z, amount: 400, maxAmount: 400, variant: 0, rot: 0.6, reservedBy: null });
     placed.push({ x: v.x, z: v.z });
@@ -99,7 +108,7 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   }
   world.stats.buildingsBuilt = 0;
   for (const [dx, dz] of (scenario.enemy && scenario.enemy.extraTowers) || []) {
-    createBuildingEntity(world, { type: 'reavertower', owner: ENEMY, x: ec.x + dx, z: ec.z + dz, rot: hallRot, state: 'active' });
+    createBuildingEntity(world, { type: fac.tower, owner: ENEMY, x: ec.x + dx, z: ec.z + dz, rot: hallRot, state: 'active' });
   }
   if (scenario.ai) world.ai.mods = { ...scenario.ai };
   if (scenario.enemy && scenario.enemy.hallBarred) world.mission.flags.hallBarred = true;
@@ -108,9 +117,16 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   const door = { x: keep.x + Math.sin(keep.rot) * 9, z: keep.z + Math.cos(keep.rot) * 9 };
   const settlers = st.settlers || 5;
   for (let i = 0; i < settlers; i++) spawnSettler(world, PLAYER, door.x + ((i % 5) - 2) * 1.4, door.z + 1.5 + (i < 5 ? i % 2 : Math.floor(i / 5) * 1.3));
-  (st.soldiers || []).forEach((type, i) => {
+  // soldiers: 'type' or [type, rank] (veterans of earlier chapters keep their stars)
+  (st.soldiers || []).forEach((spec, i) => {
+    const [type, rank] = Array.isArray(spec) ? spec : [spec, 0];
     const u = spawnUnit(world, type, PLAYER, door.x - 4 + (i % 4) * 1.6, door.z + 5 + Math.floor(i / 4) * 1.6);
-    if (u) u.order = { type: 'idle', ax: u.x, az: u.z };
+    if (!u) return;
+    u.order = { type: 'idle', ax: u.x, az: u.z };
+    if (rank > 0) {
+      u.rank = rank; u.xp = RANKS[rank].kills;
+      u.maxHp = Math.round(u.maxHp * RANKS[rank].hp); u.hp = u.maxHp;
+    }
   });
   const maren = spawnUnit(world, 'maren', PLAYER, door.x + 2, door.z - 1.5);
   maren.order = { type: 'idle', ax: maren.x, az: maren.z };
@@ -118,7 +134,7 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
 
   // Enemy garrison
   const hallDoor = { x: ec.x + Math.sin(hallRot) * 9, z: ec.z + Math.cos(hallRot) * 9 };
-  const garrison = ['reaver', 'reaver', 'slinger', 'brute', 'reaver', 'slinger'];
+  const garrison = fac.garrison;
   garrison.forEach((type, i) => {
     const u = spawnEnemy(world, type, hallDoor.x + (i % 3) * 2 - 2, hallDoor.z + Math.floor(i / 3) * 2);
     if (u) {
@@ -136,7 +152,7 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
     }
   });
   // (in the last chapter Vharek leads his host in person and arrives later)
-  const vharek = scenario.enemy && scenario.enemy.commanderLate ? null : spawnEnemy(world, 'vharek', hallDoor.x, hallDoor.z + 1);
+  const vharek = scenario.enemy && scenario.enemy.commanderLate ? null : spawnEnemy(world, fac.commander, hallDoor.x, hallDoor.z + 1);
   if (vharek) vharek.order = { type: 'guard', ax: hallDoor.x, az: hallDoor.z + 1, leash: 30 };
 
   const cfg = aiSettings(world);

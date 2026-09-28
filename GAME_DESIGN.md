@@ -225,6 +225,18 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
   flag/unflag, reveal, relation, raidSoon, spawnHost), `raidWarnAfter`, `winWhen`, `cinematic`.
 - New conditions: minutes, stance, poiDone, unitGone, veterans (+rank), winter, not, hostSpent.
 
+## Chapter 4 additions
+
+- **Maps** (`src/world/maps/index.js`): harrowmere, saltmere. A scenario names its map
+  (`map`); loaded saves use their scenario's map. Terrain supports `lakes` and `islands`
+  (ellipses); `nearestWater` serves fishers and placement.
+- **Factions** (`src/ai/factions.js`): rustfang, varr — hall, tower, muster cycle, garrison,
+  commander and wording. `scenario.enemy.faction` → `world.ai.faction` (saved).
+- **Varr units:** Pikeman (defensive, 170 HP, armour 4), Crossbowman (ranged 14 m, pierce 0.4),
+  Knight (melee, 210 HP, armour 5), Ysolde (commander, 760 HP). Manor 2800 HP; towers 13 dmg / 16 m.
+- **Salt:** deposit `salt` (never depletes), Salt Works (25 timber, 10 stone; 12 m), salter
+  earns 3 Taler per 8-s trip.
+
 ## Controls (default)
 
 Camera: right-drag grabs and moves the map (a short right-click stays the context order), arrow keys pan, screen-edge scrolling is optional (off by default), Q/E or middle-drag rotate, mouse wheel zooms towards the cursor,

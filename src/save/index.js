@@ -9,6 +9,7 @@ import { UNITS } from '../units/defs.js';
 import { TECHS } from '../technology/defs.js';
 import { HARROWMERE_SCENARIO } from '../missions/scenarios/harrowmere.js';
 import { GREYFEN_SCENARIO, TOLLBREAKER_SCENARIO } from '../missions/scenarios/campaign.js';
+import { SALTROAD_SCENARIO } from '../missions/scenarios/saltroad.js';
 
 export const SAVE_FORMAT = 'kindlehold-save';
 
@@ -53,7 +54,7 @@ const KIND_SCHEMAS = {
   }),
   settler: v.object({
     hp: v.number({ min: -1e4, max: 1e5 }), maxHp: v.number({ min: 1, max: 1e5 }),
-    job: v.optional(v.string({ oneOf: ['forester', 'quarrier', 'farmer', 'miner', 'hunter', 'fisher', 'cook'] })),
+    job: v.optional(v.string({ oneOf: ['forester', 'quarrier', 'farmer', 'miner', 'hunter', 'fisher', 'salter', 'cook'] })),
     sleep: v.optional(v.object({ home: v.number({ min: 1, max: 1e9, int: true }), in: v.boolean() }, { allowExtra: false })),
     hidden: v.optional(v.boolean()),
     carry: v.optional(v.object({ res: v.string({ oneOf: RESOURCES }), amt: nonNeg(1000) })),
@@ -62,7 +63,7 @@ const KIND_SCHEMAS = {
   }),
   poi: v.object({ type: v.string({ oneOf: ['trader', 'cairn', 'ruin', 'hamlet'] }), state: v.string({ oneOf: ['hidden', 'found', 'done'] }) }),
   animal: v.object({ type: v.string({ oneOf: ['deer'] }), herd: v.number({ min: 1, max: 64, int: true }), goal: v.optional(point) }),
-  deposit: v.object({ type: v.string({ oneOf: ['tree', 'rock', 'iron'] }), amount: v.number({ min: -1000, max: 1e5 }), maxAmount: v.number({ min: 1, max: 1e5 }) }),
+  deposit: v.object({ type: v.string({ oneOf: ['tree', 'rock', 'iron', 'salt'] }), amount: v.number({ min: -1000, max: 1e5 }), maxAmount: v.number({ min: 1, max: 1e5 }) }),
 };
 
 const entitySchema = (x, p) => {
@@ -87,7 +88,7 @@ const playerFull = v.object({
 const worldSchema = v.object({
   schemaVersion: v.number({ min: 1, max: SCHEMA_VERSION, int: true }),
   meta: v.object({
-    scenarioId: v.string({ oneOf: ['harrowmere', 'greyfen', 'tollbreaker'] }), difficulty: v.string({ oneOf: ['story', 'normal', 'hard'] }),
+    scenarioId: v.string({ oneOf: ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad'] }), difficulty: v.string({ oneOf: ['story', 'normal', 'hard'] }),
     campaign: v.optional(v.object({ greyfen: v.optional(v.string({ oneOf: ['allied', 'defeated', 'neutral'] })) }, { allowExtra: false })),
   }),
   tick: v.number({ min: 0, max: 1e9, int: true }),
@@ -114,7 +115,7 @@ const worldSchema = v.object({
     objectives: v.array(v.object({ id: v.string({ max: 40 }), state: v.string({ oneOf: ['pending', 'active', 'done'] }) }), { max: 64 }),
     flags: v.record(v.any(), { max: 64 }), triggers: v.record(v.any(), { max: 64 }), messages: v.array(v.any(), { max: 200 }),
   }),
-  ai: v.object({ wave: nonNeg(1000), state: v.string({ oneOf: ['build', 'gather', 'raid', 'retreat'] }), raidIds: ids(400), nextSpawnTick: nonNeg(1e10), nextScoutTick: nonNeg(1e10) }),
+  ai: v.object({ wave: nonNeg(1000), state: v.string({ oneOf: ['build', 'gather', 'raid', 'retreat'] }), raidIds: ids(400), nextSpawnTick: nonNeg(1e10), nextScoutTick: nonNeg(1e10), faction: v.optional(v.string({ oneOf: ['rustfang', 'varr'] })) }),
   combat: v.object({ pending: v.array(v.object({ target: v.number({ min: 1, max: 1e9, int: true }), damage: nonNeg(1e5), arrive: nonNeg(1e10) }), { max: 4000 }) }),
   selection: v.object({ ids: v.array(num, { max: 2000 }), groups: v.record(ids(200), { max: 10, keyPattern: /^[1-9]$/ }) }),
   stats: v.object({ produced: stockSchema, consumed: stockSchema }),
@@ -179,7 +180,7 @@ export function deserializeWorld(text) {
     if (String(e.id) !== k) throw new ValidationError(`entity key ${k} does not match id ${e.id}`);
     if (e.id >= doc.world.nextId) throw new ValidationError('entity id beyond nextId');
   }
-  const sc = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO }[doc.world.meta.scenarioId] || HARROWMERE_SCENARIO;
+  const sc = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO, saltroad: SALTROAD_SCENARIO }[doc.world.meta.scenarioId] || HARROWMERE_SCENARIO;
   const known = new Set(sc.objectives.map((o) => o.id));
   for (const o of doc.world.mission.objectives) if (!known.has(o.id)) throw new ValidationError(`unknown objective "${o.id}"`);
   markDirty(doc.world);

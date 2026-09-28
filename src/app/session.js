@@ -50,9 +50,10 @@ export async function createSession({ container, seed, quality = 'high', verify 
   const overlay = { placementReason: '' };
   const input = views.register(createInput({ canvas: rc.renderer.domElement, rc, sim, terrain: sim.terrain, settings, hooks }));
   const selectionView = views.register(createSelectionView({ scene: rc.scene, terrain: sim.terrain, world, sim, input, camera: rc.camera, overlay }));
-  const audio = views.register(createAudio({ bus: sim.bus, world, settings, getListener: () => rc.rts.state }));
+  const audio = views.register(createAudio({ bus: sim.bus, world, settings, getListener: () => rc.rts.state, terrain: sim.terrain }));
   if (demo) terrainView.seedWear(0.5);
-  rc.rts.setPreset('settlement');
+  // start over the player's town, wherever the map puts it
+  { const ps = sim.terrain.map.playerStart; rc.rts.jumpTo(ps.x + 2, ps.z, 0.6, 60); }
   if (loadedWorld && loadedWorld.camera) rc.rts.jumpTo(loadedWorld.camera.x, loadedWorld.camera.z, loadedWorld.camera.yaw, loadedWorld.camera.zoom);
 
   const stats = createFrameStats();

@@ -8,6 +8,7 @@ import { BUILDINGS } from '../buildings/defs.js';
 import { viewRng } from '../render/geometry-kit.js';
 import { shroudOverlay } from '../render/structure-material.js';
 import { flushInstances } from '../render/instancing.js';
+import { isFactionHall } from '../ai/factions.js';
 
 function spriteTexture() {
   const size = 64;
@@ -112,6 +113,7 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
     else if (d.kind === 'mine') { emit('sparks', d.x, y + 1.1, d.z, 5, 0.3, [0, 2.2, 0], 2.8); }
     else if (d.kind === 'build' || d.kind === 'repair') { emit('dust', d.x, y + 0.3, d.z, 2, 0.6, [0, 0.4, 0], 0.5); }
     else if (d.kind === 'cook') { emit('smoke', d.x, y + 5.5, d.z, 1, 0.6, [0, 0.8, 0], 0.3); }
+    else if (d.kind === 'salter') { emit('glint', d.x, heightAt(d.x, d.z) + 0.5, d.z, 2, 0.8, [0, 0.8, 0], 0.6); }
     else if (d.kind === 'fish') { emit('splash', d.x, heightAt(d.x, d.z) + 0.3, d.z, 3, 0.4, [0, 1.6, 0], 1.2); }
     else if (d.kind === 'harvest' || d.kind === 'sow') { emit('dust', d.x, y + 0.2, d.z, 1, 0.8, [0, 0.3, 0], 0.4); }
   }));
@@ -184,7 +186,7 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
           if (b.lit) { const [x, z] = toW(0, -2.2); emit('fire', x, y + 12.2, z, Math.ceil(step * 18), 0.6, [0, 1.2, 0], 0.4); if (rnd() < step * 5) emit('ember', x, y + 12.6, z, 1, 0.5, [0, 1.5, 0], 1); }
         }
         if (b.type === 'mine' && rnd() < step * 0.7) { const [x, z] = toW(0, 2); emit('dust', x, y + 0.5, z, 1, 0.6, [0, 0.3, 0.2], 0.3); }
-        if (b.type === 'warhall' && rnd() < step * 2) { const [x, z] = toW(4, -2); emit('smoke', x, y + 8, z, 1, 0.4, [0.3, 0.8, 0], 0.3); }
+        if (isFactionHall(b.type) && rnd() < step * 2) { const [x, z] = toW(4, -2); emit('smoke', x, y + 8, z, 1, 0.4, [0.3, 0.8, 0], 0.3); }
       }
       // damage: smoke below 60%, fire below 35%
       if (b.state !== 'destroyed' && b.maxHp) {

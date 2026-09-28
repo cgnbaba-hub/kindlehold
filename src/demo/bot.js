@@ -1,4 +1,4 @@
-import { UPGRADES } from '../buildings/defs.js';
+import { UPGRADES, BUILDINGS } from '../buildings/defs.js';
 import { keepOf } from '../population/index.js';
 // Scripted player ("bot") that plays the scenario only through the public command API.
 // Used by the happy-path simulation test, balancing, and verification demo states.
@@ -10,6 +10,7 @@ import { researchBlocker } from '../technology/index.js';
 import { countBuilt, soldierCount } from '../missions/conditions.js';
 import { UNITS } from '../units/defs.js';
 import { ABILITIES, abilityReady } from '../heroes/index.js';
+import { warhallOf } from '../ai/index.js';
 
 /** Spiral search for a valid building spot near (x,z). */
 export function findSpot(world, services, type, x, z, maxR = 34) {
@@ -35,13 +36,39 @@ export function createBot(sim, { aggressive = true } = {}) {
   let phase = 'economy';
   let lastAct = -999;
 
+  // the scripted layout was drawn for Harrowmere (keep at -46,50): shift it to this map's town
+  const home = services.terrain.map.playerStart;
+  const rel = ([x, z]) => [x + 46 + home.x, z - 50 + home.z];
+
+  /** Fallback search centre: next to the nearest deposit the building needs, or the nearest water. */
+  function fallbackCentre(world, type) {
+    const def = BUILDINGS[type];
+    if (def.deposit) {
+      let best = null, bd = Infinity;
+      for (const d of all(world, 'deposit')) {
+        if (d.type !== def.deposit || d.amount <= 0) continue;
+        const dd = Math.hypot(d.x - home.x, d.z - home.z);
+        if (dd < bd) { bd = dd; best = d; }
+      }
+      return best ? [best.x, best.z] : null;
+    }
+    if (def.waterRange) {
+      const wtr = services.terrain.nearestWater(home.x, home.z, 110);
+      if (!wtr) return null;
+      const len = wtr.d || 1;
+      return [wtr.x + ((home.x - wtr.x) / len) * 16, wtr.z + ((home.z - wtr.z) / len) * 16];
+    }
+    return null;
+  }
+
   function place(type, near) {
     const world = w();
     if (!canAfford(world, PLAYER, buildCost(world, PLAYER, type))) return false;
-    const [x, z] = near || SITES[type];
-    const spot = findSpot(world, services, type, x, z);
+    const [x, z] = rel(near || SITES[type] || [-46, 50]);
+    let spot = findSpot(world, services, type, x, z);
+    if (!spot) { const c = fallbackCentre(world, type); if (c) spot = findSpot(world, services, type, c[0], c[1], 26); }
     if (!spot) { log.push(`${world.tick}: no spot for ${type}`); return false; }
-    sim.issue({ type: 'place', buildingType: type, x: spot.x, z: spot.z, rot: Math.atan2(-46 - spot.x, 50 - spot.z) + Math.PI });
+    sim.issue({ type: 'place', buildingType: type, x: spot.x, z: spot.z, rot: Math.atan2(home.x - spot.x, home.z - spot.z) + Math.PI });
     log.push(`${world.tick}: place ${type} @${spot.x},${spot.z}`);
     return true;
   }
@@ -61,6 +88,8 @@ export function createBot(sim, { aggressive = true } = {}) {
     if (count('cottage') < 1) { place('cottage'); return; }
     if (count('lodge') < 2) { place('lodge', [-70, 26]); return; }
     if (count('quarry') < 1) { place('quarry'); return; }
+    // where the map has salt pans, salt works pay for everything else
+    if (count('saltworks') < 2 && all(world, 'deposit').some((d) => d.type === 'salt')) { place('saltworks'); return; }
     if (count('cottage') < 2) { place('cottage', [-58, 30]); return; }
     if (count('mine') < 1) { place('mine'); return; }
     if (count('farm') < 2) { place('farm', [-60, 78]); return; }
@@ -112,7 +141,7 @@ export function createBot(sim, { aggressive = true } = {}) {
     if (dead && canAfford(world, PLAYER, buildCost(world, PLAYER, 'lodge'))) {
       let best = null, bd = Infinity;
       const trees = all(world, 'deposit').filter((d) => d.type === 'tree' && d.amount > 0);
-      for (const d of trees) { if (trees.filter((o) => Math.hypot(o.x - d.x, o.z - d.z) < 18).length < 8) continue; const dd = Math.hypot(d.x + 46, d.z - 50); if (dd < bd) { bd = dd; best = d; } }
+      for (const d of trees) { if (trees.filter((o) => Math.hypot(o.x - d.x, o.z - d.z) < 18).length < 8) continue; const dd = Math.hypot(d.x - home.x, d.z - home.z); if (dd < bd) { bd = dd; best = d; } }
       if (best && place('lodge', [best.x, best.z])) sim.issue({ type: 'demolish', id: dead.id });
     }
   }
@@ -141,7 +170,7 @@ export function createBot(sim, { aggressive = true } = {}) {
     const active = (id) => (world.mission.objectives.find((o) => o.id === id) || {}).state === 'active';
     const h = hero();
     heroErrand = false;
-    if (active('millbrook') && h && !h.downed && world.ai.state !== 'raid') {
+    if ((active('millbrook') || active('pannholt')) && h && !h.downed && world.ai.state !== 'raid') {
       const ham = all(world, 'poi').find((x) => x.type === 'hamlet');
       if (ham) { heroErrand = true; if (Math.hypot(h.x - ham.x, h.z - ham.z) > 4 && (!h.order || h.order.type !== 'move')) sim.issue({ type: 'move', ids: [h.id], x: ham.x, z: ham.z }); }
     }
@@ -154,15 +183,15 @@ export function createBot(sim, { aggressive = true } = {}) {
     const h = hero();
     const ids = army.map((u) => u.id).concat(h && !h.downed && !heroErrand ? [h.id] : []);
     const raidOn = world.ai.state === 'raid';
-    const hall = all(world, 'building').find((b) => b.type === 'warhall' && b.owner === ENEMY && b.state !== 'destroyed');
+    const hall = warhallOf(world);
     if (raidOn) {
       phase = 'defend';
       const raiders = world.ai.raidIds.map((id) => world.entities[id]).filter(Boolean);
       if (raiders.length && world.tick - lastAct > 60) {
         let cx = 0, cz = 0; raiders.forEach((r) => { cx += r.x; cz += r.z; }); cx /= raiders.length; cz /= raiders.length;
         // only engage raiders once they are near the settlement; otherwise hold the north road
-        if (Math.hypot(cx + 46, cz - 50) < 55) sim.issue({ type: 'attackMove', ids, x: cx, z: cz });
-        else sim.issue({ type: 'move', ids, x: -30, z: 34 });
+        if (Math.hypot(cx - home.x, cz - home.z) < 55) sim.issue({ type: 'attackMove', ids, x: cx, z: cz });
+        else { const [gx, gz] = rel([-30, 34]); sim.issue({ type: 'move', ids, x: gx, z: gz }); }
         lastAct = world.tick;
       }
     } else if (phase === 'defend' || (world.ai.wave >= 1 && aggressive)) {
@@ -171,11 +200,11 @@ export function createBot(sim, { aggressive = true } = {}) {
         sim.issue({ type: 'attackMove', ids, x: hall.x - 6, z: hall.z + 8 });
         lastAct = world.tick;
       } else if (hall && army.length < 6 && world.tick - lastAct > 200) {
-        sim.issue({ type: 'move', ids, x: -26, z: 32 });
+        const [gx, gz] = rel([-26, 32]); sim.issue({ type: 'move', ids, x: gx, z: gz });
         lastAct = world.tick;
       }
     } else if (world.mission.flags.raidWarned && world.tick - lastAct > 400) {
-      sim.issue({ type: 'move', ids, x: -26, z: 30 });
+      const [gx, gz] = rel([-26, 30]); sim.issue({ type: 'move', ids, x: gx, z: gz });
       lastAct = world.tick;
     }
     // hero abilities when enemies are close

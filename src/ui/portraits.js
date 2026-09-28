@@ -68,6 +68,18 @@ ${FACE('#d6b494', '#9a7654')}${EYES('#1e2a14')}
 <path d="M20 50c4 3 8 4 12 4s8-1 12-4" stroke="#e8dcc0" stroke-width="2.2" fill="none"/>
 <path d="M26 53l-1 3M32 54v3M38 53l1 3" stroke="#e8dcc0" stroke-width="1.4"/>`, ['#4a5838', '#121810']),
 
+  // Ysolde, Margravine of Varr: golden hair, gold circlet, steel gorget, crimson mantle
+  ysolde: P('ysolde', `<path d="M6 64c2-15 11-21 26-21s24 6 26 21z" fill="#6a1822"/>
+<path d="M14 64c2-10 8-15 18-15s16 5 18 15z" fill="#8a1c2c"/>
+<path d="M22 46c3 3 7 4 10 4s7-1 10-4l-2 6H24z" fill="#9aa0a8" stroke="#4a4e56" stroke-width=".8"/>
+<path d="M20 30c-1 10 0 18 3 22M44 30c1 10 0 18-3 22" stroke="#c8a060" stroke-width="4" fill="none"/>
+${FACE('#e2c2a4', '#aa8468')}${EYES('#26303a')}
+<path d="M25.5 25.6l4.4-.8M34.1 24.8l4.4.8" stroke="#8a6a3a" stroke-width="1.1" stroke-linecap="round"/>
+<path d="M29 35.4c2 .5 4 .5 6 0" stroke="#9a4a44" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<path d="M21 26c0-9 5-13 11-13s11 4 11 13c-2-5-5-7-11-7s-9 2-11 7z" fill="#d4ac6a"/>
+<path d="M21 20.5c3-2 7-3 11-3s8 1 11 3" stroke="#e3c26b" stroke-width="2" fill="none"/>
+<path d="M32 15.5l1.4 2.4h-2.8z" fill="#c03040" stroke="#e3c26b" stroke-width=".6"/>`, ['#5a2a30', '#140a0c']),
+
   // Hild of Millbrook, elder of the river folk: white braids, blue-grey shawl, a reed charm
   hild: P('hild', `<path d="M8 64c2-14 10-20 24-20s22 6 24 20z" fill="#4a5a68"/>
 <path d="M14 64c1-10 6-16 18-18 12 2 17 8 18 18z" fill="#5d7080"/>

@@ -56,6 +56,18 @@ export function rawHeight(map, x, z) {
     h = h * (1 - w) + (f.h + (valueNoise2(x * 0.2, z * 0.2, s + 3) - 0.5) * 0.15) * w;
   }
   h = Math.max(h, map.minLand);
+  // lakes: elliptical basins with shelving shores (an island is a smaller ellipse raised back up)
+  for (const lake of map.lakes || []) {
+    const e = Math.hypot((x - lake.x) / lake.rx, (z - lake.z) / lake.rz);
+    const wob = 1 + (valueNoise2(x * 0.03, z * 0.03, s + 51) - 0.5) * 0.18;
+    const t = 1 - smoothstep(0.78, 1.0, e * wob);
+    if (t > 0) h = h * (1 - t) + lake.bed * t;
+  }
+  for (const isle of map.islands || []) {
+    const e = Math.hypot((x - isle.x) / isle.rx, (z - isle.z) / isle.rz);
+    const t = 1 - smoothstep(0.6, 1.0, e);
+    if (t > 0) h = h * (1 - t) + isle.h * t;
+  }
   // river channel
   const dr = distToPolyline(x, z, map.river.points);
   if (dr < map.river.bankWidth) {
@@ -110,7 +122,23 @@ export function createTerrainData(map) {
   function waterDepth(x, z) { return Math.max(0, WATER_LEVEL - height(x, z)); }
   function inBounds(x, z, margin = 0) { return Math.abs(x) <= map.half - margin && Math.abs(z) <= map.half - margin; }
 
-  return { map, half: map.half, size, res, n, step, heights, height, slope, isWater, waterDepth, inBounds, waterLevel: WATER_LEVEL };
+  /** Nearest open water (river or lake, at least `minDepth` deep) within `maxR` metres, or null. */
+  function nearestWater(x, z, maxR, minDepth = 0.3) {
+    for (let r = 0; r <= maxR; r += 2) {
+      const steps = Math.max(8, Math.round((2 * Math.PI * r) / 3));
+      let best = null, bd = Infinity;
+      for (let i = 0; i < steps; i++) {
+        const a = (i / steps) * Math.PI * 2, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
+        if (!inBounds(px, pz, 2) || waterDepth(px, pz) < minDepth) continue;
+        const d = Math.hypot(px - x, pz - z);
+        if (d < bd) { bd = d; best = { x: px, z: pz, d }; }
+      }
+      if (best) return best;
+    }
+    return null;
+  }
+
+  return { map, half: map.half, size, res, n, step, heights, height, slope, isWater, waterDepth, inBounds, nearestWater, waterLevel: WATER_LEVEL };
 }
 
 /**

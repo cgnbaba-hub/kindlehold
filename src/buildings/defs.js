@@ -60,6 +60,12 @@ export const BUILDINGS = {
     cost: { timber: 25, stone: 15 }, buildTime: 22, hp: 450, radius: 4, navRadius: 3.2, slots: 1, job: 'miner',
     deposit: 'iron', depositRange: 10, outCap: 8, inCap: 6, door: [0, 4],
   },
+  saltworks: {
+    id: 'saltworks', name: 'Salt Works', owner: 'p1', buildable: true,
+    desc: 'A salter rakes salt from a pan on the shore (within 12 m). Salt pans never run dry; the salt is sold on the road for Taler.',
+    cost: { timber: 25, stone: 10 }, buildTime: 18, hp: 320, radius: 3.4, navRadius: 2.8, slots: 1, job: 'salter',
+    deposit: 'salt', depositRange: 12, outCap: 30, door: [0, 3.4],
+  },
   hunter: {
     id: 'hunter', name: "Hunter's Hut", owner: 'p1', buildable: true,
     desc: 'A hunter stalks the deer herds within 45 m for meat (provisions). Hunting goes on in winter.',
@@ -68,7 +74,7 @@ export const BUILDINGS = {
   },
   fisher: {
     id: 'fisher', name: "Fisher's Hut", owner: 'p1', buildable: true,
-    desc: 'A fisher casts a line in the river for fish (provisions). Must stand within 30 m of the Harrow; slower when the river is frozen.',
+    desc: 'A fisher casts a line in the river for fish (provisions). Must stand within 30 m of a river or lake; slower when the water is frozen.',
     cost: { timber: 20, stone: 5 }, buildTime: 14, hp: 280, radius: 3.2, navRadius: 2.6, slots: 1, job: 'fisher',
     waterRange: 30, outCap: 8, door: [0, 3.2],
   },
@@ -105,6 +111,16 @@ export const BUILDINGS = {
     desc: 'A brigand lookout with a keen-eyed poacher on top.',
     cost: {}, buildTime: 0, hp: 450, radius: 2.6, navRadius: 2.2, attack: { damage: 11, range: 15, cooldown: 1.7 }, door: [0, 2.6],
   },
+  varrkeep: {
+    id: 'varrkeep', name: 'Manor of Varr', owner: 'p2', buildable: false,
+    desc: 'The Margravine\'s fortified manor on the eastern rise. Its legion guards the salt road.',
+    cost: {}, buildTime: 0, hp: 2800, radius: 7.5, navRadius: 6.5, territory: 32, door: [0, 7.6],
+  },
+  varrtower: {
+    id: 'varrtower', name: 'Varr Watchtower', owner: 'p2', buildable: false,
+    desc: 'A stone tower with a crossbowman behind its crenels.',
+    cost: {}, buildTime: 0, hp: 650, radius: 2.8, navRadius: 2.4, attack: { damage: 13, range: 16, cooldown: 1.9 }, door: [0, 2.8],
+  },
   reavertower: {
     id: 'reavertower', name: 'Rustfang Lookout', owner: 'p2', buildable: false,
     desc: 'A crude lookout that pelts intruders with stones.',
@@ -132,6 +148,7 @@ export const UPGRADES = {
   mine: { 2: { ...WORKSHOP_L2, name: 'Deep Mine', cost: { timber: 30, stone: 30, taler: 35 } } },
   hunter: { 2: { ...WORKSHOP_L2, name: 'Hunting Lodge' } },
   fisher: { 2: { ...WORKSHOP_L2, name: 'Fishery' } },
+  saltworks: { 2: { ...WORKSHOP_L2, name: 'Salt House' } },
   barracks: { 2: { name: 'Drill Yard', cost: { timber: 40, stone: 30, iron: 20, taler: 60 }, time: 45, speed: 1.25, hp: 250, desc: 'Unlocks Crossbowmen and Halberdiers; training 25% faster.' } },
   canteen: { 2: { ...WORKSHOP_L2, name: 'Inn', desc: 'A second cook and 20% faster cooking.' } },
 };
@@ -155,7 +172,7 @@ export function displayName(b) {
   return BUILDINGS[b.type].name;
 }
 
-export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'fisher', 'canteen', 'quarry', 'mine', 'barracks', 'tower'];
+export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'fisher', 'canteen', 'quarry', 'mine', 'saltworks', 'barracks', 'tower'];
 
 export function buildingDef(type) {
   const d = BUILDINGS[type];

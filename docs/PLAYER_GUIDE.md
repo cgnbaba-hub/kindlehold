@@ -66,6 +66,11 @@ Choose **Campaign** in the main menu. Three chapters tell the story of Kindlehol
 3. **The Tollbreaker's Winter:** prepare for the snow, break Vharek's great host (his fort's
    gates stay barred until you do), then face the Tollbreaker himself when he marches on
    your town.
+4. **The Salt Road:** a new land beyond the eastern pass. Build the waystation Lanternford,
+   raise **Salt Works** by the salt pans (salt is sold for Taler, the pans never run dry),
+   win over the salters of Pannholt and decide whether to pay the Margravine of Varr's
+   tribute. Her legion fights in formation: pikemen in front, crossbowmen behind (their bolts
+   pierce armour), knights in mail. Break two attacks, then take her manor.
 
 Winning a chapter opens the next. Chapter 3 remembers what you decided about the Greyfen.
 Each chapter starts with a short flight over the valley: click or press any key to skip it.

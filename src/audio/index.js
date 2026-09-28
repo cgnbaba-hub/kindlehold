@@ -4,6 +4,7 @@
 // during raids. Fully optional: any failure leaves the game running silently.
 import { EV, PLAYER } from '../core/contracts.js';
 import { log } from '../core/logger.js';
+import { distToPolyline } from '../world/terrain-data.js';
 
 const SCALE = [0, 2, 3, 5, 7, 9, 10]; // D dorian degrees
 
@@ -12,7 +13,7 @@ let seed = 0x1a2b3c;
 function rand() { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }
 const ROOT_HZ = 146.83; // D3
 
-export function createAudio({ bus, world, settings, getListener }) {
+export function createAudio({ bus, world, settings, getListener, terrain = null }) {
   let ctx = null;
   let meter = null, meterBuf = null;
   let ok = false;
@@ -233,9 +234,10 @@ export function createAudio({ bus, world, settings, getListener }) {
     amb.wf.frequency.setTargetAtTime(380 + Math.sin(t * 0.13) * 180 + L.zoom * 2 + snow * (260 + Math.sin(t * 0.31) * 160), t, 0.8);
     amb.wg.gain.setTargetAtTime((0.07 + L.zoom / 900) * (1 + snow * 0.8), t, 1);
     // river loudness from distance to the listener target (river runs roughly along z≈0)
-    const riverNear = Math.max(0, 1 - Math.abs(L.z - (-8 + L.x * 0.05)) / 45);
+    const riverNear = terrain ? Math.max(0, 1 - distToPolyline(L.x, L.z, terrain.map.river.points) / 45) : 0;
     amb.rg.gain.setTargetAtTime(frozen ? 0 : riverNear * 0.1, t, 1);
-    const keepNear = Math.max(0, 1 - Math.hypot(L.x + 46, L.z - 50) / 60) * (w.players[PLAYER] ? Math.min(1, w.players[PLAYER].pop / 20) : 0);
+    const home = terrain ? terrain.map.playerStart : { x: -46, z: 50 };
+    const keepNear = Math.max(0, 1 - Math.hypot(L.x - home.x, L.z - home.z) / 60) * (w.players[PLAYER] ? Math.min(1, w.players[PLAYER].pop / 20) : 0);
     amb.vg.gain.setTargetAtTime(keepNear * 0.05, t, 1);
     const rain = w.weather && w.weather.kind === 'rain' ? w.weather.intensity : 0;
     amb.rag.gain.setTargetAtTime(rain * 0.09, t, 1.2);
@@ -323,7 +325,7 @@ export function createAudio({ bus, world, settings, getListener }) {
   on('mission:raid-warning', () => sfx.alarm());
   on(EV.COMMAND_REJECTED, () => { if (allowed('bad', 200)) sfx.uiBad(); });
   on(EV.MISSION_ENDED, (d) => (d.result === 'victory' ? sfx.victory : sfx.defeat)());
-  on('keep:rekindled', () => sfx.flare(-46, 50));
+  on('keep:rekindled', (d) => { const k = world().entities[d.id]; sfx.flare(k ? k.x : 0, k ? k.z : 0); });
   // payday: a short run of coin clinks
   on('population:payday', (d) => {
     if (d.owner !== PLAYER || !(d.taxes > 0)) return;

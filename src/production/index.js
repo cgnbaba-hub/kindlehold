@@ -17,6 +17,7 @@ export const WORK = {
   miner: { res: 'iron', perCycle: 2, work: 8.0, provisionsPerCycle: 1, anim: 'mine' },
   hunter: { res: 'provisions', perTrip: 4, aim: 1.6, dress: 3.0, throwRange: 10, anim: 'cast' },
   cook: { perCycle: 3, provisionsPerCycle: 2, work: 7.0, anim: 'mine' },
+  salter: { res: 'taler', perTrip: 3, work: 8.0, strike: 1.2, anim: 'harvest' },
   fisher: { res: 'provisions', perTrip: 3, fish: 7.0, strike: 2.2, frozenSpeed: 0.5, anim: 'fish' },
 };
 
@@ -68,22 +69,14 @@ function findDeposit(world, b, type, range, workerId) {
 
 /** Where the fisher stands: the dry bank closest to the hut, facing the water. */
 export function fishingSpot(services, b) {
-  const map = services.terrain.map, nav = services.nav;
-  const pts = map.river.points;
-  let best = null, bd = Infinity;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const [ax, az] = pts[i], [bx, bz] = pts[i + 1];
-    const vx = bx - ax, vz = bz - az, l2 = vx * vx + vz * vz || 1;
-    const k = Math.max(0, Math.min(1, ((b.x - ax) * vx + (b.z - az) * vz) / l2));
-    const px = ax + vx * k, pz = az + vz * k, d = Math.hypot(b.x - px, b.z - pz);
-    if (d < bd) { bd = d; best = [px, pz]; }
-  }
-  if (!best) return null;
-  // walk from mid-river towards the hut until the ground is dry and walkable
-  const [wx, wz] = best, len = bd || 1;
-  for (let s = 0; s <= bd; s += 0.5) {
-    const x = wx + ((b.x - wx) / len) * s, z = wz + ((b.z - wz) / len) * s;
-    if (services.terrain.waterDepth(x, z) <= 0 && nav.walkable(x, z)) return { x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10, wx: Math.round(wx * 10) / 10, wz: Math.round(wz * 10) / 10 };
+  const terrain = services.terrain, nav = services.nav;
+  const w = terrain.nearestWater(b.x, b.z, BUILDINGS[b.type].waterRange + 12);
+  if (!w) return null;
+  // walk from the water towards the hut until the ground is dry and walkable
+  const len = Math.hypot(b.x - w.x, b.z - w.z) || 1;
+  for (let s = 0; s <= len; s += 0.5) {
+    const x = w.x + ((b.x - w.x) / len) * s, z = w.z + ((b.z - w.z) / len) * s;
+    if (terrain.waterDepth(x, z) <= 0 && nav.walkable(x, z)) return { x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10, wx: Math.round(w.x * 10) / 10, wz: Math.round(w.z * 10) / 10 };
   }
   return null;
 }
@@ -124,7 +117,7 @@ export function createProductionModule() {
       return;
     }
 
-    if (s.job === 'forester' || s.job === 'quarrier') {
+    if (s.job === 'forester' || s.job === 'quarrier' || s.job === 'salter') {
       const depType = def.deposit;
       switch (t.stage) {
         case 'start': {
@@ -144,7 +137,7 @@ export function createProductionModule() {
           t.deposit = d.id;
           // stand on the side of the deposit facing the workplace
           const dx = b.x - d.x, dz = b.z - d.z, len = Math.hypot(dx, dz) || 1;
-          const stand = d.type === 'tree' ? 1.1 : 2.2;
+          const stand = d.type === 'tree' ? 1.1 : d.type === 'salt' ? 2.6 : 2.2;
           t.spot = [d.x + (dx / len) * stand, d.z + (dz / len) * stand];
           t.stage = 'toDeposit';
           if (b.stall === 'noDeposit' || b.stall === 'noAccess') setStall(world, b, null);
@@ -168,8 +161,9 @@ export function createProductionModule() {
             emit(world, EV.WORK_STRIKE, { id: s.id, kind: s.job, x: d.x, z: d.z, deposit: d.id });
           }
           if (t.timer >= W.work) {
-            const amt = Math.min(W.perTrip, d.amount);
-            d.amount -= amt;
+            // salt pans never run dry
+            const amt = d.type === 'salt' ? W.perTrip : Math.min(W.perTrip, d.amount);
+            if (d.type !== 'salt') d.amount -= amt;
             d.reservedBy = null;
             s.carry = { res: W.res, amt };
             if (d.amount <= 0) {

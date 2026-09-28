@@ -5,15 +5,17 @@ import { evaluate } from './conditions.js';
 import { setupScenario } from './setup.js';
 import { HARROWMERE_SCENARIO } from './scenarios/harrowmere.js';
 import { GREYFEN_SCENARIO, TOLLBREAKER_SCENARIO } from './scenarios/campaign.js';
+import { SALTROAD_SCENARIO } from './scenarios/saltroad.js';
 import { aiSettings, spawnEnemy } from '../ai/index.js';
 import { doorOf } from '../buildings/defs.js';
 import { addRes } from '../economy/stock.js';
 import { reveal } from '../exploration/index.js';
 import { setRelation, relation } from '../diplomacy/index.js';
+import { enemyFaction } from '../ai/factions.js';
 
-export const SCENARIOS = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO };
+export const SCENARIOS = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO, saltroad: SALTROAD_SCENARIO };
 /** The campaign in play order. */
-export const CAMPAIGN = ['harrowmere', 'greyfen', 'tollbreaker'];
+export const CAMPAIGN = ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad'];
 
 export function scenarioOf(world) { const id = world.mission.scenarioId || world.meta.scenarioId; return Object.hasOwn(SCENARIOS, id) ? SCENARIOS[id] : HARROWMERE_SCENARIO; }
 
@@ -106,7 +108,7 @@ export function createMissionsModule() {
       m.flags.raidWarned = true;
       world.ai.raidTick = world.tick + aiSettings(world).raidDelay * 20;
       say(world, scenarioOf(world).warning);
-      alert(world, 'danger', 'A Rustfang raid is coming! Prepare your defences.');
+      alert(world, 'danger', `A ${enemyFaction(world).short} attack is coming! Prepare your defences.`);
       emit(world, 'mission:raid-warning', { raidTick: world.ai.raidTick });
     }
   }
@@ -114,7 +116,7 @@ export function createMissionsModule() {
   function checkEnd(world) {
     const sc = scenarioOf(world);
     if (sc.winWhen) { if (evaluate(world, sc.winWhen)) { end(world, 'victory', 'objectives'); return; } }
-    else if (!all(world, 'building').some((b) => b.type === 'warhall' && b.owner === ENEMY && b.state !== 'destroyed')) { end(world, 'victory', 'warhall-destroyed'); return; }
+    else if (!all(world, 'building').some((b) => b.type === enemyFaction(world).hall && b.owner === ENEMY && b.state !== 'destroyed')) { end(world, 'victory', 'warhall-destroyed'); return; }
     const keep = all(world, 'building').some((b) => b.type === 'keep' && b.owner === PLAYER && b.state !== 'destroyed');
     if (!keep) { end(world, 'defeat', 'keep-destroyed'); return; }
     let people = 0;

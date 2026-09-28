@@ -27,7 +27,7 @@ fasst zusammen, was eine neue Session (z. B. Claude Code im Web) wissen muss.
 ```bash
 npm ci && npx playwright install chromium   # einmalig
 npm run dev          # http://127.0.0.1:5180/  (?debug=1 stellt window.__GAME__ bereit)
-npm test             # 116 node:test-Tests (Unit, Integration, deterministische Simulation)
+npm test             # 119 node:test-Tests (Unit, Integration, deterministische Simulation)
 npm run build
 npm run verify -- --prod --nofps    # 12 Screenshot-Presets + JSON-Berichte (langsam)
 npm run test:e2e -- --only=<name>   # UI-Tests in Headless-Chromium, --only filtert
@@ -99,6 +99,15 @@ Tests: 107/107. e2e 11/11 (neu: `diplomacy-gift`), Audio-Check ok, Dreiecke im �
 1,436 M (Budget 1,5 M; dafür etwas weniger Deko-Wald). `npm run balance`: 6/8 (Hard 1/3, siehe
 Roadmap). Menüs setzen den Fokus jetzt sofort, sonst ging auf langsamen Rechnern das erste Esc
 verloren.
+
+## Kapitel 4 „The Salt Road“
+
+Neue Karte Saltmere (`src/world/maps/saltmere.js`), Legion von Varr (`src/ai/factions.js`),
+Salzwirtschaft, Kapitel-Daten in `src/missions/scenarios/saltroad.js`. Eine Karte schnell prüfen:
+Draufsicht als PNG mit einem kleinen Skript über `createTerrainData(mapById(id))`. Mit Blick auf
+die Wegstation muss erreichbar sein: Holz, Stein, Eisen und (hier) Salz innerhalb von 34 m
+Territorium. Presets: `saltmere-town`, `saltmere-lake`, `saltmere-manor`, `saltmere-pans`
+(Parameter `chapter`).
 
 ## Stufe 3 (erster Teil): Kampagne
 
