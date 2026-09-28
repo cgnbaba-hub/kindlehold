@@ -90,6 +90,9 @@ export function buildParts() {
     bow: g([place(paint(place(new THREE.TorusGeometry(0.9, 0.02, 4, 14, Math.PI * 0.45), { y: 0.9, rz: -Math.PI * 0.725 }), '#6b4a2f', 0, null, P.planks), { ry: -Math.PI / 2 }), paint(place(cyl(0.004, 0.004, 1.17, 3), { y: 0.216, rx: Math.PI / 2 }), '#e8e0cc', 0, null, P.plain), paint(place(cyl(0.03, 0.03, 0.12, 6), { rx: Math.PI / 2 }), '#3a2a1e', 0, null, P.plain)]),
     rake: g([paint(place(cyl(0.022, 0.025, 1.6, 5), { y: -0.5 }), '#8a6a44', 0, null, P.planks), B(0.5, 0.05, 0.06, '#6b4a2f', P.planks, { y: -1.3 })]),
     rod: flip(g([paint(place(cyl(0.012, 0.022, 2.2, 4), { y: -0.6 }), '#8a6a44', 0, null, P.planks)])),
+    // the cook's kettle on three short legs, stew inside
+    pot: g([paint(place(cyl(0.3, 0.22, 0.34, 9), { y: 0.47 }), '#2f2f31', 0, null, P.metal), paint(place(cyl(0.32, 0.32, 0.04, 9), { y: 0.64 }), '#46464a', 0, null, P.metal), paint(place(cyl(0.28, 0.28, 0.02, 9), { y: 0.61 }), '#8a5a2a', 0, null, P.plain), ...[0, 2.1, 4.2].map((a) => paint(place(cyl(0.03, 0.025, 0.32, 4), { x: Math.sin(a) * 0.2, z: Math.cos(a) * 0.2, y: 0.16 }), '#2f2f31', 0, null, P.metal)), paint(place(cone(0.16, 0.12, 6), { y: 0.06 }), '#e08a3a', 0, null, P.plain)]),
+    ladle: g([paint(place(cyl(0.015, 0.018, 0.8, 4), { y: -0.35 }), '#8a6a44', 0, null, P.planks), paint(place(sphere(0.06, 6, 3, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), { y: -0.74 }), '#6f7176', 0, null, P.metal)]),
     // the fishing line hangs straight down from the rod tip (placed in world orientation)
     line: g([paint(place(cyl(0.004, 0.004, 1.2, 3), { y: -0.6 }), '#e8e0cc', 0, null, P.plain), paint(place(sphere(0.03, 5, 3), { y: -0.95 }), '#c84a3a', 0, null, P.plain)]),
     pole: g([paint(place(cyl(0.03, 0.035, 2.3, 6), { y: -0.55 }), '#3e2c1f', 0, null, P.planks), paint(place(cyl(0.016, 0.016, 0.3, 4), { y: 0.72, z: 0.12, rx: 0.9 }), '#2f2f31', 0, null, P.metal)]),
@@ -123,7 +126,7 @@ export function buildParts() {
   };
 }
 
-const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', salter: 'rake', cook: null };
+const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', salter: 'rake', cook: 'ladle' };
 const CARRY = { timber: 'log', stone: 'stone', provisions: 'sack', iron: 'ingot' };
 // where each good sits in the torso frame: x, y, z, pitch, yaw
 const CARRY_AT = { log: [0.25, 0.8, -0.05, 0.22, Math.PI / 2], sack: [-0.24, 0.76, -0.08, 0, 0.3], stone: [0, 0.3, 0.3, 0, 0], ingot: [0, 0.36, 0.28, 0, 0] };
@@ -136,7 +139,7 @@ const LEGS = ['#5b4b3c', '#4a4a3e', '#6a5a44', '#3e4652'];
 const MAIL = '#8d9096', GLOVE = '#5a4030';
 const NO_OUTLINE = new Set(['hand', 'star', 'line']);
 const POLE_ITEMS = new Set(['spear', 'pole', 'halberd']);
-const BLADES = new Set(['axe', 'pick', 'hammer', 'sword', 'greataxe', 'maul', 'sickle']);
+const BLADES = new Set(['axe', 'pick', 'hammer', 'sword', 'greataxe', 'maul', 'sickle', 'ladle']);
 
 export const STYLE = {
   settler: { torso: null, head: 'cap', skin: '#e2b894', legs: '#5b4b3c' },
@@ -301,6 +304,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
       else put('tabard', torsoFrame, st.tabard);
     }
     if (settler && f.job === 'cook') put('apron', torsoFrame, null);
+    if (f.anim === 'stir') { out.multiplyMatrices(root, local(0.08, 0, 0.62, 0)); put('pot', out, null); }
     // the cloak hangs from the shoulders and trails behind when walking (it ignores the lean)
     if (st.cape && !fall) { out.multiplyMatrices(torsoFrame, local(0, 0.62, -0.06, P.cape - P.lean * 0.85)); put('cape', out, st.cape); }
     // head: face (skin tone), hair (style and colour vary), beard, headgear
@@ -353,7 +357,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
     if (left && !f.carry) {
       // shields are held turned out to the side, so they read from the RTS camera
       // a bow is kept upright in the world whatever the arm does; shields turn out to the side
-      if (left === 'bow') out.multiplyMatrices(foreLM, local(0, -0.29, 0.0, -Math.PI / 2 - (P.lean + P.armL + P.elbowL)));
+      if (left === 'bow') out.multiplyMatrices(foreLM, local(0, -0.29, 0.0, -Math.PI / 2 - (P.lean + P.armL + P.elbowL) - P.bowT));
       else out.multiplyMatrices(foreLM, local(0, -0.25, 0.05, 0, -1.0));
       put(left, out, st.leftColor || null);
     }

@@ -10,7 +10,7 @@
 //   (0 = the item simply follows the forearm). Pole-type items point along +Y (T = PI/2 is level
 //   forward), blades along -Y (T = -PI/2 is level forward).
 
-export const POSE_KEYS = ['legA', 'hipR', 'hipL', 'kneeL', 'kneeR', 'armL', 'armR', 'armLz', 'armRz', 'elbowL', 'elbowR', 'bob', 'lean', 'twist', 'sway', 'nod', 'headYaw', 'cape', 'itemT', 'itemW', 'itemRoll'];
+export const POSE_KEYS = ['legA', 'hipR', 'hipL', 'kneeL', 'kneeR', 'armL', 'armR', 'armLz', 'armRz', 'elbowL', 'elbowR', 'bob', 'lean', 'twist', 'sway', 'nod', 'headYaw', 'cape', 'itemT', 'itemW', 'itemRoll', 'bowT'];
 
 export function neutralPose(out = {}) {
   for (const k of POSE_KEYS) out[k] = 0;
@@ -165,6 +165,7 @@ export function computePose(anim, f, P) {
       P.armR = -0.95 + Math.sin(a) * 0.14; P.armRz = 0.12 + Math.cos(a) * 0.14; P.elbowR = -0.95;
       P.armL = -0.7; P.elbowL = -1.1; P.armLz = -0.1; P.lean += 0.18; P.nod = 0.18; P.kneeL = P.kneeR = 0.1;
       P.sway = Math.sin(a) * 0.02; P.twist = Math.sin(a) * 0.05;
+      P.itemT = 0.12; P.itemW = 1; // the ladle points down into the kettle
       break;
     }
     case 'fish': { // rod held out over the water, a patient twitch now and then
@@ -174,7 +175,14 @@ export function computePose(anim, f, P) {
       P.headYaw = Math.sin(t * 0.2 + ph0) * 0.2;
       break;
     }
-    case 'cast': P.armR = -2.9; P.armL = -0.5; P.armLz = -0.35; P.lean = -0.1; P.elbowR = -0.15; P.elbowL = -0.4; P.nod = -0.15; P.kneeL = 0.2; P.kneeR = 0.1; P.hipR = 0.2; P.hipL = -0.1; P.cape = 0.3; P.itemT = 0.15; P.itemW = 1; break;
+    case 'cast':
+      if (f.weapon === 'bow') { // an arrow storm: the bow tilted at the sky, the string drawn to the cheek
+        P.armL = -2.35; P.elbowL = -0.05; P.armLz = -0.1; P.armR = -2.05; P.elbowR = -1.75; P.armRz = 0.35;
+        P.twist = 0.55; P.lean = -0.18; P.nod = -0.3; P.headYaw = -0.35; P.bowT = 0.8;
+        P.kneeL = 0.25; P.kneeR = 0.1; P.hipR = 0.25; P.hipL = -0.15; P.cape = 0.3;
+        break;
+      }
+      P.armR = -2.9; P.armL = -0.5; P.armLz = -0.35; P.lean = -0.1; P.elbowR = -0.15; P.elbowL = -0.4; P.nod = -0.15; P.kneeL = 0.2; P.kneeR = 0.1; P.hipR = 0.2; P.hipL = -0.1; P.cape = 0.3; P.itemT = 0.15; P.itemW = 1; break;
     case 'talk': {
       // two idle neighbours chatting: they take turns, the speaker gestures, the listener nods
       const speaking = Math.sin(t * 0.45 + ph0 * 2.1) > 0;
