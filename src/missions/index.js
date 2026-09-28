@@ -4,9 +4,16 @@ import { all, emit, alert } from '../world/world.js';
 import { evaluate } from './conditions.js';
 import { setupScenario } from './setup.js';
 import { HARROWMERE_SCENARIO } from './scenarios/harrowmere.js';
-import { aiSettings } from '../ai/index.js';
+import { GREYFEN_SCENARIO, TOLLBREAKER_SCENARIO } from './scenarios/campaign.js';
+import { aiSettings, spawnEnemy } from '../ai/index.js';
+import { doorOf } from '../buildings/defs.js';
+import { addRes } from '../economy/stock.js';
+import { reveal } from '../exploration/index.js';
+import { setRelation, relation } from '../diplomacy/index.js';
 
-export const SCENARIOS = { harrowmere: HARROWMERE_SCENARIO };
+export const SCENARIOS = { harrowmere: HARROWMERE_SCENARIO, greyfen: GREYFEN_SCENARIO, tollbreaker: TOLLBREAKER_SCENARIO };
+/** The campaign in play order. */
+export const CAMPAIGN = ['harrowmere', 'greyfen', 'tollbreaker'];
 
 export function scenarioOf(world) { const id = world.mission.scenarioId || world.meta.scenarioId; return Object.hasOwn(SCENARIOS, id) ? SCENARIOS[id] : HARROWMERE_SCENARIO; }
 
@@ -52,10 +59,49 @@ export function createMissionsModule() {
     }
   }
 
+  /** A scripted host (e.g. Vharek and his bodyguard) marches in on the east road towards the Keep. */
+  function spawnHost(world, spec) {
+    const at = world.enemyEntry || { x: 100, z: -100 };
+    const keep = all(world, 'building').find((b) => b.type === 'keep' && b.owner === PLAYER && b.state !== 'destroyed');
+    const goal = keep ? doorOf(keep) : { x: 0, z: 0 };
+    const types = [...(spec.units || []), ...(spec.commander ? [spec.commander] : [])];
+    types.forEach((type, i) => {
+      const u = spawnEnemy(world, type, at.x - (i % 4) * 1.8, at.z + Math.floor(i / 4) * 1.8);
+      if (!u) return;
+      u.host = true;
+      u.order = { type: 'attackMove', x: goal.x + (i % 4) - 2, z: goal.z + 2, ax: u.x, az: u.z };
+    });
+    if (spec.flag) world.mission.flags[spec.flag] = true;
+    const c = spec.commander ? all(world, 'unit').find((u) => u.type === spec.commander) : null;
+    alert(world, 'danger', spec.alert || 'An enemy host is marching on Kindlehold!', c ? c.x : at.x, c ? c.z : at.z);
+  }
+
+  // scripted story beats: each fires once when its condition holds
+  function runEvents(world) {
+    const sc = scenarioOf(world);
+    const tr = world.mission.triggers;
+    for (const ev of sc.events || []) {
+      if (tr[ev.id] || !evaluate(world, ev.when)) continue;
+      tr[ev.id] = world.tick;
+      if (ev.say) say(world, ev.say);
+      if (ev.alert) alert(world, ev.alert[0], ev.alert[1]);
+      for (const a of ev.actions || []) {
+        if (a.grant) for (const r in a.grant) addRes(world, PLAYER, r, a.grant[r], 'story');
+        if (a.flag) world.mission.flags[a.flag] = true;
+        if (a.unflag) delete world.mission.flags[a.unflag];
+        if (a.reveal) reveal(world, ctx.services.terrain.half, a.reveal[0], a.reveal[1], a.reveal[2]);
+        if (a.relation) setRelation(world, PLAYER, a.relation[0], relation(world, PLAYER, a.relation[0]) + a.relation[1], 'story');
+        if (a.spawnHost) spawnHost(world, a.spawnHost);
+        if (a.raidSoon && world.ai.state === 'build') world.ai.raidTick = Math.min(world.ai.raidTick ?? Infinity, world.tick + a.raidSoon * 20);
+      }
+      emit(world, 'mission:event', { id: ev.id });
+    }
+  }
+
   function checkRaidWarning(world) {
     const m = world.mission;
     if (m.flags.raidWarned) return;
-    const armsDone = (m.objectives.find((o) => o.id === 'arms') || {}).state === 'done';
+    const armsDone = (m.objectives.find((o) => o.id === (scenarioOf(world).raidWarnAfter || 'arms')) || {}).state === 'done';
     if (armsDone || world.tick >= m.raidWarningTick) {
       m.flags.raidWarned = true;
       world.ai.raidTick = world.tick + aiSettings(world).raidDelay * 20;
@@ -66,8 +112,9 @@ export function createMissionsModule() {
   }
 
   function checkEnd(world) {
-    const hall = all(world, 'building').some((b) => b.type === 'warhall' && b.owner === ENEMY && b.state !== 'destroyed');
-    if (!hall) { end(world, 'victory', 'warhall-destroyed'); return; }
+    const sc = scenarioOf(world);
+    if (sc.winWhen) { if (evaluate(world, sc.winWhen)) { end(world, 'victory', 'objectives'); return; } }
+    else if (!all(world, 'building').some((b) => b.type === 'warhall' && b.owner === ENEMY && b.state !== 'destroyed')) { end(world, 'victory', 'warhall-destroyed'); return; }
     const keep = all(world, 'building').some((b) => b.type === 'keep' && b.owner === PLAYER && b.state !== 'destroyed');
     if (!keep) { end(world, 'defeat', 'keep-destroyed'); return; }
     let people = 0;
@@ -85,7 +132,7 @@ export function createMissionsModule() {
     init(c) {
       ctx = c;
       unsub.push(c.bus.on('world:setup', () => {
-        setupScenario(ctx.world, ctx.services.terrain);
+        setupScenario(ctx.world, ctx.services.terrain, scenarioOf(ctx.world));
         say(ctx.world, scenarioOf(ctx.world).intro);
         evaluateObjectives(ctx.world);
         c.bus.emit('world:setup-done', {});
@@ -96,6 +143,7 @@ export function createMissionsModule() {
       if (world.mission.result) return;
       if (world.tick % 10 === 0) {
         evaluateObjectives(world);
+        runEvents(world);
         checkRaidWarning(world);
         checkEnd(world);
       }

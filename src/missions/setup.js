@@ -1,7 +1,9 @@
 // Deterministic scenario setup: players, Keep, hero, settlers, deposits, enemy camp.
 import { PLAYER, ENEMY } from '../core/contracts.js';
 import { addPlayer, spawn, worldRng, all } from '../world/world.js';
-import { createBuildingEntity } from '../construction/index.js';
+import { createBuildingEntity, completeBuilding } from '../construction/index.js';
+import { UPGRADES } from '../buildings/defs.js';
+import { findSpot } from '../demo/bot.js';
 import { spawnSettler } from '../population/index.js';
 import { spawnUnit } from '../units/sim.js';
 import { spawnEnemy, aiSettings } from '../ai/index.js';
@@ -9,6 +11,16 @@ import { distToPolyline } from '../world/terrain-data.js';
 import { HARROWMERE_SCENARIO } from './scenarios/harrowmere.js';
 
 const DIFF_RES = { story: 1.5, normal: 1, hard: 0.8 };
+
+/** Raise a building to a level at setup (its upgrades already built). */
+function setLevel(b, level) {
+  for (let l = 2; l <= level; l++) {
+    const up = UPGRADES[b.type] && UPGRADES[b.type][l];
+    if (!up) break;
+    if (up.hp) { b.maxHp += up.hp; b.hp = b.maxHp; }
+    b.level = l;
+  }
+}
 
 export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   const map = terrain.map;
@@ -72,9 +84,34 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
     }
   }
 
+  // Later chapters begin in an established town (keep level, buildings, techs, soldiers)
+  const st = scenario.setup || {};
+  if (st.keepLevel > 1) setLevel(keep, st.keepLevel);
+  if (st.keepLit) { keep.lit = true; world.mission.flags.keepLit = true; }
+  for (const t of st.techs || []) world.players[PLAYER].techs[t] = true;
+  for (const [type, x, z, level] of st.buildings || []) {
+    const spot = findSpot(world, { terrain, nav: null }, type, x, z, 30);
+    if (!spot) continue;
+    const rot = Math.atan2(ks.x - spot.x, ks.z - spot.z);
+    const b = createBuildingEntity(world, { type, owner: PLAYER, x: spot.x, z: spot.z, rot, state: 'site' });
+    completeBuilding(world, b);
+    if (level > 1) setLevel(b, level);
+  }
+  world.stats.buildingsBuilt = 0;
+  for (const [dx, dz] of (scenario.enemy && scenario.enemy.extraTowers) || []) {
+    createBuildingEntity(world, { type: 'reavertower', owner: ENEMY, x: ec.x + dx, z: ec.z + dz, rot: hallRot, state: 'active' });
+  }
+  if (scenario.ai) world.ai.mods = { ...scenario.ai };
+  if (scenario.enemy && scenario.enemy.hallBarred) world.mission.flags.hallBarred = true;
+
   // Settlers and hero at the Keep
   const door = { x: keep.x + Math.sin(keep.rot) * 9, z: keep.z + Math.cos(keep.rot) * 9 };
-  for (let i = 0; i < 5; i++) spawnSettler(world, PLAYER, door.x + (i - 2) * 1.4, door.z + 1.5 + (i % 2));
+  const settlers = st.settlers || 5;
+  for (let i = 0; i < settlers; i++) spawnSettler(world, PLAYER, door.x + ((i % 5) - 2) * 1.4, door.z + 1.5 + Math.floor(i / 5) * 1.3);
+  (st.soldiers || []).forEach((type, i) => {
+    const u = spawnUnit(world, type, PLAYER, door.x - 4 + (i % 4) * 1.6, door.z + 5 + Math.floor(i / 4) * 1.6);
+    if (u) u.order = { type: 'idle', ax: u.x, az: u.z };
+  });
   const maren = spawnUnit(world, 'maren', PLAYER, door.x + 2, door.z - 1.5);
   maren.order = { type: 'idle', ax: maren.x, az: maren.z };
   world.selection.ids = [maren.id];
@@ -89,7 +126,17 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
       u.order = { type: 'guard', ax: ec.x + Math.sin(ang) * rr, az: ec.z + Math.cos(ang) * rr, leash: 28 };
     }
   });
-  const vharek = spawnEnemy(world, 'vharek', hallDoor.x, hallDoor.z + 1);
+  // later chapters: a stronger standing garrison around the hall
+  ((scenario.enemy && scenario.enemy.garrison) || []).forEach((type, i) => {
+    const u = spawnEnemy(world, type, hallDoor.x + (i % 5) * 1.8 - 3.6, hallDoor.z + 3 + Math.floor(i / 5) * 1.8);
+    if (u) {
+      const ang = (u.id * 2.399) % (Math.PI * 2), rr = 9 + (u.id % 4) * 2.5;
+      u.order = { type: 'guard', ax: ec.x + Math.sin(ang) * rr, az: ec.z + Math.cos(ang) * rr, leash: 26 };
+      u.sentinel = true; // the standing garrison holds the fort and never joins the raids
+    }
+  });
+  // (in the last chapter Vharek leads his host in person and arrives later)
+  const vharek = scenario.enemy && scenario.enemy.commanderLate ? null : spawnEnemy(world, 'vharek', hallDoor.x, hallDoor.z + 1);
   if (vharek) vharek.order = { type: 'guard', ax: hallDoor.x, az: hallDoor.z + 1, leash: 30 };
 
   const cfg = aiSettings(world);

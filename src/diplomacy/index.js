@@ -135,7 +135,8 @@ export function createDiplomacyModule() {
         const r = d.rel[k] ?? DRIFT_TO[k];
         const target = DRIFT_TO[k];
         if (k === `${PLAYER}|${ENEMY}`) continue;
-        if (r > target) d.rel[k] = Math.max(target, r - 1);
+        // sworn friendship fades slowly (a point every 30 s), ordinary goodwill faster
+        if (r > target && (r < ALLY_AT || tick % 600 === 0)) d.rel[k] = Math.max(target, r - 1);
         else if (r < target && r > WAR_AT) d.rel[k] = Math.min(target, r + 1);
       }
     },

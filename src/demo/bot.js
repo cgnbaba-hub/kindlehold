@@ -106,7 +106,7 @@ export function createBot(sim, { aggressive = true } = {}) {
     if (!p.research && soldiers().length >= 6 && !researchBlocker(world, PLAYER, 'blades')) { sim.issue({ type: 'research', techId: 'blades' }); return; }
     if (!p.research && soldiers().length >= 6 && !researchBlocker(world, PLAYER, 'axes') && p.res.timber > 100) { sim.issue({ type: 'research', techId: 'axes' }); return; }
     if (!p.research && !researchBlocker(world, PLAYER, 'charter') && p.res.stone > 100) { sim.issue({ type: 'research', techId: 'charter' }); return; }
-    if (p.techs.charter && count('tower') < 1) { place('tower'); return; }
+    if (p.techs.charter && count('tower') < (world.meta.scenarioId === 'tollbreaker' ? 2 : 1)) { place('tower', count('tower') ? [-50, 20] : null); return; }
     // exhausted forests: demolish the idle lodge and build a new one next to standing trees
     const dead = all(world, 'building').find((b) => b.owner === PLAYER && b.type === 'lodge' && b.state === 'active' && b.stall === 'noDeposit');
     if (dead && canAfford(world, PLAYER, buildCost(world, PLAYER, 'lodge'))) {
@@ -134,11 +134,25 @@ export function createBot(sim, { aggressive = true } = {}) {
     void p;
   }
 
+  // campaign chores: Maren's visit to Millbrook, gifts for the Greyfen
+  let heroErrand = false;
+  function storyStep() {
+    const world = w();
+    const active = (id) => (world.mission.objectives.find((o) => o.id === id) || {}).state === 'active';
+    const h = hero();
+    heroErrand = false;
+    if (active('millbrook') && h && !h.downed && world.ai.state !== 'raid') {
+      const ham = all(world, 'poi').find((x) => x.type === 'hamlet');
+      if (ham) { heroErrand = true; if (Math.hypot(h.x - ham.x, h.z - ham.z) > 4 && (!h.order || h.order.type !== 'move')) sim.issue({ type: 'move', ids: [h.id], x: ham.x, z: ham.z }); }
+    }
+    if (active('greyfen') && world.players[PLAYER].res.taler >= 50 && world.tick % 600 === 50) sim.issue({ type: 'gift', to: 'p3' });
+  }
+
   function tacticsStep() {
     const world = w();
     const army = soldiers();
     const h = hero();
-    const ids = army.map((u) => u.id).concat(h && !h.downed ? [h.id] : []);
+    const ids = army.map((u) => u.id).concat(h && !h.downed && !heroErrand ? [h.id] : []);
     const raidOn = world.ai.state === 'raid';
     const hall = all(world, 'building').find((b) => b.type === 'warhall' && b.owner === ENEMY && b.state !== 'destroyed');
     if (raidOn) {
@@ -185,6 +199,7 @@ export function createBot(sim, { aggressive = true } = {}) {
       if (world.tick % 20 === 0) economyStep();
       if (world.tick % 20 === 10) militaryStep();
       if (world.tick % 10 === 3) tacticsStep();
+      if (world.tick % 100 === 50 && world.meta.scenarioId !== 'harrowmere') storyStep();
     },
     /** Run until the mission ends or maxTicks. */
     play(maxTicks, onTick = null) {

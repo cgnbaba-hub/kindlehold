@@ -1,6 +1,8 @@
 // Declarative condition evaluation for scenario objectives and triggers.
 import { all } from '../world/world.js';
 import { PLAYER } from '../core/contracts.js';
+import { stance } from '../diplomacy/index.js';
+import { aiSettings } from '../ai/index.js';
 
 export function countBuilt(world, owner, type) {
   let n = 0;
@@ -32,5 +34,14 @@ export function evaluate(world, cond, owner = PLAYER) {
   if (cond.raidsRepelled !== undefined) return (world.ai.wave || 0) >= cond.raidsRepelled;
   if (cond.destroyed) return !all(world, 'building').some((b) => b.type === cond.destroyed && b.state !== 'destroyed');
   if (cond.tickAtLeast !== undefined) return world.tick >= cond.tickAtLeast;
+  if (cond.minutes !== undefined) return world.tick >= cond.minutes * 1200;
+  if (cond.stance) return stance(world, owner, cond.stance.with) === cond.stance.is;
+  if (cond.poiDone) return all(world, 'poi').some((p) => p.type === cond.poiDone && p.state === 'done');
+  if (cond.unitGone) return !all(world, 'unit').some((u) => u.type === cond.unitGone && !u.downed);
+  if (cond.veterans !== undefined) return all(world, 'unit').filter((u) => u.owner === owner && (u.rank || 0) >= (cond.rank || 1)).length >= cond.veterans;
+  if (cond.winter !== undefined) return !!(world.weather && world.weather.season === 'winter') === cond.winter;
+  if (cond.not) return !evaluate(world, cond.not, owner);
+  // the Rustfang host is spent: every reserve mustered and no raider left in the field
+  if (cond.hostSpent) return (world.ai.spawned || 0) >= aiSettings(world).reserves && !all(world, 'unit').some((u) => u.owner === 'p2' && !u.commander && !u.sentinel && !u.host);
   return false;
 }
