@@ -7,6 +7,7 @@ const SHOWCASES = {
   economy: () => import('./economy.js'),
   population: () => import('./population.js'),
   units: () => import('./units.js'),
+  figures: () => import('./figures.js'),
   combat: () => import('./combat.js'),
   effects: () => import('./effects.js'),
   audio: () => import('./audio.js'),

@@ -25,7 +25,7 @@ export async function startShowcase(id, config, params) {
   container.append(uiRoot);
   if (cfg.hud) createHud({ root: uiRoot, session, input: session.input, settings, actions: { pause: () => {}, cycleSpeed: () => {} } });
   uiRoot.append(h('div.showcase-tag.panel', {}, [h('strong', { text: `Showcase: ${id}` }), h('span', { text: cfg.caption || '' })]));
-  if (cfg.setup) await cfg.setup(session, uiRoot);
+  if (cfg.setup) await cfg.setup(session, uiRoot, params);
   const api = installVerifyApi(session);
   api.showcase = { id, health: () => (cfg.health ? cfg.health(session) : { status: 'ok' }) };
   session.start();
