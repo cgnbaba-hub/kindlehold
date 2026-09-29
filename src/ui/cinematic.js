@@ -54,7 +54,7 @@ export function playCinematic({ root, rts, scenario, reducedMotion = false, onDo
     skip,
     update(dt) {
       if (finished) return;
-      t += dt;
+      t += Math.min(dt, 0.1); // a long frame (shaders compiling, a stutter) must not skip lines
       const s = shots[i];
       // glide to the shot in the first 2.5 s, then drift slowly while the line is read
       const k = reducedMotion ? 1 : ease(Math.min(1, t / 2.5));

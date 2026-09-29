@@ -207,18 +207,25 @@ Messung (Software-Rendering im Container, 1280×720, dieselbe Ansicht; nur relat
 | Alltag | Waren je nach Art getragen (Stamm auf der Schulter, Sack über der Schulter, Stein und Eisen in den Armen), wartende Nachbarn plaudern miteinander, Einzelne strecken sich oder wischen sich die Stirn, Soldaten quittieren Befehle mit einer Geste. |
 | Modelle | Geformter Oberkörper, Hände, Ärmel, runde Schuhe, lange Frisuren (Zopf, Dutt, offen), verschiedene Hauttöne, Größe und Körperbau. Speere, Hellebarden, Armbrüste und Angeln wurden bisher verkehrt herum gehalten. |
 
+## Figuren, zweiter Schritt: modellierte Charaktere mit Skelett (KayKit, CC0)
+
+| Punkt | Umsetzung |
+|---|---|
+| Modelle | Fünf professionell modellierte Figuren (Ritter, Barbar, Schurkin, Schurkin mit Kapuze, Magier) mit gemeinsamem Skelett; Köpfe und Körper werden kombiniert und umgefärbt: Siedler in fünf Grundtypen mit vielen Farben, Haaren und Hauttönen, eigene Truppen in Blau, Rustfang als Barbaren mit Bärenkappe, Varr in Rot, der Hirsch-Orden in Weiß-Grün, Morrow in Schwarz-Gold. |
+| Animationen | 37 modellierte Animationen: Gehen, Laufen, Hieb, Stich, Beidhandschlag, Zielen und Schießen, Werfen, Treffer, zwei Todesarten, Aufheben (Feldarbeit), Benutzen (Kochen), Jubeln, Sitzen. |
+| Gegenstände | Waffen und Werkzeuge sitzen an den modellierten Griffpunkten der Hände; Speere und Stäbe werden aufrecht getragen und zum Stoß gesenkt. |
+| Technik | Alle Figuren gebündelt auf der Grafikkarte animiert (Knochen-Textur), inklusive Schatten. |
+
 ## Stufe 3: was noch fehlt (ehrliche Liste, grob nach Wirkung sortiert)
 
-0. **Figuren, nächste Schritte:** Gesichter mit Ausdruck, Kleidungsdetails (Gürteltaschen,
-   Mäntel mit Falten), Reittiere; langfristig Skelett-Modelle (Punkt 1).
+0. **Figuren, nächste Schritte:** eigene Zubehörteile für mehr Rollen (Strohhut, Schürze,
+   Kochmütze, Kiepe), Detailstufen für große Schlachten, Reittiere.
 0b. **Grafik, weitere Schritte:** detailliertere Gebäude und Gelände (Materialien, Texturen,
    Vegetation), Figuren mit mehr Details bis hin zu animierten Modellen (Punkt 1), bessere
    Schatten auf großen Ansichten (Kaskaden), Wolken am Himmel, Morgennebel in den Tälern.
    Nächste Schritte gemeinsam mit dem Spieler festlegen, idealerweise mit Messwerten von
    seiner Grafikkarte.
-1. **Echte animierte Figuren (Variante B):** Modelle mit Skelett, z. B. aus CC0-Paketen,
-   mit Lauf-, Arbeits- und Kampfanimationen. Wegen der vielen Figuren sind dafür
-   Leistungstricks nötig (Animation in Texturen vorberechnen, Detailstufen).
+1. **Echte animierte Figuren (Variante B):** umgesetzt mit KayKit (siehe oben).
 2. **Mehr Helden und eine Kampagne:** mehrere Karten, Zwischensequenzen mit Kamerafahrt,
    Sprachausgabe.
 3. **Truppen als Trupps mit Hauptmann,** die man mit Taler nachkauft, dazu Belagerungswaffen.

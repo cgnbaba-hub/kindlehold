@@ -126,6 +126,33 @@ Auflösung muss an Texelmitten des Tiefenpuffers abtasten und Normalen aus Nachb
 entstehen Streifen. (5) Schnelle Sichtprüfung ohne die langsamen Verify-Läufe: einmal
 `?verify=1&demo=midgame` laden und viele Kamera-Presets nacheinander fotografieren.
 
+## Figuren aus KayKit (Stufe 3, Figuren-Teil 2)
+
+Der Spieler fand die selbst gebauten Figuren nicht gut genug („nicht auf Siedler-Niveau“, Gegenstände
+komisch gehalten). Freigegeben: das CC0-Paket **KayKit Adventurers 1.0** (Kay Lousberg), Köpfe in
+Originalgröße. Aufbau:
+- `scripts/assets/bake-figures.mjs` (+ `gltf-lite.mjs`, eigener GLB/PNG-Leser) liest das Paket
+  (`git clone https://github.com/KayKit-Game-Assets/kaykit-character-pack-adventures-1.0` nach
+  `/home/user/kaykit-game-assets/...`, oder Pfad als Argument) und schreibt `public/figures/kaykit.bin/.json`
+  (2,4 MB): Körper und Köpfe als skinned Meshes mit Vertex-Farben aus der Palette und Tönungs-Slots
+  (Haut, Haar, Stoff A/B/C, Metall, Leder – Zuordnung der Paletten-Zellen in `CELLS`), starre
+  Teile (Helme, Hüte, Umhänge, Waffen, Schilde) im Raum ihres Knochens, 37 Animationen als
+  3×4-Knochenmatrizen mit 24 fps, dazu Schrittlänge (`stride`) und Trefferzeitpunkt (`hit`).
+- `src/units/skinned-figures.js`: ein InstancedMesh je Körper/Kopf/Teil; jede Figur schreibt ihre
+  Knochenmatrizen und Tönungen in eine Zeile einer Float-Textur, der Vertex-Shader skinnt daraus
+  (auch im Schatten-Durchgang). Gegenstände sitzen an den Handslots; Stangenwaffen, Stab, Angel und
+  Bogen werden aufrecht in Weltrichtung gehalten und für einen Stoß waagrecht gesenkt. Waren liegen
+  auf der Schulter bzw. zwischen den Händen; Arme dafür aus einer zweiten Animation, auf die Brust
+  umgehängt (`layerArms`). Clip-Wahl in `choose()`, Überblendung 0,2 s, Gangtempo aus der
+  tatsächlichen Geschwindigkeit (bis 1,8× der modellierten Schrittfolge).
+- `src/units/cast.js`: Kostüme je Einheit (Körper, Kopf, Helm/Hut/Umhang, Waffen, Farben), Siedler
+  in fünf Grundtypen mit Farb-, Haar- und Hautvarianten.
+- Ohne Daten (Ladefehler) oder mit `?figs=classic` bleiben die prozeduralen Figuren (`figures.js`).
+- Kosten gemessen (Software-GL, gleiche Ansichten): Dreiecke 1,43 → 1,65 Mio. (Siedlung), Draw
+  Calls 182 → 144 (keine Umriss-Hüllen mehr).
+Neue Charaktere: Köpfe und Körper frei kombinieren, Tönungen in `cast.js`, zusätzliche starre Teile
+in `RIGID` im Baker; eigene Werkzeuge kommen aus `buildParts()` (Griff im Ursprung, Arbeitsende +Y).
+
 ## Figuren und Animationen (Stufe 3, Figuren-Teil 1)
 
 Posen stehen jetzt in `src/units/poses.js` (flache Gelenkwinkel, `computePose`, `lerpPose`),

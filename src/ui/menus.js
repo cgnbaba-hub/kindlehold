@@ -260,8 +260,9 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
   function credits({ onBack }) {
     return show(screen('sub-menu', [backdrop(), h('div.menu-card.wide', {}, [
       h('h2', { text: 'Credits & licences' }),
-      h('p', { text: 'Kindlehold is an original game: its setting, characters, missions, dialogue, buildings, interface, icons, textures, models, music and sounds were created for this project, mostly generated procedurally at runtime.' }),
-      h('p', { text: 'Rendering: three.js (MIT licence) including its Sky shader addon. Build tooling: Vite (MIT). No third-party art, audio or fonts are shipped.' }),
+      h('p', { text: 'Kindlehold is an original game: its setting, story characters, missions, dialogue, buildings, interface, icons, textures, music and sounds were created for this project, mostly generated procedurally at runtime.' }),
+      h('p', { text: 'Characters and their animations: KayKit Adventurers Character Pack by Kay Lousberg (kaylousberg.com), CC0 1.0 — recoloured and dressed for Kindlehold\'s roles and factions.' }),
+      h('p', { text: 'Rendering: three.js (MIT licence) including its Sky shader addon. Build tooling: Vite (MIT). No other third-party art, audio or fonts are shipped.' }),
       h('p.muted', { text: 'Inspired only by the general conventions of economy-focused real-time strategy games. Not affiliated with, endorsed by, or a remake of any existing game.' }),
       menuButton('Back', onBack, { primary: true }),
     ])], { onEsc: onBack }));
