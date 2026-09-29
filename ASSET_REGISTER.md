@@ -10,7 +10,8 @@ build check if a file under `public/assets/` is not listed.
 
 | File | Source | Creator | Original URL | Licence | Attribution required | Modifications | Used by |
 |---|---|---|---|---|---|---|---|
-| *(none yet)* | | | | | | | |
+| `public/figures/kaykit.bin`, `public/figures/kaykit.json` | KayKit Adventurers Character Pack 1.0 (Knight, Barbarian, Rogue, Rogue_Hooded, Mage; helmets, hats, capes, swords, axes, shields, crossbows; 37 of its 76 animations) | Kay Lousberg (kaylousberg.com) | https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0 | CC0 1.0 | No (credited anyway) | Baked by `scripts/assets/bake-figures.mjs`: palette texture converted to vertex colours with tint slots, attachments moved into bone space, animations sampled at 24 fps as bone matrices | `src/units/skinned-figures.js`, `src/units/cast.js` |
+| `public/figures/KAYKIT-LICENSE.txt` | the pack's licence file | Kay Lousberg | as above | CC0 1.0 | – | unchanged | – |
 
 ## Libraries (runtime)
 
@@ -28,7 +29,7 @@ this project, same licence as the project). They are not placeholders unless mar
 | Terrain heightfield & splat map | `src/world/terrain-data.js`, `src/terrain/` | final |
 | Ground textures (grass, dirt, rock, sand albedo/normal) | `src/terrain/textures.js` (canvas, seeded noise) | final |
 | Building meshes (8 player + Warhall + palisade) | `src/buildings/meshes.js` | final |
-| Character figures & animation | `src/units/figures.js` | final |
+| Character figures & animation (fallback when the KayKit data cannot load; tools, goods, lantern) | `src/units/figures.js`, `src/units/poses.js` | final |
 | Trees, rocks, iron veins, grass | `src/environment/vegetation.js` | final |
 | Sky, water shader | three `Sky` addon (MIT) + `src/environment/water.js` | final |
 | Particles (smoke, dust, sparks, fire, embers) | `src/effects/` sprite textures drawn on canvas | final |

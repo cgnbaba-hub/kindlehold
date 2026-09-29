@@ -13,6 +13,7 @@ import { createWildlifeView } from '../environment/wildlife-view.js';
 import { createPoisView } from '../environment/pois-view.js';
 import { createBuildingsView } from '../buildings/view.js';
 import { createUnitsView } from '../units/view.js';
+import { loadFigureAssets } from '../units/skinned-figures.js';
 import { createEffects } from '../effects/index.js';
 import { applyDemoState } from '../demo/states.js';
 import { createSelectionView } from '../selection/view.js';
@@ -43,7 +44,9 @@ export async function createSession({ container, seed, quality = 'high', verify 
   views.register(createWildlifeView({ scene: rc.scene, terrain: sim.terrain, world }));
   views.register(createPoisView({ scene: rc.scene, terrain: sim.terrain, world }));
   const buildingsView = views.register(createBuildingsView({ scene: rc.scene, terrain: sim.terrain, world, renderer: rc.renderer, sky }));
-  const unitsView = views.register(createUnitsView({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, getZoom: () => rc.rts.state.zoom }));
+  // modelled, animated characters (KayKit); ?figs=classic keeps the procedural figures
+  const figureAssets = typeof location !== 'undefined' && /[?&]figs=classic\b/.test(location.search) ? null : await loadFigureAssets();
+  const unitsView = views.register(createUnitsView({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, getZoom: () => rc.rts.state.zoom, figureAssets }));
   const effects = views.register(createEffects({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, quality: rc.quality, camera: rc.camera, reducedMotion: () => !!settings.reducedMotion }));
   const winter = views.register(createWinter({
     scene: rc.scene, world, terrainView, water, sky, quality: rc.quality, reducedMotion: () => !!settings.reducedMotion,

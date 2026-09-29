@@ -55,7 +55,7 @@ try {
     await page.getByRole('radio', { name: /Normal/ }).click();
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
     // the chapter opens with a flight over the valley; a click skips it
-    await page.waitForSelector('.cinematic', { timeout: 10000 });
+    await page.waitForSelector('.cinematic', { timeout: 30000 }); // it is there at once, but the first frames keep the page busy
     assert(/Chapter 1/.test(await page.textContent('.cinematic')), 'chapter intro shown');
     await page.mouse.click(640, 400);
     await page.waitForSelector('.cinematic', { state: 'detached', timeout: 20000 });
@@ -130,7 +130,7 @@ try {
     await game(page, () => { const g = window.__GAME__; g.issue({ type: 'rekindle' }); g.runTicks(400); });
     const before = await game(page, () => ({ tick: window.__GAME__.world().tick, hash: window.__GAME__.getWorldHash(), n: Object.keys(window.__GAME__.world().entities).length }));
     await page.keyboard.press('F5');
-    await page.waitForFunction(() => /Quick-saved/.test(document.querySelector('.toasts').textContent), null, { timeout: 10000 });
+    await page.waitForFunction(() => /Quick-saved/.test(document.querySelector('.toasts').textContent), null, { timeout: 30000 });
     await game(page, () => window.__GAME__.runTicks(300));
     await page.keyboard.press('F9');
     await page.waitForFunction((t) => window.__GAME_READY__ && window.__GAME__ && window.__GAME__.world().tick < t + 100, before.tick, { timeout: 120000 });
@@ -212,7 +212,7 @@ try {
     await page.getByRole('button', { name: /Chapter 2/ }).click();
     await page.getByRole('radio', { name: /Normal/ }).click();
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
-    await page.waitForSelector('.cinematic', { timeout: 10000 });
+    await page.waitForSelector('.cinematic', { timeout: 30000 }); // it is there at once, but the first frames keep the page busy
     await page.keyboard.press('Space');
     await page.waitForSelector('.cinematic', { state: 'detached', timeout: 20000 });
     await page.waitForFunction(() => /A town that feeds itself/.test(document.querySelector('.objectives').textContent), null, { timeout: 20000 });

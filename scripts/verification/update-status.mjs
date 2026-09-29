@@ -56,7 +56,7 @@ const status = {
   openPolish: scores.openPolish || [],
   criticHistory: scores.history,
   builderIterations: scores.iterations || {},
-  assetLicences: 'All runtime content is procedural/project-authored; three.js (MIT). check-register: see scripts/assets/check-register.mjs',
+  assetLicences: 'Procedural/project-authored content; character models and animations: KayKit Adventurers (Kay Lousberg, CC0); three.js (MIT). check-register: see scripts/assets/check-register.mjs',
   deployment: scores.deployment || prev.deployment || { status: 'validated locally (nginx in Docker); public deployment not performed' },
   nextRecommendedAction: scores.next || prev.nextRecommendedAction,
 };
