@@ -159,8 +159,8 @@ export async function startApp(params) {
       setTimeout(() => {
         if (!session) return;
         session.loop.pause();
-        const diff = session.world.meta.difficulty, sid = session.world.meta.scenarioId;
-        menus.endScreen({ result, world: session.world, onMenu: showMain, onRestart: () => startGame({ difficulty: diff, scenarioId: sid }), onNext: next ? () => startGame({ difficulty: diff, scenarioId: next }) : null });
+        const diff = session.world.meta.difficulty, sid = session.world.meta.scenarioId, seed = sid === 'free-wild' ? session.world.meta.seed : null;
+        menus.endScreen({ result, world: session.world, onMenu: showMain, onRestart: () => startGame({ difficulty: diff, scenarioId: sid, seed }), onNext: next ? () => startGame({ difficulty: diff, scenarioId: next }) : null });
       }, 2500);
     });
     if (verify || debugApi || import.meta.env.DEV) installVerifyApi(Object.assign(session, { save: (s) => doSave(s || 'quick'), load: (s) => startGame({ slot: s || 'quick' }) }));
@@ -219,7 +219,8 @@ export async function startApp(params) {
       onSave: (slot) => { doSave(slot); togglePause(); },
       onLoad: (slot) => startGame({ slot }),
       onQuit: () => showMain(),
-      onRestart: () => startGame({ difficulty: session.world.meta.difficulty, scenarioId: session.world.meta.scenarioId }),
+      // (a random map restarts on the same valley)
+      onRestart: () => startGame({ difficulty: session.world.meta.difficulty, scenarioId: session.world.meta.scenarioId, seed: session.world.meta.scenarioId === 'free-wild' ? session.world.meta.seed : null }),
     });
   }
 

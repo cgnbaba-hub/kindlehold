@@ -12,7 +12,8 @@ import { dealDamage } from '../../src/combat/index.js';
 log.setConsoleLevel('error');
 
 test('free play offers every map against its own faction', () => {
-  const want = { 'free-harrowmere': ['harrowmere', 'rustfang'], 'free-saltmere': ['saltmere', 'varr'], 'free-whitehart': ['whitehart', 'stag'], 'free-ironmarch': ['ironmarch', 'morrow'] };
+  // (the random map draws its faction by lot from the seed)
+  const want = { 'free-harrowmere': ['harrowmere', 'rustfang'], 'free-saltmere': ['saltmere', 'varr'], 'free-whitehart': ['whitehart', 'stag'], 'free-ironmarch': ['ironmarch', 'morrow'], 'free-wild': ['wild', null] };
   assert.deepEqual(FREE_PLAY, Object.keys(want));
   for (const id of FREE_PLAY) {
     assert.ok(!CAMPAIGN.includes(id), 'free play is not a chapter');
@@ -20,7 +21,7 @@ test('free play offers every map against its own faction', () => {
     sim.step();
     const w = sim.world;
     assert.equal(sim.terrain.map.id, want[id][0], id);
-    assert.equal(enemyFaction(w).id, want[id][1], id);
+    if (want[id][1]) assert.equal(enemyFaction(w).id, want[id][1], id);
     assert.ok(w.mission.flags.keepLit, 'the hearth already burns');
     assert.ok(all(w, 'unit').some((u) => u.type === 'maren'));
     assert.ok(all(w, 'building').some((b) => b.type === enemyFaction(w).hall && b.owner === 'p2'));

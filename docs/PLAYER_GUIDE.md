@@ -97,6 +97,11 @@ Stag) or the Iron March (House Morrow). The hearth already burns; grow as you li
 destroying the enemy's seat. Two optional goals (30 people, find the ruin) give you something
 to aim for.
 
+**The Wildlands** is a new valley every game: hills, lakes, forests, a river with fords and a
+handful of places to explore are laid out by chance, and the lord across the river is drawn by
+lot. Your home always has forest, rock, iron and water within reach. Restarting from the menu
+keeps the same valley; a new game from the main menu rolls a new one.
+
 ## If the graphics card struggles
 
 When frames stay slow for a few seconds, Kindlehold first switches off the costliest effects

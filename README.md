@@ -1,7 +1,7 @@
 # Kindlehold
 
 **A 3D settlement-building and real-time strategy game for the browser** — six story chapters,
-a free-play mode on four maps, four enemy factions, and a living economy of settlers who fell
+a free-play mode on four maps plus endless random maps, four enemy factions, and a living economy of settlers who fell
 trees, farm, fish, mine, cook and carry. Written in plain JavaScript on Three.js, no game engine.
 
 **Play it:** <https://kindlehold.js-automata.work> (desktop browser with WebGL 2)
@@ -20,7 +20,9 @@ trees, farm, fish, mine, cook and carry. Written in plain JavaScript on Three.js
   night, eat, grow content or restless; seasons with snow, a freezing river and slow winter fields.
 - **Campaign:** six chapters with an original story, spoken intros over camera flights, allies
   and choices that carry over (win the Greyfen brigands as friends or destroy their hold).
-- **Free play:** any of the four maps against the faction that holds it.
+- **Free play:** any of the four maps against the faction that holds it, or **the Wildlands** —
+  a random valley generated from the game's seed (hills, lakes, forests, a river with fords)
+  against a lord drawn by lot.
 - **Battles:** nine soldier types with counters, veterans with ranks, towers, sieges of stone
   walls, heroes with abilities (Maren's lantern, Wren's arrow storm).
 - **Four enemy factions** with their own units, buildings and AI behaviour.
@@ -41,9 +43,9 @@ tooling, measured instead of guessing, and documented every step for the next se
 
 What that process looks like in the repository:
 
-- **146 automated tests** (`node:test`): unit, integration and *deterministic simulation* tests
+- **149 automated tests** (`node:test`): unit, integration and *deterministic simulation* tests
   that replay whole chapters with a scripted bot.
-- **16 end-to-end tests** in a real browser (Playwright): menus, tutorial, save/load round trip,
+- **17 end-to-end tests** in a real browser (Playwright): menus, tutorial, save/load round trip,
   every campaign chapter, graphics driver reset, layout at 1280×720.
 - **Soak and leak tests** that play for many game minutes and watch GPU buffers, textures,
   shaders, DOM and heap.
@@ -79,7 +81,7 @@ More: [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) (a short to
 ```bash
 npm ci                 # Node 20+
 npm run dev            # http://127.0.0.1:5180/
-npm test               # the 146 tests
+npm test               # the 149 tests
 npm run build && npm run preview
 npm run test:e2e       # browser tests (needs: npx playwright install chromium)
 ```

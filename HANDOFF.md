@@ -143,6 +143,18 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Zufallskarten im freien Spiel („The Wildlands“)
+
+- `src/world/maps/wild.js` erzeugt aus dem Seed der Welt ein ganzes Tal (Hügel, Seen, Wald, Fluss
+  mit Furten, Fundorte, Straße). Spielstände brauchen nichts extra: Karte = f(`meta.seed`).
+- `mapById('wild', seed)`; `terrainFor` cached per `mapKey` (`wild:<seed>`).
+- Szenario `free-wild` (5. Eintrag im Freien Spiel): Fraktion per Los aus dem Seed, Ziel
+  `destroyedSeat`, Neustart behält den Seed. Details in `GAME_DESIGN.md`.
+- Tests: `tests/simulation/wild.test.js` (gleiches Tal je Seed, spielbar für mehrere Seeds,
+  Speichern/Laden auf demselben Tal); e2e `free-play-random-map` (über das Menü).
+- Rückmeldung: `src/ui/floaters.js` zeigt „+4 Holz“ über Werkstätten, sobald eine Ladung fertig
+  ist (höchstens 12 gleichzeitig, DOM-Pool, gleiche Ware am selben Ort wird zusammengezählt).
+
 ## Diagnose auf dem Rechner des Spielers (F3)
 
 Der Nutzer meldet auf seinem älteren Mac weiter Hänger und Flackern „nach einer gewissen Zeit“.

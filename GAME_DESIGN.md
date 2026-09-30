@@ -256,6 +256,21 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 - **Deliveries** are generic: a building's `inputs` lists goods and store sizes;
   `stock.inIncoming` counts goods on the way per kind (was one number for provisions).
 
+## Random maps (free play "Wildlands")
+
+- `src/world/maps/wild.js` generates a map from a seed (the world's `meta.seed`, so saves need
+  nothing extra; `mapById('wild', seed)`, terrain cached per seed in `simulation.js`).
+- Layout: the two seats face each other across the centre (100–118 m out); a river winds
+  across the axis with a ford near the middle and up to two more; 1–3 lakes (half of them salt
+  lakes with pans), 10 hills plus rim hills, 13 forests, 8 rock clusters, 4 iron veins, trader,
+  hamlet, two cairns and a ruin, a road from home over the middle ford to the enemy.
+- Guarantees: forest 36–46 m, rock 34–42 m and an iron terrace 40–52 m from home; a pond near
+  home when the river is far; nothing in water; tested over many seeds
+  (`tests/simulation/wild.test.js`).
+- Scenario `free-wild`: `enemy.faction: 'random'` (drawn from the seed in `missions/setup.js`),
+  objective `{ destroyedSeat: true }`, home cottages placed relative to the Keep. Restart keeps
+  the seed.
+
 ## Controls (default)
 
 Camera: right-drag grabs and moves the map (a short right-click stays the context order), arrow keys pan, screen-edge scrolling is optional (off by default), Q/E or middle-drag rotate, mouse wheel zooms towards the cursor,
