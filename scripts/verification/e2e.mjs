@@ -269,6 +269,23 @@ try {
     await page.waitForFunction(() => window.__GAME__.session.input.state.targetKind === 'volley', null, { timeout: 20000 });
   });
 
+  await test('free-play-random-map', async (page) => {
+    // the Wildlands is picked from the free-play menu and grows a valley from the game's seed
+    await page.goto(url('?debug=1&quality=low'), { waitUntil: 'load' });
+    await page.getByRole('button', { name: /Free Play/ }).first().click({ timeout: 60000 });
+    await page.getByRole('button', { name: /Free play: The Wildlands/ }).click({ timeout: 20000 });
+    await page.getByRole('radio', { name: /Normal/ }).click({ timeout: 20000 });
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__ && window.__GAME__.session.sim.terrain.map.id === 'wild', null, { timeout: 120000 });
+    // skip the flight over the new valley
+    if (await page.waitForSelector('.cinematic', { timeout: 30000 }).catch(() => null)) {
+      await page.mouse.click(640, 400);
+      await page.waitForSelector('.cinematic', { state: 'detached', timeout: 20000 });
+    }
+    await page.waitForFunction(() => /enemy seat across the river/.test(document.querySelector('.objectives').textContent), null, { timeout: 30000 });
+    const info = await page.evaluate(() => { const w = window.__GAME__.world(); const m = window.__GAME__.session.sim.terrain.map; return { seed: String(w.meta.seed), mapSeed: m.seed, faction: w.ai.faction, keep: Object.values(w.entities).some((e) => e.type === 'keep') }; });
+    assert(info.mapSeed === info.seed && info.faction && info.keep, `a generated valley from the game's seed (${JSON.stringify(info)})`);
+  });
+
   await test('diplomacy-gift', async (page) => {
     await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });

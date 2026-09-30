@@ -9,7 +9,7 @@ import { spawnUnit } from '../units/sim.js';
 import { spawnEnemy, aiSettings } from '../ai/index.js';
 import { distToPolyline } from '../world/terrain-data.js';
 import { HARROWMERE_SCENARIO } from './scenarios/harrowmere.js';
-import { enemyFaction } from '../ai/factions.js';
+import { enemyFaction, FACTIONS } from '../ai/factions.js';
 import { RANKS } from '../combat/index.js';
 
 const DIFF_RES = { story: 1.5, normal: 1, hard: 0.8 };
@@ -32,7 +32,12 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   for (const r in scenario.startResources) res[r] = Math.round(scenario.startResources[r] * mult);
   addPlayer(world, { id: PLAYER, name: 'Hearthbound', faction: 'hearthbound', color: '#2f6f8f', res, stability: 55 });
   // the enemy faction of this chapter (Rustfang by default)
-  if (scenario.enemy && scenario.enemy.faction) world.ai.faction = scenario.enemy.faction;
+  if (scenario.enemy && scenario.enemy.faction === 'random') {
+    // drawn by lot from the seed (the same seed always meets the same lord)
+    const ids = Object.keys(FACTIONS).sort();
+    const h = [...String(world.meta.seed)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 11);
+    world.ai.faction = ids[h % ids.length];
+  } else if (scenario.enemy && scenario.enemy.faction) world.ai.faction = scenario.enemy.faction;
   const fac = enemyFaction(world);
   addPlayer(world, { id: ENEMY, name: fac.name, faction: fac.id, color: fac.color, res: {}, stability: 100, ai: true });
   world.mapEntry = { ...map.settlerEntry };
@@ -42,7 +47,9 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
 
   // Keep (door faces the valley towards the ford)
   const ks = map.playerStart;
-  const keep = createBuildingEntity(world, { type: 'keep', owner: PLAYER, x: ks.x, z: ks.z, rot: 2.3, state: 'active' });
+  // (on generated maps the door faces the middle of the valley)
+  const keepRot = map.id === 'wild' ? Math.atan2(-ks.x, -ks.z) : 2.3;
+  const keep = createBuildingEntity(world, { type: 'keep', owner: PLAYER, x: ks.x, z: ks.z, rot: keepRot, state: 'active' });
 
   // Enemy camp
   const ec = map.enemyCamp;
@@ -98,7 +105,8 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   if (st.keepLevel > 1) setLevel(keep, st.keepLevel);
   if (st.keepLit) { keep.lit = true; world.mission.flags.keepLit = true; }
   for (const t of st.techs || []) world.players[PLAYER].techs[t] = true;
-  for (const [type, x, z, level] of st.buildings || []) {
+  const home = (st.homeBuildings || []).map(([type, dx, dz, level]) => [type, ks.x + dx, ks.z + dz, level]);
+  for (const [type, x, z, level] of [...(st.buildings || []), ...home]) {
     const spot = findSpot(world, { terrain, nav: null }, type, x, z, 30);
     if (!spot) continue;
     const rot = Math.atan2(ks.x - spot.x, ks.z - spot.z);

@@ -3,6 +3,7 @@ import { all } from '../world/world.js';
 import { PLAYER } from '../core/contracts.js';
 import { stance } from '../diplomacy/index.js';
 import { aiSettings } from '../ai/index.js';
+import { enemyFaction } from '../ai/factions.js';
 
 export function countBuilt(world, owner, type) {
   let n = 0;
@@ -34,6 +35,8 @@ export function evaluate(world, cond, owner = PLAYER) {
   if (cond.tech) return !!world.players[owner].techs[cond.tech];
   if (cond.raidsRepelled !== undefined) return (world.ai.wave || 0) >= cond.raidsRepelled;
   if (cond.destroyed) return !all(world, 'building').some((b) => b.type === cond.destroyed && b.state !== 'destroyed');
+  // the enemy faction's seat, whichever faction holds the map (random maps draw it by lot)
+  if (cond.destroyedSeat) { const hall = enemyFaction(world).hall; return !all(world, 'building').some((b) => b.type === hall && b.state !== 'destroyed'); }
   if (cond.tickAtLeast !== undefined) return world.tick >= cond.tickAtLeast;
   if (cond.minutes !== undefined) return world.tick >= cond.minutes * 1200;
   if (cond.stance) return stance(world, owner, cond.stance.with) === cond.stance.is;

@@ -50,6 +50,10 @@ html, body { margin: 0; height: 100%; background: var(--slate-900); color: var(-
 .ui-root > * { pointer-events: auto; }
 .hud { position: absolute; inset: 0; pointer-events: none; }
 .hud > * { pointer-events: auto; }
+/* "+4 timber" labels rising from workplaces (never catch the mouse; under every panel) */
+.hud > .floaters { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.floater { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 3px; padding: 2px 7px 2px 4px; border-radius: 11px; background: rgba(20, 24, 28, 0.7); border: 1px solid rgba(201, 164, 92, 0.35); color: #f3e6c4; font: 700 0.95em var(--sans); text-shadow: 0 1px 1px #000; white-space: nowrap; will-change: transform, opacity; }
+.floater .icon { width: 20px; height: 20px; }
 .hud[hidden] { display: none; }
 .panel { background: var(--panel); border: 1px solid rgba(201, 164, 92, 0.45); border-radius: 8px;
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 240, 210, 0.06); color: var(--ink); }

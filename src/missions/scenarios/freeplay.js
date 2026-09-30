@@ -1,8 +1,6 @@
 // Free play ("skirmish"): build a settlement on any of the campaign maps and break the lord who
 // holds it, without a story. Declarative like the chapters; one scenario per map, each against
 // the faction that holds that map in the campaign.
-import { mapById } from '../../world/maps/index.js';
-
 const SPEAKERS = {
   maren: { name: 'Maren Ashgrove', role: 'Lantern Warden' },
   osric: { name: 'Osric Tallow', role: 'Reeve of Kindlehold' },
@@ -15,10 +13,13 @@ const FIELDS = [
   ['free-saltmere', 'saltmere', 'The Saltmere', 'varr', 'varrkeep', 'the Manor of Varr on the eastern rise', 'Lowlands by a broad salt lake: salt pans for trade, a long road along the shore.'],
   ['free-whitehart', 'whitehart', 'Whitehart Vale', 'stag', 'staghall', 'the Chapterhouse of the White Stag', 'A forest vale crossed by a river, with three villages and an old abbey. Stone walls: train Sappers.'],
   ['free-ironmarch', 'ironmarch', 'The Iron March', 'morrow', 'morrowhold', 'Morrow Hold across the Iceburn', 'Highlands with glacier water, rich iron veins and steep crags. Delvers tear down buildings.'],
+  // a new valley every game, grown from the game's seed; the lord who holds it is drawn by lot
+  ['free-wild', 'wild', 'The Wildlands (random map)', 'random', null, 'the enemy seat across the river', 'A new valley every time: hills, lakes and forests laid out by chance, a river with fords between you and a lord drawn by lot.'],
 ];
 
 function freeScenario([id, map, title, faction, hall, seat, land]) {
-  const ps = mapById(map).playerStart;
+  // two cottages beside the Keep, so the first families have a roof (relative to the Keep)
+  const homeBuildings = [['cottage', -14, 12], ['cottage', -18, -8]];
   return {
     id,
     map,
@@ -29,8 +30,7 @@ function freeScenario([id, map, title, faction, hall, seat, land]) {
     raidWarningAt: { story: 22 * 60, normal: 16 * 60, hard: 12 * 60 },
     raidWarnAfter: 'none',
     speakers: SPEAKERS,
-    // two cottages beside the Keep, so the first families have a roof
-    setup: { keepLit: true, settlers: 9, soldiers: ['shield', 'fletcher'], buildings: [['cottage', ps.x - 14, ps.z + 12], ['cottage', ps.x - 18, ps.z - 8]] },
+    setup: { keepLit: true, settlers: 9, soldiers: ['shield', 'fletcher'], homeBuildings },
     enemy: { faction },
     intro: [
       { speaker: 'osric', text: 'The hearth burns and the storehouse is open, Warden. Build the town the way you want it.' },
@@ -57,7 +57,7 @@ function freeScenario([id, map, title, faction, hall, seat, land]) {
         text: `Destroy ${seat}.`,
         hint: 'Build Barracks, train an army and research better weapons. Towers and a standing guard defend the seat.',
         highlight: 'enemy-camp', activeWhen: { always: true },
-        completeWhen: { destroyed: hall },
+        completeWhen: hall ? { destroyed: hall } : { destroyedSeat: true },
       },
     ],
     events: [],

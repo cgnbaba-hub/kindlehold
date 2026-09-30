@@ -7,6 +7,7 @@ import { seasonAt } from '../weather/index.js';
 import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf } from '../population/index.js';
 import { POI_INFO, TRADES, poiName, priceOf } from '../pois/index.js';
 import { createMinimap } from './minimap.js';
+import { createFloaters } from './floaters.js';
 import { all } from '../world/world.js';
 import { PLAYER, EV, RESOURCES } from '../core/contracts.js';
 import { BUILDINGS, PLAYER_BUILD_ORDER, UPGRADES, nextUpgrade, levelOf, displayName, upgradeBonus, slotsOf } from '../buildings/defs.js';
@@ -64,6 +65,8 @@ export function createHud({ root, session, input, settings, actions }) {
 
   const hud = h('div.hud', { role: 'region', 'aria-label': 'Game interface' });
   root.append(hud);
+  // "+4 timber" rising from workplaces as batches are finished
+  const floaters = createFloaters({ root: hud, session });
 
   // --- top-left: resource ribbon -------------------------------------------------
   const resEls = {};
@@ -784,6 +787,7 @@ export function createHud({ root, session, input, settings, actions }) {
     const p = w.players[PLAYER];
     t += dt; slow += dt;
     pumpMessages(dt);
+    floaters.update(dt);
     minimap.update(dt);
     // drag box
     const st = input.state;
@@ -886,6 +890,6 @@ export function createHud({ root, session, input, settings, actions }) {
     toast,
     openBuildMenu() { cmdMode = cmdMode === 'build' ? 'auto' : 'build'; dirtySel = true; },
     selectionChanged() { cmdMode = 'auto'; dirtySel = true; },
-    dispose() { unsub.forEach((u) => u()); hud.remove(); },
+    dispose() { unsub.forEach((u) => u()); floaters.dispose(); hud.remove(); },
   };
 }

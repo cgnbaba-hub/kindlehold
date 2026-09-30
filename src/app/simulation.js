@@ -6,7 +6,7 @@ import { log } from '../core/logger.js';
 import { createWorld, attachBus, worldRng, syncRngState } from '../world/world.js';
 import { createTerrainData } from '../world/terrain-data.js';
 import { HARROWMERE_MAP } from '../world/maps/harrowmere.js';
-import { mapById } from '../world/maps/index.js';
+import { mapById, mapKey } from '../world/maps/index.js';
 import { worldHash } from '../world/hash.js';
 import { createNavigationModule } from '../navigation/index.js';
 import { createWorldServicesModule } from '../world/services-module.js';
@@ -34,8 +34,12 @@ export const NIGHT_PACE = 6;
 export function isFastHour(h) { return h >= 20 || h < 6; }
 
 export function terrainFor(map = HARROWMERE_MAP) {
-  let t = terrainCache.get(map.id);
-  if (!t) { t = createTerrainData(map); terrainCache.set(map.id, t); }
+  const key = mapKey(map);
+  let t = terrainCache.get(key);
+  if (!t) {
+    if (terrainCache.size > 6) for (const k of terrainCache.keys()) if (k.startsWith('wild:')) { terrainCache.delete(k); break; }
+    t = createTerrainData(map); terrainCache.set(key, t);
+  }
   return t;
 }
 
@@ -67,7 +71,8 @@ export function createSimulation({ seed = 1337, difficulty = 'normal', scenarioI
   const host = createModuleHost({ bus, onCritical, now: () => (sim.world ? sim.world.tick * 50 : 0) });
   // the scenario (or the loaded save's scenario) decides which map is played
   const sid = world ? world.meta.scenarioId : scenarioId;
-  const terrain = terrainFor(mapById((SCENARIOS[sid] || SCENARIOS.harrowmere).map || 'harrowmere'));
+  // (a generated map grows from the world's seed)
+  const terrain = terrainFor(mapById((SCENARIOS[sid] || SCENARIOS.harrowmere).map || 'harrowmere', world ? world.meta.seed : seed));
   const pending = [];
   const commandLog = [];
 
