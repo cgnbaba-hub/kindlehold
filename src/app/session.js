@@ -108,6 +108,8 @@ export async function createSession({ container, seed, quality = 'high', verify 
     if (!running) return;
     requestAnimationFrame(frame); // schedule first: one throwing frame can never stop the game
     if (frozen) { last = now; return; }
+    // optional 30 fps limit: skip every other display frame (the next one catches up the time)
+    if (settings.frameCap30 && last && now - last < 1000 / 30 - 4) return;
     const dt = last ? (now - last) / 1000 : 0;
     last = now;
     stats.pushFrame(dt * 1000 || 16.7);

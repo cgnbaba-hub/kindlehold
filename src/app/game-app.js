@@ -8,6 +8,7 @@ import { loadSettings, saveSettings, prefersReducedMotion, suggestedQuality } fr
 import { createMenus } from '../ui/menus.js';
 import { createHud } from '../ui/hud.js';
 import { createTutorial } from '../ui/tutorial.js';
+import { createDiagnostics } from '../ui/diagnostics.js';
 import { saveToSlot, loadFromSlot, latestSave, hasAnySave } from '../save/storage.js';
 import { EV } from '../core/contracts.js';
 import { log } from '../core/logger.js';
@@ -38,6 +39,7 @@ export async function startApp(params) {
   let session = null;
   let hud = null;
   let tutorial = null;
+  let diagnostics = null;
   let cinematic = null;
   let menus = null;
   let paused = false;
@@ -55,11 +57,12 @@ export async function startApp(params) {
     if (session) { session.audio.applyVolumes(); if (!paused) session.loop.setSpeed(settings.gameSpeed); }
   }
 
-  menus = createMenus({ root: uiRoot, settings, onSettingsChange, graphicsInfo: () => (session ? session.rc.load() : null) });
+  menus = createMenus({ root: uiRoot, settings, onSettingsChange, graphicsInfo: () => (session ? session.rc.load() : null), openDiagnostics: () => { if (diagnostics) { menus.close(); if (paused) togglePause(); diagnostics.toggle(true); } } });
 
   function endSession() {
     if (cinematic) { const c = cinematic; cinematic = null; c.skip(); }
     if (tutorial) { tutorial.dispose(); tutorial = null; }
+    if (diagnostics) { diagnostics.dispose(); diagnostics = null; }
     if (hud) { hud.dispose(); hud = null; }
     if (session) { session.dispose(); session = null; }
     paused = false; ended = false;
@@ -112,6 +115,7 @@ export async function startApp(params) {
           onToast: (t) => hud && hud.toast(t),
           onQuickSave: () => doSave('quick'),
           onQuickLoad: () => startGame({ slot: 'quick' }),
+          onDiagnostics: () => diagnostics && diagnostics.toggle(),
           onSpeed: (d) => { const sp = SPEEDS; const i = Math.max(0, Math.min(sp.length - 1, sp.indexOf(session.loop.getSpeed()) + d)); session.loop.setSpeed(sp[i]); },
           onFrame: (dt) => { if (cinematic) { cinematic.update(dt); return; } if (hud) hud.update(dt); if (tutorial) tutorial.update(dt); autosave(dt); },
           onUiFailure: (err) => showErrorOverlay({ title: 'The interface stopped responding', message: 'The game is still running. Save and reload, or return to the menu.', detail: err && (err.stack || err.message), actions: [{ label: 'Save and reload', primary: true, run: () => { doSave('quick', true); location.reload(); } }, { label: 'Main menu', run: () => { hideErrorOverlay(); showMain(); } }] }),
@@ -128,6 +132,7 @@ export async function startApp(params) {
       pause: () => togglePause(),
       cycleSpeed: () => { const sp = SPEEDS; const i = (sp.indexOf(session.loop.getSpeed()) + 1) % sp.length; session.loop.setSpeed(sp[i]); },
     } });
+    if (!verify) diagnostics = createDiagnostics({ root: uiRoot, session, settings });
     // graphics trouble: keep the game safe and tell the player what happened
     let scaledNotice = false;
     session.rc.on('lost', () => {
@@ -139,8 +144,8 @@ export async function startApp(params) {
     session.rc.on('scaled', ({ reason }) => {
       if (reason !== 'slow' || scaledNotice || !hud) return;
       scaledNotice = true;
-      const lower = settings.quality === 'high' ? ' Quality "Medium" (Settings → Graphics) keeps it lighter from the start.' : '';
-      hud.toast(`Your graphics card is at its limit: some effects were switched off to keep the game smooth.${lower}`, 'info');
+      const lower = settings.quality === 'high' ? ' Quality "Medium" or the 30 fps limit (Settings → Graphics) keep it lighter.' : settings.frameCap30 ? '' : ' The 30 fps limit (Settings → Graphics) can help.';
+      hud.toast(`Your graphics card is at its limit: some effects were switched off to keep the game smooth.${lower} F3 shows a performance log.`, 'info');
     });
     if (!verify && !slot && !settings.tutorialDone && session.world.meta.scenarioId === 'harrowmere') {
       tutorial = createTutorial({ root: uiRoot, session, settings, onFinish: () => { saveSettings(settings); tutorial = null; } });

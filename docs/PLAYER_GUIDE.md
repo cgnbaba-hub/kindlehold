@@ -102,7 +102,9 @@ to aim for.
 When frames stay slow for a few seconds, Kindlehold first switches off the costliest effects
 (ambient occlusion, then glow and the miniature focus, then edge smoothing) and only then lowers
 the resolution. Settings → Graphics shows your graphics chip and what was switched off. On
-laptops with built-in graphics, **Medium** quality is the better choice.
+laptops with built-in graphics, **Medium** quality is the better choice, and **Limit to 30
+frames per second** keeps older machines cooler. Press **F3** for a performance log of the running
+game (sampled every 30 seconds); **Download log** saves it to send along with a bug report.
 
 ## Veterans, rain and fish
 

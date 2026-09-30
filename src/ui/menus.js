@@ -31,7 +31,7 @@ function backdrop() {
   ]);
 }
 
-export function createMenus({ root, settings, onSettingsChange, graphicsInfo = () => null }) {
+export function createMenus({ root, settings, onSettingsChange, graphicsInfo = () => null, openDiagnostics = null }) {
   let current = null;
   function show(el) { close(); current = el; root.append(el); focusFirst(el); requestAnimationFrame(() => { if (!el.contains(document.activeElement)) focusFirst(el); }); return el; }
   function close() { if (current) { current.remove(); current = null; } }
@@ -190,13 +190,14 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       clear(body);
       for (const b of tabBar.children) b.setAttribute('aria-selected', b.textContent === tab ? 'true' : 'false');
       if (tab === 'Graphics') {
-        body.append(choice('Quality', 'quality', [['low', 'Low (no shadows, no post-processing)'], ['medium', 'Medium (glow, smooth edges)'], ['high', 'High (all effects)']]), toggle('Miniature focus', 'depthOfField', 'Softly blur the top and bottom of close views, like a model landscape (High quality)'));
+        body.append(choice('Quality', 'quality', [['low', 'Low (no shadows, no post-processing)'], ['medium', 'Medium (glow, smooth edges)'], ['high', 'High (all effects)']]), toggle('Miniature focus', 'depthOfField', 'Softly blur the top and bottom of close views, like a model landscape (High quality)'), toggle('Limit to 30 frames per second', 'frameCap30', 'Less work for the graphics card: cooler and quieter laptops, fewer hitches on older machines'));
         body.append(h('p.muted', { text: inGame ? 'Quality changes apply the next time a game is started or loaded.' : 'Quality applies when a game starts.' }));
         const gi = graphicsInfo();
         if (gi) {
           const names = { ao: 'occlusion', glow: 'glow and miniature focus', msaa: 'edge smoothing' };
           const load = gi.reduced.length ? `Switched off under load: ${gi.reduced.map((k) => names[k] || k).join(', ')}. ` : '';
           body.append(h('p.muted.gfx-info', { text: `${load}Resolution ${Math.round((gi.ratio / gi.max) * 100)} %.${gi.gpu ? ` Graphics chip: ${gi.gpu}` : ''}` }));
+          if (openDiagnostics) body.append(menuButton('Show diagnostics (F3)', openDiagnostics, { sub: 'Performance log of this game, to download and send' }));
         }
       } else if (tab === 'Audio') {
         body.append(slider('Master volume', 'masterVolume', 0, 1, 0.05), slider('Music', 'musicVolume', 0, 1, 0.05), slider('Ambience', 'ambienceVolume', 0, 1, 0.05), slider('Effects', 'effectsVolume', 0, 1, 0.05), slider('Voices', 'voiceVolume', 0, 1, 0.05), toggle('Mute all audio', 'muted'));
