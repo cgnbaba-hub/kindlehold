@@ -41,7 +41,7 @@ const KIND_SCHEMAS = {
     state: v.string({ oneOf: ['site', 'active', 'destroyed'] }),
     hp: nonNeg(1e5), maxHp: v.number({ min: 1, max: 1e5 }), rot: optNum({ min: -100, max: 100 }),
     workers: ids(16), queue: v.array(v.object({ unitType: v.string({ oneOf: Object.keys(UNITS) }), progress: nonNeg(2) }), { max: 8 }),
-    stock: v.object({ out: v.record(nonNeg(1e5), { max: 8 }), in: v.record(nonNeg(1e5), { max: 8 }), outReserved: nonNeg(1e5), inIncoming: nonNeg(1e5) }),
+    stock: v.object({ out: v.record(nonNeg(1e5), { max: 8 }), in: v.record(nonNeg(1e5), { max: 8 }), outReserved: nonNeg(1e5), inIncoming: v.record(nonNeg(1e5), { max: 8 }) }),
     build: v.optional(v.object({ progress: nonNeg(1), required: v.record(nonNeg(1e5), { max: 8 }), supplied: v.record(nonNeg(1e5), { max: 8 }), incoming: v.record(nonNeg(1e5), { max: 8 }), builders: ids(16) })),
     level: v.optional(v.number({ min: 1, max: 3, int: true })),
     meals: v.optional(nonNeg(1000)),
@@ -57,7 +57,7 @@ const KIND_SCHEMAS = {
   }),
   settler: v.object({
     hp: v.number({ min: -1e4, max: 1e5 }), maxHp: v.number({ min: 1, max: 1e5 }),
-    job: v.optional(v.string({ oneOf: ['forester', 'quarrier', 'farmer', 'miner', 'hunter', 'fisher', 'salter', 'cook'] })),
+    job: v.optional(v.string({ oneOf: ['forester', 'quarrier', 'farmer', 'miner', 'hunter', 'fisher', 'salter', 'cook', 'miller', 'baker', 'smith'] })),
     sleep: v.optional(v.object({ home: v.number({ min: 1, max: 1e9, int: true }), in: v.boolean() }, { allowExtra: false })),
     hidden: v.optional(v.boolean()),
     carry: v.optional(v.object({ res: v.string({ oneOf: RESOURCES }), amt: nonNeg(1000) })),

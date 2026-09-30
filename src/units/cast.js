@@ -11,7 +11,9 @@ const TROUSERS = ['#5b4b3c', '#4a4a3e', '#6a5a44', '#3e4652', '#5a4632'];
 const FUR = ['#7a6a5e', '#8a7a62', '#6a5a4a'];
 
 /** Tools of the trade, by job (right hand). */
-export const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', salter: 'rake', cook: 'ladle' };
+export const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', salter: 'rake', cook: 'ladle', smith: 'hammer' };
+/** Work headwear, by job (drawn on the head bone). */
+export const HAT = { farmer: 'strawhat', cook: 'toque', baker: 'toque' };
 
 // soldiers and leaders: body/head/headgear/cloak, weapons, colours, how they fight
 const S = {

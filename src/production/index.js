@@ -19,6 +19,10 @@ export const WORK = {
   cook: { perCycle: 3, provisionsPerCycle: 2, work: 7.0, anim: 'stir' },
   salter: { res: 'taler', perTrip: 3, work: 8.0, strike: 1.2, anim: 'harvest' },
   fisher: { res: 'provisions', perTrip: 3, fish: 7.0, strike: 2.2, frozenSpeed: 0.5, anim: 'fish' },
+  // workshops of the longer chains: take goods in, work at the door, put the product out
+  miller: { res: 'flour', perCycle: 2, needs: { provisions: 2 }, work: 8.0, strike: 2.0, anim: 'harvest', kind: 'mill' },
+  baker: { res: 'bread', perCycle: 2, needs: { flour: 2, timber: 1 }, work: 9.0, strike: 1.5, anim: 'knead', kind: 'bake' },
+  smith: { res: 'tools', perCycle: 1, needs: { iron: 2, timber: 1 }, work: 10.0, strike: 0.9, anim: 'hammer', kind: 'forge' },
 };
 
 export const TREE_REGROW = 150 * 20; // a felled tree is replanted and stands again after 2.5 minutes
@@ -28,14 +32,22 @@ export const STALL_TEXT = {
   noWorker: 'No worker — needs an idle settler (build Cottages for more people)',
   noDeposit: 'Nothing left to work within range',
   storageFull: 'Storage full — labourers must carry goods to the Keep',
-  noInput: 'Waiting for provisions to be delivered',
+  noInput: 'Waiting for goods to be delivered from the Keep',
   noAccess: 'Workers cannot reach the site',
   noSettler: 'Needs an idle settler to train — all settlers are working: pause a workplace or build Cottages',
   noGame: 'No deer within 45 m — build the hut nearer a herd, or wait for the herd to recover',
   mealsFull: 'Meal store full — the cook waits for the next mealtime',
 };
 
-const STALL_ALERT = { noGame: 'has no deer left in range', noDeposit: 'has nothing left to work nearby — build a new one closer to resources', noInput: 'is waiting for provisions', noAccess: 'cannot be reached by its workers' };
+const STALL_ALERT = { noGame: 'has no deer left in range', noDeposit: 'has nothing left to work nearby — build a new one closer to resources', noInput: 'is waiting for goods from the Keep', noAccess: 'cannot be reached by its workers' };
+const RES_WORD = { provisions: 'provisions', flour: 'flour', timber: 'timber', iron: 'iron' };
+/** What a waiting workplace lacks, for the player ("flour and timber"). */
+export function missingInputs(b) {
+  const W = WORK[BUILDINGS[b.type].job];
+  const needs = (W && W.needs) || (W && W.provisionsPerCycle ? { provisions: W.provisionsPerCycle } : null);
+  if (!needs) return [];
+  return Object.keys(needs).filter((r) => (b.stock.in[r] || 0) < needs[r]).map((r) => RES_WORD[r] || r);
+}
 
 function setStall(world, b, reason) {
   if (b.stall === reason) return;
@@ -45,7 +57,8 @@ function setStall(world, b, reason) {
   // tell the player (at most once per building per 90 s), with a jump-to location
   if (b.owner === 'p1' && STALL_ALERT[reason] && world.tick - (b.stallAlertTick ?? -1e9) > 1800) {
     b.stallAlertTick = world.tick;
-    alert(world, 'warn', `${BUILDINGS[b.type].name} ${STALL_ALERT[reason]}.`, b.x, b.z);
+    const lack = reason === 'noInput' ? missingInputs(b) : [];
+    alert(world, 'warn', `${BUILDINGS[b.type].name} ${lack.length ? `is waiting for ${lack.join(' and ')}` : STALL_ALERT[reason]}.`, b.x, b.z);
   }
   // goods piling up: one combined hint at most every 3 minutes
   if (b.owner === 'p1' && reason === 'storageFull' && world.tick - (world.stats.lastFullAlert ?? -1e9) > 3600) {
@@ -360,6 +373,36 @@ export function createProductionModule() {
           if (t.timer >= W.work) {
             b.meals = Math.min(def.mealCap, (b.meals || 0) + W.perCycle);
             emit(world, EV.PRODUCTION_CYCLE, { id: b.id, res: 'meals', amount: W.perCycle, x: door.x, z: door.z });
+            t.timer = 0; t.nextStrike = 0;
+          }
+          break;
+        }
+        default: s.task = null;
+      }
+      return;
+    }
+
+    if (W.needs) {
+      // Windmill, Bakery, Smithy: all inputs of a cycle are taken at its start
+      switch (t.stage) {
+        case 'start':
+          if (walk(door.x, door.z, 0.8) === 'arrived') { t.stage = 'work'; t.timer = 0; t.nextStrike = 0; }
+          break;
+        case 'work': {
+          s.heading = Math.atan2(b.x - s.x, b.z - s.z);
+          if (t.timer === 0) {
+            if (outCount(b) >= def.outCap) { setStall(world, b, 'storageFull'); s.anim = 'idle'; return; }
+            for (const r in W.needs) if ((b.stock.in[r] || 0) < W.needs[r]) { setStall(world, b, 'noInput'); s.anim = 'idle'; return; }
+            if (b.stall === 'noInput' || b.stall === 'storageFull' || b.stall === 'noAccess') setStall(world, b, null);
+            for (const r in W.needs) { b.stock.in[r] -= W.needs[r]; world.stats.consumed[r] += W.needs[r]; }
+          }
+          s.anim = W.anim;
+          t.timer += DT * sf;
+          if (t.timer >= t.nextStrike) { t.nextStrike += W.strike; emit(world, EV.WORK_STRIKE, { id: s.id, kind: W.kind, x: door.x, z: door.z, building: b.id }); }
+          if (t.timer >= W.work) {
+            b.stock.out[W.res] = (b.stock.out[W.res] || 0) + W.perCycle;
+            world.stats.produced[W.res] += W.perCycle;
+            emit(world, EV.PRODUCTION_CYCLE, { id: b.id, res: W.res, amount: W.perCycle, x: door.x, z: door.z });
             t.timer = 0; t.nextStrike = 0;
           }
           break;

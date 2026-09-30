@@ -61,6 +61,11 @@ button { font: inherit; color: inherit; }
 
 /* ------------------------------------------------------------------ top ribbon */
 .ribbon { position: absolute; left: 12px; top: 10px; display: flex; gap: 4px; padding: 6px 10px; align-items: center; }
+.ribbon[hidden], .ribbon .res[hidden] { display: none; }
+/* the workshop goods (flour, bread, tools) in a second row; alerts and the census move down */
+.goods-ribbon { top: 70px; }
+.has-goods .alerts { top: 132px; }
+.has-goods .people-panel { top: 130px; }
 .res { display: flex; align-items: center; gap: 6px; padding: 2px 8px; border-right: 1px solid rgba(201,164,92,0.18); min-width: 74px; }
 .res:last-child { border-right: 0; }
 .res-text { display: flex; flex-direction: column; line-height: 1.05; }
@@ -312,6 +317,9 @@ button { font: inherit; color: inherit; }
   .res.stab .meter { width: 46px; }
   .res-rate { font-size: 0.68em; }
   .alerts { top: 64px; }
+  .goods-ribbon { top: 54px; }
+  .has-goods .alerts { top: 102px; }
+  .has-goods .people-panel { top: 100px; }
 }
 
 /* ------------------------------------------------------------------ reduced motion */

@@ -300,13 +300,21 @@ try {
     await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
     await page.waitForTimeout(600);
-    const boxes = await page.evaluate(() => ['.ribbon', '.topbar', '.objectives', '.minimap', '.selection', '.commands'].map((s) => { const r = document.querySelector(s).getBoundingClientRect(); return { s, l: r.left, t: r.top, r: r.right, b: r.bottom }; }));
-    for (const b of boxes) assert(b.l >= 0 && b.t >= 0 && b.r <= 1280 && b.b <= 720, `${b.s} outside viewport`);
-    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
-      const a = boxes[i], c = boxes[j];
-      const overlap = a.l < c.r && c.l < a.r && a.t < c.b && c.t < a.b;
-      assert(!overlap, `${a.s} overlaps ${c.s}`);
-    }
+    const check = async (sel) => {
+      const boxes = await page.evaluate((list) => list.map((s) => { const r = document.querySelector(s).getBoundingClientRect(); return { s, l: r.left, t: r.top, r: r.right, b: r.bottom }; }), sel);
+      for (const b of boxes) assert(b.l >= 0 && b.t >= 0 && b.r <= 1280 && b.b <= 720, `${b.s} outside viewport`);
+      for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i], c = boxes[j];
+        const overlap = a.l < c.r && c.l < a.r && a.t < c.b && c.t < a.b;
+        assert(!overlap, `${a.s} overlaps ${c.s}`);
+      }
+    };
+    const main = ['.ribbon', '.topbar', '.objectives', '.minimap', '.selection', '.commands'];
+    await check(main);
+    // with flour, bread and tools in store their second row appears and must fit too
+    await page.evaluate(() => Object.assign(window.__GAME__.world().players.p1.res, { flour: 5, bread: 5, tools: 5 }));
+    await page.waitForFunction(() => { const g = document.querySelector('.goods-ribbon'); return g && !g.hidden; }, null, { timeout: 15000 });
+    await check([...main, '.goods-ribbon']);
   }, { viewport: { width: 1280, height: 720 } });
 } finally {
   await browser.close();

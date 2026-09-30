@@ -35,7 +35,7 @@ Dann: Live-Link öffnen, 1–2 Minuten spielen (Siedlung, eine Schlacht), danach
   Eingaben → gleiches Spiel. Deshalb kann ein Bot ganze Kapitel in Tests durchspielen.
 - **Speichern = den Spielzustand als JSON sichern**, beim Laden streng prüfen (Schema,
   Migrationen für alte Spielstände).
-- **Qualitätssicherung:** 140 automatische Tests, 16 Browser-Tests, Dauertests auf
+- **Qualitätssicherung:** 146 automatische Tests, 16 Browser-Tests, Dauertests auf
   Speicherlecks, Screenshot-Prüfungen, automatische Tests bei jedem Push.
 - **Leistung:** Hunderte Figuren in wenigen Zeichenaufrufen (Instancing, Animation auf der
   Grafikkarte); ein Regler schaltet bei Überlastung erst Effekte ab, dann die Auflösung;
@@ -58,11 +58,11 @@ Automatische Tests auf mehreren Ebenen, jeder Arbeitsschritt als Pull Request, i
 Stand selbst, und Messungen statt Bauchgefühl (z. B. Dreiecke, Bildzeit vorher/nachher).
 
 **„Was würdest du als Nächstes machen?“**
-Längere Warenketten (Mühle → Bäckerei, Schmiede), Straßen und Träger, Balance mit echten
-Spielern, Zufallskarten.
+Straßen und Träger, ein Markt, Balance mit echten Spielern, Zufallskarten. (Die ersten längeren
+Warenketten – Mühle → Bäckerei, Schmiede → Werkzeug – sind schon drin.)
 
 ## Worauf achten
 
 - Nie behaupten, den Code selbst geschrieben zu haben.
-- Zahlen parat haben: 6 Kapitel, 4 Fraktionen, 140 Tests, 16 Browser-Tests, Live-Server.
+- Zahlen parat haben: 6 Kapitel, 4 Fraktionen, 146 Tests, 16 Browser-Tests, Live-Server.
 - Das README vorher einmal durchlesen – es ist die Visitenkarte des Repos.

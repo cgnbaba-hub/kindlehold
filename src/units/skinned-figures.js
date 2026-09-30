@@ -8,7 +8,7 @@ import { patchStructureShader, PATTERN } from '../render/structure-material.js';
 import { flushInstances } from '../render/instancing.js';
 import { buildParts } from './figures.js';
 import { paint, place, merge, cyl, sphere } from '../render/geometry-kit.js';
-import { costume, TOOL, SETTLER_TUNICS } from './cast.js';
+import { costume, TOOL, HAT, SETTLER_TUNICS } from './cast.js';
 
 /** Fetch the baked figure data (null when it cannot be loaded: the procedural figures stay). */
 export async function loadFigureAssets(base) {
@@ -31,7 +31,11 @@ const BODY_PARTS = ['Body', 'ArmLeft', 'ArmRight', 'LegLeft', 'LegRight'];
 // held upright in the world when not striking with them (a spear on the march, Maren's pole)
 const UPRIGHT = { spear: 0.12, halberd: 0.1, pole: 0.25, rod: 0.2, bow: 0 };
 const OWN_PROPS = { spear: 1, halberd: 1, pole: 1, rod: 1, pick: -1, hammer: -1, sickle: -1, ladle: -1, maul: -1, axe: -1, rake: -1, sling: -1, greataxe: -1 };
-const CARRY = { timber: 'log', stone: 'stone', provisions: 'sack', iron: 'ingot' };
+const CARRY = { timber: 'log', stone: 'stone', provisions: 'sack', iron: 'ingot', flour: 'floursack', bread: 'basket', tools: 'toolbundle' };
+// how goods are carried: on the right shoulder (a log), the left one (a sack), or in both arms
+const CARRY_ARMS = { timber: 'r', provisions: 'l', flour: 'l' };
+const carryClip = (good) => (CARRY_ARMS[good] ? '2H_Melee_Idle' : '2H_Ranged_Aiming');
+const carrySide = (good) => CARRY_ARMS[good] || null;
 
 const VERT_COMMON = `
 uniform highp sampler2D khBones;
@@ -231,7 +235,7 @@ export function createSkinnedFigureRenderer({ scene, assets, maxFigures = 512 })
     bow: ['1H_Ranged_Shoot'], crossbow: ['2H_Ranged_Shoot'], sling: ['Throw'], unarmed: ['Unarmed_Melee_Attack_Punch_A'],
   };
   const GUARD = { slash: 'Idle', heavy: '2H_Melee_Idle', thrust: 'Idle', thrust2: '2H_Melee_Idle', bow: '1H_Ranged_Aiming', crossbow: '2H_Ranged_Aiming', sling: 'Idle', unarmed: 'Idle' };
-  const WORK = { chop: '2H_Melee_Attack_Chop', pick: '2H_Melee_Attack_Chop', mine: '2H_Melee_Attack_Chop', hammer: '1H_Melee_Attack_Chop', farm: 'PickUp', sow: 'PickUp', harvest: 'PickUp', stir: 'Use_Item', fish: '1H_Ranged_Aiming', cast: 'Spellcast_Shoot', cower: 'Blocking', talk: 'Idle' };
+  const WORK = { chop: '2H_Melee_Attack_Chop', pick: '2H_Melee_Attack_Chop', mine: '2H_Melee_Attack_Chop', hammer: '1H_Melee_Attack_Chop', farm: 'PickUp', sow: 'PickUp', harvest: 'PickUp', stir: 'Use_Item', knead: 'Use_Item', fish: '1H_Ranged_Aiming', cast: 'Spellcast_Shoot', cower: 'Blocking', talk: 'Idle' };
   const state = new Map(); // figure id -> { clip, time, from, fromTime, since, walkT, x, z, speed }
   const pick = { clip: 'Idle', time: 0, loop: true, arms: null, armsTime: 0, armsSide: null };
   function choose(f, c, st) {
@@ -245,10 +249,10 @@ export function createSkinnedFigureRenderer({ scene, assets, maxFigures = 512 })
         const run = f.anim === 'run';
         const clip = run ? (ph % 2 ? 'Running_B' : 'Running_A') : ['Walking_A', 'Walking_B', 'Walking_C'][ph % 3];
         pick.clip = clip; pick.time = st.walkT * clipData[clip].duration;
-        if (f.anim === 'carry') { pick.arms = f.carry === 'stone' || f.carry === 'iron' ? '2H_Ranged_Aiming' : '2H_Melee_Idle'; pick.armsTime = t; pick.armsSide = f.carry === 'stone' || f.carry === 'iron' ? null : f.carry === 'provisions' ? 'l' : 'r'; }
+        if (f.anim === 'carry') { pick.arms = carryClip(f.carry); pick.armsTime = t; pick.armsSide = carrySide(f.carry); }
         return pick;
       }
-      case 'carryIdle': pick.clip = 'Idle'; pick.time = t; pick.arms = f.carry === 'stone' || f.carry === 'iron' ? '2H_Ranged_Aiming' : '2H_Melee_Idle'; pick.armsTime = t; pick.armsSide = f.carry === 'stone' || f.carry === 'iron' ? null : f.carry === 'provisions' ? 'l' : 'r'; return pick;
+      case 'carryIdle': pick.clip = 'Idle'; pick.time = t; pick.arms = carryClip(f.carry); pick.armsTime = t; pick.armsSide = carrySide(f.carry); return pick;
       case 'attack': {
         const list = ATTACK[c.weapon] || ATTACK.slash;
         const clip = list[(Math.floor((f.attack && f.attack.n) || 0) + ph) % list.length];
@@ -347,7 +351,7 @@ export function createSkinnedFigureRenderer({ scene, assets, maxFigures = 512 })
     rootM.compose(v3.set(f.x, f.y, f.z), q, s3.set(scale, scale, scale));
     addInstance(bodyKind(c.body), rootM, row);
     addInstance(headKind(c.head), rootM, row);
-    const hat = f.style === 'settler' && !f.fallen ? (f.job === 'farmer' ? 'strawhat' : f.job === 'cook' ? 'toque' : null) : null;
+    const hat = f.style === 'settler' && !f.fallen ? (HAT[f.job] || null) : null;
     if (hat) {
       out.multiplyMatrices(rootM, get4(mats, A.head, boneM));
       local.makeRotationX(-0.12);
@@ -374,7 +378,7 @@ export function createSkinnedFigureRenderer({ scene, assets, maxFigures = 512 })
       // stone and iron held before the chest between both hands
       const g = CARRY[f.carry];
       get4(mats, A.chest, boneM);
-      if (g === 'log' || g === 'sack') {
+      if (CARRY_ARMS[f.carry]) {
         v3.set(boneM.elements[12], boneM.elements[13], boneM.elements[14]).add(pa.set(g === 'log' ? -0.34 : 0.3, 0.42, g === 'log' ? 0 : -0.12));
         local.compose(v3, g === 'log' ? q.setFromEuler(eu.set(0.12, Math.PI / 2, 0)) : q.identity(), s3.set(1.7, 1.7, 1.7));
       } else {

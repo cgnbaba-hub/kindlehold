@@ -126,6 +126,23 @@ Auflösung muss an Texelmitten des Tiefenpuffers abtasten und Normalen aus Nachb
 entstehen Streifen. (5) Schnelle Sichtprüfung ohne die langsamen Verify-Läufe: einmal
 `?verify=1&demo=midgame` laden und viele Kamera-Presets nacheinander fotografieren.
 
+## Warenketten: Windmühle, Bäckerei, Schmiede (Speicherschema 4)
+
+Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`, „Production chains“):
+- Neue Waren `flour`, `bread`, `tools` in `RESOURCES`. Migration 3→4 (`src/save/migrations.js`)
+  ergänzt Vorräte und Statistik; `stock.inIncoming` ist jetzt ein Objekt je Ware (war eine Zahl).
+- Gebäude `mill`, `bakery`, `smithy` (`defs.js`, Modelle in `meshes.js`; die Mühlenflügel sind ein
+  eigenes Teil, das sich in `buildings/view.js` dreht, solange der Müller arbeitet).
+- Lieferungen sind allgemein: `def.inputs = { ware: Lagergröße }` (Mine und Taverne nutzen es auch).
+  Die Mühle nimmt nur Getreide, wenn die nächste Mahlzeit gedeckt bleibt; Holz bleibt ab 12, Eisen
+  ab 4 im Lager.
+- Produktion (`production/index.js`, `W.needs`): Müller, Bäcker (Animation `knead`, Kochmütze),
+  Schmied (Hammer, Funken, Amboss-Ton).
+- Mahlzeiten: warme Mahlzeiten, dann Brot (1 Laib = 2 Portionen, +6 Stabilitätsziel), dann Vorräte.
+- Stufe 3 für alle Werkstätten kostet 4 Werkzeug; `workSpeedOf` multipliziert die Stufen.
+- HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
+  die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
+
 ## Diagnose auf dem Rechner des Spielers (F3)
 
 Der Nutzer meldet auf seinem älteren Mac weiter Hänger und Flackern „nach einer gewissen Zeit“.

@@ -19,6 +19,7 @@
  * @property {string} [deposit] deposit type needed within depositRange
  * @property {number} [depositRange]
  * @property {number} [outCap]
+ * @property {Record<string, number>} [inputs] goods labourers bring from the Keep, with the store size for each
  * @property {string} owner 'p1' | 'p2' | 'any'
  * @property {boolean} [buildable] player can place it
  * @property {number} door [dx, dz] door offset in local space (for workers)
@@ -58,7 +59,7 @@ export const BUILDINGS = {
     id: 'mine', name: 'Iron Mine', owner: 'p1', buildable: true,
     desc: 'Built against an iron vein (within 10 m). Miners eat 1 provision per 2 iron.',
     cost: { timber: 25, stone: 15 }, buildTime: 22, hp: 450, radius: 4, navRadius: 3.2, slots: 1, job: 'miner',
-    deposit: 'iron', depositRange: 10, outCap: 8, inCap: 6, door: [0, 4],
+    deposit: 'iron', depositRange: 10, outCap: 8, inputs: { provisions: 6 }, door: [0, 4],
   },
   saltworks: {
     id: 'saltworks', name: 'Salt Works', owner: 'p1', buildable: true,
@@ -82,7 +83,26 @@ export const BUILDINGS = {
     id: 'canteen', name: 'Tavern', owner: 'p1', buildable: true,
     desc: 'The cook turns provisions into hot meals: one provision feeds one and a half people, and warm meals lift stability.',
     cost: { timber: 30, stone: 20 }, buildTime: 24, hp: 450, radius: 4.4, navRadius: 3.6, slots: 1, job: 'cook',
-    inCap: 10, mealCap: 30, door: [0, 4.4],
+    inputs: { provisions: 10 }, mealCap: 30, door: [0, 4.4],
+  },
+  // --- the longer production chains: grain -> flour -> bread, iron -> tools ---
+  mill: {
+    id: 'mill', name: 'Windmill', owner: 'p1', buildable: true,
+    desc: 'The miller grinds grain from the stores (provisions) into flour for the Bakery. Only takes grain while there is enough for the next meal.',
+    cost: { timber: 30, stone: 15 }, buildTime: 24, hp: 380, radius: 3.4, navRadius: 2.8, slots: 1, job: 'miller',
+    inputs: { provisions: 8 }, outCap: 10, door: [0, 3.4],
+  },
+  bakery: {
+    id: 'bakery', name: 'Bakery', owner: 'p1', buildable: true,
+    desc: 'The baker bakes flour into bread, firing the oven with timber. One loaf feeds two people, and fresh bread lifts stability.',
+    cost: { timber: 25, stone: 25 }, buildTime: 24, hp: 420, radius: 3.8, navRadius: 3.2, slots: 1, job: 'baker',
+    inputs: { flour: 8, timber: 4 }, outCap: 12, door: [0, 3.8],
+  },
+  smithy: {
+    id: 'smithy', name: 'Smithy', owner: 'p1', buildable: true,
+    desc: 'The smith forges iron into tools, burning timber in the forge. Tools are needed for the third level of every workshop.',
+    cost: { timber: 25, stone: 20, iron: 5 }, buildTime: 26, hp: 450, radius: 3.8, navRadius: 3.2, slots: 1, job: 'smith',
+    inputs: { iron: 6, timber: 4 }, outCap: 6, door: [0, 3.8],
   },
   barracks: {
     id: 'barracks', name: 'Barracks', owner: 'p1', buildable: true,
@@ -151,6 +171,9 @@ export const BUILDINGS = {
 // Upgrades (levels 2 and 3). Each entry lists the bonuses gained on reaching that level;
 // bonuses add up. `requires` gates a level behind another building's level.
 const WORKSHOP_L2 = { name: null, cost: { timber: 20, stone: 25, taler: 25 }, time: 30, slots: 1, speed: 1.2, hp: 150, desc: 'One more worker and 20% faster work.' };
+// the third level needs tools from a Smithy
+const WORKSHOP_L3 = { name: null, cost: { timber: 15, stone: 30, tools: 4, taler: 40 }, time: 40, speed: 1.25, hp: 200, desc: 'Iron tools from the Smithy: 25% faster work again.' };
+const workshop = (n2, n3, l2 = {}) => ({ 2: { ...WORKSHOP_L2, name: n2, ...l2 }, 3: { ...WORKSHOP_L3, name: n3 } });
 export const UPGRADES = {
   keep: {
     2: { name: 'Kindlehold Castle', cost: { timber: 40, stone: 80, taler: 60 }, time: 60, territory: 14, housing: 4, hp: 600, tax: 0.25,
@@ -162,15 +185,18 @@ export const UPGRADES = {
     2: { name: 'Stone House', cost: { stone: 20, taler: 15 }, time: 25, housing: 3, hp: 150, desc: 'Stone walls and a slate roof: +3 housing.' },
     3: { name: 'Townhouse', cost: { timber: 15, stone: 30, taler: 30 }, time: 30, housing: 3, hp: 150, requiresKeep: 2, desc: 'A wing and dormers: +3 housing. Needs the Castle.' },
   },
-  lodge: { 2: { ...WORKSHOP_L2, name: "Woodcutter's Hall" } },
-  quarry: { 2: { ...WORKSHOP_L2, name: 'Stoneworks' } },
-  farm: { 2: { ...WORKSHOP_L2, name: 'Manor Farm' } },
-  mine: { 2: { ...WORKSHOP_L2, name: 'Deep Mine', cost: { timber: 30, stone: 30, taler: 35 } } },
-  hunter: { 2: { ...WORKSHOP_L2, name: 'Hunting Lodge' } },
-  fisher: { 2: { ...WORKSHOP_L2, name: 'Fishery' } },
-  saltworks: { 2: { ...WORKSHOP_L2, name: 'Salt House' } },
+  lodge: workshop("Woodcutter's Hall", "Forester's Guildhall"),
+  quarry: workshop('Stoneworks', 'Master Quarry'),
+  farm: workshop('Manor Farm', 'Great Farm'),
+  mine: workshop('Deep Mine', 'Iron Works', { cost: { timber: 30, stone: 30, taler: 35 } }),
+  hunter: workshop('Hunting Lodge', "Huntmaster's Lodge"),
+  fisher: workshop('Fishery', 'Fish Market'),
+  saltworks: workshop('Salt House', 'Salt Guild'),
   barracks: { 2: { name: 'Drill Yard', cost: { timber: 40, stone: 30, iron: 20, taler: 60 }, time: 45, speed: 1.25, hp: 250, desc: 'Unlocks Crossbowmen, Halberdiers and Sappers; training 25% faster.' } },
-  canteen: { 2: { ...WORKSHOP_L2, name: 'Inn', desc: 'A second cook and 20% faster cooking.' } },
+  canteen: workshop('Inn', 'Guest House', { desc: 'A second cook and 20% faster cooking.' }),
+  mill: workshop('Stone Mill', 'Great Mill', { desc: 'A second miller and 20% faster grinding.' }),
+  bakery: workshop("Baker's House", 'Guild Bakery', { desc: 'A second baker and 20% faster baking.' }),
+  smithy: { 2: { ...WORKSHOP_L2, name: 'Forge', desc: 'A second smith and 20% faster forging.' } },
 };
 
 export function levelOf(b) { return b.level || 1; }
@@ -185,14 +211,23 @@ export function upgradeBonus(b, key) {
   return s;
 }
 export function slotsOf(b) { return (BUILDINGS[b.type].slots || 0) + upgradeBonus(b, 'slots'); }
-export function workSpeedOf(b) { return b && levelOf(b) > 1 && UPGRADES[b.type] && UPGRADES[b.type][2].speed ? UPGRADES[b.type][2].speed : 1; }
+/** Work speed from upgrades: each level's speed bonus multiplies (1.2 at level 2, 1.5 at level 3). */
+export function workSpeedOf(b) {
+  const u = b && UPGRADES[b.type];
+  if (!u) return 1;
+  let s = 1;
+  for (let l = 2; l <= levelOf(b); l++) if (u[l] && u[l].speed) s *= u[l].speed;
+  return s;
+}
+/** Goods a workplace takes in, with the store size for each (null if it takes none). */
+export function inputsOf(type) { return BUILDINGS[type].inputs || null; }
 export function displayName(b) {
   const u = UPGRADES[b.type];
   for (let l = levelOf(b); l >= 2; l--) if (u && u[l] && u[l].name) return u[l].name;
   return BUILDINGS[b.type].name;
 }
 
-export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'fisher', 'canteen', 'quarry', 'mine', 'saltworks', 'barracks', 'tower'];
+export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'fisher', 'canteen', 'quarry', 'mine', 'saltworks', 'mill', 'bakery', 'smithy', 'barracks', 'tower'];
 
 export function buildingDef(type) {
   const d = BUILDINGS[type];
