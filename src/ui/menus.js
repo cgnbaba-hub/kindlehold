@@ -190,7 +190,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       clear(body);
       for (const b of tabBar.children) b.setAttribute('aria-selected', b.textContent === tab ? 'true' : 'false');
       if (tab === 'Graphics') {
-        body.append(choice('Quality', 'quality', [['low', 'Low (no shadows, no post-processing)'], ['medium', 'Medium (glow, smooth edges)'], ['high', 'High (all effects)']]), toggle('Miniature focus', 'depthOfField', 'Softly blur the top and bottom of close views, like a model landscape (High quality)'), toggle('Limit to 30 frames per second', 'frameCap30', 'Less work for the graphics card: cooler and quieter laptops, fewer hitches on older machines'));
+        body.append(choice('Quality', 'quality', [['low', 'Low (no shadows, no post-processing)'], ['medium', 'Medium (glow, smooth edges)'], ['high', 'High (all effects)']]), toggle('Miniature focus', 'depthOfField', 'Softly blur the top and bottom of close views, like a model landscape (High quality)'), toggle('Limit to 30 frames per second', 'frameCap30', 'Less work for the graphics card: cooler and quieter laptops, fewer hitches on older machines'), toggle('Modelled buildings', 'modelledBuildings', 'Detailed building models (KayKit). Off: the simpler hand-built buildings. Takes effect in the next game or after loading'));
         body.append(h('p.muted', { text: inGame ? 'Quality changes apply the next time a game is started or loaded.' : 'Quality applies when a game starts.' }));
         const gi = graphicsInfo();
         if (gi) {
@@ -264,6 +264,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       h('h2', { text: 'Credits & licences' }),
       h('p', { text: 'Kindlehold is an original game: its setting, story characters, missions, dialogue, buildings, interface, icons, textures, music and sounds were created for this project, mostly generated procedurally at runtime.' }),
       h('p', { text: 'Characters and their animations: KayKit Adventurers Character Pack by Kay Lousberg (kaylousberg.com), CC0 1.0 — recoloured and dressed for Kindlehold\'s roles and factions.' }),
+      h('p', { text: 'Building models and props: KayKit Medieval Hexagon Pack by Kay Lousberg (kaylousberg.com), CC0 1.0.' }),
       h('p', { text: 'Rendering: three.js (MIT licence) including its Sky shader addon. Build tooling: Vite (MIT). No other third-party art, audio or fonts are shipped.' }),
       h('p.muted', { text: 'Inspired only by the general conventions of economy-focused real-time strategy games. Not affiliated with, endorsed by, or a remake of any existing game.' }),
       menuButton('Back', onBack, { primary: true }),
