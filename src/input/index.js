@@ -336,6 +336,7 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
       case b.focusKeep: { const k = all(world(), 'building').find((x) => x.type === 'keep' && x.owner === PLAYER); if (k) cam.focus(k.x, k.z); break; }
       case b.quickSave: ev.preventDefault(); if (hooks.onQuickSave) hooks.onQuickSave(); break;
       case b.quickLoad: ev.preventDefault(); if (hooks.onQuickLoad) hooks.onQuickLoad(); break;
+      case b.diagnostics: ev.preventDefault(); if (hooks.onDiagnostics) hooks.onDiagnostics(); break;
       case b.speedUp: if (hooks.onSpeed) hooks.onSpeed(1); break;
       case b.speedDown: if (hooks.onSpeed) hooks.onSpeed(-1); break;
       default: break;

@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS = {
   muted: false,
   reducedMotion: false,
   depthOfField: true,       // soft miniature focus at the top and bottom of the view (High quality)
+  frameCap30: false,        // draw at most 30 frames a second (less heat and fan noise on laptops)
   uiScale: 1,
   edgeScroll: false,
   cameraSpeed: 1,

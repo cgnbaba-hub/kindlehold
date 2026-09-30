@@ -126,6 +126,20 @@ Auflösung muss an Texelmitten des Tiefenpuffers abtasten und Normalen aus Nachb
 entstehen Streifen. (5) Schnelle Sichtprüfung ohne die langsamen Verify-Läufe: einmal
 `?verify=1&demo=midgame` laden und viele Kamera-Presets nacheinander fotografieren.
 
+## Diagnose auf dem Rechner des Spielers (F3)
+
+Der Nutzer meldet auf seinem älteren Mac weiter Hänger und Flackern „nach einer gewissen Zeit“.
+Die Container-Messungen (Software-GL) finden keine Lecks, also Messwerte vom echten Gerät holen:
+- `src/ui/diagnostics.js`: ab Spielstart alle 30 s eine Zeile (fps, p95, schlimmster Frame,
+  Hänger > 100 ms, Heap, Texturen, Geometrien, Shader, Draw Calls, DOM, Auflösung, was der Regler
+  abgeschaltet hat) plus Ereignisse (Regler, Kontextverlust, Frames > 250 ms). F3 öffnet die
+  Tabelle, „Download log“ speichert JSON (mit Browser, GPU, Pixeldichte, Qualität). Eigene
+  rAF-Messung, weil die Spiel-Schritte gekappt sind. Auch über Einstellungen → Grafik erreichbar.
+- Einstellung „Limit to 30 frames per second“ (`frameCap30`, in `session.js` `frame()`).
+- Keine endlosen CSS-Animationen mehr im Spiel (`.cmd.pulse`, `.btn-ghost.pulse`: 4 Pulse, dann
+  fester Rahmen).
+Nächster Schritt: Log vom Nutzer auswerten (was wächst? wann beginnen die Hänger?).
+
 ## Figuren aus KayKit (Stufe 3, Figuren-Teil 2)
 
 Der Spieler fand die selbst gebauten Figuren nicht gut genug („nicht auf Siedler-Niveau“, Gegenstände
