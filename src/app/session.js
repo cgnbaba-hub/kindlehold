@@ -14,6 +14,8 @@ import { createPoisView } from '../environment/pois-view.js';
 import { createBuildingsView } from '../buildings/view.js';
 import { createUnitsView } from '../units/view.js';
 import { loadFigureAssets } from '../units/skinned-figures.js';
+import { loadBuildingAssets } from '../buildings/kaykit.js';
+import { setBuildingAssets } from '../buildings/meshes.js';
 import { createEffects } from '../effects/index.js';
 import { applyDemoState } from '../demo/states.js';
 import { createSelectionView } from '../selection/view.js';
@@ -43,6 +45,9 @@ export async function createSession({ container, seed, quality = 'high', verify 
   views.register(createVegetation({ scene: rc.scene, terrain: sim.terrain, world, quality: rc.quality }));
   views.register(createWildlifeView({ scene: rc.scene, terrain: sim.terrain, world }));
   views.register(createPoisView({ scene: rc.scene, terrain: sim.terrain, world }));
+  // modelled buildings (KayKit); the setting or ?blds=classic keeps the procedural ones
+  const modelled = settings.modelledBuildings !== false && !(typeof location !== 'undefined' && /[?&]blds=classic\b/.test(location.search));
+  setBuildingAssets(modelled ? await loadBuildingAssets() : null);
   const buildingsView = views.register(createBuildingsView({ scene: rc.scene, terrain: sim.terrain, world, renderer: rc.renderer, sky }));
   // modelled, animated characters (KayKit); ?figs=classic keeps the procedural figures
   const figureAssets = typeof location !== 'undefined' && /[?&]figs=classic\b/.test(location.search) ? null : await loadFigureAssets();

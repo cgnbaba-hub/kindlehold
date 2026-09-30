@@ -12,6 +12,8 @@ build check if a file under `public/assets/` is not listed.
 |---|---|---|---|---|---|---|---|
 | `public/figures/kaykit.bin`, `public/figures/kaykit.json` | KayKit Adventurers Character Pack 1.0 (Knight, Barbarian, Rogue, Rogue_Hooded, Mage; helmets, hats, capes, swords, axes, shields, crossbows; 37 of its 76 animations) | Kay Lousberg (kaylousberg.com) | https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0 | CC0 1.0 | No (credited anyway) | Baked by `scripts/assets/bake-figures.mjs`: palette texture converted to vertex colours with tint slots, attachments moved into bone space, animations sampled at 24 fps as bone matrices | `src/units/skinned-figures.js`, `src/units/cast.js` |
 | `public/figures/KAYKIT-LICENSE.txt` | the pack's licence file | Kay Lousberg | as above | CC0 1.0 | – | unchanged | – |
+| `public/buildings/kaykit.bin`, `public/buildings/kaykit.json` | KayKit Medieval Hexagon Pack 1.0 (17 blue buildings, 9 neutral pieces, 16 props) | Kay Lousberg (kaylousberg.com) | https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0 | CC0 1.0 | No (credited anyway) | Baked by `scripts/assets/bake-buildings.mjs`: palette texture converted to vertex colours with a surface pattern per palette cell, window panes flagged for the night glow, moving parts (windmill sails, watermill wheel) split off | `src/buildings/kaykit.js`, `src/buildings/meshes.js` |
+| `public/buildings/KAYKIT-LICENSE.txt` | the pack's licence file | Kay Lousberg | as above | CC0 1.0 | – | unchanged | – |
 
 ## Libraries (runtime)
 

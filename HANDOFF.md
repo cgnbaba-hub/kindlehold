@@ -143,6 +143,20 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Modellierte Gebäude (KayKit Medieval Hexagon Pack, CC0) — Grafik-Prototyp
+
+Vom Nutzer freigegeben („Grafik-Prototyp“, externes CC0-Paket). Aufbau wie bei den Figuren:
+- `scripts/assets/bake-buildings.mjs <pack-dir>` (Paket: `git clone --depth 1
+  https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0`) → `public/buildings/kaykit.bin/.json`
+  (42 Modelle, 52 000 Dreiecke, 1,8 MB): Palettenfarben → Vertexfarben, Oberflächenmuster je
+  Palettenzelle (Stein, Bretter, Schindeln…), Fensterflächen markiert (leuchten nachts), bewegliche
+  Teile (Mühlenflügel, Wasserrad) getrennt.
+- `src/buildings/kaykit.js`: `BUILDING_STYLE` ordnet unseren Typen Modell, Größe, Drehung und Deko
+  zu (Stufe 2/3: eigene Modelle oder Kisten/Flagge). Ohne Eintrag (Burg, Steinbruch, Hof, Bäckerei,
+  Salzsiederei, Jäger, Fischer) bleibt das prozedurale Modell.
+- `meshes.js` `setBuildingAssets()`; `session.js` lädt vor dem Gebäude-View. Einstellung
+  „Modelled buildings“ (Standard an) oder `?blds=classic` für den Vergleich.
+
 ## Zufallskarten im freien Spiel („The Wildlands“)
 
 - `src/world/maps/wild.js` erzeugt aus dem Seed der Welt ein ganzes Tal (Hügel, Seen, Wald, Fluss

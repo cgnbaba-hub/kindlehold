@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { all } from '../world/world.js';
 import { EV } from '../core/contracts.js';
 import { BUILDINGS } from '../buildings/defs.js';
+import { chimneyOf } from '../buildings/meshes.js';
 import { viewRng } from '../render/geometry-kit.js';
 import { shroudOverlay } from '../render/structure-material.js';
 import { flushInstances } from '../render/instancing.js';
@@ -190,7 +191,7 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
       const c = Math.cos(b.rot || 0), s = Math.sin(b.rot || 0);
       const toW = (lx, lz) => [b.x + lx * c + lz * s, b.z - lx * s + lz * c];
       if (b.state === 'active') {
-        if (b.type === 'cottage' && rnd() < step * 1.8) { const [x, z] = toW(-1.5, -0.8); emit('smoke', x, y + 6.4, z, 1, 0.2, [0.25, 0.6, 0.1], 0.2); }
+        if (b.type === 'cottage' && rnd() < step * 1.8) { const ch = chimneyOf('cottage', b.level || 1) || [-1.5, 6.4, -0.8]; const [x, z] = toW(ch[0], ch[2]); emit('smoke', x, y + ch[1], z, 1, 0.2, [0.25, 0.6, 0.1], 0.2); }
         if (b.type === 'keep') {
           if (rnd() < step * 1.4) { const [x, z] = toW(2.6, 0.8); emit('smoke', x, y + 7.8, z, 1, 0.2, [0.25, 0.6, 0.1], 0.2); }
           if (b.lit) { const [x, z] = toW(0, -2.2); emit('fire', x, y + 12.2, z, Math.ceil(step * 18), 0.6, [0, 1.2, 0], 0.4); if (rnd() < step * 5) emit('ember', x, y + 12.6, z, 1, 0.5, [0, 1.5, 0], 1); }

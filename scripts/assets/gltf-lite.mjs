@@ -1,6 +1,7 @@
 // Minimal GLB + PNG readers for the asset baker (no dependencies): enough for the KayKit packs.
 import fs from 'node:fs';
 import zlib from 'node:zlib';
+import path from 'node:path';
 
 const COMP = { 5120: Int8Array, 5121: Uint8Array, 5122: Int16Array, 5123: Uint16Array, 5125: Uint32Array, 5126: Float32Array };
 const SIZE = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT4: 16 };
@@ -16,6 +17,19 @@ export function readGlb(file) {
     else if (type === 0x004e4942) bin = chunk;
     off += 8 + len;
   }
+  return withReader(json, bin);
+}
+
+/** A .gltf file with its single external .bin buffer (as in the KayKit hexagon pack). */
+export function readGltf(file) {
+  const json = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const uri = json.buffers && json.buffers[0] && json.buffers[0].uri;
+  if (!uri || uri.startsWith('data:')) throw new Error(`${file}: expected one external buffer`);
+  const bin = fs.readFileSync(path.join(path.dirname(file), decodeURIComponent(uri)));
+  return withReader(json, bin);
+}
+
+function withReader(json, bin) {
   const gltf = json;
   /** Typed copy of an accessor (normalized integer data is left as integers). */
   gltf.read = (i) => {

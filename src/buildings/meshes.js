@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { PATTERN as P } from '../render/structure-material.js';
 import { paint, paintGradient, place, merge, jitterVertices, viewRng, box, cyl, cone, ico, gable, pyramid } from '../render/geometry-kit.js';
+import { kaykitModel, clearKaykitCache, BUILDING_STYLE } from './kaykit.js';
 
 const C = {
   lime: '#d6c9ad', limeDark: '#bfb193', timber: '#5f4330', timberDark: '#3f2c20', plank: '#8f6a47', plankLight: '#a88259',
@@ -745,19 +746,44 @@ for (const t of ['lodge', 'quarry', 'farm', 'mine', 'hunter', 'fisher', 'saltwor
 }
 
 const cache = new Map();
+// modelled buildings (KayKit, see kaykit.js); null = the procedural models everywhere
+let kaykitAssets = null;
+/** Switch the building style: baked KayKit models where a type has one, or null for procedural. */
+export function setBuildingAssets(assets) {
+  if (assets === kaykitAssets) return;
+  disposeBuildingGeometries();
+  kaykitAssets = assets;
+}
+
+/** Where a building's chimney smoke rises in local space, when its model says (else null). */
+export function chimneyOf(type, level = 1) {
+  const s = kaykitAssets && BUILDING_STYLE[type];
+  if (!s) return null;
+  let smoke = s.smoke || null;
+  for (let l = 2; l <= level; l++) if (s.level && s.level[l] && s.level[l].smoke) smoke = s.level[l].smoke;
+  return smoke;
+}
 
 /** Build (and cache) the geometries for a building type. */
 export function buildingGeometries(type, radius, level = 1) {
   const key = level > 1 ? `${type}:${level}` : type;
   if (cache.has(key)) return cache.get(key);
   const rnd = viewRng(type.split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 7));
-  const model = MODELS[type](rnd);
-  for (let l = 2; l <= level; l++) {
-    const extra = LEVEL_EXTRAS[type] && LEVEL_EXTRAS[type][l];
-    if (!extra) continue;
-    const e = extra(rnd);
-    model.body.push(...e.body);
-    model.glow.push(...e.glow);
+  const km = kaykitModel(kaykitAssets, type, level);
+  let model;
+  if (km) {
+    // a modelled building: its own props per level; windows glow, a light by the door
+    const sails = km.moving[0];
+    model = { body: [...km.body], glow: [...km.glow], height: km.height, lantern: [0, 2.4, radius * 0.9], sails: sails ? { parts: [sails.geometry], at: sails.pivot } : null };
+  } else {
+    model = MODELS[type](rnd);
+    for (let l = 2; l <= level; l++) {
+      const extra = LEVEL_EXTRAS[type] && LEVEL_EXTRAS[type][l];
+      if (!extra) continue;
+      const e = extra(rnd);
+      model.body.push(...e.body);
+      model.glow.push(...e.glow);
+    }
   }
   const out = {
     body: merge(model.body),
@@ -784,6 +810,7 @@ function mergeGlow(parts) {
 export function disposeBuildingGeometries() {
   for (const g of cache.values()) for (const k of ['body', 'glow', 'site', 'scaffold', 'rubble', 'charter', 'sails']) if (g[k]) g[k].dispose();
   cache.clear();
+  clearKaykitCache();
 }
 
 export { C as BUILDING_COLORS };
