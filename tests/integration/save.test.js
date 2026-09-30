@@ -26,13 +26,34 @@ test('migration from schema 1', () => {
   for (const p of Object.values(doc.world.players)) { delete p.burnPenalty; delete p.res.taler; delete p.tax; delete p.nextPayTick; }
   delete doc.world.stats.produced.taler; delete doc.world.stats.consumed.taler;
   const { world, migrated } = deserializeWorld(JSON.stringify(doc));
-  assert.deepEqual(migrated, [2, 3]);
+  assert.deepEqual(migrated, [2, 3, 4]);
   assert.equal(world.schemaVersion, SCHEMA_VERSION);
   assert.equal(world.stats.buildingsBuilt, 0);
   assert.ok(world.mapEntry);
   assert.equal(world.players.p1.burnPenalty, 0);
   assert.equal(world.players.p1.res.taler, 0);
   assert.equal(world.players.p1.tax, 1);
+});
+
+test('migration from schema 3 adds the goods of the production chains', () => {
+  const sim = newSim({ seed: 5 });
+  createBot(sim).play(1500);
+  const doc = JSON.parse(serializeWorld(sim.world));
+  doc.schemaVersion = 3; doc.world.schemaVersion = 3;
+  for (const p of Object.values(doc.world.players)) for (const r of ['flour', 'bread', 'tools']) delete p.res[r];
+  for (const k of ['produced', 'consumed']) for (const r of ['flour', 'bread', 'tools']) delete doc.world.stats[k][r];
+  const buildings = Object.values(doc.world.entities).filter((e) => e.kind === 'building');
+  buildings.forEach((b, i) => { b.stock.inIncoming = i === 0 ? 3 : 0; });
+  const { world, migrated } = deserializeWorld(JSON.stringify(doc));
+  assert.deepEqual(migrated, [4]);
+  assert.equal(world.players.p1.res.bread, 0);
+  assert.equal(world.stats.produced.tools, 0);
+  assert.deepEqual(world.entities[buildings[0].id].stock.inIncoming, { provisions: 3 });
+  assert.deepEqual(world.entities[buildings[1].id].stock.inIncoming, {});
+  // and the migrated world keeps running
+  const b = newSim({ seed: 5 });
+  b.replaceWorld(world);
+  for (let i = 0; i < 400; i++) b.step();
 });
 
 test('malicious and broken saves are rejected with readable errors', () => {

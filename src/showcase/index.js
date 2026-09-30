@@ -5,6 +5,7 @@ const SHOWCASES = {
   environment: () => import('./environment.js'),
   buildings: () => import('./buildings.js'),
   economy: () => import('./economy.js'),
+  chains: () => import('./chains.js'),
   population: () => import('./population.js'),
   units: () => import('./units.js'),
   figures: () => import('./figures.js'),

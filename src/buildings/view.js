@@ -143,8 +143,11 @@ export function createBuildingsView({ scene, terrain, world, renderer, sky }) {
     root.add(body, site, scaffold, rubble);
     if (glow) root.add(glow);
     if (charter) root.add(charter);
+    // windmill sails turn while the miller works
+    const sails = geos.sails ? new THREE.Mesh(geos.sails, mat) : null;
+    if (sails) { sails.position.set(...geos.sailsAt); sails.castShadow = true; sails.userData.entityId = b.id; root.add(sails); }
     group.add(root);
-    return { root, body, glow, site, scaffold, rubble, charter, siteMat, clip, height: geos.height, state: null, lantern: geos.lantern };
+    return { root, body, glow, site, scaffold, rubble, charter, sails, siteMat, clip, height: geos.height, state: null, lantern: geos.lantern };
   }
 
   function sync() {
@@ -276,6 +279,13 @@ export function createBuildingsView({ scene, terrain, world, renderer, sky }) {
         if (r.upScaffold) r.upScaffold.visible = !!b.upgrade && stage === 'done';
         else if (b.upgrade && stage === 'done') { r.upScaffold = new THREE.Mesh(buildingGeometries(b.type, BUILDINGS[b.type].radius).scaffold, mat); r.root.add(r.upScaffold); }
         if (r.charter) r.charter.visible = stage === 'done' && !!(w.players[b.owner] && w.players[b.owner].techs.charter);
+        if (r.sails) {
+          r.sails.visible = stage === 'done';
+          // turning while there is grain to grind; coasting to a stop otherwise
+          const turning = stage === 'done' && b.workers.length > 0 && !b.paused && b.stall !== 'noInput' && b.stall !== 'storageFull';
+          r.spin = (r.spin || 0) + ((turning ? 0.9 : 0) - (r.spin || 0)) * Math.min(1, frame.dt * 0.8);
+          r.sails.rotation.z -= r.spin * Math.min(frame.dt, 0.1);
+        }
         // lit buildings for the night light pool (keep only when its hearth burns)
         if (stage === 'done' && (b.type !== 'keep' || b.lit) && (r.glow || b.type === 'keep' || r.lantern)) litList.push(b);
       }

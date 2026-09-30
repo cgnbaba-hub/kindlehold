@@ -6,6 +6,7 @@ import { spawnUnit } from '../units/sim.js';
 import { spawnEnemy } from '../ai/index.js';
 import { all } from '../world/world.js';
 import { createBuildingEntity } from '../construction/index.js';
+import { spawnSettler } from '../population/index.js';
 import { reveal } from '../exploration/index.js';
 
 function playTo(sim, bot, tick) { while (sim.world.tick < tick && !sim.world.mission.result) { bot.step(); sim.step(); } }
@@ -133,6 +134,26 @@ DEMO_STATES.buildingLineup = (sim) => {
   if (f) { f.plots = [0, 1, 2, 3, 4, 5].map((i) => ({ x: f.x + Math.sin(i + 0.5) * 9.5, z: f.z + Math.cos(i + 0.5) * 9.5, growth: i / 5, state: i === 5 ? 'ripe' : 'growing' })); }
   w.players.p1.techs.charter = true;
   sim.issue({ type: 'rekindle' });
+};
+
+/** Showcase: the longer production chains at work — Windmill, Bakery, Smithy, a level-3 Lodge. */
+DEMO_STATES.chains = (sim) => {
+  quietEnemy(sim);
+  const w = sim.world;
+  sim.issue({ type: 'rekindle' });
+  Object.assign(w.players.p1.res, { timber: 300, stone: 200, iron: 40, provisions: 150, flour: 10 });
+  for (const [type, x, z] of [['mill', -44, 52], ['bakery', -34, 60], ['smithy', -52, 64], ['lodge', -58, 46]]) {
+    const spot = findSpot(w, sim.services, type, x, z);
+    if (!spot) continue;
+    const b = createBuildingEntity(w, { type, owner: 'p1', x: spot.x, z: spot.z, rot: 0.5, state: 'active' });
+    if (type === 'lodge') b.level = 3;
+  }
+  // enough hands for every workplace
+  const k = all(w, 'building').find((e) => e.type === 'keep' && e.owner === 'p1');
+  for (let i = 0; i < 6 && k; i++) spawnSettler(w, 'p1', k.x + (i - 3), k.z + 9);
+  w.players.p1.nextSettlerTick = w.tick + 1e6;
+  // let the workers take up their posts and the first goods arrive
+  sim.run(20 * 45);
 };
 
 /** Showcase: upgrade levels — Fortress keep, cottage levels 1-3, workshops at level 2. */

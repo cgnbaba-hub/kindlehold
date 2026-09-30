@@ -123,13 +123,16 @@ export function buildParts() {
     stone: g([paint(place(ico(0.2, 0), {}), '#8c8a82', 0, null, P.rock)]),
     sack: g([paint(place(sphere(0.22, 8, 6), { sy: 1.2 }), '#c2a878', 0, null, P.cloth)]),
     ingot: g([B(0.34, 0.12, 0.2, '#6f7176', P.metal, {}), B(0.34, 0.12, 0.2, '#6f7176', P.metal, { y: 0.12, x: 0.05 })]),
+    floursack: g([paint(place(sphere(0.22, 8, 6), { sy: 1.2 }), '#ece4d0', 0, null, P.cloth), paint(place(cyl(0.06, 0.08, 0.08, 6), { y: 0.27 }), '#b8a888', 0, null, P.cloth)]),
+    basket: g([paint(place(cyl(0.22, 0.17, 0.18, 9), {}), '#a07a48', 0, null, P.planks), ...[-0.09, 0.09].map((x) => paint(place(sphere(0.1, 6, 4), { x, y: 0.1, sz: 1.5, sy: 0.7 }), '#c98a42', 0, null, P.plain))]),
+    toolbundle: g([B(0.44, 0.08, 0.08, '#6b4a2f', P.planks, { y: 0.02 }), B(0.44, 0.08, 0.08, '#6b4a2f', P.planks, { y: 0.1, z: 0.05 }), B(0.1, 0.14, 0.18, '#7d7f82', P.metal, { x: 0.2, y: 0.06 }), B(0.08, 0.1, 0.24, '#8c8f93', P.metal, { x: -0.2, y: 0.12, z: 0.05 })]),
   };
 }
 
-const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', salter: 'rake', cook: 'ladle' };
-const CARRY = { timber: 'log', stone: 'stone', provisions: 'sack', iron: 'ingot' };
+const TOOL = { forester: 'axe', quarrier: 'pick', miner: 'pick', farmer: 'sickle', hunter: 'spear', fisher: 'rod', salter: 'rake', cook: 'ladle', smith: 'hammer' };
+const CARRY = { timber: 'log', stone: 'stone', provisions: 'sack', iron: 'ingot', flour: 'floursack', bread: 'basket', tools: 'toolbundle' };
 // where each good sits in the torso frame: x, y, z, pitch, yaw
-const CARRY_AT = { log: [0.25, 0.8, -0.05, 0.22, Math.PI / 2], sack: [-0.24, 0.76, -0.08, 0, 0.3], stone: [0, 0.3, 0.3, 0, 0], ingot: [0, 0.36, 0.28, 0, 0] };
+const CARRY_AT = { log: [0.25, 0.8, -0.05, 0.22, Math.PI / 2], sack: [-0.24, 0.76, -0.08, 0, 0.3], floursack: [-0.24, 0.76, -0.08, 0, 0.3], stone: [0, 0.3, 0.3, 0, 0], ingot: [0, 0.36, 0.28, 0, 0], basket: [0, 0.34, 0.3, 0, 0], toolbundle: [0, 0.36, 0.28, 0, 0] };
 const SETTLER_TUNICS = ['#8a6f4e', '#6f7b5a', '#9b7c52', '#5f6f7a', '#7a5f4e', '#8e8a6a', '#8a4e4a', '#4e6a7a'];
 const HAIR = ['#4a3222', '#2a1e16', '#b8914e', '#8a4a24', '#6a5a4a', '#c8c0b0', '#3a2a1e'];
 const HAIR_LONG = ['hairLong', 'hairBun', 'hairBraids'];
@@ -303,7 +306,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
       if (st.coat) { tmp.makeScale(1.16, 1, 1.18); out.multiplyMatrices(torsoFrame, tmp); put('tabard', out, st.tabard); }
       else put('tabard', torsoFrame, st.tabard);
     }
-    if (settler && f.job === 'cook') put('apron', torsoFrame, null);
+    if (settler && (f.job === 'cook' || f.job === 'baker' || f.job === 'smith')) put('apron', torsoFrame, null);
     if (f.anim === 'stir') { out.multiplyMatrices(root, local(0.08, 0, 0.62, 0)); put('pot', out, null); }
     // the cloak hangs from the shoulders and trails behind when walking (it ignores the lean)
     if (st.cape && !fall) { out.multiplyMatrices(torsoFrame, local(0, 0.62, -0.06, P.cape - P.lean * 0.85)); put('cape', out, st.cape); }

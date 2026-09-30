@@ -16,7 +16,7 @@ import { researchBlocker } from '../technology/index.js';
 import { buildCost, upgradeBlocker } from '../construction/index.js';
 import { canAfford } from '../economy/stock.js';
 import { ABILITIES, heroAbilities } from '../heroes/index.js';
-import { STALL_TEXT, WORK } from '../production/index.js';
+import { STALL_TEXT, WORK, missingInputs } from '../production/index.js';
 import { scenarioOf } from '../missions/index.js';
 import { aiSettings } from '../ai/index.js';
 import { RANKS, rankOf } from '../combat/index.js';
@@ -24,9 +24,16 @@ import { BRIGANDS, relation, stance, TRUCE, GIFT, PEACE, WAR_AT, ALLY_AT } from 
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 import { enemyFaction } from '../ai/factions.js';
 
-const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler' };
+const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler', flour: 'Flour', bread: 'Bread', tools: 'Tools' };
+const RES_TIPS = {
+  flour: 'Flour in the Keep store, ground by a Windmill. The Bakery bakes it into bread.',
+  bread: 'Bread in the Keep store, from a Bakery. Eaten after hot meals and before plain provisions: one loaf feeds two, and bread lifts stability.',
+  tools: 'Tools in the Keep store, forged at a Smithy. Needed for the third level of every workshop.',
+};
+// goods of the longer chains show in the ribbon only once the settlement has them
+const CHAIN_GOODS = { flour: 'mill', bread: 'bakery', tools: 'smithy' };
 const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander' };
-const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner', hunter: 'Hunter', fisher: 'Fisher', salter: 'Salter', cook: 'Cook' };
+const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner', hunter: 'Hunter', fisher: 'Fisher', salter: 'Salter', cook: 'Cook', miller: 'Miller', baker: 'Baker', smith: 'Smith' };
 
 /**
  * Bring `target` in line with freshly rendered `fresh` children, replacing only the nodes that
@@ -61,12 +68,16 @@ export function createHud({ root, session, input, settings, actions }) {
   // --- top-left: resource ribbon -------------------------------------------------
   const resEls = {};
   const ribbon = h('div.ribbon.panel', { role: 'group', 'aria-label': 'Stores' });
+  // flour, bread and tools sit in a second row under the stores (the top row is full at 1280 px)
+  const goodsRibbon = h('div.ribbon.goods-ribbon.panel', { role: 'group', 'aria-label': 'Workshop goods' });
+  goodsRibbon.hidden = true;
   for (const r of RESOURCES) {
     const val = h('span.res-val', { text: '0' });
     const rate = h('span.res-rate', { text: '' });
-    const el = h('div.res', { 'data-tip': `${RES_NAMES[r]} in the Keep store. Small number: change over the last minute.`, tabindex: 0 }, [icon(r), h('div.res-text', {}, [val, rate])]);
+    const el = h('div.res', { 'data-tip': `${RES_TIPS[r] || `${RES_NAMES[r]} in the Keep store.`} Small number: change over the last minute.`, tabindex: 0 }, [icon(r), h('div.res-text', {}, [val, rate])]);
+    if (CHAIN_GOODS[r]) el.hidden = true;
     resEls[r] = { val, rate, el };
-    ribbon.append(el);
+    (CHAIN_GOODS[r] ? goodsRibbon : ribbon).append(el);
   }
   const popVal = h('span.res-val', { text: '0/0' });
   const idleVal = h('span.res-rate', { text: '' });
@@ -74,7 +85,7 @@ export function createHud({ root, session, input, settings, actions }) {
   const stabBar = h('div.meter-fill');
   const stabEl = h('div.res.stab', { 'data-tip': 'Stability: fed, housed people work faster. Below 30 no newcomers arrive.', tabindex: 0 }, [icon('stability'), h('div.meter', {}, [stabBar])]);
   ribbon.append(popEl, stabEl);
-  hud.append(ribbon);
+  hud.append(ribbon, goodsRibbon);
 
   // --- people: census panel (click the population) --------------------------------------
   const peopleBody = h('div.people-body');
@@ -91,7 +102,7 @@ export function createHud({ root, session, input, settings, actions }) {
     ['building', 'hammer', 'Building'], ['carrying', 'provisions', 'Carrying goods'], ['repairing', 'hammer', 'Repairing'], ['gathering', 'tree', 'Gathering by hand'],
     ['idle', 'idle', 'Idle'], ['asleep', 'moon', 'Asleep'], ['arriving', 'settler', 'Arriving'], ['training', 'barracks', 'Going to train'], ['fleeing', 'alertDanger', 'Fleeing'],
   ];
-  const JOB_ICONS = { forester: 'lodge', quarrier: 'quarry', farmer: 'farm', miner: 'mine', hunter: 'hunter', fisher: 'fisher', salter: 'saltworks', cook: 'canteen' };
+  const JOB_ICONS = { forester: 'lodge', quarrier: 'quarry', farmer: 'farm', miner: 'mine', hunter: 'hunter', fisher: 'fisher', salter: 'saltworks', cook: 'canteen', miller: 'mill', baker: 'bakery', smith: 'smithy' };
   function censusLines(c) {
     const lines = [];
     for (const [k, , label] of CENSUS_ROWS) if (c[k]) lines.push(`${c[k]} ${label.toLowerCase()}`);
@@ -190,6 +201,10 @@ export function createHud({ root, session, input, settings, actions }) {
         'All is well in Kindlehold. The hearth burns bright.',
         p.res.taler > 150 ? 'The treasury is full. Upgrades, a feast or the trader at the crossroads could use it.' : 'The treasury grows with every payday.',
         c.idle > 3 ? 'Some labourers stand idle. They could fell trees by hand — select them and right-click a tree.' : 'The people are busy and content.',
+        // the longer chains, once the basics stand
+        !has('mill') && p.res.provisions > p.pop * 3 + 20 ? 'Our granary overflows. A Windmill and a Bakery would turn that grain into bread — one loaf feeds two.'
+          : !has('smithy') && has('mine') && p.res.iron > 30 ? 'Iron piles up in the store. A Smithy could forge tools for the third level of our workshops.'
+            : 'The hearth warms every hall tonight.',
       ];
       out.push({ text: calm[Math.floor(w.tick / 400) % calm.length], level: 'calm' });
     }
@@ -516,7 +531,7 @@ export function createHud({ root, session, input, settings, actions }) {
         if (def.slots) selPanel.append(h('div.sel-row.small', { text: `${JOB_NAMES[def.job]}s: ${e.workers.length}/${slotsOf(e)}` }));
         let out = 0; for (const r in e.stock.out) out += e.stock.out[r];
         if (def.outCap) selPanel.append(h('div.sel-row.small', { text: `Waiting for pickup: ${out}/${def.outCap} ${RES_NAMES[WORK[def.job].res].toLowerCase()}` }));
-        if (def.inCap) selPanel.append(h('div.sel-row.small', { text: `Provisions for the ${e.type === 'canteen' ? 'kitchen' : 'miners'}: ${e.stock.in.provisions || 0}/${def.inCap}` }));
+        if (def.inputs) selPanel.append(h('div.sel-row.small', { text: `In store: ${Object.keys(def.inputs).map((r) => `${RES_NAMES[r].toLowerCase()} ${Math.floor(e.stock.in[r] || 0)}/${def.inputs[r]}`).join(' · ')}` }));
         if (e.type === 'canteen') selPanel.append(h('div.sel-row.small', { text: `Hot meals ready: ${Math.floor(e.meals || 0)}/${def.mealCap} — served first at every mealtime` }));
         if (def.housing) selPanel.append(h('div.sel-row.small', { text: `Houses ${def.housing + upgradeBonus(e, 'housing') + (e.type === 'keep' && w.players[PLAYER].techs.charter ? 6 : 0)} people` }));
         if (e.type === 'farm' && e.plots) selPanel.append(h('div.sel-row.small', { text: `Fields: ${e.plots.filter((p) => p.state === 'ripe').length} ripe, ${e.plots.filter((p) => p.state === 'growing').length} growing` }));
@@ -555,7 +570,10 @@ export function createHud({ root, session, input, settings, actions }) {
           });
           selPanel.append(q);
         }
-        if (e.stall && STALL_TEXT[e.stall]) selPanel.append(h('div.sel-warn', { role: 'status', text: STALL_TEXT[e.stall] }));
+        if (e.stall && STALL_TEXT[e.stall]) {
+          const lack = e.stall === 'noInput' ? missingInputs(e) : [];
+          selPanel.append(h('div.sel-warn', { role: 'status', text: lack.length ? `Waiting for ${lack.join(' and ')} from the Keep` : STALL_TEXT[e.stall] }));
+        }
       }
       return;
     }
@@ -705,7 +723,8 @@ export function createHud({ root, session, input, settings, actions }) {
         else {
           const why = upgradeBlocker(w, PLAYER, one);
           const afford = canAfford(w, PLAYER, up.cost);
-          cmdGrid.append(cmdButton({ ic: 'bracing', label: `Upgrade to ${up.name}`, tipTitle: `Upgrade to ${up.name} (level ${levelOf(one) + 1})`, tip: why ? `${why}. ${up.desc}` : afford ? `${up.desc} Takes ${up.time}s; the building keeps working.` : `Not enough resources. ${up.desc}`, cost: up.cost, disabled: !!why || !afford, onClick: () => input.issue({ type: 'upgrade', id: one.id }) }));
+          const short = up.cost.tools && (p.res.tools || 0) < up.cost.tools ? 'Needs tools: build a Smithy and keep it supplied with iron and timber.' : 'Not enough resources.';
+          cmdGrid.append(cmdButton({ ic: 'bracing', label: `Upgrade to ${up.name}`, tipTitle: `Upgrade to ${up.name} (level ${levelOf(one) + 1})`, tip: why ? `${why}. ${up.desc}` : afford ? `${up.desc} Takes ${up.time}s; the building keeps working.` : `${short} ${up.desc}`, cost: up.cost, disabled: !!why || !afford, onClick: () => input.issue({ type: 'upgrade', id: one.id }) }));
         }
       }
       if (one.type === 'keep') {
@@ -787,15 +806,24 @@ export function createHud({ root, session, input, settings, actions }) {
     t = 0;
     // resources + rates over the last minute
     while (resHistory.length && w.tick - resHistory[0].tick > 1200) resHistory.shift();
-    const rates = { timber: 0, stone: 0, iron: 0, provisions: 0, taler: 0 };
-    for (const r of resHistory) rates[r.res] += r.delta;
+    const rates = {};
+    for (const r of RESOURCES) rates[r] = 0;
+    for (const r of resHistory) if (r.res in rates) rates[r.res] += r.delta;
+    let goods = false;
     for (const r of RESOURCES) {
+      if (CHAIN_GOODS[r]) {
+        const show = p.res[r] > 0 || all(w, 'building').some((b) => b.owner === PLAYER && b.type === CHAIN_GOODS[r]);
+        if (resEls[r].el.hidden === show) resEls[r].el.hidden = !show;
+        if (!show) continue;
+        goods = true;
+      }
       setText(resEls[r].val, Math.floor(p.res[r]));
       const rt = Math.round(rates[r]);
       setText(resEls[r].rate, rt ? `${rt > 0 ? '+' : ''}${rt}/min` : '');
       const rc = `res-rate ${rt < 0 ? 'neg' : 'pos'}`;
       if (resEls[r].rate.className !== rc) resEls[r].rate.className = rc; // untouched DOM is not repainted
     }
+    if (goodsRibbon.hidden === goods) { goodsRibbon.hidden = !goods; hud.classList.toggle('has-goods', goods); }
     setText(popVal, `${p.pop}/${p.popCap}`);
     { const c = censusOf(w, PLAYER); const tip = `${censusLines(c).join('\n')}\nClick for the full list.`; if (popEl.getAttribute('data-tip') !== tip) popEl.setAttribute('data-tip', tip); }
     renderPeople();

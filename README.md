@@ -15,8 +15,9 @@ trees, farm, fish, mine, cook and carry. Written in plain JavaScript on Three.js
 ## What is in it
 
 - **Economy in the spirit of the classic settler games:** woodcutters, quarries, farms, mines,
-  fishers, hunters, salt works and taverns; settlers haul goods, sleep at night, eat, grow
-  content or restless; seasons with snow, a freezing river and slow winter fields.
+  fishers, hunters, salt works and taverns; production chains (windmill → flour → bakery →
+  bread, iron → smithy → tools for the third workshop level); settlers haul goods, sleep at
+  night, eat, grow content or restless; seasons with snow, a freezing river and slow winter fields.
 - **Campaign:** six chapters with an original story, spoken intros over camera flights, allies
   and choices that carry over (win the Greyfen brigands as friends or destroy their hold).
 - **Free play:** any of the four maps against the faction that holds it.
@@ -40,7 +41,7 @@ tooling, measured instead of guessing, and documented every step for the next se
 
 What that process looks like in the repository:
 
-- **140 automated tests** (`node:test`): unit, integration and *deterministic simulation* tests
+- **146 automated tests** (`node:test`): unit, integration and *deterministic simulation* tests
   that replay whole chapters with a scripted bot.
 - **16 end-to-end tests** in a real browser (Playwright): menus, tutorial, save/load round trip,
   every campaign chapter, graphics driver reset, layout at 1280×720.
@@ -78,7 +79,7 @@ More: [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) (a short to
 ```bash
 npm ci                 # Node 20+
 npm run dev            # http://127.0.0.1:5180/
-npm test               # the 140 tests
+npm test               # the 146 tests
 npm run build && npm run preview
 npm run test:e2e       # browser tests (needs: npx playwright install chromium)
 ```

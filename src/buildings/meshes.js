@@ -321,6 +321,79 @@ const MODELS = {
     body.push(...barrel(3.9, 1.6), ...barrel(4.0, 0.7), ...barrel(3.95, 1.15, 0.85));
     return { body, glow, height: 7.4 };
   },
+  mill(rnd) {
+    const body = [], glow = [];
+    // a tapering stone tower mill with a timber cap; the sails turn separately (see `sails`)
+    body.push(paint(place(cyl(2.9, 3.1, 0.5, 14), { y: 0.25 }), C.stoneDark, 0, null, P.stone));
+    body.push(paintGradient(place(cyl(1.85, 2.6, 6.6, 14), { y: 3.8 }), C.limeDark, C.lime, P.plaster));
+    for (const y of [1.2, 3.8, 6.4]) body.push(paint(place(cyl(2.62 - (y / 6.6) * 0.75, 2.66 - (y / 6.6) * 0.75, 0.14, 14), { y }), C.timberDark, 0, null, P.planks));
+    body.push(paint(place(cone(2.3, 2.4, 14), { y: 8.3 }), C.thatchDark, 0, null, P.thatch));
+    body.push(paint(place(cyl(0.2, 0.2, 1.4, 6), { y: 7.4, z: 2.0, rx: Math.PI / 2 }), C.timberDark, 0, null, P.planks));
+    body.push(...door(0.95, 1.8, 2.55));
+    body.push(b(0.6, 0.7, 0.12, C.timberDark, P.planks, { y: 4.6, z: 2.18, rx: -0.12 }));
+    glow.push(win(0.4, 0.5, { y: 4.6, z: 2.26 }));
+    // sacks of flour by the door and a small cart
+    for (let i = 0; i < 4; i++) body.push(paint(place(sphere8(0.3), { x: 1.8 + (i % 2) * 0.5, y: 0.35 + Math.floor(i / 2) * 0.42, z: 2.1 - (i % 2) * 0.2, sy: 1.15 }), '#ece4d0', 0.05, rnd, P.cloth));
+    body.push(b(1.2, 0.35, 0.8, C.plank, P.planks, { x: -2.3, y: 0.55, z: 1.6 }));
+    for (const z of [1.15, 2.05]) body.push(paint(place(cyl(0.3, 0.3, 0.07, 10), { x: -2.3, y: 0.3, z, rx: Math.PI / 2 }), C.timberDark, 0, null, P.planks));
+    // four lattice sails around a hub, drawn about the hub (0,0,0) and facing +Z
+    const sails = [paint(place(cyl(0.32, 0.32, 0.4, 8), { rx: Math.PI / 2 }), C.timberDark, 0, null, P.planks)];
+    for (let k = 0; k < 4; k++) {
+      const a = (k / 4) * Math.PI * 2;
+      const arm = [b(0.16, 4.2, 0.12, C.timber, P.planks, { y: 2.2 }), b(0.95, 3.2, 0.04, '#e8dcc0', P.cloth, { x: 0.52, y: 2.6, z: -0.05 })];
+      for (let j = 0; j < 5; j++) arm.push(b(1.0, 0.06, 0.08, C.timberDark, P.planks, { x: 0.5, y: 1.1 + j * 0.75 }));
+      sails.push(place(merge(arm), { rz: a }));
+    }
+    return { body, glow, height: 9.6, sails: { parts: sails, at: [0, 7.4, 2.75] } };
+  },
+  bakery(rnd) {
+    const body = [], glow = [];
+    body.push(b(5.4, 0.45, 4.2, C.stoneDark, P.stone, { y: 0.22 }));
+    body.push(b(5, 2.5, 3.8, C.lime, P.plaster, { y: 1.7 }));
+    body.push(...timberFrame(5, 2.3, 3.8, 0.45));
+    body.push(roof(5.8, 4.8, 2.6, '#8e4a32', P.shingles, { y: 2.95 }));
+    body.push(...door(1.0, 1.9, 1.95, -1.2));
+    body.push(b(1.2, 0.9, 0.12, C.timberDark, P.planks, { x: 1.1, y: 1.7, z: 1.94 }));
+    glow.push(win(0.95, 0.65, { x: 1.1, y: 1.7, z: 2.01 }));
+    // the domed bread oven built against the side wall, its mouth glowing, a tall chimney
+    body.push(paint(place(sphere8(1.35), { x: 3.3, y: 0.45, z: -0.2, sy: 0.85 }), '#b8a488', 0.06, rnd, P.stone));
+    body.push(b(2.4, 0.5, 2.4, C.stoneDark, P.stone, { x: 3.3, y: 0.25, z: -0.2 }));
+    glow.push(place(new THREE.CircleGeometry(0.38, 10, 0, Math.PI), { x: 3.3, y: 0.55, z: 1.03 }));
+    body.push(...chimney(3.6, -1.0, 0.8, 4.8));
+    body.push(...chimney(-1.4, -0.9, 2.95, 2.4));
+    // a sign with a loaf, a trestle with loaves, firewood for the oven
+    body.push(beam(-2.8, 2.6, 2.0, -2.8, 2.6, 2.9, 0.1, C.timberDark));
+    body.push(b(0.08, 0.6, 0.7, '#7a5a2a', P.planks, { x: -2.8, y: 2.15, z: 2.75 }));
+    body.push(paint(place(sphere8(0.22), { x: -2.76, y: 2.15, z: 2.75, sx: 0.4, sz: 1.3 }), '#c98a42', 0, null, P.plain));
+    body.push(b(1.6, 0.08, 0.6, C.plank, P.planks, { x: 0.9, y: 0.85, z: 2.7 }), b(0.1, 0.8, 0.5, C.timberDark, P.planks, { x: 0.3, y: 0.42, z: 2.7 }), b(0.1, 0.8, 0.5, C.timberDark, P.planks, { x: 1.5, y: 0.42, z: 2.7 }));
+    for (let i = 0; i < 4; i++) body.push(paint(place(sphere8(0.17), { x: 0.4 + i * 0.33, y: 0.98, z: 2.7, sz: 1.5, sy: 0.7 }), i % 2 ? '#b8762e' : '#d09a52', 0, null, P.plain));
+    body.push(...logPile(3.2, -2.6, 5, rnd, 1.4));
+    return { body, glow, height: 6.4 };
+  },
+  smithy(rnd) {
+    const body = [], glow = [];
+    // a stone workshop with an open forge hall under a lean-to roof
+    body.push(b(6.2, 0.4, 4.6, C.stoneDark, P.stone, { y: 0.2 }));
+    body.push(b(3.2, 2.8, 4.0, C.stone, P.stone, { x: -1.4, y: 1.8 }, 0.05, rnd));
+    body.push(roof(4.0, 4.8, 2.0, C.slateDark, P.shingles, { x: -1.4, y: 3.2, ry: Math.PI / 2 }));
+    body.push(...door(0.95, 1.9, 2.05, -1.4));
+    for (const [x, z] of [[1.0, 2.0], [2.9, 2.0], [2.9, -2.0]]) body.push(beam(x, 0.4, z, x, 3.0, z, 0.24));
+    body.push(b(2.3, 0.14, 4.6, C.slate, P.shingles, { x: 1.95, y: 3.05, rx: 0, rz: -0.18 }));
+    // the forge hearth with its hood and chimney, the anvil on a block, a quench tub
+    body.push(b(1.4, 0.9, 1.2, C.stoneDark, P.stone, { x: 1.9, y: 0.85, z: -1.2 }));
+    glow.push(place(new THREE.BoxGeometry(0.9, 0.12, 0.7), { x: 1.9, y: 1.32, z: -1.2 }));
+    body.push(paint(place(pyramid(1.3, 1.0, 1.2), { x: 1.9, y: 2.0, z: -1.2 }), C.stoneDark, 0, null, P.stone));
+    body.push(...chimney(1.9, -1.4, 2.4, 2.6));
+    body.push(paint(place(cyl(0.3, 0.35, 0.6, 8), { x: 2.0, y: 0.7, z: 0.9 }), '#6e5037', 0, null, P.planks));
+    body.push(b(0.8, 0.26, 0.34, C.iron, P.metal, { x: 2.0, y: 1.12, z: 0.9 }), b(0.3, 0.2, 0.2, C.iron, P.metal, { x: 2.45, y: 1.15, z: 0.9 }));
+    body.push(paint(place(cyl(0.45, 0.4, 0.55, 10), { x: 3.4, y: 0.68, z: 1.2 }), '#7a5638', 0, null, P.planks));
+    body.push(paint(place(cyl(0.4, 0.4, 0.02, 10), { x: 3.4, y: 0.94, z: 1.2 }), '#3a4a52', 0, null, P.plain));
+    // a rack of finished tools and a pile of iron bars
+    body.push(b(0.1, 1.4, 1.6, C.timberDark, P.planks, { x: -3.1, y: 1.1, z: 0.6 }));
+    for (let i = 0; i < 4; i++) body.push(b(0.06, 0.9, 0.06, C.timber, P.planks, { x: -3.22, y: 1.1, z: 0.05 + i * 0.36 }), b(0.12, 0.18, 0.22, C.iron, P.metal, { x: -3.24, y: 1.62, z: 0.05 + i * 0.36 }));
+    for (let i = 0; i < 5; i++) body.push(b(0.6, 0.1, 0.16, '#6f7176', P.metal, { x: 0.4 + (i % 3) * 0.05, y: 0.5 + Math.floor(i / 3) * 0.1, z: 2.5 + (i % 3) * 0.18 }));
+    return { body, glow, lantern: [2.2, 2.4, 0.4], height: 5.8 };
+  },
   barracks(rnd) {
     const body = [], glow = [];
     body.push(b(10.6, 1.4, 5.6, C.stone, P.stone, { y: 0.7 }));
@@ -660,8 +733,15 @@ const LEVEL_EXTRAS = {
     },
   },
 };
-for (const t of ['lodge', 'quarry', 'farm', 'mine', 'hunter', 'fisher', 'saltworks', 'canteen']) {
-  LEVEL_EXTRAS[t] = { 2: (rnd) => ({ body: [...leanTo(-3.4, -1.6, rnd), ...hangingSign(1.9, 3.9, t === 'mine' ? C.rust : C.teal), ...barrel(-3.8, -1.2), ...barrel(-3.0, -2.1)], glow: [] }) };
+for (const t of ['lodge', 'quarry', 'farm', 'mine', 'hunter', 'fisher', 'saltworks', 'canteen', 'mill', 'bakery', 'smithy']) {
+  LEVEL_EXTRAS[t] = {
+    2: (rnd) => ({ body: [...leanTo(-3.4, -1.6, rnd), ...hangingSign(1.9, 3.9, t === 'mine' ? C.rust : C.teal), ...barrel(-3.8, -1.2), ...barrel(-3.0, -2.1)], glow: [] }),
+    // level 3 (tools from the Smithy): a stone store with a slate roof and a guild banner
+    3: (rnd) => ({
+      body: [b(2.2, 1.8, 1.8, C.stone, P.stone, { x: 3.6, y: 0.9, z: -2.4 }, 0.05, rnd), roof(2.6, 2.2, 1.1, C.slate, P.shingles, { x: 3.6, y: 1.8, z: -2.4 }), ...banner(-2.6, 0, 3.4, C.gold, rnd, 1.8)],
+      glow: [],
+    }),
+  };
 }
 
 const cache = new Map();
@@ -687,6 +767,8 @@ export function buildingGeometries(type, radius, level = 1) {
     site: siteStage(radius, rnd),
     scaffold: scaffold(radius, model.height),
     rubble: rubble(radius, rnd),
+    sails: model.sails ? merge(model.sails.parts) : null,
+    sailsAt: model.sails ? model.sails.at : null,
   };
   if (type === 'keep') out.charter = merge(MODELS.keepCharter(rnd).body);
   out.levelUp = level > 1;
@@ -700,7 +782,7 @@ function mergeGlow(parts) {
 }
 
 export function disposeBuildingGeometries() {
-  for (const g of cache.values()) for (const k of ['body', 'glow', 'site', 'scaffold', 'rubble', 'charter']) if (g[k]) g[k].dispose();
+  for (const g of cache.values()) for (const k of ['body', 'glow', 'site', 'scaffold', 'rubble', 'charter', 'sails']) if (g[k]) g[k].dispose();
   cache.clear();
 }
 

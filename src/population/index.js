@@ -23,6 +23,9 @@ export const TAX_LEVELS = [
 ];
 export const SOLDIER_PAY = 1;
 export const HOT_MEAL_STABILITY = 8;
+// Bread from the Bakery: one loaf feeds two people, and fresh bread lifts the mood
+export const BREAD_PORTIONS = 2;
+export const BREAD_STABILITY = 6;
 // Rations: how much each person gets at mealtime (portions) and what it does to the mood
 export const RATIONS = [
   { id: 'half', name: 'Half', portion: 0.5, stability: -10 },
@@ -173,13 +176,13 @@ export function createPopulationModule() {
     }
 
     // warn half a minute before a meal the stores cannot cover
-    if (keep && p.nextMealTick - world.tick === 900 && p.res.provisions + mealsInStock(world, owner) < p.pop - asleepCount(world, owner)) {
+    if (keep && p.nextMealTick - world.tick === 900 && p.res.provisions + (p.res.bread || 0) * BREAD_PORTIONS + mealsInStock(world, owner) < p.pop - asleepCount(world, owner)) {
       alert(world, 'warn', `Provisions are running low: ${Math.floor(p.res.provisions)} left for ${p.pop} people at the next meal. Build or staff Farmsteads.`, keep.x, keep.z);
     }
     // meals
     if (world.tick >= p.nextMealTick) {
       p.nextMealTick = world.tick + MEAL_INTERVAL;
-      // sleepers do not eat; hot meals from the Tavern are served first, then plain stores
+      // sleepers do not eat; hot meals from the Tavern are served first, then bread, then plain stores
       const ration = RATIONS[p.rations ?? 1] || RATIONS[1];
       const need = Math.ceil(Math.max(0, p.pop - asleepCount(world, owner)) * ration.portion);
       let hot = 0;
@@ -189,10 +192,17 @@ export function createPopulationModule() {
         b.meals -= take; hot += take;
         if (hot >= need) break;
       }
-      const eat = Math.min(need - hot, Math.floor(p.res.provisions));
+      let bread = 0;
+      const loaves = Math.min(Math.ceil((need - hot) / BREAD_PORTIONS), Math.floor(p.res.bread || 0));
+      if (loaves > 0) {
+        addRes(world, owner, 'bread', -loaves, 'meal');
+        world.stats.consumed.bread += loaves;
+        bread = Math.min(need - hot, loaves * BREAD_PORTIONS);
+      }
+      const eat = Math.min(need - hot - bread, Math.floor(p.res.provisions));
       if (eat > 0) { addRes(world, owner, 'provisions', -eat, 'meal'); world.stats.consumed.provisions += eat; }
-      p.lastMealFed = need > 0 ? (hot + eat) / need : 1;
-      if (need > 0) p.hotMeals = hot / need;
+      p.lastMealFed = need > 0 ? (hot + bread + eat) / need : 1;
+      if (need > 0) { p.hotMeals = hot / need; p.breadMeals = bread / need; }
       if (p.lastMealFed < 1) {
         p.stability = Math.max(0, p.stability - 8 * (1 - p.lastMealFed));
         alert(world, 'warn', 'Your people went hungry. Build or staff Farmsteads.', keep ? keep.x : 0, keep ? keep.z : 0);
@@ -205,7 +215,7 @@ export function createPopulationModule() {
       const headroom = p.popCap - p.pop;
       const target = Math.max(0, Math.min(100,
         40 + 35 * p.lastMealFed + (headroom >= 1 ? 10 : 0) + (headroom < 0 ? -20 : 0) + (keep && keep.lit ? 10 : -10) - p.burnPenalty
-        + (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability + HOT_MEAL_STABILITY * (p.hotMeals || 0)
+        + (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability + HOT_MEAL_STABILITY * (p.hotMeals || 0) + BREAD_STABILITY * (p.breadMeals || 0)
         + (RATIONS[p.rations ?? 1] || RATIONS[1]).stability * Math.min(1, p.lastMealFed) + ((p.feastUntil || 0) > world.tick ? FEAST.stability : 0)));
       const step = 0.5;
       if (p.stability < target) p.stability = Math.min(target, p.stability + step);
@@ -224,7 +234,7 @@ export function createPopulationModule() {
     if (world.tick % 20 === 5) assignJobs(world, owner);
   }
 
-  const JOB_RES = { forester: 'timber', quarrier: 'stone', miner: 'iron', farmer: 'provisions', hunter: 'provisions', fisher: 'provisions', cook: 'provisions' };
+  const JOB_RES = { forester: 'timber', quarrier: 'stone', miner: 'iron', farmer: 'provisions', hunter: 'provisions', fisher: 'provisions', cook: 'provisions', miller: 'flour', baker: 'bread', smith: 'tools' };
 
   function assignJobs(world, owner) {
     const idle = all(world, 'settler').filter((s) => s.owner === owner && isIdleLabourer(s) && !s.leaving);

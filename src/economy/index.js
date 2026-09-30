@@ -30,6 +30,23 @@ function spotAround(b, id, extra = 1.2) {
   return [b.x + Math.sin(ang) * r, b.z + Math.cos(ang) * r];
 }
 
+/** Goods of one kind on their way to a workplace. */
+export function incomingOf(b, res) { const inc = b.stock.inIncoming; return (inc && inc[res]) || 0; }
+function unreserveIncoming(b, res, amt) {
+  if (!b.stock.inIncoming || typeof b.stock.inIncoming !== 'object') b.stock.inIncoming = {};
+  const left = Math.max(0, incomingOf(b, res) - amt);
+  if (left > 0) b.stock.inIncoming[res] = left; else delete b.stock.inIncoming[res];
+}
+function reserveIncoming(b, res, amt) {
+  if (!b.stock.inIncoming || typeof b.stock.inIncoming !== 'object') b.stock.inIncoming = {};
+  b.stock.inIncoming[res] = incomingOf(b, res) + amt;
+}
+
+// Who is served first when several workplaces wait for goods (lower = sooner), and how much of
+// a good stays in the Keep for building and meals before a workplace may take it.
+const DELIVER_PRIO = { mine: 110, mill: 125, bakery: 120, smithy: 130, canteen: 135 };
+const KEEP_BACK = { provisions: 2, timber: 12, iron: 4, flour: 0 };
+
 /** Undo reservations of a labourer's task; carried goods are returned to the store. */
 export function abandonTask(world, s) {
   const t = s.task;
@@ -40,7 +57,7 @@ export function abandonTask(world, s) {
     } else if (t.type === 'haul' && target && t.stage === 'toBuilding') {
       target.stock.outReserved = Math.max(0, target.stock.outReserved - t.amt);
     } else if (t.type === 'deliver' && target) {
-      target.stock.inIncoming = Math.max(0, target.stock.inIncoming - t.amt);
+      unreserveIncoming(target, t.res, t.amt);
     } else if (t.type === 'build' && target && target.build) {
       target.build.builders = target.build.builders.filter((id) => id !== s.id);
     } else if (t.type === 'repair' && target) {
@@ -89,7 +106,7 @@ export function createEconomyModule() {
           let out = 0;
           for (const r in b.stock.out) out += b.stock.out[r];
           const avail = out - b.stock.outReserved;
-          const food = b.stock.out.provisions > 0 && res.provisions < world.players[owner].pop * 2;
+          const food = (b.stock.out.provisions > 0 || b.stock.out.bread > 0) && res.provisions + res.bread * 2 < world.players[owner].pop * 2;
           if (avail >= 2 || (avail >= 1 && out >= def.outCap - 1) || (food && avail >= 1)) {
             // haul what the Keep is short of first; a well-stocked good can wait
             let kind = null; for (const r in b.stock.out) if (b.stock.out[r] > 0) { kind = r; break; }
@@ -98,12 +115,16 @@ export function createEconomyModule() {
             consider((food ? 40 : 150) + need + d - Math.min(60, avail * 8), { type: 'haul', from: b.id, amt: Math.min(HAUL_LOAD, avail), stage: 'toBuilding' });
           }
         }
-        if (def.inCap) {
-          const have = (b.stock.in.provisions || 0) + b.stock.inIncoming;
-          if (have <= def.inCap - DELIVER_LOAD && res.provisions >= DELIVER_LOAD + 2) {
+        if (def.inputs && !b.paused) {
+          for (const r in def.inputs) {
+            const have = (b.stock.in[r] || 0) + incomingOf(b, r);
+            if (have > def.inputs[r] - DELIVER_LOAD) continue;
+            // the Windmill only grinds grain the next meal does not need
+            const keepBack = (KEEP_BACK[r] || 0) + (b.type === 'mill' ? world.players[owner].pop : 0);
+            if (res[r] < DELIVER_LOAD + keepBack) continue;
             // an empty mine comes first; the Tavern's kitchen is a comfort and waits its turn
-            const prio = b.type === 'canteen' ? 135 : have === 0 ? 70 : 110;
-            consider(prio + d, { type: 'deliver', to: b.id, res: 'provisions', amt: DELIVER_LOAD, stage: 'toKeep' });
+            const prio = b.type === 'mine' && have === 0 ? 70 : (DELIVER_PRIO[b.type] || 120);
+            consider(prio + d, { type: 'deliver', to: b.id, res: r, amt: DELIVER_LOAD, stage: 'toKeep' });
           }
         }
         if (b.hp < b.maxHp * 0.75 && !b.repairer && world.tick - b.lastHitTick > 200 && res.timber >= 3) {
@@ -116,7 +137,7 @@ export function createEconomyModule() {
     const target = world.entities[best.site ?? best.from ?? best.to ?? best.target];
     if (best.type === 'supply') target.build.incoming[best.res] = (target.build.incoming[best.res] || 0) + best.amt;
     else if (best.type === 'haul') target.stock.outReserved += best.amt;
-    else if (best.type === 'deliver') target.stock.inIncoming += best.amt;
+    else if (best.type === 'deliver') reserveIncoming(target, best.res, best.amt);
     else if (best.type === 'build') { target.build.builders.push(s.id); best.spot = spotAround(target, s.id); }
     else if (best.type === 'repair') { target.repairer = s.id; best.spot = spotAround(target, s.id); }
     return best;
@@ -214,7 +235,7 @@ export function createEconomyModule() {
             if (amt <= 0) { abandonTask(world, s); break; }
             addRes(world, s.owner, t.res, -amt, 'deliver');
             s.carry = { res: t.res, amt };
-            target.stock.inIncoming = Math.max(0, target.stock.inIncoming - t.amt + amt);
+            unreserveIncoming(target, t.res, t.amt - amt);
             t.amt = amt;
             t.stage = 'toBuilding';
           }
@@ -222,7 +243,7 @@ export function createEconomyModule() {
           const d = doorOf(target);
           if (walk(d.x, d.z, 1.0) === 'arrived') {
             target.stock.in[t.res] = (target.stock.in[t.res] || 0) + s.carry.amt;
-            target.stock.inIncoming = Math.max(0, target.stock.inIncoming - t.amt);
+            unreserveIncoming(target, t.res, t.amt);
             s.carry = null; s.task = null;
             if (target.stall === 'noInput') target.stall = null;
           }

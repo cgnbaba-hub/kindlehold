@@ -89,7 +89,7 @@ function idleGesture(P, t, ph0) {
  */
 function carryArms(P, good) {
   if (good === 'timber') { P.armR = -1.35; P.armRz = 0.5; P.elbowR = -2.15; P.twist *= 0.5; }
-  else if (good === 'provisions') { P.armL = -1.35; P.armLz = -0.5; P.elbowL = -2.15; P.twist *= 0.5; }
+  else if (good === 'provisions' || good === 'flour') { P.armL = -1.35; P.armLz = -0.5; P.elbowL = -2.15; P.twist *= 0.5; }
   else { P.armL = P.armR = -0.72; P.elbowL = P.elbowR = -1.3; P.armLz = 0.18; P.armRz = -0.18; P.lean -= 0.05; P.twist *= 0.3; }
 }
 function keyPose(cls, name, out) { neutralPose(out); Object.assign(out, KEYS[cls][name]); return out; }
@@ -166,6 +166,12 @@ export function computePose(anim, f, P) {
       P.armL = -0.7; P.elbowL = -1.1; P.armLz = -0.1; P.lean += 0.18; P.nod = 0.18; P.kneeL = P.kneeR = 0.1;
       P.sway = Math.sin(a) * 0.02; P.twist = Math.sin(a) * 0.05;
       P.itemT = 0.12; P.itemW = 1; // the ladle points down into the kettle
+      break;
+    }
+    case 'knead': { // at the baker's table: both hands push the dough, the body rocks with it
+      const c = Math.sin(t * 3.0 + ph0);
+      P.armR = P.armL = -0.95 - c * 0.2; P.elbowR = P.elbowL = -0.8 + c * 0.35; P.armLz = -0.12; P.armRz = 0.12;
+      P.lean += 0.26 + c * 0.06; P.nod = 0.2; P.kneeL = P.kneeR = 0.1; P.bob = -0.01 * c;
       break;
     }
     case 'fish': { // rod held out over the water, a patient twitch now and then

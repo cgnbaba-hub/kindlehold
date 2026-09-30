@@ -305,7 +305,7 @@ export function createAudio({ bus, world, settings, getListener, terrain = null 
   // --- event wiring --------------------------------------------------------------------------------
   function on(name, fn) { unsub.push(bus.on(name, (d) => { if (!ok || !ctx || ctx.state !== 'running') return; try { fn(d); } catch (err) { log.warn('audio', err.message); } })); }
   on(EV.WORK_STRIKE, (d) => {
-    const map = { forester: 'chop', quarrier: 'pick', mine: 'anvil', build: 'hammer', repair: 'hammer', harvest: 'rustle', sow: 'rustle' };
+    const map = { forester: 'chop', quarrier: 'pick', mine: 'anvil', forge: 'anvil', build: 'hammer', repair: 'hammer', harvest: 'rustle', sow: 'rustle', mill: 'rustle' };
     const k = map[d.kind];
     if (k && allowed(k + Math.round(d.x / 8) + Math.round(d.z / 8), 120)) sfx[k](d.x, d.z);
   });

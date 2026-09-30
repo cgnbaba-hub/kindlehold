@@ -237,6 +237,25 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 - **Salt:** deposit `salt` (never depletes), Salt Works (25 timber, 10 stone; 12 m), salter
   earns 3 Taler per 8-s trip.
 
+## Production chains (save schema 4)
+
+- **Goods:** `flour`, `bread`, `tools` join the Keep store (RESOURCES). They show in the HUD
+  ribbon once the player has the building that makes them (or some in store).
+- **Windmill** (30 timber, 15 stone; miller): 2 provisions → 2 flour in 8 s. Inputs up to 8
+  provisions; labourers deliver grain only while the Keep holds more than `pop` + 5 provisions.
+  The sails turn while the miller works (view part in `buildings/view.js`).
+- **Bakery** (25 timber, 25 stone; baker): 2 flour + 1 timber → 2 bread in 9 s. Stores 8 flour,
+  4 timber.
+- **Smithy** (25 timber, 20 stone, 5 iron; smith): 2 iron + 1 timber → 1 tool in 10 s. Stores
+  6 iron, 4 timber. Timber deliveries keep 12 in the Keep for building, iron 4.
+- **Meals:** hot meals first, then bread (1 loaf = 2 portions, `BREAD_STABILITY` = +6 on the
+  stability target when everyone ate bread), then provisions.
+- **Level 3** for every workshop (lodge, quarry, farm, mine, hunter, fisher, salt works, tavern,
+  mill, bakery): 15 timber, 30 stone, 4 tools, 40 Taler; speed ×1.25 on top of level 2's ×1.2
+  (`workSpeedOf` multiplies the levels).
+- **Deliveries** are generic: a building's `inputs` lists goods and store sizes;
+  `stock.inIncoming` counts goods on the way per kind (was one number for provisions).
+
 ## Controls (default)
 
 Camera: right-drag grabs and moves the map (a short right-click stays the context order), arrow keys pan, screen-edge scrolling is optional (off by default), Q/E or middle-drag rotate, mouse wheel zooms towards the cursor,

@@ -166,8 +166,26 @@ three minutes; the clock shows the season). In winter:
 
 Select a building and press **Upgrade**: the Keep grows into a **Castle** and then a **Fortress**
 (more territory, housing and taxes), Cottages into **Stone Houses** and **Townhouses** (more
-housing), and workshops gain a second level (one more worker, 20% faster). Soldiers improve
-through research at the Keep: **Steel Mail** (tougher) and **Veteran Drill** (faster).
+housing), and workshops gain a second level (one more worker, 20% faster) and a third level
+(another 25% faster) that needs **tools** from a Smithy. Soldiers improve through research at
+the Keep: **Steel Mail** (tougher) and **Veteran Drill** (faster).
+
+## Production chains
+
+Once the settlement stands, three workshops turn simple goods into better ones. Labourers
+carry the raw goods from the Keep to each workshop and the products back, so every chain needs
+free hands as well as the building:
+
+* **Windmill** — the miller grinds grain (provisions) into **flour**. The mill only takes grain
+  while the Keep keeps enough for the next meal, so it never starves your people.
+* **Bakery** — the baker bakes flour into **bread**, firing the oven with timber
+  (2 flour + 1 timber → 2 loaves). One loaf feeds two people, so the chain stretches your
+  grain; bread is eaten after the Tavern's hot meals and before plain provisions, and fresh
+  bread lifts stability.
+* **Smithy** — the smith forges iron into **tools**, burning timber (2 iron + 1 timber → 1 tool).
+  Four tools (with timber, stone and Taler) raise any workshop to its third level.
+
+Flour, bread and tools appear in the top ribbon once you have the building that makes them.
 
 ## Day and night
 
@@ -180,7 +198,8 @@ rouse a volunteer if you train soldiers at night.
 
 Farmsteads grow grain, the **Hunter's Hut** hunts the deer herds (also in winter), and the
 **Tavern**'s cook turns two provisions into three hot meals. Hot meals are served first at
-mealtime and lift stability.
+mealtime and lift stability; then **bread** from the Bakery (two people per loaf, also lifts
+stability), then plain provisions.
 
 ## Exploring
 
@@ -202,7 +221,8 @@ the market. Prices drift back to normal over a few minutes.
   buildings lower it. Low stability slows all work; below 30 no one new arrives.
 * **Select a building** to see its workers, stock, fields, and — in amber — exactly why
   it has stopped: *no worker*, *storage full* (labourers are busy; you need more people),
-  *waiting for provisions*, *nothing left in range*, or *cannot be reached*.
+  *waiting for goods* (it names which: provisions, flour, timber or iron), *nothing left in
+  range*, or *cannot be reached*.
 * **Objectives** (top right) list what to do next; blue boxes are tutorial hints
   (switch off in Settings → Gameplay). Buttons that matter right now glow.
 

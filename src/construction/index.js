@@ -83,7 +83,7 @@ export function createBuildingEntity(world, { type, owner, x, z, rot = 0, state 
     hp: state === 'site' ? Math.round(def.hp * 0.2) : def.hp, maxHp: def.hp,
     build: state === 'site' ? { progress: 0, required: cost, supplied: {}, incoming: {}, builders: [] } : null,
     workers: [],
-    stock: { out: {}, in: {}, outReserved: 0, inIncoming: 0 },
+    stock: { out: {}, in: {}, outReserved: 0, inIncoming: {} },
     stall: null,
     lit: type !== 'keep',
     queue: [],
