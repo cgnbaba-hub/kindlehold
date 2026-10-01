@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { newSim, keep, place, runUntil, grant, units, all } from '../helpers/sim.js';
-import { UPGRADES, levelOf, slotsOf, BUILDINGS } from '../../src/buildings/defs.js';
+import { UPGRADES, levelOf, slotsOf, BUILDINGS, attackOf } from '../../src/buildings/defs.js';
 import { housingCap, paydayForecast } from '../../src/population/index.js';
 import { territorySources } from '../../src/world/territory.js';
 import { serializeWorld, deserializeWorld } from '../../src/save/index.js';
@@ -85,4 +85,38 @@ test('Steel Mail toughens soldiers; Veteran Drill needs the castle', () => {
   sim.step();
   assert.ok(!sim.world.players.p1.research, 'drill refused without the castle');
   assert.ok(units(sim).length > 0 && all(sim.world, 'building').length > 0);
+});
+
+test('watchtowers grow into stone towers and bastions: further reach, harder shots, more land', () => {
+  const sim = newSim();
+  sim.issue({ type: 'rekindle' });
+  sim.world.players.p1.techs.charter = true;
+  grant(sim, { ...RICH, tools: 10 });
+  const k = keep(sim);
+  const t = place(sim, 'tower', k.x + 24, k.z + 6);
+  runUntil(sim, () => t.state === 'active', 20 * 200);
+  assert.equal(t.state, 'active');
+  const a1 = attackOf(t), r1 = territorySources(sim.world).find((s) => s.id === t.id).r;
+  sim.issue({ type: 'upgrade', id: t.id });
+  runUntil(sim, () => levelOf(t) === 2, 20 * 200);
+  assert.equal(levelOf(t), 2);
+  const a2 = attackOf(t);
+  assert.equal(a2.range, a1.range + UPGRADES.tower[2].range);
+  assert.equal(a2.damage, a1.damage + UPGRADES.tower[2].damage);
+  assert.equal(territorySources(sim.world).find((s) => s.id === t.id).r, r1 + UPGRADES.tower[2].territory);
+  // the Bastion needs the Castle
+  sim.issue({ type: 'upgrade', id: t.id });
+  sim.step();
+  assert.ok(!t.upgrade, 'bastion refused without the castle');
+  k.level = 2;
+  sim.issue({ type: 'upgrade', id: t.id });
+  runUntil(sim, () => levelOf(t) === 3, 20 * 200);
+  assert.equal(levelOf(t), 3);
+  assert.ok(attackOf(t).cooldown < a2.cooldown, 'the bastion shoots more often');
+  // and it shoots raiders further out than a fresh tower could
+  const foe = spawnUnit(sim.world, 'reaver', 'p2', t.x + a1.range + 2, t.z);
+  foe.order = { type: 'hold', ax: foe.x, az: foe.z };
+  const hp0 = foe.hp;
+  runUntil(sim, () => foe.hp < hp0 || !sim.world.entities[foe.id], 20 * 10);
+  assert.ok(foe.hp < hp0 || !sim.world.entities[foe.id], 'hit beyond the old range');
 });

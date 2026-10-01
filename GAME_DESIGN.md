@@ -298,3 +298,15 @@ Controls. (WASD is not used for panning because A/S are unit orders.)
 ## Out of scope for Stage 1
 
 Diplomacy, trading, rain/other weather, multiple maps, skirmish, map editor, multiplayer.
+
+## Watchtower upgrades
+
+| Level | Name | Cost | Time | Bonus |
+|---|---|---|---|---|
+| 2 | Stone Watchtower | 15 T, 40 S, 5 I, 30 taler | 35 s | range +4 m (20 m), damage +4, territory +6 m, +250 hp |
+| 3 | Bastion Tower | 50 S, 10 I, 2 tools, 50 taler; needs the Castle | 45 s | reload ×0.7, damage +6, territory +6 m, +300 hp |
+
+Upgrades that add range, damage or a faster reload stack through `attackOf(b)` in
+`buildings/defs.js`, which combat and the selection panel both use. Towers are the
+Settlers-like way to grow the land, so each level also widens the territory.
+

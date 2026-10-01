@@ -202,6 +202,13 @@ export const UPGRADES = {
   mill: workshop('Stone Mill', 'Great Mill', { desc: 'A second miller and 20% faster grinding.' }),
   bakery: workshop("Baker's House", 'Guild Bakery', { desc: 'A second baker and 20% faster baking.' }),
   smithy: { 2: { ...WORKSHOP_L2, name: 'Forge', desc: 'A second smith and 20% faster forging.' } },
+  // towers: damage and range add up, rate shortens the reload; each level reaches further out
+  tower: {
+    2: { name: 'Stone Watchtower', cost: { timber: 15, stone: 40, iron: 5, taler: 30 }, time: 35, range: 4, damage: 4, territory: 6, hp: 250,
+      desc: 'Higher stone walls: range +4 m, +4 damage, territory +6 m.' },
+    3: { name: 'Bastion Tower', cost: { stone: 50, iron: 10, tools: 2, taler: 50 }, time: 45, rate: 0.7, damage: 6, territory: 6, hp: 300, requiresKeep: 2,
+      desc: 'A second archer with iron-tipped arrows: shoots 40% more often, +6 damage, territory +6 m. Needs the Castle and tools from the Smithy.' },
+  },
 };
 
 export function levelOf(b) { return b.level || 1; }
@@ -223,6 +230,15 @@ export function workSpeedOf(b) {
   let s = 1;
   for (let l = 2; l <= levelOf(b); l++) if (u[l] && u[l].speed) s *= u[l].speed;
   return s;
+}
+/** A building's shot with its upgrades (null if it does not shoot). */
+export function attackOf(b) {
+  const a = BUILDINGS[b.type].attack;
+  if (!a) return null;
+  const u = UPGRADES[b.type];
+  let cooldown = a.cooldown;
+  if (u) for (let l = 2; l <= levelOf(b); l++) if (u[l] && u[l].rate) cooldown *= u[l].rate;
+  return { ...a, damage: a.damage + upgradeBonus(b, 'damage'), range: a.range + upgradeBonus(b, 'range'), cooldown };
 }
 /** Goods a workplace takes in, with the store size for each (null if it takes none). */
 export function inputsOf(type) { return BUILDINGS[type].inputs || null; }

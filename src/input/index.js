@@ -231,7 +231,7 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
         const g = pickGround(ev.clientX, ev.clientY);
         if (g) {
           const x = Math.round(g.x * 2) / 2, z = Math.round(g.z * 2) / 2;
-          if (state.moveId != null) { issue({ type: 'move', id: state.moveId, x, z, rot: state.placeRot }); cancelMode(); return; }
+          if (state.moveId != null) { issue({ type: 'relocate', id: state.moveId, x, z, rot: state.placeRot }); cancelMode(); return; }
           issue({ type: 'place', buildingType: state.placeType, x, z, rot: state.placeRot });
           if (!ev.shiftKey) cancelMode();
         }

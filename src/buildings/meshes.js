@@ -755,6 +755,12 @@ const LEVEL_EXTRAS = {
     },
   },
 };
+LEVEL_EXTRAS.tower = {
+  // Stone Watchtower: the timber legs walled in with stone up to the platform
+  2: (rnd) => ({ body: [paint(place(cyl(1.75, 2.2, 6, 10), { y: 5.2 }), C.stone, 0.08, rnd, P.stone), ...banner(1.9, 10.4, 1.9, C.teal, rnd, 1.3)], glow: [win(0.4, 0.7, { x: 0, y: 5.6, z: 2.02 })] }),
+  // Bastion Tower: stone crenels round the platform and a second banner
+  3: (rnd) => ({ body: [...crenelRing(2.25, 9.5, 0, 0, Math.PI * 2, 13, rnd), ...banner(-1.9, 10.4, -1.9, C.gold, rnd, 1.3)], glow: [] }),
+};
 for (const t of ['lodge', 'quarry', 'farm', 'mine', 'hunter', 'fisher', 'saltworks', 'canteen', 'mill', 'bakery', 'smithy']) {
   LEVEL_EXTRAS[t] = {
     2: (rnd) => ({ body: [...leanTo(-3.4, -1.6, rnd), ...hangingSign(1.9, 3.9, t === 'mine' ? C.rust : C.teal), ...barrel(-3.8, -1.2), ...barrel(-3.0, -2.1)], glow: [] }),

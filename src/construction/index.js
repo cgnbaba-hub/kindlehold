@@ -227,7 +227,7 @@ export function createConstructionModule() {
       clearFootprint(world, b);
       emit(world, 'building:demolished', { id: b.id, type: b.type, x: b.x, z: b.z });
       remove(world, b.id, 'demolished');
-    } else if (cmd.type === 'move') {
+    } else if (cmd.type === 'relocate') {
       // take the building down and put it up again elsewhere: the materials come along
       // (all delivered at once), only the building time is spent again; the level is kept
       const b = world.entities[cmd.id];

@@ -69,7 +69,7 @@ test('a moved building is taken down and put up elsewhere with its materials and
   const before = { ...sim.world.players.p1.res };
   const spot = findSpot(sim.world, sim.services, 'lodge', k.x - 34, k.z - 4);
   assert.ok(spot, 'a free spot for the lodge');
-  sim.issue({ type: 'move', id: lodge.id, x: spot.x, z: spot.z });
+  sim.issue({ type: 'relocate', id: lodge.id, x: spot.x, z: spot.z });
   sim.step();
   assert.equal(sim.world.entities[lodge.id], undefined, 'the old lodge is gone');
   const site = all(sim.world, 'building').find((b) => b.type === 'lodge' && b.x === spot.x && b.z === spot.z);
@@ -80,9 +80,20 @@ test('a moved building is taken down and put up elsewhere with its materials and
   assert.equal(site.state, 'active');
   assert.equal(site.level, 2, 'the level is kept');
   // the Keep cannot be moved
-  sim.issue({ type: 'move', id: k.id, x: k.x + 30, z: k.z });
+  sim.issue({ type: 'relocate', id: k.id, x: k.x + 30, z: k.z });
   sim.step();
   assert.ok(sim.world.entities[k.id], 'the Keep stays');
+});
+
+test('ordering units to walk is not mistaken for moving a building', () => {
+  const sim = started();
+  const hero = all(sim.world, 'unit').find((u) => u.hero);
+  const rejected = [];
+  sim.bus.on('command:rejected', (r) => rejected.push(r.reason));
+  sim.issue({ type: 'move', ids: [hero.id], x: hero.x + 10, z: hero.z + 6 });
+  sim.step();
+  assert.deepEqual(rejected, []);
+  assert.equal(hero.order && hero.order.type, 'move');
 });
 
 test('soldiers heal at home once out of the fight, not out in the field', () => {
