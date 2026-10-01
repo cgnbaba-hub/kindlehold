@@ -5,6 +5,7 @@ import { all } from '../world/world.js';
 import { createStructureMaterial, PATTERN as P } from '../render/structure-material.js';
 import { paint, place, merge, box, cyl, cone, ico } from '../render/geometry-kit.js';
 import { flushInstances } from '../render/instancing.js';
+import { createSkinnedAnimals } from './animals-skinned.js';
 
 const MAX = 80;
 
@@ -31,7 +32,9 @@ function geometries() {
   return { body, head, antlers, leg };
 }
 
-export function createWildlifeView({ scene, terrain, world }) {
+export function createWildlifeView({ scene, terrain, world, animalAssets = null, camera = null }) {
+  // modelled, animated animals (Quaternius) when their data loaded; the simple deer otherwise
+  if (animalAssets) return skinnedView({ scene, terrain, world, assets: animalAssets, camera });
   const geos = geometries();
   const mat = createStructureMaterial({ roughness: 0.9 }, 'kh-structure');
   const mk = (g, n) => { const m = new THREE.InstancedMesh(g, mat, n); m.count = 0; m.castShadow = true; m.frustumCulled = false; scene.add(m); return m; };
@@ -82,5 +85,41 @@ export function createWildlifeView({ scene, terrain, world }) {
       for (const k in geos) geos[k].dispose();
       mat.dispose();
     },
+  };
+}
+
+function skinnedView({ scene, terrain, world, assets, camera }) {
+  const herd = createSkinnedAnimals({ scene, assets, max: MAX });
+  // only animals in view are skinned and drawn (each one is a few thousand triangles, twice with its shadow)
+  const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), ball = new THREE.Sphere(new THREE.Vector3(), 3);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
+  const last = new Map(); // id -> [x, z, speed]
+  const f = { id: 0, kind: 'deer', anim: 'idle', matrix: m4, dt: 0, speed: 0 };
+  return {
+    id: 'wildlife-view',
+    kind: 'view',
+    render(alpha, frame) {
+      const dt = frame.dt || 0;
+      herd.begin();
+      if (camera) frustum.setFromProjectionMatrix(pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+      let n = 0;
+      for (const a of all(world(), 'animal')) {
+        const x = a.px + (a.x - a.px) * alpha, z = a.pz + (a.z - a.pz) * alpha;
+        const l = last.get(a.id) || [x, z, 0];
+        const moved = Math.hypot(x - l[0], z - l[1]);
+        const sp = dt > 0 && moved < 3 ? l[2] + (moved / dt - l[2]) * Math.min(1, dt * 6) : l[2];
+        last.set(a.id, [x, z, sp]);
+        const y = terrain.height(x, z);
+        ball.center.set(x, y + 1, z);
+        if (camera && !frustum.intersectsSphere(ball)) continue;
+        if (n++ >= MAX) break;
+        m4.compose(p.set(x, y, z), q.setFromAxisAngle(up, a.heading || 0), s);
+        f.id = a.id; f.kind = a.id % 3 === 0 ? 'stag' : 'deer'; f.anim = a.anim || 'idle'; f.dt = dt; f.speed = sp;
+        herd.draw(f);
+      }
+      herd.end(dt);
+      if (last.size > MAX * 3) last.clear();
+    },
+    dispose() { herd.dispose(); },
   };
 }

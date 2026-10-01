@@ -10,6 +10,7 @@ import { createVegetation } from '../environment/vegetation.js';
 import { createWinter } from '../environment/winter.js';
 import { createShroud } from '../environment/shroud.js';
 import { createWildlifeView } from '../environment/wildlife-view.js';
+import { loadAnimalAssets } from '../environment/animals-skinned.js';
 import { createPoisView } from '../environment/pois-view.js';
 import { createBuildingsView } from '../buildings/view.js';
 import { createUnitsView } from '../units/view.js';
@@ -43,7 +44,9 @@ export async function createSession({ container, seed, quality = 'high', verify 
   const terrainView = views.register(createTerrainView({ scene: rc.scene, terrain: sim.terrain, quality: rc.quality, world }));
   const water = views.register(createWater({ scene: rc.scene, terrain: sim.terrain }));
   views.register(createVegetation({ scene: rc.scene, terrain: sim.terrain, world, quality: rc.quality }));
-  views.register(createWildlifeView({ scene: rc.scene, terrain: sim.terrain, world }));
+  // modelled, animated deer and stags (Quaternius); ?animals=classic keeps the simple ones
+  const animalAssets = typeof location !== 'undefined' && /[?&]animals=classic\b/.test(location.search) ? null : await loadAnimalAssets();
+  views.register(createWildlifeView({ scene: rc.scene, terrain: sim.terrain, world, animalAssets, camera: rc.camera }));
   views.register(createPoisView({ scene: rc.scene, terrain: sim.terrain, world }));
   // modelled buildings (KayKit); the setting or ?blds=classic keeps the procedural ones
   const modelled = settings.modelledBuildings !== false && !(typeof location !== 'undefined' && /[?&]blds=classic\b/.test(location.search));

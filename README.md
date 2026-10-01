@@ -43,7 +43,7 @@ tooling, measured instead of guessing, and documented every step for the next se
 
 What that process looks like in the repository:
 
-- **153 automated tests** (`node:test`): unit, integration and *deterministic simulation* tests
+- **154 automated tests** (`node:test`): unit, integration and *deterministic simulation* tests
   that replay whole chapters with a scripted bot.
 - **17 end-to-end tests** in a real browser (Playwright): menus, tutorial, save/load round trip,
   every campaign chapter, graphics driver reset, layout at 1280×720.
@@ -81,7 +81,7 @@ More: [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) (a short to
 ```bash
 npm ci                 # Node 20+
 npm run dev            # http://127.0.0.1:5180/
-npm test               # the 153 tests
+npm test               # the 154 tests
 npm run build && npm run preview
 npm run test:e2e       # browser tests (needs: npx playwright install chromium)
 ```
@@ -110,6 +110,7 @@ Game design, story, code, terrain, music and sound are original to this project,
 most of it generated procedurally at runtime. Characters and their animations: **KayKit
 Adventurers Character Pack** by Kay Lousberg (CC0), recoloured and dressed for Kindlehold's
 roles. Building models and props: **KayKit Medieval Hexagon Pack** by Kay Lousberg (CC0).
+Deer and stags: **Ultimate Animated Animal Pack** by Quaternius (CC0).
 Rendering: three.js (MIT). Every external file is listed in
 [ASSET_REGISTER.md](ASSET_REGISTER.md).
 
