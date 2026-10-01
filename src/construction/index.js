@@ -2,10 +2,10 @@
 // demolition and repair bookkeeping. Labourers perform the physical work (economy).
 import { EV, PLAYER, DT } from '../core/contracts.js';
 import { spawn, remove, all, emit, alert } from '../world/world.js';
-import { BUILDINGS, buildingDef, nextUpgrade, levelOf, displayName } from '../buildings/defs.js';
+import { BUILDINGS, UPGRADES, buildingDef, nextUpgrade, levelOf, displayName } from '../buildings/defs.js';
 import { stabilityFactor } from '../population/index.js';
 import { territorySources, territoryOwner } from '../world/territory.js';
-import { pay, refund } from '../economy/stock.js';
+import { pay, refund, addRes } from '../economy/stock.js';
 import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
 
 export const MAX_BUILDERS = 3;
@@ -24,7 +24,7 @@ export function buildCost(world, owner, type) {
  * Placement validity shared by the simulation and the UI preview.
  * @returns {{ok:boolean, reason?:string, deposit?:number}}
  */
-export function checkPlacement(world, services, owner, type, x, z) {
+export function checkPlacement(world, services, owner, type, x, z, ignoreId = null) {
   const def = BUILDINGS[type];
   if (!def) return { ok: false, reason: 'Unknown building' };
   if (!def.buildable && owner === PLAYER) return { ok: false, reason: 'Cannot be built' };
@@ -49,7 +49,7 @@ export function checkPlacement(world, services, owner, type, x, z) {
   if (territoryOwner(world, x, z, src) !== owner) return { ok: false, reason: 'Outside your territory' };
   // collisions with buildings and deposits
   for (const b of all(world, 'building')) {
-    if (b.state === 'destroyed') continue;
+    if (b.state === 'destroyed' || b.id === ignoreId) continue;
     const r = BUILDINGS[b.type].radius + def.radius + 1.2;
     if ((b.x - x) ** 2 + (b.z - z) ** 2 < r * r) return { ok: false, reason: `Too close to ${BUILDINGS[b.type].name}` };
   }
@@ -138,14 +138,28 @@ export function completeBuilding(world, b) {
       b.plots.push({ x: b.x + Math.sin(ang) * 9.5, z: b.z + Math.cos(ang) * 9.5, growth: 0, state: 'fallow' });
     }
   }
+  // a moved building comes back at the level it had
+  if (b.movedLevel > 1) {
+    for (let l = 2; l <= b.movedLevel; l++) { const up = UPGRADES[b.type] && UPGRADES[b.type][l]; if (up && up.hp) b.maxHp += up.hp; }
+    b.level = b.movedLevel; b.hp = b.maxHp;
+  }
+  delete b.movedLevel;
   if (b.owner === PLAYER) world.stats.buildingsBuilt++;
   emit(world, EV.BUILDING_COMPLETED, { id: b.id, type: b.type, owner: b.owner });
 }
 
+/** Buildings that can be moved (the Keep stays where it was founded). */
+export function canMove(b) { return !!b && b.kind === 'building' && b.state === 'active' && b.type !== 'keep' && !!BUILDINGS[b.type].buildable; }
+
 export function releaseWorkers(world, b) {
   for (const wid of b.workers) {
     const s = world.entities[wid];
-    if (s) { s.job = null; s.workplace = null; s.task = null; s.carry = null; }
+    if (!s) continue;
+    // let go of the tree, rock, deer or field they were working on
+    const t = s.task;
+    for (const id of t ? [t.deposit, t.prey] : []) { const e = id != null && world.entities[id]; if (e && e.reservedBy === s.id) e.reservedBy = null; }
+    if (t && t.plot != null && b.plots && b.plots[t.plot] && b.plots[t.plot].tender === s.id) b.plots[t.plot].tender = undefined;
+    s.job = null; s.workplace = null; s.task = null; s.carry = null;
   }
   b.workers = [];
 }
@@ -213,6 +227,31 @@ export function createConstructionModule() {
       clearFootprint(world, b);
       emit(world, 'building:demolished', { id: b.id, type: b.type, x: b.x, z: b.z });
       remove(world, b.id, 'demolished');
+    } else if (cmd.type === 'move') {
+      // take the building down and put it up again elsewhere: the materials come along
+      // (all delivered at once), only the building time is spent again; the level is kept
+      const b = world.entities[cmd.id];
+      if (!canMove(b) || b.owner !== owner) return reject('This building cannot be moved', cmd);
+      if (b.upgrade) return reject('Wait until the upgrade is finished', cmd);
+      const x = Number(cmd.x), z = Number(cmd.z);
+      if (!Number.isFinite(x) || !Number.isFinite(z)) return reject('Invalid position', cmd);
+      if (Math.hypot(x - b.x, z - b.z) < 1) return reject('That is where it stands', cmd);
+      const chk = checkPlacement(world, ctx.services, owner, b.type, x, z, b.id);
+      if (!chk.ok) return reject(chk.reason, cmd);
+      const rot = Number.isFinite(Number(cmd.rot)) ? Number(cmd.rot) : (b.rot || 0);
+      const site = createBuildingEntity(world, { type: b.type, owner, x, z, rot });
+      if (!site) return reject('Too many entities', cmd);
+      site.build.supplied = { ...site.build.required };
+      if (levelOf(b) > 1) site.movedLevel = levelOf(b);
+      if (b.paused) site.paused = true;
+      // goods waiting in the old building go to the store
+      for (const r in b.stock.out) if (b.stock.out[r] > 0) addRes(world, owner, r, b.stock.out[r], 'move');
+      for (const r in b.stock.in) if (b.stock.in[r] > 0) addRes(world, owner, r, b.stock.in[r], 'move');
+      releaseWorkers(world, b);
+      clearFootprint(world, b);
+      emit(world, 'building:moved', { from: b.id, to: site.id, type: b.type, x, z });
+      remove(world, b.id, 'moved');
+      if (world.selection.ids.length === 0) world.selection.ids.push(site.id);
     } else if (cmd.type === 'toggleWork') {
       const b = world.entities[cmd.id];
       if (!b || b.kind !== 'building' || b.owner !== owner || b.state !== 'active' || !BUILDINGS[b.type].slots) return reject('This building has no workers', cmd);

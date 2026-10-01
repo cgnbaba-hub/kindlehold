@@ -142,7 +142,7 @@ DEMO_STATES.chains = (sim) => {
   const w = sim.world;
   sim.issue({ type: 'rekindle' });
   Object.assign(w.players.p1.res, { timber: 300, stone: 200, iron: 40, provisions: 150, flour: 10 });
-  for (const [type, x, z] of [['mill', -44, 52], ['bakery', -34, 60], ['smithy', -52, 64], ['lodge', -58, 46]]) {
+  for (const [type, x, z] of [['mill', -44, 52], ['bakery', -34, 60], ['smithy', -52, 64], ['lodge', -58, 46], ['storehouse', -30, 44]]) {
     const spot = findSpot(w, sim.services, type, x, z);
     if (!spot) continue;
     const b = createBuildingEntity(w, { type, owner: 'p1', x: spot.x, z: spot.z, rot: 0.5, state: 'active' });

@@ -258,7 +258,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
         if (ghostType !== st.placeType) { ghost.geometry = buildingGeometries(st.placeType, def.radius).body; ghostType = st.placeType; }
         const x = Math.round(g.x * 2) / 2, z = Math.round(g.z * 2) / 2;
         placeCheckTimer += frame.dt;
-        if (placeCheckTimer > 0.08) { placeCheckTimer = 0; lastCheck = checkPlacement(w, sim.services, PLAYER, st.placeType, x, z); }
+        if (placeCheckTimer > 0.08) { placeCheckTimer = 0; lastCheck = checkPlacement(w, sim.services, PLAYER, st.placeType, x, z, st.moveId ?? null); }
         const ok = lastCheck.ok;
         ghost.visible = true;
         ghost.position.set(x, terrain.height(x, z), z);

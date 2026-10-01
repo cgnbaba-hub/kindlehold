@@ -243,6 +243,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       ['lodge', 'Build an economy', 'Open the Build menu (B by default). Lodges need trees, Quarries rock, Mines an iron vein. Labourers carry materials and build.'],
       ['pop', 'People are everything', 'Cottages house five. New settlers need free housing and provisions. Every workplace and soldier uses one person.'],
       ['provisions', 'Feed them', 'Everyone eats every 90 s. Hunger lowers stability, and low stability slows all work.'],
+      ['storehouse', 'Storehouses and idle hands', 'Labourers carry goods to and from the nearest store — build Storehouses for outlying quarters. At the Keep, Idle hands: Gather lets labourers with nothing to do fell trees and cut stone. Any building can be moved (Move): materials come along, only building time is spent.'],
       ['mill', 'Production chains', 'A Windmill grinds grain into flour, a Bakery bakes it into bread (one loaf feeds two and cheers people up), a Smithy forges iron into tools for the third workshop level.'],
       ['alertWarn', 'Read the warnings', 'Selected buildings tell you exactly why they stall: no worker, storage full, no input, nothing in range.'],
       ['research', 'Research at the Keep', 'Keen Axes, Braced Timber, Tempered Blades and the March Charter (which unlocks Watchtowers).'],

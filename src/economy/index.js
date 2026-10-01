@@ -22,12 +22,34 @@ export const GATHER = {
   rock: { res: 'stone', perTrip: 2, work: 7.5, strike: 0.8, anim: 'pick', stand: 2.2 },
 };
 export const GATHER_RADIUS = 16; // keeps working the same grove / outcrop within this range
+// Idle labourers go gathering on their own while the store is below these amounts, within
+// `range` metres of the nearest store, leaving `keepFree` idle for hauling and new workplaces.
+export const AUTO_GATHER = { timber: 120, stone: 80, range: 45, keepFree: 1 };
 
 function spotAround(b, id, extra = 1.2) {
   const def = BUILDINGS[b.type];
   const ang = (id * 2.399) % (Math.PI * 2);
   const r = def.radius + extra;
   return [b.x + Math.sin(ang) * r, b.z + Math.cos(ang) * r];
+}
+
+/** A place labourers fetch goods from and bring them to: the Keep, or a finished Storehouse. */
+export function isStore(b, owner) {
+  return !!b && b.kind === 'building' && b.owner === owner && ((b.type === 'keep' && b.state !== 'destroyed') || (b.type === 'storehouse' && b.state === 'active'));
+}
+/**
+ * The store for one trip. 'fetch': the shortest way from the labourer via the store to the
+ * target; 'drop': the store nearest to where the goods are (the target, or the labourer).
+ */
+export function pickStore(world, s, target, mode) {
+  let best = null, bestD = Infinity;
+  const ref = target || s;
+  for (const b of all(world, 'building')) {
+    if (!isStore(b, s.owner)) continue;
+    const d = mode === 'fetch' ? Math.hypot(b.x - s.x, b.z - s.z) + Math.hypot(b.x - ref.x, b.z - ref.z) : Math.hypot(b.x - ref.x, b.z - ref.z);
+    if (d < bestD) { bestD = d; best = b; }
+  }
+  return best;
 }
 
 /** Goods of one kind on their way to a workplace. */
@@ -150,6 +172,13 @@ export function createEconomyModule() {
     const door = doorOf(keep);
     const keepSpot = [door.x + ((s.id % 7) - 3) * 0.6, door.z + 0.8];
     const target = t && t.type !== 'idle' ? world.entities[t.site ?? t.from ?? t.to ?? t.target] : null;
+    // goods are fetched from and brought to the best store for this trip: the Keep or a Storehouse
+    const storeSpot = (mode) => {
+      let st = t.store != null ? world.entities[t.store] : null;
+      if (!isStore(st, s.owner)) { st = pickStore(world, s, target, mode) || keep; t.store = st.id; }
+      const d = doorOf(st);
+      return [d.x + ((s.id % 7) - 3) * 0.6, d.z + 0.8];
+    };
     if (t && t.type !== 'idle' && (!target || target.state === 'destroyed' || (t.type === 'build' && target.state !== 'site') || (t.type === 'supply' && target.state !== 'site'))) {
       abandonTask(world, s);
       return;
@@ -177,7 +206,8 @@ export function createEconomyModule() {
       }
       case 'supply': {
         if (t.stage === 'toKeep') {
-          if (walk(keepSpot[0], keepSpot[1]) === 'arrived') { s.carry = { res: t.res, amt: t.amt }; t.stage = 'toSite'; }
+          const sp = storeSpot('fetch');
+          if (walk(sp[0], sp[1]) === 'arrived') { s.carry = { res: t.res, amt: t.amt }; t.stage = 'toSite'; }
         } else {
           const [x, z] = spotAround(target, s.id, 0.9);
           if (walk(x, z, 1.0) === 'arrived') {
@@ -220,7 +250,7 @@ export function createEconomyModule() {
             t.stage = 'toKeep';
             if (target.stall === 'storageFull') target.stall = null;
           }
-        } else if (walk(keepSpot[0], keepSpot[1]) === 'arrived') {
+        } else if (walk(...storeSpot('drop')) === 'arrived') {
           addRes(world, s.owner, s.carry.res, s.carry.amt, 'haul');
           emit(world, 'goods:stored', { id: s.id, res: s.carry.res, amt: s.carry.amt, x: s.x, z: s.z });
           s.carry = null; s.task = null;
@@ -229,7 +259,7 @@ export function createEconomyModule() {
       }
       case 'deliver': {
         if (t.stage === 'toKeep') {
-          if (walk(keepSpot[0], keepSpot[1]) === 'arrived') {
+          if (walk(...storeSpot('fetch')) === 'arrived') {
             const p = world.players[s.owner];
             const amt = Math.min(t.amt, Math.floor(p.res[t.res]));
             if (amt <= 0) { abandonTask(world, s); break; }
@@ -252,7 +282,7 @@ export function createEconomyModule() {
       }
       case 'repair': {
         if (t.stage === 'toKeep') {
-          if (walk(keepSpot[0], keepSpot[1]) === 'arrived') {
+          if (walk(...storeSpot('fetch')) === 'arrived') {
             const p = world.players[s.owner];
             if (p.res.timber < t.amt) { abandonTask(world, s); break; }
             addRes(world, s.owner, 'timber', -t.amt, 'repair');
@@ -362,7 +392,11 @@ export function createEconomyModule() {
         break;
       }
       case 'toKeep': {
-        const spot = [door.x + ((s.id % 7) - 3) * 0.6, door.z + 0.8];
+        // the nearest store (Keep or Storehouse)
+        let st = t.store != null ? world.entities[t.store] : null;
+        if (!isStore(st, s.owner)) { st = pickStore(world, s, null, 'drop') || keep; t.store = st.id; }
+        const sd = st === keep ? door : doorOf(st);
+        const spot = [sd.x + ((s.id % 7) - 3) * 0.6, sd.z + 0.8];
         if (walk(spot[0], spot[1], 0.8) === 'arrived') {
           if (s.carry) {
             addRes(world, s.owner, s.carry.res, s.carry.amt, 'gather');
@@ -371,6 +405,9 @@ export function createEconomyModule() {
             emit(world, EV.PRODUCTION_CYCLE, { id: s.id, res: s.carry.res, amount: s.carry.amt, x: s.x, z: s.z });
           }
           s.carry = null;
+          t.store = null;
+          // a labourer who went on their own does one trip, then looks for work again
+          if (o.auto) { releaseGather(world, s); return; }
           t.stage = 'find';
         }
         break;
@@ -379,8 +416,54 @@ export function createEconomyModule() {
     }
   }
 
+  function countCrew(world) {
+    const out = {};
+    for (const s of all(world, 'settler')) {
+      if (s.job || s.arriving || s.leaving || s.enlisting) continue;
+      const c = out[s.owner] ||= { labourers: 0, idle: 0, auto: 0 };
+      c.labourers++;
+      if (s.order && s.order.auto) c.auto++;
+      else if (isIdleLabourer(s)) c.idle++;
+    }
+    return out;
+  }
+
+  /**
+   * A labourer with nothing to do fells a tree or cuts stone by hand when the store runs short,
+   * one trip at a time (then the task board decides again). Some always stay free for hauling.
+   */
+  function autoGather(world, s, c) {
+    const p = world.players[s.owner];
+    if (!c || !p || p.autoGather === false) return false;
+    if (c.idle <= AUTO_GATHER.keepFree || c.auto >= Math.max(1, Math.floor(c.labourers / 3))) return false;
+    const needT = p.res.timber / AUTO_GATHER.timber, needS = p.res.stone / AUTO_GATHER.stone;
+    if (needT >= 1 && needS >= 1) return false;
+    const kind = needT <= needS ? 'tree' : 'rock';
+    const home = pickStore(world, s, null, 'drop') || s;
+    let best = null, bestD = Infinity;
+    for (const d of all(world, 'deposit')) {
+      if (d.type !== kind || d.amount <= 0) continue;
+      if (d.reservedBy && world.entities[d.reservedBy]) continue;
+      const dh = Math.hypot(d.x - home.x, d.z - home.z);
+      if (dh > AUTO_GATHER.range) continue;
+      const dd = dh + Math.hypot(d.x - s.x, d.z - s.z) * 0.5;
+      if (dd < bestD) { bestD = dd; best = d; }
+    }
+    if (!best) return false;
+    stopWalking(s);
+    s.task = null;
+    s.order = { type: 'gather', kind, x: best.x, z: best.z, deposit: best.id, auto: true };
+    c.idle--; c.auto++;
+    return true;
+  }
+
   function onCommand(cmd) {
     const world = ctx.world;
+    if (cmd.type === 'setAutoGather') {
+      const p = world.players[cmd.owner || 'p1'];
+      if (p) p.autoGather = !!cmd.on;
+      return;
+    }
     if (cmd.type !== 'gather' && cmd.type !== 'release') return;
     if (!Array.isArray(cmd.ids)) return;
     const owner = cmd.owner || 'p1';
@@ -416,6 +499,7 @@ export function createEconomyModule() {
     },
     update() {
       const world = ctx.world;
+      let crew = null; // idle and self-sent labourers per owner, counted once a tick when needed
       for (const s of all(world, 'settler')) {
         if (s.job || s.arriving || s.leaving || s.sleep) continue;
         if (s.enlisting) continue; // handled by recruitment
@@ -426,6 +510,7 @@ export function createEconomyModule() {
         if (!s.task || (s.task.type === 'idle' && (world.tick + s.id) % 10 === 0)) {
           const task = isIdleLabourer(s) || s.task === null ? chooseTask(world, s, keep) : null;
           if (task) { stopWalking(s); s.task = task; }
+          else if (s.task && (world.tick + s.id) % 40 === 0 && (crew ||= countCrew(world)) && autoGather(world, s, crew[s.owner])) continue;
           else if (!s.task) {
             const door = doorOf(keep);
             const ang = (s.id * 1.7 + Math.floor(world.tick / 400)) % (Math.PI * 2);
