@@ -50,6 +50,7 @@ export function createDiagnostics({ root, session, settings }) {
       pixelRatio: r.pixelRatio, canvas: `${r.width}x${r.height}`,
       reduced: load ? load.reduced.join('+') || '-' : '-',
       speed: session.loop.getSpeed(),
+      audio: session.audio && session.audio.state ? session.audio.state() : '-',
     };
     rows.push(row);
     if (rows.length > KEEP) rows.shift();

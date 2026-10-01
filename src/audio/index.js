@@ -69,14 +69,20 @@ export function createAudio({ bus, world, settings, getListener, terrain = null 
     buses.voice.gain.value = settings.voiceVolume;
   }
 
-  /** Resume on first user gesture (autoplay policy). */
+  // Safari pauses the context as 'interrupted' (another app or tab took the sound, the Mac slept),
+  // others as 'suspended': either way the next user gesture or return to the tab wakes it again
+  let paused = false; // the game's pause menu holds the sound on purpose
+  const asleep = () => ctx && ctx.state !== 'running' && ctx.state !== 'closed';
+  /** Resume on a user gesture (autoplay policy), and whenever the sound was interrupted. */
   function unlock() {
     init();
-    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    if (asleep() && !paused) ctx.resume().catch(() => {});
     if (ok && !started) { started = true; startAmbience(); startMusic(); }
   }
-  const gestures = ['pointerdown', 'keydown'];
+  const gestures = ['pointerdown', 'pointerup', 'click', 'keydown', 'touchend'];
   for (const g of gestures) window.addEventListener(g, unlock, { passive: true });
+  const onVisible = () => { if (document.visibilityState === 'visible' && started && asleep() && !paused) ctx.resume().catch(() => {}); };
+  document.addEventListener('visibilitychange', onVisible);
 
   // --- positional helper ------------------------------------------------------------------
   function spatialGain(x, z) {
@@ -348,12 +354,15 @@ export function createAudio({ bus, world, settings, getListener, terrain = null 
       updateAmbience(frame.dt);
       updateMusic();
     },
-    pause() { if (ctx && ctx.state === 'running') ctx.suspend().catch(() => {}); },
-    resume() { if (ctx && ctx.state === 'suspended' && started) ctx.resume().catch(() => {}); },
+    /** 'running', 'suspended', 'interrupted' (Safari), 'closed', or 'waiting' before the first input. */
+    state: () => (failed ? 'unavailable' : ctx ? ctx.state : 'waiting'),
+    pause() { paused = true; if (ctx && ctx.state === 'running') ctx.suspend().catch(() => {}); },
+    resume() { paused = false; if (started && asleep()) ctx.resume().catch(() => {}); },
     getHealthStatus() { return failed ? { status: 'degraded', detail: `audio unavailable: ${failed}` } : { status: 'ok', detail: ctx ? ctx.state : 'waiting for first input' }; },
     dispose() {
       unsub.forEach((u) => u());
       for (const g of gestures) window.removeEventListener(g, unlock);
+      document.removeEventListener('visibilitychange', onVisible);
       if (ctx) ctx.close().catch(() => {});
       ctx = null; ok = false;
     },

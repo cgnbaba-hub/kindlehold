@@ -10,7 +10,7 @@ import { createMinimap } from './minimap.js';
 import { createFloaters } from './floaters.js';
 import { all } from '../world/world.js';
 import { PLAYER, EV, RESOURCES } from '../core/contracts.js';
-import { BUILDINGS, PLAYER_BUILD_ORDER, UPGRADES, nextUpgrade, levelOf, displayName, upgradeBonus, slotsOf } from '../buildings/defs.js';
+import { BUILDINGS, PLAYER_BUILD_ORDER, UPGRADES, nextUpgrade, levelOf, displayName, upgradeBonus, slotsOf, attackOf } from '../buildings/defs.js';
 import { UNITS, RECRUITABLE, COUNTERS } from '../units/defs.js';
 import { TECHS, TECH_ORDER } from '../technology/defs.js';
 import { researchBlocker } from '../technology/index.js';
@@ -537,6 +537,7 @@ export function createHud({ root, session, input, settings, actions }) {
         if (def.inputs) selPanel.append(h('div.sel-row.small', { text: `In store: ${Object.keys(def.inputs).map((r) => `${RES_NAMES[r].toLowerCase()} ${Math.floor(e.stock.in[r] || 0)}/${def.inputs[r]}`).join(' · ')}` }));
         if (e.type === 'canteen') selPanel.append(h('div.sel-row.small', { text: `Hot meals ready: ${Math.floor(e.meals || 0)}/${def.mealCap} — served first at every mealtime` }));
         if (def.housing) selPanel.append(h('div.sel-row.small', { text: `Houses ${def.housing + upgradeBonus(e, 'housing') + (e.type === 'keep' && w.players[PLAYER].techs.charter ? 6 : 0)} people` }));
+        if (def.attack && e.owner === PLAYER) { const a = attackOf(e); selPanel.append(h('div.sel-row.small', { text: `Shoots ${a.damage} damage every ${a.cooldown.toFixed(1)} s within ${a.range} m` })); }
         if (e.type === 'farm' && e.plots) selPanel.append(h('div.sel-row.small', { text: `Fields: ${e.plots.filter((p) => p.state === 'ripe').length} ripe, ${e.plots.filter((p) => p.state === 'growing').length} growing` }));
         if (e.type === 'keep') {
           const p = w.players[PLAYER];

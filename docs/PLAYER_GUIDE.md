@@ -172,7 +172,9 @@ three minutes; the clock shows the season). In winter:
 Select a building and press **Upgrade**: the Keep grows into a **Castle** and then a **Fortress**
 (more territory, housing and taxes), Cottages into **Stone Houses** and **Townhouses** (more
 housing), and workshops gain a second level (one more worker, 20% faster) and a third level
-(another 25% faster) that needs **tools** from a Smithy. Soldiers improve through research at
+(another 25% faster) that needs **tools** from a Smithy. Watchtowers become **Stone Watchtowers**
+(range +4 m, +4 damage, +6 m territory) and then **Bastion Towers** (shoot 40% more often,
++6 damage, another +6 m territory; needs the Castle and 2 tools). Soldiers improve through research at
 the Keep: **Steel Mail** (tougher) and **Veteran Drill** (faster).
 
 ## Storehouses, idle hands, moving buildings
@@ -265,7 +267,7 @@ the market. Prices drift back to normal over a few minutes.
   **F — Beacon Flare** bursts her lantern (40 damage, enemies attack much slower for 5 s).
   **G — Kindle the Line** wards nearby allies (absorbs 60 damage) and speeds them up.
   If she falls she recovers at the Keep after 40 s.
-* **Watchtowers** shoot raiders within 16 m.
+* **Watchtowers** shoot raiders within 16 m (20 m once upgraded to a Stone Watchtower).
 
 ## Winning and losing
 

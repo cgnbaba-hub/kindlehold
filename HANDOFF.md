@@ -143,6 +143,32 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Rückmeldung 2026-10-01: Held, Ton, Titelbild, Turmstufen
+
+- **Fehler „This building cannot be moved“ beim Bewegen von Einheiten:** Der Gebäude-Befehl hieß
+  wie der Einheiten-Befehl `move`, also lehnte das Bau-Modul jeden Marschbefehl ab.
+  - Der Gebäude-Befehl heißt jetzt `relocate`.
+  - Regressionstest in `comfort.test.js`.
+  - Merke: Befehlstypen sind ein gemeinsamer Namensraum aller Module.
+- **Kein Ton (Safari):** Der Grund ist nicht bewiesen. In Chromium kommt Ton: Pegel 0,37.
+  Safari setzt den AudioContext auf `interrupted`, wenn eine andere App den Ton nimmt oder der Mac
+  schläft; der Code weckte ihn nur aus `suspended`. Jetzt weckt ihn jeder Zustand außer
+  `running`/`closed`:
+  - durch weitere Gesten (`pointerup`, `click`, `touchend`);
+  - wenn der Tab wieder sichtbar wird.
+  Im F3-Protokoll steht jetzt pro Zeile `audio`: `running`, `suspended`, `interrupted`, `waiting`
+  oder `unavailable`.
+- **Titelbild:** mit den neuen Figuren, Gebäuden und Tieren neu gerendert.
+  - Die Demo heißt jetzt `scouted`, die Kriegsnebel-Schicht wird abgeschaltet: Der Nebel kam erst
+    nach dem alten Bild.
+  - Skript: `scripts/assets/render-menu-art.mjs`.
+- **Turmstufen:** Stone Watchtower (Reichweite +4, Schaden +4, Gebiet +6 m) und Bastion Tower
+  (Nachladen ×0,7, Schaden +6, Gebiet +6 m; braucht die Burgstufe und 2 Werkzeuge).
+  - Werte in `UPGRADES.tower`; `attackOf(b)` liefert den Schuss mit Boni.
+  - KayKit: Stufe 2 nutzt `tower_B`, Stufe 3 Waffenständer und Flagge. Prozedural: Steinmantel,
+    dann Zinnen.
+  - Test in `upgrades.test.js`.
+
 ## Siedler-Komfort (nach dem Test des Nutzers am 2026-09-30)
 
 Rückmeldung nach 34 Minuten Spiel auf dem Mac (Safari, Apple GPU, Qualität Mittel, F3-Protokolle):

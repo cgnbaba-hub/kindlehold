@@ -3,7 +3,7 @@
 import { EV, PLAYER, DT } from '../core/contracts.js';
 import { all, emit, remove, alert } from '../world/world.js';
 import { UNITS, COUNTERS } from '../units/defs.js';
-import { BUILDINGS } from '../buildings/defs.js';
+import { BUILDINGS, attackOf } from '../buildings/defs.js';
 import { TECH_EFFECTS, hasTech, soldierMods } from '../technology/defs.js';
 import { hostile, provoke } from '../diplomacy/index.js';
 import { isAlive, reachDistance } from '../units/sim.js';
@@ -241,15 +241,16 @@ export function createCombatModule() {
         if (!def.attack || b.state !== 'active' || (def.attack.requiresLit && !b.lit)) continue;
         if (b.cooldown > 0) { b.cooldown--; continue; }
         if ((world.tick + b.id) % 4 !== 0) continue;
-        ctx.services.spatial.query(b.x, b.z, def.attack.range, buf, (e) => e.kind === 'unit' && hostileTo(b.owner)(e));
+        const shot = attackOf(b);
+        ctx.services.spatial.query(b.x, b.z, shot.range, buf, (e) => e.kind === 'unit' && hostileTo(b.owner)(e));
         let best = null, bestD = Infinity;
         for (const e of buf) { const d = (e.x - b.x) ** 2 + (e.z - b.z) ** 2; if (d < bestD) { bestD = d; best = e; } }
         if (!best) continue;
-        b.cooldown = Math.round(def.attack.cooldown * 20);
+        b.cooldown = Math.round(shot.cooldown * 20);
         const dist = Math.sqrt(bestD);
         const flight = Math.max(2, Math.round((dist / PROJECTILE_SPEED) * 20));
         const armor = UNITS[best.type].armor + soldierMods(world, best).armor;
-        const dmg = Math.max(1, Math.round(def.attack.damage * (1 - armor * 0.05)));
+        const dmg = Math.max(1, Math.round(shot.damage * (1 - armor * 0.05)));
         world.combat.pending.push({ from: b.id, owner: b.owner, target: best.id, damage: dmg, arrive: world.tick + flight, kind: b.owner === PLAYER ? 'arrow' : 'stone' });
         emit(world, EV.COMBAT_SHOT, { from: b.id, to: best.id, fx: b.x, fz: b.z, fy: 7, tx: best.x, tz: best.z, flightTicks: flight, kind: b.owner === PLAYER ? 'arrow' : 'stone' });
       }
