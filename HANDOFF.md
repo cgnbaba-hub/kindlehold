@@ -172,6 +172,12 @@ Tests: `tests/simulation/comfort.test.js`. Details in `GAME_DESIGN.md` („Settl
   Zuordnung: walk → Walk, run → Gallop, graze → Eating oder Idle_Headlow, idle → Idle oder Idle_2.
 - `wildlife-view.js`: jedes dritte Tier ist ein Hirsch (`id % 3`), die anderen sind Hirschkühe.
   `?animals=classic` zeigt die alten prozeduralen Tiere; die erscheinen auch, wenn die Daten nicht laden.
+- Gezeichnet werden nur Tiere im Kamerakegel; ohne das kamen in der Midgame-Demo +290 000 Dreiecke dazu.
+  Gemessen in der Midgame-Demo, Nahansicht einer Herde:
+  - mit Kegel-Test 1,654 M Dreiecke, die alten Tiere 1,656 M;
+  - 137 Draw Calls, die alten Tiere 141.
+  Frame-Zeiten aus der Software-Grafik im Container sind hier nicht aussagekräftig: Dieselbe Szene
+  schwankte zwischen 4 ms und 4 s.
 
 ## Modellierte Gebäude (KayKit Medieval Hexagon Pack, CC0) — Grafik-Prototyp
 
