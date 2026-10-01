@@ -11,6 +11,9 @@ import { soldierMods, TECH_EFFECTS } from '../technology/defs.js';
 import { hostile } from '../diplomacy/index.js';
 
 export const MAX_QUEUE = 5;
+// soldiers resting at home heal: hp per second, within these ranges of the buildings (metres)
+export const HOME_HEAL = 3;
+export const HEAL_AT = { keep: 26, barracks: 18, tower: 14 };
 export const LEASH = 22;
 const SEP_RADIUS = 0.9;
 const FOE_MIN_DIST = 1.1;
@@ -316,9 +319,21 @@ export function createUnitsModule() {
     }
   }
 
+  /** Out of the fight for 5 s within reach of the Keep, a Barracks or a Watchtower: +HOME_HEAL hp a second. */
+  function healAtHome(world) {
+    let homes = null;
+    for (const u of all(world, 'unit')) {
+      if (u.owner !== PLAYER || u.downed || u.hp >= u.maxHp) continue;
+      if (world.tick - (u.lastHitTick ?? -1e9) < 100) continue;
+      homes ||= all(world, 'building').filter((b) => b.owner === PLAYER && b.state === 'active' && HEAL_AT[b.type]);
+      if (homes.some((b) => (u.x - b.x) ** 2 + (u.z - b.z) ** 2 <= HEAL_AT[b.type] ** 2)) u.hp = Math.min(u.maxHp, u.hp + HOME_HEAL);
+    }
+  }
+
   return {
     id: 'units',
     kind: 'sim',
+    // (healAtHome below: the player's soldiers rest and heal at home, like the enemy at its hall)
     init(c) {
       ctx = c;
       unsub.push(c.bus.on('command', onCommand));
@@ -341,6 +356,7 @@ export function createUnitsModule() {
         updateUnit(world, u);
       }
       if (world.tick % 2 === 0) separate(world);
+      if (world.tick % 20 === 10) healAtHome(world);
     },
     dispose() { unsub.forEach((f) => f()); unsub.length = 0; },
   };

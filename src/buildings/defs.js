@@ -85,6 +85,11 @@ export const BUILDINGS = {
     cost: { timber: 30, stone: 20 }, buildTime: 24, hp: 450, radius: 4.4, navRadius: 3.6, slots: 1, job: 'cook',
     inputs: { provisions: 10 }, mealCap: 30, door: [0, 4.4],
   },
+  storehouse: {
+    id: 'storehouse', name: 'Storehouse', owner: 'p1', buildable: true,
+    desc: 'A second store for all goods. Labourers bring goods to the nearest store and fetch them from there, so outlying workshops and building sites are served much faster.',
+    cost: { timber: 35, stone: 25 }, buildTime: 26, hp: 550, radius: 4.2, navRadius: 3.4, door: [0, 4.2],
+  },
   // --- the longer production chains: grain -> flour -> bread, iron -> tools ---
   mill: {
     id: 'mill', name: 'Windmill', owner: 'p1', buildable: true,
@@ -227,7 +232,7 @@ export function displayName(b) {
   return BUILDINGS[b.type].name;
 }
 
-export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'fisher', 'canteen', 'quarry', 'mine', 'saltworks', 'mill', 'bakery', 'smithy', 'barracks', 'tower'];
+export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'fisher', 'canteen', 'quarry', 'mine', 'storehouse', 'saltworks', 'mill', 'bakery', 'smithy', 'barracks', 'tower'];
 
 export function buildingDef(type) {
   const d = BUILDINGS[type];

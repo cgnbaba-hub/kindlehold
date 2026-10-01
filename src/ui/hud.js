@@ -14,7 +14,7 @@ import { BUILDINGS, PLAYER_BUILD_ORDER, UPGRADES, nextUpgrade, levelOf, displayN
 import { UNITS, RECRUITABLE, COUNTERS } from '../units/defs.js';
 import { TECHS, TECH_ORDER } from '../technology/defs.js';
 import { researchBlocker } from '../technology/index.js';
-import { buildCost, upgradeBlocker } from '../construction/index.js';
+import { buildCost, upgradeBlocker, canMove } from '../construction/index.js';
 import { canAfford } from '../economy/stock.js';
 import { ABILITIES, heroAbilities } from '../heroes/index.js';
 import { STALL_TEXT, WORK, missingInputs } from '../production/index.js';
@@ -561,6 +561,16 @@ export function createHud({ root, session, input, settings, actions }) {
             rationRow.append(b);
           });
           selPanel.append(rationRow);
+          // idle labourers fell trees and cut stone on their own while the store runs short
+          const auto = p.autoGather !== false;
+          const gatherRow = h('div.tax-row', { role: 'group', 'aria-label': 'Idle labourers' }, [h('span', { text: 'Idle hands' })]);
+          [['Wait', false, 'Idle labourers wait at the Keep for work.'], ['Gather', true, 'Idle labourers fell trees and cut stone near a store while timber or stone run short.']].forEach(([name, on, tip]) => {
+            const cur = auto === on;
+            const b = h(`button.tax-btn${cur ? '.active' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'data-tip': tip, text: name });
+            b.addEventListener('click', () => { input.issue({ type: 'setAutoGather', on }); setTimeout(() => { dirtySel = true; }, 120); });
+            gatherRow.append(b);
+          });
+          selPanel.append(gatherRow);
           if ((p.feastUntil || 0) > w.tick) selPanel.append(h('div.sel-row.small', { text: `Feast in the hall: ${fmtTime((p.feastUntil - w.tick) / 20)} left (stability +${FEAST.stability})` }));
           selPanel.append(h('div.sel-row.small', { text: `Payday in ${fmtTime(Math.max(0, (p.nextPayTick ?? 0) - w.tick) / 20)}: +${f.taxes} taxes from ${f.settlers} settlers${f.pay ? `, −${f.pay} pay for ${f.soldiers} soldiers` : ''}` }));
         }
@@ -609,7 +619,7 @@ export function createHud({ root, session, input, settings, actions }) {
       else if (e.sleep) doing = e.sleep.in ? 'Asleep at home' : 'Heading home for the night';
       else if (e.arriving) doing = 'Arriving in Kindlehold';
       else if (e.enlisting) doing = 'Going to the Barracks to train';
-      else if (e.order) doing = e.carry ? `Carrying ${e.carry.amt} ${RES_NAMES[e.carry.res].toLowerCase()} to the Keep (your order)` : `${e.order.kind === 'tree' ? 'Felling trees' : 'Cutting stone'} by hand (your order)`;
+      else if (e.order) { const why = e.order.auto ? 'on their own: the store runs short' : 'your order'; doing = e.carry ? `Carrying ${e.carry.amt} ${RES_NAMES[e.carry.res].toLowerCase()} to the store (${why})` : `${e.order.kind === 'tree' ? 'Felling trees' : 'Cutting stone'} by hand (${why})`; }
       else if (e.job) doing = e.carry ? `Carrying ${e.carry.amt} ${RES_NAMES[e.carry.res].toLowerCase()}` : `Working at the ${BUILDINGS[w.entities[e.workplace] ? w.entities[e.workplace].type : 'keep'].name}`;
       else if (e.task) doing = { supply: 'Carrying building materials', build: 'Building', haul: 'Hauling goods to the Keep', deliver: 'Delivering provisions', repair: 'Repairing', idle: 'Idle at the hearth' }[e.task.type] || 'Busy';
       selPanel.append(head('settler', what, doing));
@@ -770,6 +780,9 @@ export function createHud({ root, session, input, settings, actions }) {
       if (def.slots) {
         cmdGrid.append(cmdButton({ ic: one.paused ? 'play' : 'pause', label: one.paused ? 'Resume work' : 'Pause work', tip: one.paused ? 'Let workers return to this building.' : 'Frees its workers for other work: hauling, building, other workplaces or soldier training. Useful when goods pile up or people are short.', active: !!one.paused, onClick: () => input.issue({ type: 'toggleWork', id: one.id }) }));
       }
+      if (canMove(one)) {
+        cmdGrid.append(cmdButton({ ic: 'move', label: 'Move', tipTitle: 'Move this building', tip: one.upgrade ? 'Wait until the upgrade is finished.' : 'Choose a new place: the building is taken down and put up again there. The materials come along and its level is kept; only the building time is spent again.', disabled: !!one.upgrade, active: input.state.moveId === one.id, onClick: () => input.startPlacement(one.type, { moveId: one.id }) }));
+      }
       const demoArmed = performance.now() - confirmDemolish < 3000;
       cmdGrid.append(cmdButton({ ic: 'demolish', label: demoArmed ? 'Click again to demolish' : 'Demolish', tip: 'Tear down this building (30% refund). Click twice to confirm.', active: demoArmed, onClick: () => {
         if (performance.now() - confirmDemolish < 3000) { input.issue({ type: 'demolish', id: one.id }); input.setSelection([]); confirmDemolish = 0; }
@@ -799,7 +812,7 @@ export function createHud({ root, session, input, settings, actions }) {
     if (st.mode === 'place') {
       banner.hidden = false;
       const reason = session.overlay ? session.overlay.placementReason : '';
-      setText(banner, `Placing ${BUILDINGS[st.placeType].name} — left-click to build, ${keyLabel(bindings().rotateLeft)}/${keyLabel(bindings().rotateRight)} to rotate, right-click to cancel${reason ? ' · ' + reason : ''}`);
+      setText(banner, `${st.moveId != null ? 'Moving' : 'Placing'} ${BUILDINGS[st.placeType].name} — left-click to ${st.moveId != null ? 'choose the new place (materials come along, only building time is spent)' : 'build'}, ${keyLabel(bindings().rotateLeft)}/${keyLabel(bindings().rotateRight)} to rotate, right-click to cancel${reason ? ' · ' + reason : ''}`);
       banner.classList.toggle('bad', !!reason);
     } else if (st.mode === 'target') {
       banner.hidden = false; banner.classList.remove('bad');

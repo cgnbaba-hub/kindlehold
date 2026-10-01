@@ -256,6 +256,20 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 - **Deliveries** are generic: a building's `inputs` lists goods and store sizes;
   `stock.inIncoming` counts goods on the way per kind (was one number for provisions).
 
+## Settler comfort
+
+- **Storehouse** (35 timber, 25 stone): `isStore`/`pickStore` in `economy/index.js`. Fetch trips
+  use the store with the shortest way labourer → store → target; drop-offs go to the store
+  nearest the goods. Stock stays one pool per player (no per-store inventories).
+- **Idle hands** (`AUTO_GATHER`): an idle labourer (checked every 2 s) fells a tree / cuts stone
+  within 45 m of a store while timber < 120 or stone < 80, one trip (`order.auto`), at most a third
+  of the labourers, one always left idle. Toggle per player: command `setAutoGather`
+  (`player.autoGather`, saved).
+- **Move** (command `move`): new site with all materials supplied, level kept (`movedLevel`),
+  goods in the old building go to the store; not the Keep, not during an upgrade.
+- **Healing**: player soldiers not hit for 5 s heal 3 hp/s within 26 m of the Keep, 18 m of a
+  Barracks, 14 m of a Watchtower (`HOME_HEAL`, `HEAL_AT` in `units/sim.js`).
+
 ## Random maps (free play "Wildlands")
 
 - `src/world/maps/wild.js` generates a map from a seed (the world's `meta.seed`, so saves need

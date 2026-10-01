@@ -34,6 +34,7 @@ export const BUILDING_STYLE = {
   mill: { model: 'windmill', size: 6.2, rot: 0, props: [P('sack', 2.2, 2.6, 0.2, 7), P('sack', 2.6, 2.1, 1.1, 7), P('wheelbarrow', -2.6, 2.6, 0.5, 5)] },
   smithy: { model: 'blacksmith', size: 5.8, rot: 0, props: [P('barrel', 3.6, 2.8), P('crate_open', -3.8, 2.6, 0.4, 6)] },
   barracks: { model: 'barracks', size: 7.2, rot: 0, props: [P('weaponrack', 4.8, 4.2, 0, 8), P('weaponrack', 5.6, 3.6, 0.6, 8), P('target', -5.0, 4.6, 0.3, 8)] },
+  storehouse: { model: 'market', size: 6.2, rot: 0, props: [P('crate_long_A', -3.4, 3.0, 0.2), P('crate_A_big', -2.4, 3.6, 0.5), P('resource_lumber', 4.0, -1.6, 1.4, 4), P('resource_stone', -4.2, -1.8, 0.3, 4.5), P('sack', 2.6, 3.2, 0.3, 7), P('sack', 3.0, 2.8, 1.2, 7), P('barrel', 3.8, 3.2)] },
   tower: { model: 'tower_A', size: 5.2, rot: 0, props: [P('flag_blue', 1.8, 1.9, 0, 8)] },
 };
 

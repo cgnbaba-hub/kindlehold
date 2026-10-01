@@ -43,7 +43,7 @@ tooling, measured instead of guessing, and documented every step for the next se
 
 What that process looks like in the repository:
 
-- **149 automated tests** (`node:test`): unit, integration and *deterministic simulation* tests
+- **153 automated tests** (`node:test`): unit, integration and *deterministic simulation* tests
   that replay whole chapters with a scripted bot.
 - **17 end-to-end tests** in a real browser (Playwright): menus, tutorial, save/load round trip,
   every campaign chapter, graphics driver reset, layout at 1280×720.
@@ -81,7 +81,7 @@ More: [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) (a short to
 ```bash
 npm ci                 # Node 20+
 npm run dev            # http://127.0.0.1:5180/
-npm test               # the 149 tests
+npm test               # the 153 tests
 npm run build && npm run preview
 npm run test:e2e       # browser tests (needs: npx playwright install chromium)
 ```

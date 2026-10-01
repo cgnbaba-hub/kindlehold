@@ -143,6 +143,21 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Siedler-Komfort (nach dem Test des Nutzers am 2026-09-30)
+
+Rückmeldung nach 34 Minuten Spiel auf dem Mac (Safari, Apple GPU, Qualität Mittel, F3-Protokolle):
+keine Lecks (Texturen 31, Shader 48 konstant), 30–45 fps, keine Hänger. Die Dreiecke wachsen mit
+der Siedlung (1,35 → 2,4 M, vor allem Figuren mit Schatten). Kurzes Flackern der Leiste: Safari
+zeichnet SVG-Symbole unter CSS-`filter` über der WebGL-Fläche nicht neu → `filter: grayscale` bei
+gesperrten Knöpfen und `will-change` bei den Anzeigen entfernt.
+Neu: Lagerhaus (`storehouse`, nächstes Lager für Hin- und Rückwege), „Idle hands“ (untätige
+Träger sammeln selbst Holz/Stein, Schalter an der Burg), „Move“ (Gebäude versetzen, Material
+kommt mit, Stufe bleibt), Heilung der Soldaten an Burg/Kaserne/Turm, und: Arbeiter geben beim
+Abriss/Pausieren/Versetzen ihre Baum-/Fels-Reservierung frei (alter Fehler).
+Tests: `tests/simulation/comfort.test.js`. Details in `GAME_DESIGN.md` („Settler comfort“).
+Offen: Tiere im KayKit-Stil (Quaternius „Ultimate Animated Animals“, CC0, ist aus dem Container
+nicht erreichbar — Nutzer müsste das Paket hochladen).
+
 ## Modellierte Gebäude (KayKit Medieval Hexagon Pack, CC0) — Grafik-Prototyp
 
 Vom Nutzer freigegeben („Grafik-Prototyp“, externes CC0-Paket). Aufbau wie bei den Figuren:

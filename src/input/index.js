@@ -154,12 +154,14 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
   }
 
   function cancelMode() {
-    state.mode = 'select'; state.placeType = null; state.targetKind = null;
+    state.mode = 'select'; state.placeType = null; state.targetKind = null; state.moveId = null;
     if (hooks.onMode) hooks.onMode('select');
   }
 
-  function startPlacement(type) {
-    state.mode = 'place'; state.placeType = type;
+  /** Place a new building, or with { moveId } choose the new spot for an existing one. */
+  function startPlacement(type, { moveId = null } = {}) {
+    state.mode = 'place'; state.placeType = type; state.moveId = moveId;
+    if (moveId != null) { const b = world().entities[moveId]; if (b) state.placeRot = b.rot || 0; }
     if (hooks.onMode) hooks.onMode('place', type);
   }
 
@@ -228,7 +230,9 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
       if (state.mode === 'place') {
         const g = pickGround(ev.clientX, ev.clientY);
         if (g) {
-          issue({ type: 'place', buildingType: state.placeType, x: Math.round(g.x * 2) / 2, z: Math.round(g.z * 2) / 2, rot: state.placeRot });
+          const x = Math.round(g.x * 2) / 2, z = Math.round(g.z * 2) / 2;
+          if (state.moveId != null) { issue({ type: 'move', id: state.moveId, x, z, rot: state.placeRot }); cancelMode(); return; }
+          issue({ type: 'place', buildingType: state.placeType, x, z, rot: state.placeRot });
           if (!ev.shiftKey) cancelMode();
         }
         return;

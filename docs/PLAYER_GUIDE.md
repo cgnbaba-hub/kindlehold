@@ -175,6 +175,20 @@ housing), and workshops gain a second level (one more worker, 20% faster) and a 
 (another 25% faster) that needs **tools** from a Smithy. Soldiers improve through research at
 the Keep: **Steel Mail** (tougher) and **Veteran Drill** (faster).
 
+## Storehouses, idle hands, moving buildings
+
+* **Storehouse** — a second store for all goods. Labourers bring goods to the nearest store
+  (the Keep or a Storehouse) and fetch them from the best one for the trip, so outlying
+  workshops and building sites are served much faster. Build one where a new quarter grows.
+* **Idle hands** (at the Keep): with *Gather* on, labourers who have nothing to do fell a tree
+  or cut stone by hand near a store while timber or stone run short — one trip at a time, then
+  they look for work again, and one always stays free for hauling. *Wait* keeps them at the Keep.
+* **Move** (select a building): choose a new place; the building is taken down and put up again
+  there. The materials come along and it keeps its level — only the building time is spent.
+  (The Keep stays where it was founded.)
+* **Healing**: soldiers who have not been hit for five seconds heal near the Keep, a Barracks or
+  a Watchtower; near Maren they heal anywhere.
+
 ## Production chains
 
 Once the settlement stands, three workshops turn simple goods into better ones. Labourers

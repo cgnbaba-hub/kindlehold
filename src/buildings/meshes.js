@@ -322,6 +322,27 @@ const MODELS = {
     body.push(...barrel(3.9, 1.6), ...barrel(4.0, 0.7), ...barrel(3.95, 1.15, 0.85));
     return { body, glow, height: 7.4 };
   },
+  storehouse(rnd) {
+    const body = [], glow = [];
+    // a long timber store on a stone footing with a wide double door, goods stacked outside
+    body.push(b(8.0, 0.5, 5.2, C.stoneDark, P.stone, { y: 0.25 }));
+    body.push(b(7.6, 3.0, 4.8, C.plank, P.planks, { y: 2.0 }));
+    body.push(...timberFrame(7.6, 2.8, 4.8, 0.5));
+    body.push(roof(8.6, 5.8, 2.8, C.slate, P.shingles, { y: 3.5 }));
+    body.push(b(2.6, 2.4, 0.14, C.timberDark, P.planks, { y: 1.7, z: 2.42 }));
+    body.push(b(1.2, 2.2, 0.1, C.plank, P.planks, { x: -0.62, y: 1.6, z: 2.52 }), b(1.2, 2.2, 0.1, C.plank, P.planks, { x: 0.62, y: 1.6, z: 2.52 }));
+    body.push(beam(-1.3, 3.0, 2.6, 1.3, 3.0, 2.6, 0.18, C.timberDark));
+    for (const x of [-2.8, 2.8]) { body.push(b(0.8, 0.7, 0.12, C.timberDark, P.planks, { x, y: 2.4, z: 2.42 })); glow.push(win(0.55, 0.5, { x, y: 2.4, z: 2.49 })); }
+    // a hoist beam over the door, sacks, crates, a log pile and stone blocks outside
+    body.push(beam(0, 4.6, 2.4, 0, 4.6, 3.6, 0.16, C.timberDark));
+    body.push(paint(place(cyl(0.02, 0.02, 1.4, 4), { y: 3.9, z: 3.5 }), '#c9b58a', 0, null, P.plain));
+    for (let i = 0; i < 4; i++) body.push(paint(place(sphere8(0.32), { x: 2.4 + (i % 2) * 0.55, y: 0.35 + Math.floor(i / 2) * 0.42, z: 3.2, sy: 1.1 }), '#c2a878', 0.05, rnd, P.cloth));
+    for (const [x, z, s] of [[-2.8, 3.3, 0.8], [-3.5, 3.0, 0.6], [-2.9, 3.2, 0.5]]) body.push(b(s, s, s, '#8a6440', P.planks, { x, y: s / 2 + (s < 0.6 ? 0.8 : 0), z, ry: x * 0.3 }));
+    body.push(...logPile(4.6, -0.6, 6, rnd, 1.8));
+    body.push(...stoneBlocks(-4.4, -0.8, 4, rnd));
+    body.push(...barrel(3.6, 3.4));
+    return { body, glow, height: 6.6 };
+  },
   mill(rnd) {
     const body = [], glow = [];
     // a tapering stone tower mill with a timber cap; the sails turn separately (see `sails`)
