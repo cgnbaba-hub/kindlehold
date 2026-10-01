@@ -156,7 +156,7 @@ DEMO_STATES.chains = (sim) => {
   sim.run(20 * 45);
 };
 
-/** Showcase: upgrade levels — Fortress keep, cottage levels 1-3, workshops at level 2. */
+/** Showcase: upgrade levels — Fortress keep, cottage levels 1-3, workshops at level 2, watchtowers 1-3. */
 DEMO_STATES.levels = (sim) => {
   quietEnemy(sim);
   const w = sim.world;
@@ -165,6 +165,8 @@ DEMO_STATES.levels = (sim) => {
   if (keep) { keep.level = 3; keep.lit = true; w.mission.flags.keepLit = true; }
   [[-30, 60, 1], [-22, 62, 2], [-14, 64, 3]].forEach(([x, z, level]) => { const b = createBuildingEntity(w, { type: 'cottage', owner: 'p1', x, z, rot: 0.9, state: 'active' }); b.level = level; });
   [['lodge', -30, 40], ['quarry', -20, 46]].forEach(([type, x, z]) => { const b = createBuildingEntity(w, { type, owner: 'p1', x, z, rot: 0.9, state: 'active' }); b.level = 2; });
+  // watchtower levels 1-3
+  [[-8, 58, 1], [2, 56, 2], [12, 54, 3]].forEach(([x, z, level]) => { const b = createBuildingEntity(w, { type: 'tower', owner: 'p1', x, z, rot: 0.9, state: 'active' }); b.level = level; });
   sim.run(20);
 };
 
