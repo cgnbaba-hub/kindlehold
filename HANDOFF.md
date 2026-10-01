@@ -155,8 +155,29 @@ Träger sammeln selbst Holz/Stein, Schalter an der Burg), „Move“ (Gebäude v
 kommt mit, Stufe bleibt), Heilung der Soldaten an Burg/Kaserne/Turm, und: Arbeiter geben beim
 Abriss/Pausieren/Versetzen ihre Baum-/Fels-Reservierung frei (alter Fehler).
 Tests: `tests/simulation/comfort.test.js`. Details in `GAME_DESIGN.md` („Settler comfort“).
-Offen: Tiere im KayKit-Stil (Quaternius „Ultimate Animated Animals“, CC0, ist aus dem Container
-nicht erreichbar — Nutzer müsste das Paket hochladen).
+
+## Modellierte Tiere (Quaternius Ultimate Animated Animal Pack, CC0)
+
+- Quelle: Deer und Stag aus dem Paket. Die Dateien liegen (gleiche Prüfsummen wie im
+  ASSET_REGISTER) im öffentlichen Repo `jpabloglez/trailpaw`, Pfad `assets/animals/<name>/<name>.glb`.
+  Die Dateien sind dort in LFS, also über `https://media.githubusercontent.com/media/jpabloglez/trailpaw/main/...` laden.
+  Die Lizenzdatei stammt aus der Kopie des Nutzers.
+- `scripts/assets/bake-animals.mjs <dir>` → `public/animals/quaternius.bin/.json` (1,7 MB), mit:
+  - Materialfarben als Vertexfarben;
+  - Geweih fest am Knochen;
+  - Ausrichtung nach +Z und Spielgröße;
+  - 6 Clips bei 15 fps.
+- `src/environment/animals-skinned.js`: je Art ein InstancedMesh, Knochen-Textur wie bei den Figuren,
+  0,3 s Überblendung zwischen den Clips.
+  Zuordnung: walk → Walk, run → Gallop, graze → Eating oder Idle_Headlow, idle → Idle oder Idle_2.
+- `wildlife-view.js`: jedes dritte Tier ist ein Hirsch (`id % 3`), die anderen sind Hirschkühe.
+  `?animals=classic` zeigt die alten prozeduralen Tiere; die erscheinen auch, wenn die Daten nicht laden.
+- Gezeichnet werden nur Tiere im Kamerakegel; ohne das kamen in der Midgame-Demo +290 000 Dreiecke dazu.
+  Gemessen in der Midgame-Demo, Nahansicht einer Herde:
+  - mit Kegel-Test 1,654 M Dreiecke, die alten Tiere 1,656 M;
+  - 137 Draw Calls, die alten Tiere 141.
+  Frame-Zeiten aus der Software-Grafik im Container sind hier nicht aussagekräftig: Dieselbe Szene
+  schwankte zwischen 4 ms und 4 s.
 
 ## Modellierte Gebäude (KayKit Medieval Hexagon Pack, CC0) — Grafik-Prototyp
 
