@@ -84,7 +84,7 @@ export function createEngineRenderer({ scene, max = 24 }) {
       if (f.engine === 'mangonel') {
         // the arm flies up in a quarter second, then is winched down over the reload
         const fly = Math.min(1, t / 0.25), down = Math.min(1, Math.max(0, (t - 0.6) / Math.max(0.5, (f.reload || 5) - 1.2)));
-        const ang = -1.75 * (fly < 1 ? fly * fly : 1 - down * down * (3 - 2 * down));
+        const ang = 1.75 * (fly < 1 ? fly * fly : 1 - down * down * (3 - 2 * down)); // + about x: up and over the beam
         qp.setFromAxisAngle(xAxis, ang);
         local.compose(k.pivot, qp, s.set(1, 1, 1));
       } else {
