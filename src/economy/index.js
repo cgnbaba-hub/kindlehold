@@ -25,6 +25,15 @@ export const GATHER_RADIUS = 16; // keeps working the same grove / outcrop withi
 // Idle labourers go gathering on their own while the store is below these amounts, within
 // `range` metres of the nearest store, leaving `keepFree` idle for hauling and new workplaces.
 export const AUTO_GATHER = { timber: 120, stone: 80, range: 45, keepFree: 1 };
+// Idle hands is a real easing (measured with the bot: up to 9 minutes sooner and a much larger
+// town), so it scales with the difficulty: Story as above, Normal only when the store runs low
+// and with fewer hands, Hard not at all. See CLAUDE.md, "Schwierigkeit".
+export const AUTO_GATHER_RULES = { story: { timber: 120, stone: 80, share: 1 / 3 }, normal: { timber: 60, stone: 40, share: 1 / 4 }, hard: null };
+/** The idle-hands rules for this game's difficulty (null: not available). */
+export function autoGatherRules(world) {
+  const d = world.meta && world.meta.difficulty;
+  return Object.hasOwn(AUTO_GATHER_RULES, d) ? AUTO_GATHER_RULES[d] : AUTO_GATHER_RULES.normal;
+}
 
 function spotAround(b, id, extra = 1.2) {
   const def = BUILDINGS[b.type];
@@ -434,9 +443,10 @@ export function createEconomyModule() {
    */
   function autoGather(world, s, c) {
     const p = world.players[s.owner];
-    if (!c || !p || p.autoGather === false) return false;
-    if (c.idle <= AUTO_GATHER.keepFree || c.auto >= Math.max(1, Math.floor(c.labourers / 3))) return false;
-    const needT = p.res.timber / AUTO_GATHER.timber, needS = p.res.stone / AUTO_GATHER.stone;
+    const rules = autoGatherRules(world);
+    if (!rules || !c || !p || p.autoGather === false) return false;
+    if (c.idle <= AUTO_GATHER.keepFree || c.auto >= Math.max(1, Math.floor(c.labourers * rules.share))) return false;
+    const needT = p.res.timber / rules.timber, needS = p.res.stone / rules.stone;
     if (needT >= 1 && needS >= 1) return false;
     const kind = needT <= needS ? 'tree' : 'rock';
     const home = pickStore(world, s, null, 'drop') || s;

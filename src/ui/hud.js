@@ -16,6 +16,7 @@ import { TECHS, TECH_ORDER } from '../technology/defs.js';
 import { researchBlocker } from '../technology/index.js';
 import { buildCost, upgradeBlocker, canMove } from '../construction/index.js';
 import { canAfford } from '../economy/stock.js';
+import { autoGatherRules } from '../economy/index.js';
 import { ABILITIES, heroAbilities } from '../heroes/index.js';
 import { STALL_TEXT, WORK, missingInputs } from '../production/index.js';
 import { scenarioOf } from '../missions/index.js';
@@ -563,12 +564,15 @@ export function createHud({ root, session, input, settings, actions }) {
           });
           selPanel.append(rationRow);
           // idle labourers fell trees and cut stone on their own while the store runs short
-          const auto = p.autoGather !== false;
+          const rules = autoGatherRules(w);
+          const auto = !!rules && p.autoGather !== false;
           const gatherRow = h('div.tax-row', { role: 'group', 'aria-label': 'Idle labourers' }, [h('span', { text: 'Idle hands' })]);
-          [['Wait', false, 'Idle labourers wait at the Keep for work.'], ['Gather', true, 'Idle labourers fell trees and cut stone near a store while timber or stone run short.']].forEach(([name, on, tip]) => {
+          const gatherTip = rules ? `Idle labourers fell trees and cut stone near a store while timber is below ${rules.timber} or stone below ${rules.stone}.` : 'Not on Hard: idle labourers only wait for work.';
+          [['Wait', false, 'Idle labourers wait at the Keep for work.'], ['Gather', true, gatherTip]].forEach(([name, on, tip]) => {
             const cur = auto === on;
-            const b = h(`button.tax-btn${cur ? '.active' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'data-tip': tip, text: name });
-            b.addEventListener('click', () => { input.issue({ type: 'setAutoGather', on }); setTimeout(() => { dirtySel = true; }, 120); });
+            const off = on && !rules;
+            const b = h(`button.tax-btn${cur ? '.active' : ''}${off ? '.disabled' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'aria-disabled': off ? 'true' : 'false', 'data-tip': tip, text: name });
+            b.addEventListener('click', () => { if (off) { toast(tip, 'warn'); return; } input.issue({ type: 'setAutoGather', on }); setTimeout(() => { dirtySel = true; }, 120); });
             gatherRow.append(b);
           });
           selPanel.append(gatherRow);

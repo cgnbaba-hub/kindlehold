@@ -156,6 +156,29 @@ and **Halberdiers** (heavily armoured elite with a long reach) and **Sappers** (
 four times the damage against buildings, and the only soldiers who get through stone walls
 properly; weak in the field).
 
+Once the Keep is a Castle, upgrade the Drill Yard again to the **Siege Yard** (4 tools from a
+Smithy) for two siege engines:
+
+* **Ballista** — a giant crossbow on wheels. Its bolts go through almost any armour, out to 22 m.
+* **Mangonel** — throws boulders 26 m. A boulder hurts everything where it lands and breaks
+  walls, but it lands where the target stood when it was thrown, so a group on the move can
+  dodge it.
+
+Both engines are slow, cannot shoot at enemies closer than 4 m (Ballista) or 7 m (Mangonel),
+and fall quickly to blades. Keep a shield line in front of them.
+
+## Formations
+
+Select two or more soldiers and choose a formation in the command panel. Every later march
+keeps it, and choosing one re-forms the group where it stands.
+
+* **Block** — a few deep rows. This is the default.
+* **Line** — one wide rank.
+* **Wedge** — a spearhead with the toughest at the tip.
+* **Ring** — a circle facing out, with archers and heroes inside.
+
+Shields always stand in front and archers behind; siege engines follow at the back.
+
 ## Seasons
 
 Long summers alternate with short, hard winters (the first begins at minute 17 and lasts
@@ -185,6 +208,10 @@ the Keep: **Steel Mail** (tougher) and **Veteran Drill** (faster).
 * **Idle hands** (at the Keep): with *Gather* on, labourers who have nothing to do fell a tree
   or cut stone by hand near a store while timber or stone run short — one trip at a time, then
   they look for work again, and one always stays free for hauling. *Wait* keeps them at the Keep.
+  Gathering is a help, so it depends on the difficulty:
+  * **Story:** labourers gather while timber is below 120 or stone below 80, up to a third of them.
+  * **Normal:** only below 60 timber or 40 stone, and only a quarter of them.
+  * **Hard:** never.
 * **Move** (select a building): choose a new place; the building is taken down and put up again
   there. The materials come along and it keeps its level — only the building time is spent.
   (The Keep stays where it was founded.)
