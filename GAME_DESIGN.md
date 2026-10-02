@@ -4,6 +4,17 @@ Kindlehold is an original economy-first real-time strategy game. It borrows only
 general genre conventions (worker-driven production, housing, territory, small-squad
 combat). All names, lore, numbers, layouts and art are original to this project.
 
+## Design rule: challenge before comfort
+
+The economy, transport and battles must stay demanding, scaled by the chosen difficulty.
+Story is gentle; Normal asks for planning; Hard punishes waste. A comfort feature is welcome
+when it rewards a decision, such as where to put a Storehouse. It must not remove a
+bottleneck for free.
+
+Every simplification is weighed openly. Each one names what it costs: materials, upkeep,
+research, space or risk. Its effect is measured with the balance bot (`npm run balance`) and
+the squad duels (`scripts/balance-duels.mjs`). See also `CLAUDE.md`.
+
 ## Setting
 
 **The Harrowmere March** — a river valley on the edge of the old kingdom of Aubreth,

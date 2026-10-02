@@ -7,7 +7,7 @@ import { paint, paintGradient, place, merge, jitterVertices, viewRng, cyl, cone,
 import { computeSplat } from '../terrain/terrain-view.js';
 import { distToPolyline, sceneryRelief } from '../world/terrain-data.js';
 import { BUILDINGS } from '../buildings/defs.js';
-import { flushInstance } from '../render/instancing.js';
+import { flushInstance, createInstanceCuller } from '../render/instancing.js';
 
 function conifer(rnd) {
   const parts = [paint(place(cyl(0.13, 0.22, 2.2, 7), { y: 1.1 }), '#5a3f2a', 0.1, rnd, PATTERN.planks)];
@@ -143,7 +143,7 @@ transformed.z += khSway * khH * ${(strength[0] * 0.6).toFixed(3)};`);
   };
 }
 
-export function createVegetation({ scene, terrain, world, quality }) {
+export function createVegetation({ scene, terrain, world, quality, camera = null }) {
   const rnd = viewRng(20260924);
   const uniforms = { uTime: { value: 0 } };
   const treeMat = createStructureMaterial({ roughness: 0.9 });
@@ -165,18 +165,22 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
   const counts = { tree0: 0, tree1: 0 };
   for (const d of deps) if (d.type === 'tree') counts['tree' + (d.variant || 0)]++;
 
-  const make = (geo, mat, n, shadow = true) => {
+  // trees cover the whole valley: only those in view (and close enough to throw a shadow into
+  // it) are drawn; `culled` meshes hold the data and a twin is drawn (see createInstanceCuller)
+  const cullers = [];
+  const make = (geo, mat, n, shadow = true, culled = false) => {
     const m = new THREE.InstancedMesh(geo, mat, Math.max(1, n));
     m.castShadow = shadow; m.receiveShadow = true;
     m.count = 0;
     m.frustumCulled = false;
-    scene.add(m);
+    if (culled && camera) cullers.push(createInstanceCuller(scene, m, 14));
+    else scene.add(m);
     return m;
   };
   const cap = (n) => Math.ceil(n * 1.1) + 8;
   const meshes = {
-    tree0: make(geos.conifer, treeMat, cap(counts.tree0)),
-    tree1: make(geos.broadleaf, treeMat, cap(counts.tree1)),
+    tree0: make(geos.conifer, treeMat, cap(counts.tree0), true, true),
+    tree1: make(geos.broadleaf, treeMat, cap(counts.tree1), true, true),
     stump: make(geos.stump, treeMat, 120),
     rock: make(geos.rock, rockMat, 40),
     iron: make(geos.iron, rockMat, 6),
@@ -214,7 +218,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
     if (terrain.slope(x, z) > (edge > rim + 4 ? 2.2 : 1.3)) continue;
     decoTrees.push([x, z, rnd() < 0.75 ? 0 : 1, 0.8 + rnd() * 0.6, rnd() * 6.28]);
   }
-  const decoMesh = [make(geos.conifer, treeMat, decoTrees.length), make(geos.broadleaf, treeMat, decoTrees.length)];
+  const decoMesh = [make(geos.conifer, treeMat, decoTrees.length, true, true), make(geos.broadleaf, treeMat, decoTrees.length, true, true)];
   for (const [x, z, v, sc, rot] of decoTrees) {
     const mesh = decoMesh[v];
     m4.compose(p.set(x, gh(x, z) - 0.1, z), q.setFromEuler(e.set(0, rot, 0)), s.set(sc, sc * (0.9 + (sc % 0.2)), sc));
@@ -355,6 +359,7 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
         if (v !== lastVersion) hideGrassUnderBuildings();
         lastVersion = v; rebuildTimer = 0;
         rebuildDeposits();
+        for (const c of cullers) c.touch();
       }
       // animate chopped / falling trees
       const t = w.tick / 20;
@@ -373,10 +378,13 @@ diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.55, 0.5, 0.36) * (0.8 + khNoise(
         a.mesh.setMatrixAt(a.index, m4);
         flushInstance(a.mesh, a.index);
       }
+      if (animTrees.length) for (const c of cullers) c.touch();
+      for (const c of cullers) c.update(camera);
     },
     getHealthStatus() { return { status: 'ok' }; },
     dispose() {
       for (const k in meshes) scene.remove(meshes[k]);
+      for (const c of cullers) c.dispose();
       scene.remove(decoMesh[0], decoMesh[1], grass, bushes, reeds, boulders);
       for (const k in geos) geos[k].dispose();
       treeMat.dispose(); grassMat.dispose(); rockMat.dispose();

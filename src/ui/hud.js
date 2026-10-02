@@ -647,6 +647,12 @@ export function createHud({ root, session, input, settings, actions }) {
   let confirmDemolish = 0;
   const SHORT = { 'Hold a feast': 'Feast', "Hunter's Hut": 'Hunter', 'Keen Axes': 'Axes', 'Braced Timber': 'Bracing', 'Tempered Blades': 'Blades', 'March Charter': 'Charter', 'Hire labourer': 'Hire', 'Back to work': 'Release', 'Upgrading…': 'Upgrading', 'Steel Mail': 'Mail', 'Veteran Drill': 'Drill', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
   function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
+  const FORMATION_BUTTONS = [
+    ['block', 'fmBlock', 'Block', 'A few deep rows: shields in front, archers behind. Every later march keeps this shape.'],
+    ['line', 'fmLine', 'Line', 'One wide rank: everyone fights at once, but the line is thin. Every later march keeps this shape.'],
+    ['wedge', 'fmWedge', 'Wedge', 'A spearhead with the toughest at the tip: breaks into a crowd. Every later march keeps this shape.'],
+    ['ring', 'fmRing', 'Ring', 'A circle facing out, archers and heroes inside: nobody is caught from behind. Every later march keeps this shape.'],
+  ];
   function cmdButton({ ic, label, key, tip, tipTitle, onClick, disabled = false, cost = null, progress = null, cooldown = null, active = false, highlight = false }) {
     const b = h(`button.cmd${active ? '.active' : ''}${highlight ? '.pulse' : ''}`, { type: 'button', 'aria-label': label, 'data-tip': tip || label, 'data-tip-title': tipTitle || label, 'aria-disabled': disabled ? 'true' : 'false' }, [icon(ic, 'icon icon-md'), cost ? null : h('span.cmd-label', { text: shortLabel(label) })]);
     if (key) b.append(h('span.cmd-key', { text: keyLabel(key) }));
@@ -713,6 +719,18 @@ export function createHud({ root, session, input, settings, actions }) {
       cmdGrid.append(cmdButton({ ic: 'patrol', label: 'Patrol', key: bb.patrol, tip: 'Walk back and forth, engaging enemies.', onClick: () => input.beginTarget('patrol'), active: input.state.targetKind === 'patrol' }));
       cmdGrid.append(cmdButton({ ic: 'stop', label: 'Stop', key: bb.stop, tip: 'Stop and guard the current spot.', onClick: () => input.issue({ type: 'stop', ids: units.map((u) => u.id) }) }));
       cmdGrid.append(cmdButton({ ic: 'hold', label: 'Hold position', key: bb.hold, tip: 'Never move; only strike enemies in reach.', onClick: () => input.issue({ type: 'hold', ids: units.map((u) => u.id) }) }));
+      // formations: the shape the group takes on every walk; choosing one re-forms the group where it stands
+      if (units.length > 1) {
+        const ids = units.map((u) => u.id);
+        for (const [shape, ic, label, tip] of FORMATION_BUTTONS) {
+          cmdGrid.append(cmdButton({ ic, label, tipTitle: `Formation: ${label}`, tip, active: input.state.formation === shape, onClick: () => {
+            input.state.formation = shape; dirtySel = true;
+            let cx = 0, cz = 0, sx = 0, sz = 0;
+            for (const u of units) { cx += u.x; cz += u.z; sx += Math.sin(u.heading || 0); sz += Math.cos(u.heading || 0); }
+            input.issue({ type: 'move', ids, x: cx / units.length, z: cz / units.length, formation: shape, facing: Math.atan2(sx, sz) });
+          } }));
+        }
+      }
       if (hero) {
         heroAbilities(hero).forEach((ab, i) => {
           const cd = Math.max(0, ((hero.abilityCd && hero.abilityCd[ab.id]) || 0) - w.tick) / 20;

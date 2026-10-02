@@ -43,7 +43,7 @@ export async function createSession({ container, seed, quality = 'high', verify 
   shroud.snap();
   const terrainView = views.register(createTerrainView({ scene: rc.scene, terrain: sim.terrain, quality: rc.quality, world }));
   const water = views.register(createWater({ scene: rc.scene, terrain: sim.terrain }));
-  views.register(createVegetation({ scene: rc.scene, terrain: sim.terrain, world, quality: rc.quality }));
+  views.register(createVegetation({ scene: rc.scene, terrain: sim.terrain, world, quality: rc.quality, camera: rc.camera }));
   // modelled, animated deer and stags (Quaternius); ?animals=classic keeps the simple ones
   const animalAssets = typeof location !== 'undefined' && /[?&]animals=classic\b/.test(location.search) ? null : await loadAnimalAssets();
   views.register(createWildlifeView({ scene: rc.scene, terrain: sim.terrain, world, animalAssets, camera: rc.camera }));
@@ -54,7 +54,7 @@ export async function createSession({ container, seed, quality = 'high', verify 
   const buildingsView = views.register(createBuildingsView({ scene: rc.scene, terrain: sim.terrain, world, renderer: rc.renderer, sky }));
   // modelled, animated characters (KayKit); ?figs=classic keeps the procedural figures
   const figureAssets = typeof location !== 'undefined' && /[?&]figs=classic\b/.test(location.search) ? null : await loadFigureAssets();
-  const unitsView = views.register(createUnitsView({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, getZoom: () => rc.rts.state.zoom, figureAssets }));
+  const unitsView = views.register(createUnitsView({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, getZoom: () => rc.rts.state.zoom, figureAssets, camera: rc.camera }));
   const effects = views.register(createEffects({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, quality: rc.quality, camera: rc.camera, reducedMotion: () => !!settings.reducedMotion }));
   const winter = views.register(createWinter({
     scene: rc.scene, world, terrainView, water, sky, quality: rc.quality, reducedMotion: () => !!settings.reducedMotion,

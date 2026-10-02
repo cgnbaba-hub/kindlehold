@@ -4,7 +4,7 @@ import { spawn, remove, all, emit } from '../world/world.js';
 import { UNITS, RECRUITABLE, unitDef } from './defs.js';
 import { BUILDINGS, doorOf, workSpeedOf } from '../buildings/defs.js';
 import { pay, refund } from '../economy/stock.js';
-import { followPath, formationSlots } from '../navigation/index.js';
+import { followPath, formationSlots, FORMATIONS } from '../navigation/index.js';
 import { isIdleLabourer } from '../population/index.js';
 import { walkTo, stopWalking } from '../navigation/agent.js';
 import { soldierMods, TECH_EFFECTS } from '../technology/defs.js';
@@ -64,15 +64,17 @@ export function createUnitsModule() {
     return out;
   }
 
-  function giveMoveLike(world, units, type, x, z) {
-    // centroid for formation facing
+  function giveMoveLike(world, units, type, x, z, shape = 'block', facing = null) {
+    // centroid for formation facing (or a given facing, when a group only changes its shape)
     let cx = 0, cz = 0;
     for (const u of units) { cx += u.x; cz += u.z; }
     cx /= units.length; cz /= units.length;
+    if (Number.isFinite(facing)) { cx = x - Math.sin(facing); cz = z - Math.cos(facing); }
     // melee/defensive in front rows, ranged behind, hero in the middle
     const rank = (u) => ({ defensive: 0, melee: 1, hero: 2, commander: 2, ranged: 3 }[UNITS[u.type].cls] ?? 1);
     const sorted = [...units].sort((a, b) => rank(a) - rank(b) || a.id - b.id);
-    const slots = units.length === 1 ? [[x, z]] : formationSlots(sorted.length, x, z, cx, cz);
+    const inner = sorted.filter((u) => rank(u) >= 2).length; // archers and heroes stand inside a ring
+    const slots = units.length === 1 ? [[x, z]] : formationSlots(sorted.length, x, z, cx, cz, 1.9, FORMATIONS.includes(shape) ? shape : 'block', inner);
     const nav = ctx.services.nav;
     sorted.forEach((u, i) => {
       let [sx, sz] = slots[i];
@@ -92,7 +94,7 @@ export function createUnitsModule() {
         const units = ownUnits(world, cmd.ids, owner);
         const x = Number(cmd.x), z = Number(cmd.z);
         if (!units.length || !Number.isFinite(x) || !Number.isFinite(z)) return;
-        giveMoveLike(world, units, cmd.type, x, z);
+        giveMoveLike(world, units, cmd.type, x, z, cmd.formation, Number(cmd.facing));
         emit(world, EV.UNIT_ORDER, { ids: units.map((u) => u.id), order: cmd.type, x, z, owner });
         break;
       }

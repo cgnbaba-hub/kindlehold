@@ -11,7 +11,10 @@ const CORPSE_SECONDS = 6;
 const BLEND = 0.22; // seconds to cross-fade from one animation into the next
 const STRIDE = 1.8; // metres per full stride cycle at figure scale 1: 4 x hip height x sin(swing 0.52), so feet do not slide
 
-export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60, figureAssets = null }) {
+export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60, figureAssets = null, camera = null }) {
+  // only figures in view (plus a margin for their shadows) are skinned and drawn
+  const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), ball = new THREE.Sphere(new THREE.Vector3(), 4);
+  const inView = (x, y, z) => !camera || frustum.intersectsSphere(ball.set(ball.center.set(x, y + 1, z), 4));
   const figs = figureAssets ? createSkinnedFigureRenderer({ scene, assets: figureAssets }) : createFigureRenderer({ scene });
   const corpses = [];
   const unsub = [];
@@ -91,6 +94,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
       const w = world();
       const tickTime = (w.tick + alpha) / 20;
       if (figs.tick) figs.tick(frame.dt);
+      if (camera) frustum.setFromProjectionMatrix(pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
       figs.begin();
       // idle neighbours turn to each other and chat
       const idle = [];
@@ -110,6 +114,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         if (s.hidden) continue; // asleep indoors
         const x = s.px + (s.x - s.px) * alpha, z = s.pz + (s.z - s.pz) * alpha;
         f.x = x; f.z = z; f.y = terrain.height(x, z);
+        if (!inView(x, f.y, z)) continue;
         const chat = talk.get(s.id);
         f.heading = smoothHeading(s, frame.dt, chat);
         f.style = 'settler'; f.scale = 1.25 * zk; f.tunic = figs.tunicFor(s.id); f.capColor = null;
@@ -126,6 +131,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         const def = UNITS[u.type];
         const x = u.px + (u.x - u.px) * alpha, z = u.pz + (u.z - u.pz) * alpha;
         f.x = x; f.z = z; f.y = terrain.height(x, z);
+        if (!inView(x, f.y, z)) { hitAmount(u); continue; }
         f.heading = smoothHeading(u, frame.dt);
         f.style = u.type; f.scale = 1.3 * zk; f.tunic = null; f.tool = null; f.carry = null; f.lean = 0;
         f.t = tickTime + u.id * 0.29; f.phase = u.id;
@@ -163,6 +169,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         if (c.t0 < 0) c.t0 = time;
         const age = time - c.t0;
         if (age > CORPSE_SECONDS) { corpses.splice(i, 1); continue; }
+        if (!inView(c.x, terrain.height(c.x, c.z), c.z)) continue;
         f.x = c.x; f.z = c.z; f.y = terrain.height(c.x, c.z) - Math.max(0, age - CORPSE_SECONDS + 1.5) * 0.35;
         f.heading = c.heading || 0; f.style = c.kind === 'settler' ? 'settler' : c.type; f.scale = (c.kind === 'settler' ? 1.25 : 1.3) * zk; f.job = null; f.hit = 0; f.rank = 0;
         f.tunic = c.kind === 'settler' ? figs.tunicFor(c.id) : null; f.tool = null; f.carry = null;
