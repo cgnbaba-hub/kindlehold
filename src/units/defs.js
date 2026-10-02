@@ -1,12 +1,14 @@
 // Unit definitions (data). Balance values are original to Kindlehold.
 
-export const UNIT_CLASSES = ['melee', 'ranged', 'defensive', 'hero', 'commander'];
+export const UNIT_CLASSES = ['melee', 'ranged', 'defensive', 'hero', 'commander', 'siege'];
 
 /** attacker class -> defender class -> multiplier */
 export const COUNTERS = {
-  melee: { ranged: 1.75 },
+  // siege engines: deadly at range, but a few blades among the crew make short work of them
+  melee: { ranged: 1.75, siege: 2.0 },
   ranged: { defensive: 2.0 },
   defensive: { melee: 2.0 },
+  siege: { defensive: 1.5 },
 };
 
 export const UNITS = {
@@ -23,6 +25,11 @@ export const UNITS = {
     cost: { timber: 10, iron: 30, provisions: 5 }, trainTime: 10, desc: 'Armoured elite with a long halberd: holds any line against blades and raiders. Needs the Drill Yard.' },
   sapper: { id: 'sapper', name: 'Sapper', owner: 'p1', cls: 'melee', hp: 120, armor: 1, damage: 12, range: 1.7, cooldown: 1.4, speed: 3.8, sight: 12, requiresLevel: 2,
     vsBuildings: 4, cost: { timber: 20, iron: 10, provisions: 5 }, trainTime: 10, desc: 'Siege engineer with a heavy maul: breaks gates and walls four times faster than any soldier, but is no match for them in the field. Needs the Drill Yard.' },
+  // Siege Yard (Barracks level 3): engines, not soldiers — slow, unable to fire up close (minRange)
+  ballista: { id: 'ballista', engine: 'ballista', missile: 'bolt', name: 'Ballista', owner: 'p1', cls: 'siege', hp: 200, armor: 4, damage: 30, range: 22, minRange: 4, cooldown: 4.2, speed: 2.4, sight: 22, requiresLevel: 3,
+    pierce: 0.7, cost: { timber: 50, iron: 20, tools: 2, provisions: 5 }, trainTime: 18, desc: 'A giant crossbow on wheels: its bolts go through any armour at 22 m. Slow, and helpless once enemies reach it. Needs the Siege Yard.' },
+  mangonel: { id: 'mangonel', engine: 'mangonel', missile: 'boulder', name: 'Mangonel', owner: 'p1', cls: 'siege', hp: 280, armor: 3, damage: 32, range: 26, minRange: 7, cooldown: 5.5, speed: 1.9, sight: 22, requiresLevel: 3,
+    splash: 3.2, vsBuildings: 3, cost: { timber: 70, stone: 30, iron: 15, tools: 3, provisions: 5 }, trainTime: 22, desc: 'Hurls boulders 26 m: they smash a whole group and break walls. Cannot shoot closer than 7 m and moves at a crawl. Needs the Siege Yard.' },
   maren: { id: 'maren', name: 'Maren Ashgrove', title: 'Lantern Warden', owner: 'p1', cls: 'hero', hp: 420, armor: 4, damage: 20, range: 2.2, cooldown: 1.3, speed: 4.2, sight: 14,
     abilities: ['flare', 'kindle'], passive: 'hearthlight',
     cost: {}, trainTime: 0, desc: 'Lamplighter of the old roads. Her lantern steadies allies and blinds foes.' },
@@ -55,7 +62,7 @@ export const UNITS = {
   vharek: { id: 'vharek', name: 'Vharek the Tollbreaker', owner: 'p2', cls: 'commander', hp: 700, armor: 5, damage: 35, range: 2.4, cooldown: 1.8, speed: 3.8, sight: 14, cost: {}, desc: 'Former bridge-warden turned warlord.' },
 };
 
-export const RECRUITABLE = ['shield', 'blade', 'fletcher', 'crossbow', 'halberd', 'sapper'];
+export const RECRUITABLE = ['shield', 'blade', 'fletcher', 'crossbow', 'halberd', 'sapper', 'ballista', 'mangonel'];
 
 export const SETTLER = { hp: 60, speed: 3.9 }; // rested settlers (they sleep at night) walk a little faster
 

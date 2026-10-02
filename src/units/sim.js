@@ -71,7 +71,7 @@ export function createUnitsModule() {
     cx /= units.length; cz /= units.length;
     if (Number.isFinite(facing)) { cx = x - Math.sin(facing); cz = z - Math.cos(facing); }
     // melee/defensive in front rows, ranged behind, hero in the middle
-    const rank = (u) => ({ defensive: 0, melee: 1, hero: 2, commander: 2, ranged: 3 }[UNITS[u.type].cls] ?? 1);
+    const rank = (u) => ({ defensive: 0, melee: 1, hero: 2, commander: 2, ranged: 3, siege: 4 }[UNITS[u.type].cls] ?? 1);
     const sorted = [...units].sort((a, b) => rank(a) - rank(b) || a.id - b.id);
     const inner = sorted.filter((u) => rank(u) >= 2).length; // archers and heroes stand inside a ring
     const slots = units.length === 1 ? [[x, z]] : formationSlots(sorted.length, x, z, cx, cz, 1.9, FORMATIONS.includes(shape) ? shape : 'block', inner);
@@ -117,7 +117,7 @@ export function createUnitsModule() {
         const reject = (reason) => emit(world, EV.COMMAND_REJECTED, { type: 'recruit', reason });
         if (!b || b.kind !== 'building' || b.type !== 'barracks' || b.owner !== owner || b.state !== 'active') return reject('Needs a finished Barracks');
         if (!RECRUITABLE.includes(cmd.unitType)) return reject('Unknown unit');
-        if ((UNITS[cmd.unitType].requiresLevel || 1) > (b.level || 1)) return reject('Needs the Drill Yard (upgrade the Barracks)');
+        if ((UNITS[cmd.unitType].requiresLevel || 1) > (b.level || 1)) return reject(UNITS[cmd.unitType].requiresLevel >= 3 ? 'Needs the Siege Yard (upgrade the Barracks twice)' : 'Needs the Drill Yard (upgrade the Barracks)');
         if (b.queue.length >= MAX_QUEUE) return reject('Training queue is full');
         if (!pay(world, owner, UNITS[cmd.unitType].cost, `recruit ${cmd.unitType}`)) return reject('Not enough resources');
         b.queue.push({ unitType: cmd.unitType, settlerId: null, training: false, progress: 0 });

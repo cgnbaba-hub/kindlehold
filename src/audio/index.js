@@ -182,6 +182,21 @@ export function createAudio({ bus, world, settings, getListener, terrain = null 
       tone(d, { freq: 240 * p, freqEnd: 180 * p, dur: 0.07, gain: 0.18, type: 'square' });
       noise(d, { t: t + 0.02, freq: 4200 * p, freqEnd: 2000 * p, q: 5, dur: 0.15, gain: 0.15, attack: 0.01 });
     },
+    catapult(x, z) {
+      const d = placed(x, z, 1.1); if (!d.gain.value) return;
+      const t = ctx.currentTime, p = 0.9 + rand() * 0.2;
+      // the arm slams into the padded beam: a deep wooden thump, a rattle and the rope's groan
+      tone(d, { freq: 85 * p, freqEnd: 50, dur: 0.3, gain: 0.45 });
+      noise(d, { freq: 700 * p, q: 1, dur: 0.12, gain: 0.3, type: 'lowpass' });
+      noise(d, { t: t + 0.05, freq: 1800 * p, q: 6, dur: 0.25, gain: 0.08 });
+      tone(d, { t: t + 0.1, freq: 140 * p, freqEnd: 110 * p, dur: 0.5, gain: 0.06, type: 'sawtooth', attack: 0.1 });
+    },
+    impact(x, z) {
+      const d = placed(x, z, 1.2); if (!d.gain.value) return;
+      const p = 0.9 + rand() * 0.2;
+      tone(d, { freq: 70 * p, freqEnd: 35, dur: 0.45, gain: 0.5 });
+      noise(d, { freq: 400 * p, freqEnd: 120, q: 0.7, dur: 0.6, gain: 0.4, type: 'lowpass', attack: 0.01 });
+    },
     sling(x, z) { const d = placed(x, z, 0.5); if (!d.gain.value) return; const p = 0.85 + rand() * 0.3; noise(d, { freq: 700 * p, freqEnd: 1400 * p, q: 3, dur: 0.18, gain: 0.15, attack: 0.04 }); if (rand() < 0.5) noise(d, { t: ctx.currentTime + 0.12, freq: 500 * p, freqEnd: 1100 * p, q: 3, dur: 0.14, gain: 0.1 }); },
     collapse(x, z) { const d = placed(x, z, 1.2); if (!d.gain.value) return; noise(d, { freq: 300, freqEnd: 80, q: 0.6, dur: 1.6, gain: 0.6, attack: 0.02, type: 'lowpass' }); for (let i = 0; i < 5; i++) tone(d, { t: ctx.currentTime + i * 0.18, freq: 90 - i * 8, dur: 0.2, gain: 0.25 }); },
     complete(x, z) { const d = placed(x, z, 0.9); if (!d.gain.value) return; const t = ctx.currentTime; [0, 4, 7].forEach((s, i) => pluck(d, { t: t + i * 0.09, freq: ROOT_HZ * 2 * 2 ** (s / 12), gain: 0.18 })); },
@@ -331,7 +346,8 @@ export function createAudio({ bus, world, settings, getListener, terrain = null 
   on('deposit:depleted', (d) => { if (d.type === 'tree') sfx.treeFall(d.x, d.z); });
   on('combat:swing', (d) => { const e = world().entities[d.id]; if (e && allowed('swing', 60)) sfx.swing(e.x, e.z); });
   on(EV.COMBAT_HIT, (d) => { if (!allowed('hit', 45)) return; if (d.targetKind === 'building') sfx.thud(d.x, d.z); else sfx.clash(d.x, d.z); });
-  on(EV.COMBAT_SHOT, (d) => { if (allowed('shot', 70)) (d.kind === 'stone' ? sfx.sling : d.kind === 'bolt' ? sfx.bolt : sfx.arrow)(d.fx, d.fz); });
+  on(EV.COMBAT_SHOT, (d) => { if (d.kind === 'boulder') { sfx.catapult(d.fx, d.fz); return; } if (allowed('shot', 70)) (d.kind === 'stone' ? sfx.sling : d.kind === 'bolt' ? sfx.bolt : sfx.arrow)(d.fx, d.fz); });
+  on('combat:impact', (d) => { if (allowed('impact', 120)) sfx.impact(d.x, d.z); });
   on(EV.BUILDING_DESTROYED, (d) => sfx.collapse(d.x, d.z));
   on(EV.BUILDING_COMPLETED, (d) => { const b = world().entities[d.id]; if (b && d.owner === PLAYER) sfx.complete(b.x, b.z); });
   on(EV.HERO_ABILITY, (d) => { if (d.ability === 'flare') sfx.flare(d.x, d.z); else if (d.ability === 'kindle') sfx.kindle(d.x, d.z); else if (d.ability === 'volley') { sfx.arrow(d.x, d.z); } else if (d.ability === 'mark') sfx.kindle(d.x, d.z); else if (d.ability === 'horn') sfx.horn(); });

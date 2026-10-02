@@ -33,7 +33,7 @@ const RES_TIPS = {
 };
 // goods of the longer chains show in the ribbon only once the settlement has them
 const CHAIN_GOODS = { flour: 'mill', bread: 'bakery', tools: 'smithy' };
-const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander' };
+const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander', siege: 'Siege engine' };
 const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner', hunter: 'Hunter', fisher: 'Fisher', salter: 'Salter', cook: 'Cook', miller: 'Miller', baker: 'Baker', smith: 'Smith' };
 
 /**
@@ -792,7 +792,7 @@ export function createHud({ root, session, input, settings, actions }) {
           const u = UNITS[type];
           const afford = canAfford(w, PLAYER, u.cost);
           const locked = (u.requiresLevel || 1) > levelOf(one);
-          cmdGrid.append(cmdButton({ ic: type, label: `Train ${u.name}`, tipTitle: u.name, tip: locked ? `Needs the Drill Yard: upgrade this Barracks. ${u.desc}` : afford ? `${u.desc} Uses one idle settler.` : `Not enough resources. ${u.desc}`, cost: u.cost, disabled: locked || !afford || one.queue.length >= 5, highlight: hl === 'build:barracks' && !locked, onClick: () => input.issue({ type: 'recruit', building: one.id, unitType: type }) }));
+          cmdGrid.append(cmdButton({ ic: type, label: `Train ${u.name}`, tipTitle: u.name, tip: locked ? `${u.requiresLevel >= 3 ? 'Needs the Siege Yard: upgrade this Barracks to level 3' : 'Needs the Drill Yard: upgrade this Barracks'}. ${u.desc}` : afford ? `${u.desc} Uses one idle settler.` : `Not enough resources. ${u.desc}`, cost: u.cost, disabled: locked || !afford || one.queue.length >= 5, highlight: hl === 'build:barracks' && !locked, onClick: () => input.issue({ type: 'recruit', building: one.id, unitType: type }) }));
         }
         cmdGrid.append(cmdButton({ ic: 'patrol', label: 'Set rally point', tip: 'Right-click the ground while the Barracks is selected.', onClick: () => toast('Right-click the ground to set the rally point', 'info') }));
       }

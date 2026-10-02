@@ -153,6 +153,7 @@ export function createCombatModule() {
     for (const e of buf) {
       const d = reachDistance(u, e);
       if (d > radius) continue;
+      if (UNITS[u.type].minRange && d < UNITS[u.type].minRange) continue;
       // prefer units that can fight, then settlers, then buildings; nearer first
       let score = d;
       if (e.kind === 'unit') score += 0;
@@ -175,6 +176,22 @@ export function createCombatModule() {
     return m;
   }
 
+  // a boulder: everything hostile within the splash takes damage, full at the centre and 40%
+  // at the rim (armour counts, walls count as for siege work)
+  function splashHit(world, src, p) {
+    const near = [];
+    ctx.services.spatial.query(p.x, p.z, p.splash + 6, near, hostileTo(p.owner));
+    for (const e of near) {
+      const d = e.kind === 'building' ? Math.max(0, Math.hypot(e.x - p.x, e.z - p.z) - (BUILDINGS[e.type].radius || 3)) : Math.hypot(e.x - p.x, e.z - p.z);
+      if (d > p.splash || !isAlive(e)) continue;
+      const k = 1 - 0.6 * (d / p.splash);
+      if (e.kind === 'building') { dealDamage(world, src, e, p.base * p.vsB * k, 'siege'); continue; }
+      const armor = e.kind === 'unit' ? (UNITS[e.type].armor + soldierMods(world, e).armor) * (1 - p.pierce) : 0;
+      dealDamage(world, src, e, computeDamage({ base: p.base * k, attackerCls: p.cls, defenderCls: classOf(e), armor, damageMult: 1 }), 'stone');
+    }
+    emit(world, 'combat:impact', { x: p.x, z: p.z, r: p.splash });
+  }
+
   function attack(world, u, t) {
     const def = UNITS[u.type];
     const dazzled = u.dazzleUntil > world.tick;
@@ -186,13 +203,16 @@ export function createCombatModule() {
     const armor = t.kind === 'unit' ? (UNITS[t.type].armor + soldierMods(world, t).armor) * (1 - (def.pierce || 0)) : 0;
     let dmg = computeDamage({ base, attackerCls: def.cls, defenderCls: tcls, armor, damageMult: damageMult(world, u) });
     const strong = counterOf(def.cls, tcls) > 1;
-    if (def.cls === 'ranged' || def.ranged) {
-      if (t.kind === 'building') dmg = Math.max(1, Math.round(dmg * RANGED_VS_BUILDING));
+    if (def.cls === 'ranged' || def.ranged || def.cls === 'siege') {
+      if (t.kind === 'building') dmg = Math.max(1, Math.round(dmg * (def.vsBuildings || RANGED_VS_BUILDING)));
       const dist = Math.hypot(t.x - u.x, t.z - u.z);
-      const flight = Math.max(2, Math.round((dist / PROJECTILE_SPEED) * 20));
-      // what flies: arrows by default, iron shot from slings, bolts from crossbows
+      const flight = Math.max(2, Math.round((dist / (def.splash ? PROJECTILE_SPEED * 0.6 : PROJECTILE_SPEED)) * 20));
+      // what flies: arrows by default, iron shot from slings, bolts from crossbows, boulders from mangonels
       const missile = def.missile || 'arrow';
-      world.combat.pending.push({ from: u.id, owner: u.owner, target: t.id, damage: dmg, arrive: world.tick + flight, kind: missile, strong });
+      // a boulder lands where the target stood when it was loosed: a group that keeps moving can dodge it
+      const shot = { from: u.id, owner: u.owner, target: t.id, damage: dmg, arrive: world.tick + flight, kind: def.cls === 'siege' && t.kind === 'building' ? 'siege' : missile, strong };
+      if (def.splash) Object.assign(shot, { splash: def.splash, x: t.x, z: t.z, base: def.damage * damageMult(world, u), cls: def.cls, pierce: def.pierce || 0, vsB: def.vsBuildings || 1 });
+      world.combat.pending.push(shot);
       emit(world, EV.COMBAT_SHOT, { from: u.id, to: t.id, fx: u.x, fz: u.z, tx: t.x, tz: t.z, flightTicks: flight, kind: missile });
     } else {
       emit(world, 'combat:swing', { id: u.id, target: t.id });
@@ -216,7 +236,8 @@ export function createCombatModule() {
           if (p.arrive <= world.tick) {
             const t = world.entities[p.target];
             const src = world.entities[p.from] || { id: p.from, owner: p.owner };
-            if (t && isAlive(t)) dealDamage(world, src, t, p.damage, p.strong ? 'strong' : p.kind);
+            if (p.splash) splashHit(world, src, p);
+            else if (t && isAlive(t)) dealDamage(world, src, t, p.damage, p.strong ? 'strong' : p.kind);
           } else pend[w++] = p;
         }
         pend.length = w;
@@ -235,7 +256,9 @@ export function createCombatModule() {
           t = acquire(world, u, radius);
           if (t) u.target = t.id;
         }
-        if (t && u.cd <= 0 && o.type !== 'move' && reachDistance(u, t) <= def.range) attack(world, u, t);
+        // engines cannot shoot at enemies right next to them: look for one further out
+        if (t && def.minRange && reachDistance(u, t) < def.minRange) { u.target = null; t = acquire(world, u, Math.max(def.sight, def.range + 1)); if (t) u.target = t.id; }
+        if (t && u.cd <= 0 && o.type !== 'move' && reachDistance(u, t) <= def.range && !(def.minRange && reachDistance(u, t) < def.minRange)) attack(world, u, t);
       }
       // towers
       for (const b of all(world, 'building')) {

@@ -12,6 +12,7 @@ const has = (name) => !!meta.parts[name] || !!own[name];
 
 test('every unit type and every settler look is fully dressed from the baked parts', () => {
   for (const type of Object.keys(UNITS)) {
+    if (UNITS[type].engine) continue; // siege engines are machines, not figures
     assert.ok(STYLES.includes(type), `${type} has a costume`);
     const c = costume(type);
     for (const p of ['Body', 'ArmLeft', 'ArmRight', 'LegLeft', 'LegRight']) assert.ok(meta.parts[`${c.body}_${p}`], `${type}: body ${c.body}_${p}`);
