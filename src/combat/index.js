@@ -190,8 +190,10 @@ export function createCombatModule() {
       if (t.kind === 'building') dmg = Math.max(1, Math.round(dmg * RANGED_VS_BUILDING));
       const dist = Math.hypot(t.x - u.x, t.z - u.z);
       const flight = Math.max(2, Math.round((dist / PROJECTILE_SPEED) * 20));
-      world.combat.pending.push({ from: u.id, owner: u.owner, target: t.id, damage: dmg, arrive: world.tick + flight, kind: u.owner === PLAYER ? 'arrow' : 'stone', strong });
-      emit(world, EV.COMBAT_SHOT, { from: u.id, to: t.id, fx: u.x, fz: u.z, tx: t.x, tz: t.z, flightTicks: flight, kind: u.owner === PLAYER ? 'arrow' : 'stone' });
+      // what flies: arrows by default, iron shot from slings, bolts from crossbows
+      const missile = def.missile || 'arrow';
+      world.combat.pending.push({ from: u.id, owner: u.owner, target: t.id, damage: dmg, arrive: world.tick + flight, kind: missile, strong });
+      emit(world, EV.COMBAT_SHOT, { from: u.id, to: t.id, fx: u.x, fz: u.z, tx: t.x, tz: t.z, flightTicks: flight, kind: missile });
     } else {
       emit(world, 'combat:swing', { id: u.id, target: t.id });
       if (t.kind === 'building' && def.vsBuildings) dealDamage(world, u, t, dmg * def.vsBuildings, 'siege');
@@ -251,8 +253,9 @@ export function createCombatModule() {
         const flight = Math.max(2, Math.round((dist / PROJECTILE_SPEED) * 20));
         const armor = UNITS[best.type].armor + soldierMods(world, best).armor;
         const dmg = Math.max(1, Math.round(shot.damage * (1 - armor * 0.05)));
-        world.combat.pending.push({ from: b.id, owner: b.owner, target: best.id, damage: dmg, arrive: world.tick + flight, kind: b.owner === PLAYER ? 'arrow' : 'stone' });
-        emit(world, EV.COMBAT_SHOT, { from: b.id, to: best.id, fx: b.x, fz: b.z, fy: 7, tx: best.x, tz: best.z, flightTicks: flight, kind: b.owner === PLAYER ? 'arrow' : 'stone' });
+        const missile = shot.missile || 'arrow';
+        world.combat.pending.push({ from: b.id, owner: b.owner, target: best.id, damage: dmg, arrive: world.tick + flight, kind: missile });
+        emit(world, EV.COMBAT_SHOT, { from: b.id, to: best.id, fx: b.x, fz: b.z, fy: 7, tx: best.x, tz: best.z, flightTicks: flight, kind: missile });
       }
     },
     acquire: (u, r) => acquire(ctx.world, u, r),

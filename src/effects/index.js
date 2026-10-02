@@ -263,14 +263,14 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
         const k = Math.min(1, sh.t / sh.dur);
         const x = sh.fx + (sh.tx - sh.fx) * k, z = sh.fz + (sh.tz - sh.fz) * k;
         const dist = Math.hypot(sh.tx - sh.fx, sh.tz - sh.fz);
-        const arc = Math.sin(k * Math.PI) * dist * (sh.kind === 'arrow' ? 0.22 : 0.12);
+        const arc = Math.sin(k * Math.PI) * dist * (sh.kind !== 'stone' ? 0.22 : 0.12);
         const y = sh.fy + (sh.ty - sh.fy) * k + arc;
         if (k >= 1) { shots.splice(i, 1); continue; }
-        const vyv = (sh.ty - sh.fy) + Math.cos(k * Math.PI) * Math.PI * dist * (sh.kind === 'arrow' ? 0.22 : 0.12);
+        const vyv = (sh.ty - sh.fy) + Math.cos(k * Math.PI) * Math.PI * dist * (sh.kind !== 'stone' ? 0.22 : 0.12);
         p.set(sh.tx - sh.fx, vyv, sh.tz - sh.fz).normalize();
         q.setFromUnitVectors(fwd, p);
         m4.compose(s.set(x, y, z), q, p.set(1, 1, 1));
-        if (sh.kind === 'arrow') arrows.setMatrixAt(na++, m4); else stones.setMatrixAt(ns++, m4);
+        if (sh.kind !== 'stone') arrows.setMatrixAt(na++, m4); else stones.setMatrixAt(ns++, m4);
       }
       arrows.count = na; stones.count = ns;
       flushInstances(arrows); flushInstances(stones);

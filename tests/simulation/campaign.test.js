@@ -8,6 +8,7 @@ import { SCENARIOS, CAMPAIGN } from '../../src/missions/index.js';
 import { stance } from '../../src/diplomacy/index.js';
 import { serializeWorld, deserializeWorld } from '../../src/save/index.js';
 import { log } from '../../src/core/logger.js';
+import { BUILDINGS } from '../../src/buildings/defs.js';
 
 log.setConsoleLevel('error');
 const chapter = (id, extra = {}) => createSimulation({ seed: 7, difficulty: 'normal', scenarioId: id, ...extra });
@@ -96,4 +97,17 @@ test('chapter three: Vharek marches in after his host breaks; he must fall and h
   remove(w, vharek.id, 'test');
   sim.run(40);
   assert.equal(w.mission.result, 'victory');
+});
+
+test('every chapter starts with all troops and settlers outside the walls of the town', () => {
+  for (const id of CAMPAIGN) {
+    const sim = chapter(id);
+    const bs = all(sim.world, 'building');
+    for (const e of [...all(sim.world, 'unit'), ...all(sim.world, 'settler')]) {
+      for (const b of bs) {
+        const r = BUILDINGS[b.type].navRadius || BUILDINGS[b.type].radius;
+        assert.ok(Math.hypot(e.x - b.x, e.z - b.z) >= r * 0.9, `${id}: ${e.type || e.kind} ${e.id} stands inside the ${b.type}`);
+      }
+    }
+  }
 });

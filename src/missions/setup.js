@@ -2,7 +2,7 @@
 import { PLAYER, ENEMY } from '../core/contracts.js';
 import { addPlayer, spawn, worldRng, all } from '../world/world.js';
 import { createBuildingEntity, completeBuilding } from '../construction/index.js';
-import { UPGRADES } from '../buildings/defs.js';
+import { UPGRADES, BUILDINGS } from '../buildings/defs.js';
 import { findSpot } from '../demo/bot.js';
 import { spawnSettler } from '../population/index.js';
 import { spawnUnit } from '../units/sim.js';
@@ -132,12 +132,29 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
 
   // Settlers and hero at the Keep
   const door = { x: keep.x + Math.sin(keep.rot) * 9, z: keep.z + Math.cos(keep.rot) * 9 };
+  // a spot in front of the Keep, in its own frame (across the door, further out), so nobody
+  // stands inside the walls whichever way the Keep faces
+  const wanted = (across, out) => ({ x: door.x + Math.cos(keep.rot) * across + Math.sin(keep.rot) * out, z: door.z - Math.sin(keep.rot) * across + Math.cos(keep.rot) * out });
+  // ...moved to the nearest dry spot outside every building (the starting town stands there too)
+  const standing = all(world, 'building');
+  const free = (x, z) => !terrain.isWater(x, z) && standing.every((b) => Math.hypot(x - b.x, z - b.z) > (BUILDINGS[b.type].radius || 3) + 0.6);
+  const front = (across, out) => {
+    const p = wanted(across, out);
+    for (let r = 0; r <= 24; r += 1.2) {
+      for (let k = 0, n = Math.max(1, Math.round(r * 4)); k < n; k++) {
+        const a = (k / n) * Math.PI * 2, x = p.x + Math.sin(a) * r, z = p.z + Math.cos(a) * r;
+        if (free(x, z)) return { x, z };
+      }
+    }
+    return p;
+  };
   const settlers = st.settlers || 5;
-  for (let i = 0; i < settlers; i++) spawnSettler(world, PLAYER, door.x + ((i % 5) - 2) * 1.4, door.z + 1.5 + (i < 5 ? i % 2 : Math.floor(i / 5) * 1.3));
+  for (let i = 0; i < settlers; i++) { const p = front(((i % 5) - 2) * 1.4, 1.5 + (i < 5 ? i % 2 : Math.floor(i / 5) * 1.3)); spawnSettler(world, PLAYER, p.x, p.z); }
   // soldiers: 'type' or [type, rank] (veterans of earlier chapters keep their stars)
   (st.soldiers || []).forEach((spec, i) => {
     const [type, rank] = Array.isArray(spec) ? spec : [spec, 0];
-    const u = spawnUnit(world, type, PLAYER, door.x - 4 + (i % 4) * 1.6, door.z + 5 + Math.floor(i / 4) * 1.6);
+    const p = front(-4 + (i % 4) * 1.6, 5 + Math.floor(i / 4) * 1.6);
+    const u = spawnUnit(world, type, PLAYER, p.x, p.z);
     if (!u) return;
     u.order = { type: 'idle', ax: u.x, az: u.z };
     if (rank > 0) {
@@ -145,12 +162,14 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
       u.maxHp = Math.round(u.maxHp * RANKS[rank].hp); u.hp = u.maxHp;
     }
   });
-  const maren = spawnUnit(world, 'maren', PLAYER, door.x + 2, door.z - 1.5);
+  const mp = front(2, -1.5);
+  const maren = spawnUnit(world, 'maren', PLAYER, mp.x, mp.z);
   maren.order = { type: 'idle', ax: maren.x, az: maren.z };
   world.selection.ids = [maren.id];
   // further heroes who join in later chapters (Wren from chapter six)
   for (const type of st.heroes || []) {
-    const hh = spawnUnit(world, type, PLAYER, door.x + 3.5, door.z - 0.5);
+    const hp = front(3.5, -0.5);
+    const hh = spawnUnit(world, type, PLAYER, hp.x, hp.z);
     if (hh) hh.order = { type: 'idle', ax: hh.x, az: hh.z };
   }
 

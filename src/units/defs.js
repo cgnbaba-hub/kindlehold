@@ -17,7 +17,7 @@ export const UNITS = {
     cost: { iron: 20, provisions: 5 }, trainTime: 8, desc: 'Fast swordsman. Cuts down archers and slingers.' },
   fletcher: { id: 'fletcher', name: 'Fletcher', owner: 'p1', cls: 'ranged', hp: 90, armor: 0, damage: 12, range: 15, cooldown: 1.6, speed: 3.8, sight: 16,
     cost: { timber: 15, provisions: 5 }, trainTime: 8, desc: 'Longbow archer. Arcing shots pierce shield lines.' },
-  crossbow: { id: 'crossbow', name: 'Crossbowman', owner: 'p1', cls: 'ranged', hp: 110, armor: 2, damage: 22, range: 17, cooldown: 2.4, speed: 3.5, sight: 17, requiresLevel: 2,
+  crossbow: { id: 'crossbow', missile: 'bolt', name: 'Crossbowman', owner: 'p1', cls: 'ranged', hp: 110, armor: 2, damage: 22, range: 17, cooldown: 2.4, speed: 3.5, sight: 17, requiresLevel: 2,
     pierce: 0.5, cost: { timber: 20, iron: 15, provisions: 5 }, trainTime: 10, desc: 'Heavy bolts that punch through armour and shields. Slow to reload. Needs the Drill Yard.' },
   halberd: { id: 'halberd', name: 'Halberdier', owner: 'p1', cls: 'defensive', hp: 250, armor: 7, damage: 16, range: 2.5, cooldown: 1.4, speed: 3.2, sight: 12, requiresLevel: 2,
     cost: { timber: 10, iron: 30, provisions: 5 }, trainTime: 10, desc: 'Armoured elite with a long halberd: holds any line against blades and raiders. Needs the Drill Yard.' },
@@ -31,7 +31,7 @@ export const UNITS = {
     cost: {}, trainTime: 0, desc: 'Scout of the valley since the Long Frost. Her longbow never misses twice.' },
   // Rustfang Reavers
   reaver: { id: 'reaver', name: 'Reaver', owner: 'p2', cls: 'melee', hp: 120, armor: 1, damage: 14, range: 1.6, cooldown: 1.1, speed: 4.2, sight: 13, cost: {}, desc: 'Axe-raider of the Rustfang.' },
-  slinger: { id: 'slinger', name: 'Slinger', owner: 'p2', cls: 'ranged', hp: 80, armor: 0, damage: 10, range: 13, cooldown: 1.7, speed: 3.8, sight: 15, cost: {}, desc: 'Hurls iron shot.' },
+  slinger: { id: 'slinger', missile: 'stone', name: 'Slinger', owner: 'p2', cls: 'ranged', hp: 80, armor: 0, damage: 10, range: 13, cooldown: 1.7, speed: 3.8, sight: 15, cost: {}, desc: 'Hurls iron shot.' },
   brute: { id: 'brute', name: 'Brute', owner: 'p2', cls: 'defensive', hp: 180, armor: 4, damage: 10, range: 1.9, cooldown: 1.4, speed: 3.2, sight: 12, cost: {}, desc: 'Hide-shielded bruiser with a pike.' },
   // Greyfen brigands (p3)
   brigand: { id: 'brigand', name: 'Greyfen Brigand', owner: 'p3', cls: 'melee', hp: 115, armor: 1, damage: 13, range: 1.6, cooldown: 1.05, speed: 4.4, sight: 13, cost: {}, desc: 'Marsh outlaw with a hatchet and a quick temper.' },
@@ -39,7 +39,7 @@ export const UNITS = {
   morwen: { id: 'morwen', name: 'Morwen Greyfen', owner: 'p3', cls: 'commander', hp: 520, armor: 3, damage: 24, range: 15, cooldown: 1.5, speed: 4.2, sight: 16, cost: {}, desc: 'Chieftain of the Greyfen brigands. Proud, clever, and owes the Rustfang a blood debt.' },
   // the Legion of Varr (p2 in chapter four): disciplined lowland troops
   varrspear: { id: 'varrspear', name: 'Varr Pikeman', owner: 'p2', cls: 'defensive', hp: 170, armor: 4, damage: 11, range: 2.3, cooldown: 1.4, speed: 3.3, sight: 12, cost: {}, desc: 'A legion pikeman behind a crimson kite shield.' },
-  varrbow: { id: 'varrbow', name: 'Varr Crossbowman', owner: 'p2', cls: 'ranged', hp: 85, armor: 1, damage: 15, range: 14, cooldown: 2.2, speed: 3.6, sight: 15, pierce: 0.4, cost: {}, desc: 'Slow to reload; the bolts punch through armour.' },
+  varrbow: { id: 'varrbow', missile: 'bolt', name: 'Varr Crossbowman', owner: 'p2', cls: 'ranged', hp: 85, armor: 1, damage: 15, range: 14, cooldown: 2.2, speed: 3.6, sight: 15, pierce: 0.4, cost: {}, desc: 'Slow to reload; the bolts punch through armour.' },
   varrknight: { id: 'varrknight', name: 'Knight of Varr', owner: 'p2', cls: 'melee', hp: 210, armor: 5, damage: 18, range: 1.7, cooldown: 1.3, speed: 3.6, sight: 13, cost: {}, desc: 'Mailed swordsman of the Margravine\'s household.' },
   ysolde: { id: 'ysolde', name: 'Ysolde of Varr', owner: 'p2', cls: 'commander', hp: 760, armor: 6, damage: 30, range: 2.2, cooldown: 1.4, speed: 3.9, sight: 15, cost: {}, desc: 'Margravine of Varr. She believes every road leads to her treasury.' },
   // the Order of the White Stag (p2 in chapter five): merchant-knights of the lowland roads
@@ -49,7 +49,7 @@ export const UNITS = {
   vane: { id: 'vane', name: 'Master Edric Vane', owner: 'p2', cls: 'commander', hp: 800, armor: 6, damage: 28, range: 2.4, cooldown: 1.3, speed: 3.8, sight: 15, cost: {}, desc: 'Master of the Order of the White Stag. Every toll on every lowland road ends in his ledger.' },
   // House Morrow of the Iron March (p2 in chapter six): highland miners and their household guard
   ironguard: { id: 'ironguard', name: 'Morrow Ironguard', owner: 'p2', cls: 'defensive', hp: 230, armor: 6, damage: 12, range: 2.2, cooldown: 1.4, speed: 3.1, sight: 12, cost: {}, desc: 'Household guard in black iron plate behind a tower shield.' },
-  arbalest: { id: 'arbalest', name: 'Morrow Arbalest', owner: 'p2', cls: 'ranged', hp: 90, armor: 2, damage: 21, range: 18, cooldown: 2.7, speed: 3.3, sight: 18, pierce: 0.5, cost: {}, desc: 'A steel-bowed arbalest: slow to wind, deadly at long range.' },
+  arbalest: { id: 'arbalest', missile: 'bolt', name: 'Morrow Arbalest', owner: 'p2', cls: 'ranged', hp: 90, armor: 2, damage: 21, range: 18, cooldown: 2.7, speed: 3.3, sight: 18, pierce: 0.5, cost: {}, desc: 'A steel-bowed arbalest: slow to wind, deadly at long range.' },
   delver: { id: 'delver', name: 'Morrow Delver', owner: 'p2', cls: 'melee', hp: 135, armor: 2, damage: 14, range: 1.7, cooldown: 1.2, speed: 4.0, sight: 13, vsBuildings: 3, cost: {}, desc: 'A miner with a war-pick: tears down walls and houses three times faster than any soldier.' },
   ismay: { id: 'ismay', name: 'Lady Ismay Morrow', owner: 'p2', cls: 'commander', hp: 820, armor: 7, damage: 26, range: 2.4, cooldown: 1.3, speed: 3.8, sight: 15, cost: {}, desc: 'Heir of House Morrow. She has come to collect a debt a hundred years old.' },
   vharek: { id: 'vharek', name: 'Vharek the Tollbreaker', owner: 'p2', cls: 'commander', hp: 700, armor: 5, damage: 35, range: 2.4, cooldown: 1.8, speed: 3.8, sight: 14, cost: {}, desc: 'Former bridge-warden turned warlord.' },
