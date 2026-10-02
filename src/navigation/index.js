@@ -103,19 +103,44 @@ export function followPath(e, speed, dt) {
   return false;
 }
 
-/** Formation slots: rows facing from (fromX,fromZ) towards (x,z). Ranged units go to the back rows. */
-export function formationSlots(count, x, z, fromX, fromZ, spacing = 1.9) {
+export const FORMATIONS = ['block', 'line', 'wedge', 'ring'];
+
+/**
+ * Formation slots facing from (fromX,fromZ) towards (x,z), front first: callers sort front-line
+ * troops first and ranged ones last.
+ *   block — a few deep rows (the default); line — one wide rank (two if many);
+ *   wedge — a spearhead with the first unit at the tip; ring — a circle facing out, the last
+ *   `inner` units (archers, the hero) in its middle.
+ */
+export function formationSlots(count, x, z, fromX, fromZ, spacing = 1.9, shape = 'block', inner = 0) {
   const dirX = x - fromX, dirZ = z - fromZ;
-  const len = Math.hypot(dirX, dirZ) || 1;
-  const fx = dirX / len, fz = dirZ / len; // forward
+  const len = Math.hypot(dirX, dirZ);
+  const fx = len > 1e-6 ? dirX / len : 0, fz = len > 1e-6 ? dirZ / len : 1; // forward
   const rx = fz, rz = -fx;                 // right
-  const perRow = Math.max(3, Math.ceil(Math.sqrt(count * 2)));
+  const at = (col, row) => [x + rx * col * spacing - fx * row * spacing, z + rz * col * spacing - fz * row * spacing];
   const slots = [];
+  if (shape === 'ring' && count > 3) {
+    const out = Math.max(3, count - Math.min(inner, count - 3));
+    const r = Math.max(2.2, (out * spacing) / (Math.PI * 2));
+    for (let i = 0; i < out; i++) { const a = (i / out) * Math.PI * 2; slots.push([x + Math.sin(a) * r, z + Math.cos(a) * r]); }
+    const rest = count - out, r2 = Math.min(r - spacing, Math.max(0.9, (rest * spacing) / (Math.PI * 2)));
+    for (let i = 0; i < rest; i++) { const a = (i / Math.max(1, rest)) * Math.PI * 2 + 0.4; slots.push(rest === 1 ? [x, z] : [x + Math.sin(a) * r2, z + Math.cos(a) * r2]); }
+    return slots;
+  }
+  if (shape === 'wedge') {
+    // rows of 1, 2, 3 … behind the tip, each row centred: the point of a spear
+    let i = 0;
+    for (let row = 0; i < count; row++) {
+      const inRow = Math.min(row + 1, count - i);
+      for (let k = 0; k < inRow; k++, i++) slots.push(at(k - (inRow - 1) / 2, row * 0.85));
+    }
+    return slots;
+  }
+  const perRow = shape === 'line' ? Math.max(3, count > 12 ? Math.ceil(count / 2) : count) : Math.max(3, Math.ceil(Math.sqrt(count * 2)));
   for (let i = 0; i < count; i++) {
     const row = Math.floor(i / perRow);
     const inRow = Math.min(perRow, count - row * perRow);
-    const col = (i % perRow) - (inRow - 1) / 2;
-    slots.push([x + rx * col * spacing - fx * row * spacing, z + rz * col * spacing - fz * row * spacing]);
+    slots.push(at((i % perRow) - (inRow - 1) / 2, row));
   }
   return slots;
 }

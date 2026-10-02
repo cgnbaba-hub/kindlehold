@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { newSim, keep, place, runUntil, grant, all, units } from '../helpers/sim.js';
-import { pickStore, AUTO_GATHER } from '../../src/economy/index.js';
+import { pickStore, AUTO_GATHER, autoGatherRules } from '../../src/economy/index.js';
 import { findSpot } from '../../src/demo/bot.js';
 import { spawnUnit } from '../../src/units/sim.js';
 
@@ -58,6 +58,18 @@ test('idle labourers fell trees on their own while timber runs short, and can be
   const sim2 = started({ timber: AUTO_GATHER.timber + 200, stone: AUTO_GATHER.stone + 200 });
   for (let i = 0; i < 20 * 60; i++) sim2.step();
   assert.ok(!all(sim2.world, 'settler').some((s) => s.order && s.order.auto), 'nobody gathers when the store is full');
+});
+
+test('idle hands scale with the difficulty: not at all on Hard', () => {
+  const sim = newSim({ difficulty: 'hard' });
+  sim.issue({ type: 'rekindle' });
+  grant(sim, { timber: 0, stone: 0, provisions: 200 });
+  for (let i = 0; i < 20 * 90; i++) {
+    sim.step();
+    assert.ok(!all(sim.world, 'settler').some((s) => s.order && s.order.auto), 'nobody sets out on their own on Hard');
+  }
+  assert.equal(autoGatherRules(sim.world), null);
+  assert.ok(autoGatherRules(newSim({ difficulty: 'story' }).world).timber > autoGatherRules(newSim().world).timber, 'Story helps more than Normal');
 });
 
 test('a moved building is taken down and put up elsewhere with its materials and level', () => {

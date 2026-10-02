@@ -6,19 +6,26 @@ import { EV } from '../core/contracts.js';
 import { UNITS } from './defs.js';
 import { createFigureRenderer } from './figures.js';
 import { createSkinnedFigureRenderer } from './skinned-figures.js';
+import { createEngineRenderer } from './engines.js';
 
 const CORPSE_SECONDS = 6;
 const BLEND = 0.22; // seconds to cross-fade from one animation into the next
 const STRIDE = 1.8; // metres per full stride cycle at figure scale 1: 4 x hip height x sin(swing 0.52), so feet do not slide
 
-export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60, figureAssets = null }) {
+export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60, figureAssets = null, camera = null }) {
+  // only figures in view (plus a margin for their shadows) are skinned and drawn
+  const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), ball = new THREE.Sphere(new THREE.Vector3(), 4);
+  const inView = (x, y, z) => !camera || frustum.intersectsSphere(ball.set(ball.center.set(x, y + 1, z), 4));
   const figs = figureAssets ? createSkinnedFigureRenderer({ scene, assets: figureAssets }) : createFigureRenderer({ scene });
+  const engines = createEngineRenderer({ scene });
+  const eng = { engine: '', x: 0, y: 0, z: 0, heading: 0, scale: 1, since: 99, reload: 5 };
   const corpses = [];
   const unsub = [];
   unsub.push(bus.on(EV.UNIT_DIED, (d) => {
+    headings.delete(d.id); lastHp.delete(d.id); hitAt.delete(d.id); motion.delete(d.id); acks.delete(d.id);
+    if (d.type && UNITS[d.type] && UNITS[d.type].engine) return; // a wrecked engine leaves no body
     if (corpses.length > 60) corpses.shift();
     corpses.push({ ...d, t0: -1 });
-    headings.delete(d.id); lastHp.delete(d.id); hitAt.delete(d.id); motion.delete(d.id); acks.delete(d.id);
   }));
   // the player's soldiers answer orders with a short gesture
   const acks = new Map();
@@ -91,7 +98,8 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
       const w = world();
       const tickTime = (w.tick + alpha) / 20;
       if (figs.tick) figs.tick(frame.dt);
-      figs.begin();
+      if (camera) frustum.setFromProjectionMatrix(pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+      figs.begin(); engines.begin();
       // idle neighbours turn to each other and chat
       const idle = [];
       for (const s of all(w, 'settler')) if (!s.hidden && (s.anim || 'idle') === 'idle' && !s.carry) idle.push(s);
@@ -110,6 +118,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         if (s.hidden) continue; // asleep indoors
         const x = s.px + (s.x - s.px) * alpha, z = s.pz + (s.z - s.pz) * alpha;
         f.x = x; f.z = z; f.y = terrain.height(x, z);
+        if (!inView(x, f.y, z)) continue;
         const chat = talk.get(s.id);
         f.heading = smoothHeading(s, frame.dt, chat);
         f.style = 'settler'; f.scale = 1.25 * zk; f.tunic = figs.tunicFor(s.id); f.capColor = null;
@@ -126,7 +135,14 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         const def = UNITS[u.type];
         const x = u.px + (u.x - u.px) * alpha, z = u.pz + (u.z - u.pz) * alpha;
         f.x = x; f.z = z; f.y = terrain.height(x, z);
+        if (!inView(x, f.y, z)) { hitAmount(u); continue; }
         f.heading = smoothHeading(u, frame.dt);
+        if (def.engine) {
+          eng.engine = def.engine; eng.x = x; eng.y = f.y; eng.z = z; eng.heading = f.heading; eng.scale = zk;
+          eng.since = (w.tick - (u.attackT ?? -1e6) + alpha) / 20; eng.reload = def.cooldown;
+          engines.draw(eng);
+          continue;
+        }
         f.style = u.type; f.scale = 1.3 * zk; f.tunic = null; f.tool = null; f.carry = null; f.lean = 0;
         f.t = tickTime + u.id * 0.29; f.phase = u.id;
         f.kneel = !!u.downed; f.fallen = 0; f.job = null; f.hit = u.downed ? 0 : hitAmount(u); f.rank = u.rank || 0;
@@ -163,6 +179,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         if (c.t0 < 0) c.t0 = time;
         const age = time - c.t0;
         if (age > CORPSE_SECONDS) { corpses.splice(i, 1); continue; }
+        if (!inView(c.x, terrain.height(c.x, c.z), c.z)) continue;
         f.x = c.x; f.z = c.z; f.y = terrain.height(c.x, c.z) - Math.max(0, age - CORPSE_SECONDS + 1.5) * 0.35;
         f.heading = c.heading || 0; f.style = c.kind === 'settler' ? 'settler' : c.type; f.scale = (c.kind === 'settler' ? 1.25 : 1.3) * zk; f.job = null; f.hit = 0; f.rank = 0;
         f.tunic = c.kind === 'settler' ? figs.tunicFor(c.id) : null; f.tool = null; f.carry = null;
@@ -170,10 +187,10 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         f.ack = null; f.id = `c${c.id}`; f.dt = frame.dt; f.deathT = age; f.fallen = Math.min(1, age / 0.85); f.lanternOut = null; f.blendFrom = null; f.walkPh = 0; f.attack = null; f.phase = c.id || 0;
         figs.draw(f);
       }
-      figs.end();
+      figs.end(); engines.end();
       if ((prune += frame.dt) > 5) { prune = 0; for (const [id, m] of motion) if (time - m.seen > 3) motion.delete(id); }
     },
     getHealthStatus() { return { status: 'ok' }; },
-    dispose() { unsub.forEach((u) => u()); figs.dispose(); },
+    dispose() { unsub.forEach((u) => u()); figs.dispose(); engines.dispose(); },
   };
 }

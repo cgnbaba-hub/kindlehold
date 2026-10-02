@@ -248,6 +248,8 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       ['alertWarn', 'Read the warnings', 'Selected buildings tell you exactly why they stall: no worker, storage full, no input, nothing in range.'],
       ['research', 'Research at the Keep', 'Keen Axes, Braced Timber, Tempered Blades and the March Charter (which unlocks Watchtowers).'],
       ['shield', 'Soldiers', 'Shieldbearers beat blades, Bladesmen beat archers, Fletchers beat shields. Right-click to move or attack; A = attack-move.'],
+      ['fmWedge', 'Formations', 'With two or more soldiers selected, pick Block, Line, Wedge or Ring: every march keeps that shape.'],
+      ['mangonel', 'Siege engines', 'The Siege Yard (Barracks level 3, needs the Castle) builds the Ballista and the Mangonel: deadly at range, helpless up close.'],
       ['maren', 'Maren Ashgrove', 'F: Beacon Flare (damages and dazzles enemies). G: Kindle the Line (wards nearby allies). Allies near her heal.'],
       ['wren', 'Wren Fenmore (from chapter 6)', 'F: Arrow Storm (arrows rain on a circle). G: Hunter\'s Mark (marked enemies take 30% more damage; reveals the land). She sees further than anyone.'],
       ['warhall', 'Win', 'Survive the Rustfang raid, then destroy the Warhall at the ford fort. Lose the Keep and the scenario is lost.'],

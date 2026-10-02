@@ -15,7 +15,7 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
   const cam = rc.rts;
   const keys = new Set();
   const state = {
-    mode: 'select', placeType: null, placeRot: 2.3, targetKind: null,
+    mode: 'select', placeType: null, placeRot: 2.3, targetKind: null, formation: 'block',
     mouse: { x: 0, y: 0, inside: false }, down: null, box: null, hoverGround: null, hoverEntity: null,
     lastClick: { t: 0, id: null },
   };
@@ -101,7 +101,11 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
     return null;
   }
 
-  function issue(cmd) { sim.issue(cmd); if (hooks.onCommand) hooks.onCommand(cmd); }
+  function issue(cmd) {
+    // the player's chosen formation goes with every walking order of a group
+    if ((cmd.type === 'move' || cmd.type === 'attackMove' || cmd.type === 'patrol') && Array.isArray(cmd.ids) && !cmd.formation) cmd = { ...cmd, formation: state.formation };
+    sim.issue(cmd); if (hooks.onCommand) hooks.onCommand(cmd);
+  }
 
   function contextOrder(x, y) {
     const units = selectedUnits();

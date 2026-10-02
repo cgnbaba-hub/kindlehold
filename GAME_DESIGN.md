@@ -4,6 +4,17 @@ Kindlehold is an original economy-first real-time strategy game. It borrows only
 general genre conventions (worker-driven production, housing, territory, small-squad
 combat). All names, lore, numbers, layouts and art are original to this project.
 
+## Design rule: challenge before comfort
+
+The economy, transport and battles must stay demanding, scaled by the chosen difficulty.
+Story is gentle; Normal asks for planning; Hard punishes waste. A comfort feature is welcome
+when it rewards a decision, such as where to put a Storehouse. It must not remove a
+bottleneck for free.
+
+Every simplification is weighed openly. Each one names what it costs: materials, upkeep,
+research, space or risk. Its effect is measured with the balance bot (`npm run balance`) and
+the squad duels (`scripts/balance-duels.mjs`). See also `CLAUDE.md`.
+
 ## Setting
 
 **The Harrowmere March** — a river valley on the edge of the old kingdom of Aubreth,
@@ -261,11 +272,19 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 - **Storehouse** (35 timber, 25 stone): `isStore`/`pickStore` in `economy/index.js`. Fetch trips
   use the store with the shortest way labourer → store → target; drop-offs go to the store
   nearest the goods. Stock stays one pool per player (no per-store inventories).
-- **Idle hands** (`AUTO_GATHER`): an idle labourer (checked every 2 s) fells a tree / cuts stone
-  within 45 m of a store while timber < 120 or stone < 80, one trip (`order.auto`), at most a third
-  of the labourers, one always left idle. Toggle per player: command `setAutoGather`
-  (`player.autoGather`, saved).
-- **Move** (command `move`): new site with all materials supplied, level kept (`movedLevel`),
+- **Idle hands** (`AUTO_GATHER`, `AUTO_GATHER_RULES`):
+  - An idle labourer (checked every 2 s) fells a tree or cuts stone within 45 m of a store.
+  - One trip at a time (`order.auto`); one labourer always stays idle.
+  - Per difficulty:
+    - Story: while timber < 120 or stone < 80, at most a third of the labourers.
+    - Normal: while timber < 60 or stone < 40, at most a quarter.
+    - Hard: off.
+  - The bot measured it as a real easing: up to 9 minutes faster wins and a much larger town.
+    That is why it scales with the difficulty.
+  - With the scaled rules, bot runs on Normal (seeds 1337 and 7) win 0–4 minutes sooner with
+    it on; Hard is unchanged.
+  - Toggle per player: command `setAutoGather` (`player.autoGather`, saved).
+- **Move** (command `relocate`): new site with all materials supplied, level kept (`movedLevel`),
   goods in the old building go to the store; not the Keep, not during an upgrade.
 - **Healing**: player soldiers not hit for 5 s heal 3 hp/s within 26 m of the Keep, 18 m of a
   Barracks, 14 m of a Watchtower (`HOME_HEAL`, `HEAL_AT` in `units/sim.js`).
@@ -309,4 +328,29 @@ Diplomacy, trading, rain/other weather, multiple maps, skirmish, map editor, mul
 Upgrades that add range, damage or a faster reload stack through `attackOf(b)` in
 `buildings/defs.js`, which combat and the selection panel both use. Towers are the
 Settlers-like way to grow the land, so each level also widens the territory.
+
+## Siege Yard and formations
+
+**Siege Yard** (Barracks level 3): 60 T, 40 S, 20 I, 4 tools, 80 taler, 60 s. Needs the Castle.
+
+| Engine | HP | Armour | Damage | Range (min) | Reload | Speed | Cost | Notes |
+|---|---|---|---|---|---|---|---|---|
+| Ballista | 200 | 4 | 30, pierces 70% of armour | 22 m (4 m) | 4.2 s | 2.4 | 50 T, 20 I, 2 tools, 5 P | ×1.5 against shields |
+| Mangonel | 280 | 3 | 32 in a 3.2 m splash (40% at the rim) | 26 m (7 m) | 5.5 s | 1.9 | 70 T, 30 S, 15 I, 3 tools, 5 P | ×3 against buildings; ignores walls |
+
+Engines form a new class, `siege`. Blades deal ×2 against it. A boulder lands where its target
+stood when it was thrown.
+
+Balance check, duels of 6 Shieldbearers and 2 engines against 4 Reavers,
+3 Brutes and 3 Slingers:
+- 8 Shieldbearers lose.
+- With engines the fight is close, won or lost depending on the seed.
+- Two engines alone lose at once.
+
+The first Ballista (40 damage, 3.6 s) was too strong and was cut back.
+
+**Formations:** Block (default), Line, Wedge and Ring, defined in `navigation.formationSlots`.
+- The player's choice lives in the input state, not in the save.
+- Every walking order of a group carries it.
+- A re-form order carries the group's facing.
 

@@ -130,6 +130,12 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
     const fy = d.fy != null ? d.fy : 1.4;
     shots.push({ fx: d.fx, fz: d.fz, fy: heightAt(d.fx, d.fz) + fy, tx: d.tx, tz: d.tz, ty: heightAt(d.tx, d.tz) + 1.1, t: 0, dur: d.flightTicks / 20, kind: d.kind, target: d.to });
   }));
+  // a boulder lands: a ring of dust and flying earth
+  unsub.push(bus.on('combat:impact', (d) => {
+    const y = heightAt(d.x, d.z);
+    emit('dust', d.x, y + 0.6, d.z, 14, d.r * 0.8, [0, 1.4, 0], 2.2);
+    emit('chips', d.x, y + 0.5, d.z, 8, d.r * 0.4, [0, 4.5, 0], 3.5);
+  }));
   unsub.push(bus.on(EV.COMBAT_HIT, (d) => {
     const y = heightAt(d.x, d.z);
     if (d.targetKind === 'building') { emit('dust', d.x, y + 1.5, d.z, 3, 2, [0, 0.8, 0], 1); emit('chips', d.x, y + 2, d.z, 3, 1.5, [0, 3, 0], 3); }
@@ -263,14 +269,16 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
         const k = Math.min(1, sh.t / sh.dur);
         const x = sh.fx + (sh.tx - sh.fx) * k, z = sh.fz + (sh.tz - sh.fz) * k;
         const dist = Math.hypot(sh.tx - sh.fx, sh.tz - sh.fz);
-        const arc = Math.sin(k * Math.PI) * dist * (sh.kind === 'arrow' ? 0.22 : 0.12);
+        const arc = Math.sin(k * Math.PI) * dist * (sh.kind === 'boulder' ? 0.32 : sh.kind !== 'stone' ? 0.22 : 0.12);
         const y = sh.fy + (sh.ty - sh.fy) * k + arc;
         if (k >= 1) { shots.splice(i, 1); continue; }
-        const vyv = (sh.ty - sh.fy) + Math.cos(k * Math.PI) * Math.PI * dist * (sh.kind === 'arrow' ? 0.22 : 0.12);
+        const vyv = (sh.ty - sh.fy) + Math.cos(k * Math.PI) * Math.PI * dist * (sh.kind === 'boulder' ? 0.32 : sh.kind !== 'stone' ? 0.22 : 0.12);
         p.set(sh.tx - sh.fx, vyv, sh.tz - sh.fz).normalize();
         q.setFromUnitVectors(fwd, p);
         m4.compose(s.set(x, y, z), q, p.set(1, 1, 1));
-        if (sh.kind === 'arrow') arrows.setMatrixAt(na++, m4); else stones.setMatrixAt(ns++, m4);
+        // a boulder is the iron shot, three times the size
+        if (sh.kind === 'boulder') { m4.compose(s.set(x, y, z), q, p.set(3.2, 3.2, 3.2)); stones.setMatrixAt(ns++, m4); }
+        else if (sh.kind !== 'stone') arrows.setMatrixAt(na++, m4); else stones.setMatrixAt(ns++, m4);
       }
       arrows.count = na; stones.count = ns;
       flushInstances(arrows); flushInstances(stones);

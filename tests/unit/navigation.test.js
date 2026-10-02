@@ -68,3 +68,20 @@ test('formation slots are distinct and centred on the target', () => {
   const front = slots.slice(0, 3);
   assert.ok(front.every(([x]) => Math.abs(x) < 0.01), 'first row at the target line');
 });
+
+test('formations: a line is one wide rank, a wedge has a tip, a ring keeps archers inside', () => {
+  const distinct = (slots) => new Set(slots.map(([x, z]) => `${x.toFixed(2)},${z.toFixed(2)}`)).size;
+  // marching east (+x): ranks run north-south (z)
+  const line = formationSlots(8, 0, 0, -10, 0, 1.9, 'line');
+  assert.equal(distinct(line), 8);
+  assert.ok(line.every(([x]) => Math.abs(x) < 0.01), 'everyone in the front rank');
+  const wedge = formationSlots(6, 0, 0, -10, 0, 1.9, 'wedge');
+  assert.equal(distinct(wedge), 6);
+  assert.ok(wedge.slice(1).every(([x]) => x < wedge[0][0] - 0.5), 'the first stands ahead of all others');
+  const ring = formationSlots(10, 0, 0, -10, 0, 1.9, 'ring', 3);
+  assert.equal(distinct(ring), 10);
+  const r = (p) => Math.hypot(p[0], p[1]);
+  assert.ok(Math.max(...ring.slice(7).map(r)) < Math.min(...ring.slice(0, 7).map(r)), 'the last three stand inside the ring');
+  // re-forming in place: target and origin coincide, the shape still spreads out
+  assert.equal(distinct(formationSlots(6, 5, 5, 5, 5, 1.9, 'block')), 6);
+});

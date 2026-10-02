@@ -170,16 +170,19 @@ DEMO_STATES.levels = (sim) => {
   sim.run(20);
 };
 
-/** Showcase: every unit type standing in a row. */
+/** Showcase: every unit type standing in a row, the siege engines behind. */
 DEMO_STATES.unitLineup = (sim) => {
   quietEnemy(sim);
   const types = ['shield', 'blade', 'fletcher', 'maren', 'reaver', 'slinger', 'brute', 'vharek'];
+  const engines = [['ballista', -34], ['mangonel', -26]];
   for (const u of all(sim.world, 'unit').slice()) if (u.owner === 'p2') u.order = { type: 'hold', ax: u.x, az: u.z };
   types.forEach((t, i) => {
     if (t === 'maren') { const h = all(sim.world, 'unit').find((u) => u.hero); if (h) { h.x = h.px = -40 + i * 2.6; h.z = h.pz = 36; h.heading = 0.4; } return; }
     const u = (t === 'shield' || t === 'blade' || t === 'fletcher') ? spawnUnit(sim.world, t, 'p1', -40 + i * 2.6, 36) : spawnEnemy(sim.world, t, -40 + i * 2.6, 36);
     if (u) { u.order = { type: 'hold', ax: u.x, az: u.z }; u.heading = 0.4; }
   });
+  // the siege engines behind the line
+  for (const [t, x] of engines) { const u = spawnUnit(sim.world, t, 'p1', x, 30); if (u) { u.order = { type: 'hold', ax: u.x, az: u.z }; u.heading = 0.4; } }
 };
 
 export function applyDemoState(sim, name) {

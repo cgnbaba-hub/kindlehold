@@ -16,6 +16,7 @@ import { TECHS, TECH_ORDER } from '../technology/defs.js';
 import { researchBlocker } from '../technology/index.js';
 import { buildCost, upgradeBlocker, canMove } from '../construction/index.js';
 import { canAfford } from '../economy/stock.js';
+import { autoGatherRules } from '../economy/index.js';
 import { ABILITIES, heroAbilities } from '../heroes/index.js';
 import { STALL_TEXT, WORK, missingInputs } from '../production/index.js';
 import { scenarioOf } from '../missions/index.js';
@@ -33,7 +34,7 @@ const RES_TIPS = {
 };
 // goods of the longer chains show in the ribbon only once the settlement has them
 const CHAIN_GOODS = { flour: 'mill', bread: 'bakery', tools: 'smithy' };
-const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander' };
+const CLS_NAMES = { melee: 'Melee', ranged: 'Ranged', defensive: 'Defensive', hero: 'Hero', commander: 'Commander', siege: 'Siege engine' };
 const JOB_NAMES = { forester: 'Forester', quarrier: 'Quarrier', farmer: 'Farmer', miner: 'Miner', hunter: 'Hunter', fisher: 'Fisher', salter: 'Salter', cook: 'Cook', miller: 'Miller', baker: 'Baker', smith: 'Smith' };
 
 /**
@@ -563,12 +564,15 @@ export function createHud({ root, session, input, settings, actions }) {
           });
           selPanel.append(rationRow);
           // idle labourers fell trees and cut stone on their own while the store runs short
-          const auto = p.autoGather !== false;
+          const rules = autoGatherRules(w);
+          const auto = !!rules && p.autoGather !== false;
           const gatherRow = h('div.tax-row', { role: 'group', 'aria-label': 'Idle labourers' }, [h('span', { text: 'Idle hands' })]);
-          [['Wait', false, 'Idle labourers wait at the Keep for work.'], ['Gather', true, 'Idle labourers fell trees and cut stone near a store while timber or stone run short.']].forEach(([name, on, tip]) => {
+          const gatherTip = rules ? `Idle labourers fell trees and cut stone near a store while timber is below ${rules.timber} or stone below ${rules.stone}.` : 'Not on Hard: idle labourers only wait for work.';
+          [['Wait', false, 'Idle labourers wait at the Keep for work.'], ['Gather', true, gatherTip]].forEach(([name, on, tip]) => {
             const cur = auto === on;
-            const b = h(`button.tax-btn${cur ? '.active' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'data-tip': tip, text: name });
-            b.addEventListener('click', () => { input.issue({ type: 'setAutoGather', on }); setTimeout(() => { dirtySel = true; }, 120); });
+            const off = on && !rules;
+            const b = h(`button.tax-btn${cur ? '.active' : ''}${off ? '.disabled' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'aria-disabled': off ? 'true' : 'false', 'data-tip': tip, text: name });
+            b.addEventListener('click', () => { if (off) { toast(tip, 'warn'); return; } input.issue({ type: 'setAutoGather', on }); setTimeout(() => { dirtySel = true; }, 120); });
             gatherRow.append(b);
           });
           selPanel.append(gatherRow);
@@ -647,6 +651,12 @@ export function createHud({ root, session, input, settings, actions }) {
   let confirmDemolish = 0;
   const SHORT = { 'Hold a feast': 'Feast', "Hunter's Hut": 'Hunter', 'Keen Axes': 'Axes', 'Braced Timber': 'Bracing', 'Tempered Blades': 'Blades', 'March Charter': 'Charter', 'Hire labourer': 'Hire', 'Back to work': 'Release', 'Upgrading…': 'Upgrading', 'Steel Mail': 'Mail', 'Veteran Drill': 'Drill', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
   function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
+  const FORMATION_BUTTONS = [
+    ['block', 'fmBlock', 'Block', 'A few deep rows: shields in front, archers behind. Every later march keeps this shape.'],
+    ['line', 'fmLine', 'Line', 'One wide rank: everyone fights at once, but the line is thin. Every later march keeps this shape.'],
+    ['wedge', 'fmWedge', 'Wedge', 'A spearhead with the toughest at the tip: breaks into a crowd. Every later march keeps this shape.'],
+    ['ring', 'fmRing', 'Ring', 'A circle facing out, archers and heroes inside: nobody is caught from behind. Every later march keeps this shape.'],
+  ];
   function cmdButton({ ic, label, key, tip, tipTitle, onClick, disabled = false, cost = null, progress = null, cooldown = null, active = false, highlight = false }) {
     const b = h(`button.cmd${active ? '.active' : ''}${highlight ? '.pulse' : ''}`, { type: 'button', 'aria-label': label, 'data-tip': tip || label, 'data-tip-title': tipTitle || label, 'aria-disabled': disabled ? 'true' : 'false' }, [icon(ic, 'icon icon-md'), cost ? null : h('span.cmd-label', { text: shortLabel(label) })]);
     if (key) b.append(h('span.cmd-key', { text: keyLabel(key) }));
@@ -713,6 +723,18 @@ export function createHud({ root, session, input, settings, actions }) {
       cmdGrid.append(cmdButton({ ic: 'patrol', label: 'Patrol', key: bb.patrol, tip: 'Walk back and forth, engaging enemies.', onClick: () => input.beginTarget('patrol'), active: input.state.targetKind === 'patrol' }));
       cmdGrid.append(cmdButton({ ic: 'stop', label: 'Stop', key: bb.stop, tip: 'Stop and guard the current spot.', onClick: () => input.issue({ type: 'stop', ids: units.map((u) => u.id) }) }));
       cmdGrid.append(cmdButton({ ic: 'hold', label: 'Hold position', key: bb.hold, tip: 'Never move; only strike enemies in reach.', onClick: () => input.issue({ type: 'hold', ids: units.map((u) => u.id) }) }));
+      // formations: the shape the group takes on every walk; choosing one re-forms the group where it stands
+      if (units.length > 1) {
+        const ids = units.map((u) => u.id);
+        for (const [shape, ic, label, tip] of FORMATION_BUTTONS) {
+          cmdGrid.append(cmdButton({ ic, label, tipTitle: `Formation: ${label}`, tip, active: input.state.formation === shape, onClick: () => {
+            input.state.formation = shape; dirtySel = true;
+            let cx = 0, cz = 0, sx = 0, sz = 0;
+            for (const u of units) { cx += u.x; cz += u.z; sx += Math.sin(u.heading || 0); sz += Math.cos(u.heading || 0); }
+            input.issue({ type: 'move', ids, x: cx / units.length, z: cz / units.length, formation: shape, facing: Math.atan2(sx, sz) });
+          } }));
+        }
+      }
       if (hero) {
         heroAbilities(hero).forEach((ab, i) => {
           const cd = Math.max(0, ((hero.abilityCd && hero.abilityCd[ab.id]) || 0) - w.tick) / 20;
@@ -774,7 +796,7 @@ export function createHud({ root, session, input, settings, actions }) {
           const u = UNITS[type];
           const afford = canAfford(w, PLAYER, u.cost);
           const locked = (u.requiresLevel || 1) > levelOf(one);
-          cmdGrid.append(cmdButton({ ic: type, label: `Train ${u.name}`, tipTitle: u.name, tip: locked ? `Needs the Drill Yard: upgrade this Barracks. ${u.desc}` : afford ? `${u.desc} Uses one idle settler.` : `Not enough resources. ${u.desc}`, cost: u.cost, disabled: locked || !afford || one.queue.length >= 5, highlight: hl === 'build:barracks' && !locked, onClick: () => input.issue({ type: 'recruit', building: one.id, unitType: type }) }));
+          cmdGrid.append(cmdButton({ ic: type, label: `Train ${u.name}`, tipTitle: u.name, tip: locked ? `${u.requiresLevel >= 3 ? 'Needs the Siege Yard: upgrade this Barracks to level 3' : 'Needs the Drill Yard: upgrade this Barracks'}. ${u.desc}` : afford ? `${u.desc} Uses one idle settler.` : `Not enough resources. ${u.desc}`, cost: u.cost, disabled: locked || !afford || one.queue.length >= 5, highlight: hl === 'build:barracks' && !locked, onClick: () => input.issue({ type: 'recruit', building: one.id, unitType: type }) }));
         }
         cmdGrid.append(cmdButton({ ic: 'patrol', label: 'Set rally point', tip: 'Right-click the ground while the Barracks is selected.', onClick: () => toast('Right-click the ground to set the rally point', 'info') }));
       }

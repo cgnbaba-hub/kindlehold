@@ -15,6 +15,8 @@ export default {
       ['Hammer', () => bus.emit(EV.WORK_STRIKE, { kind: 'build', x, z })],
       ['Clash', () => bus.emit(EV.COMBAT_HIT, { x, z, targetKind: 'unit', kind: 'melee' })],
       ['Arrow', () => bus.emit(EV.COMBAT_SHOT, { fx: x, fz: z, tx: x + 10, tz: z, flightTicks: 10, kind: 'arrow' })],
+      ['Mangonel', () => { bus.emit(EV.COMBAT_SHOT, { fx: x, fz: z, tx: x + 12, tz: z, flightTicks: 30, kind: 'boulder' }); bus.emit('combat:impact', { x: x + 6, z, r: 3 }); }],
+      ['Crossbow bolt', () => bus.emit(EV.COMBAT_SHOT, { fx: x, fz: z, tx: x + 10, tz: z, flightTicks: 8, kind: 'bolt' })],
       ['Beacon Flare', () => bus.emit(EV.HERO_ABILITY, { ability: 'flare', x, z, radius: 6 })],
       ['Kindle the Line', () => bus.emit(EV.HERO_ABILITY, { ability: 'kindle', x, z, radius: 9 })],
       ['War horn', () => bus.emit(EV.AI_WAVE, { wave: 1, size: 9, x, z })],

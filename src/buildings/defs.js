@@ -159,17 +159,17 @@ export const BUILDINGS = {
   morrowtower: {
     id: 'morrowtower', name: 'Morrow Bastion', owner: 'p2', buildable: false,
     desc: 'A squat black-stone bastion with an arbalest on the roof.',
-    cost: {}, buildTime: 0, hp: 650, radius: 2.9, navRadius: 2.5, attack: { damage: 14, range: 18, cooldown: 2.2 }, door: [0, 2.9], walls: 0.5,
+    cost: {}, buildTime: 0, hp: 650, radius: 2.9, navRadius: 2.5, attack: { damage: 14, range: 18, cooldown: 2.2, missile: 'bolt' }, door: [0, 2.9], walls: 0.5,
   },
   varrtower: {
     id: 'varrtower', name: 'Varr Watchtower', owner: 'p2', buildable: false,
     desc: 'A stone tower with a crossbowman behind its crenels.',
-    cost: {}, buildTime: 0, hp: 650, radius: 2.8, navRadius: 2.4, attack: { damage: 13, range: 16, cooldown: 1.9 }, door: [0, 2.8],
+    cost: {}, buildTime: 0, hp: 650, radius: 2.8, navRadius: 2.4, attack: { damage: 13, range: 16, cooldown: 1.9, missile: 'bolt' }, door: [0, 2.8],
   },
   reavertower: {
     id: 'reavertower', name: 'Rustfang Lookout', owner: 'p2', buildable: false,
     desc: 'A crude lookout that pelts intruders with stones.',
-    cost: {}, buildTime: 0, hp: 500, radius: 2.6, navRadius: 2.2, attack: { damage: 10, range: 14, cooldown: 1.8 }, door: [0, 2.6],
+    cost: {}, buildTime: 0, hp: 500, radius: 2.6, navRadius: 2.2, attack: { damage: 10, range: 14, cooldown: 1.8, missile: 'stone' }, door: [0, 2.6],
   },
 };
 
@@ -197,7 +197,11 @@ export const UPGRADES = {
   hunter: workshop('Hunting Lodge', "Huntmaster's Lodge"),
   fisher: workshop('Fishery', 'Fish Market'),
   saltworks: workshop('Salt House', 'Salt Guild'),
-  barracks: { 2: { name: 'Drill Yard', cost: { timber: 40, stone: 30, iron: 20, taler: 60 }, time: 45, speed: 1.25, hp: 250, desc: 'Unlocks Crossbowmen, Halberdiers and Sappers; training 25% faster.' } },
+  barracks: {
+    2: { name: 'Drill Yard', cost: { timber: 40, stone: 30, iron: 20, taler: 60 }, time: 45, speed: 1.25, hp: 250, desc: 'Unlocks Crossbowmen, Halberdiers and Sappers; training 25% faster.' },
+    3: { name: 'Siege Yard', cost: { timber: 60, stone: 40, iron: 20, tools: 4, taler: 80 }, time: 60, hp: 300, requiresKeep: 2,
+      desc: 'Carpenters and smiths build siege engines: unlocks the Ballista and the Mangonel. Needs the Castle and tools from the Smithy.' },
+  },
   canteen: workshop('Inn', 'Guest House', { desc: 'A second cook and 20% faster cooking.' }),
   mill: workshop('Stone Mill', 'Great Mill', { desc: 'A second miller and 20% faster grinding.' }),
   bakery: workshop("Baker's House", 'Guild Bakery', { desc: 'A second baker and 20% faster baking.' }),

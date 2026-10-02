@@ -166,11 +166,36 @@ export function createAudio({ bus, world, settings, getListener, terrain = null 
     },
     thud(x, z) { const d = placed(x, z, 0.8); if (!d.gain.value) return; const p = 0.85 + rand() * 0.3; tone(d, { freq: 120 * p, freqEnd: 60 * p, dur: 0.15, gain: 0.35 }); noise(d, { freq: 500 * p, q: 1, dur: 0.08, gain: 0.25, type: 'lowpass' }); if (rand() < 0.4) noise(d, { t: ctx.currentTime + 0.06, freq: 2600, q: 2, dur: 0.1, gain: 0.08 }); },
     arrow(x, z) {
-      const d = placed(x, z, 0.6); if (!d.gain.value) return;
-      const p = 0.85 + rand() * 0.3;
-      // bowstring twang, then the arrow's hiss
-      tone(d, { freq: 190 * p, freqEnd: 150 * p, dur: 0.09, gain: 0.12, type: 'triangle' });
-      noise(d, { t: ctx.currentTime + 0.02, freq: 3000 * p, freqEnd: 1200 * p, q: 4, dur: 0.2 + rand() * 0.08, gain: 0.16, attack: 0.02 });
+      const d = placed(x, z, 0.8); if (!d.gain.value) return;
+      const p = 0.85 + rand() * 0.3, t = ctx.currentTime;
+      // the string slaps the bracer and rings (a low twang with a bright overtone), then the arrow hisses away
+      noise(d, { freq: 1400 * p, q: 1.2, dur: 0.025, gain: 0.22 });
+      tone(d, { freq: 165 * p, freqEnd: 128 * p, dur: 0.16, gain: 0.2, type: 'triangle' });
+      tone(d, { freq: 495 * p, freqEnd: 400 * p, dur: 0.07, gain: 0.05, type: 'sawtooth' });
+      noise(d, { t: t + 0.03, freq: 3200 * p, freqEnd: 1100 * p, q: 4, dur: 0.24 + rand() * 0.08, gain: 0.17, attack: 0.02 });
+    },
+    bolt(x, z) {
+      const d = placed(x, z, 0.8); if (!d.gain.value) return;
+      const p = 0.9 + rand() * 0.2, t = ctx.currentTime;
+      // a crossbow: the trigger's hard clack, a short stiff thrum, and a fast whizz
+      noise(d, { freq: 2600 * p, q: 3, dur: 0.03, gain: 0.3 });
+      tone(d, { freq: 240 * p, freqEnd: 180 * p, dur: 0.07, gain: 0.18, type: 'square' });
+      noise(d, { t: t + 0.02, freq: 4200 * p, freqEnd: 2000 * p, q: 5, dur: 0.15, gain: 0.15, attack: 0.01 });
+    },
+    catapult(x, z) {
+      const d = placed(x, z, 1.1); if (!d.gain.value) return;
+      const t = ctx.currentTime, p = 0.9 + rand() * 0.2;
+      // the arm slams into the padded beam: a deep wooden thump, a rattle and the rope's groan
+      tone(d, { freq: 85 * p, freqEnd: 50, dur: 0.3, gain: 0.45 });
+      noise(d, { freq: 700 * p, q: 1, dur: 0.12, gain: 0.3, type: 'lowpass' });
+      noise(d, { t: t + 0.05, freq: 1800 * p, q: 6, dur: 0.25, gain: 0.08 });
+      tone(d, { t: t + 0.1, freq: 140 * p, freqEnd: 110 * p, dur: 0.5, gain: 0.06, type: 'sawtooth', attack: 0.1 });
+    },
+    impact(x, z) {
+      const d = placed(x, z, 1.2); if (!d.gain.value) return;
+      const p = 0.9 + rand() * 0.2;
+      tone(d, { freq: 70 * p, freqEnd: 35, dur: 0.45, gain: 0.5 });
+      noise(d, { freq: 400 * p, freqEnd: 120, q: 0.7, dur: 0.6, gain: 0.4, type: 'lowpass', attack: 0.01 });
     },
     sling(x, z) { const d = placed(x, z, 0.5); if (!d.gain.value) return; const p = 0.85 + rand() * 0.3; noise(d, { freq: 700 * p, freqEnd: 1400 * p, q: 3, dur: 0.18, gain: 0.15, attack: 0.04 }); if (rand() < 0.5) noise(d, { t: ctx.currentTime + 0.12, freq: 500 * p, freqEnd: 1100 * p, q: 3, dur: 0.14, gain: 0.1 }); },
     collapse(x, z) { const d = placed(x, z, 1.2); if (!d.gain.value) return; noise(d, { freq: 300, freqEnd: 80, q: 0.6, dur: 1.6, gain: 0.6, attack: 0.02, type: 'lowpass' }); for (let i = 0; i < 5; i++) tone(d, { t: ctx.currentTime + i * 0.18, freq: 90 - i * 8, dur: 0.2, gain: 0.25 }); },
@@ -285,7 +310,10 @@ export function createAudio({ bus, world, settings, getListener, terrain = null 
     const beat = raid ? 0.32 : 0.46;
     const t = ctx.currentTime;
     if (music.pad) { music.pad.plp.frequency.setTargetAtTime(500 + music.tense * 700, t, 2); }
-    while (music.next < t + 0.3) {
+    // after a long frame (8x speed, a hitch) skip the notes that were missed instead of playing
+    // them all at once, which sounded like the tune racing on
+    if (music.next < t) music.next = t + 0.05;
+    while (music.next < t + 0.6) {
       const step = music.step++;
       const bar = Math.floor(step / 8);
       if (step % 8 === 0) { music.degree = [0, 3, 4, 0, 5, 3, 6, 4][bar % 8]; }
@@ -318,7 +346,8 @@ export function createAudio({ bus, world, settings, getListener, terrain = null 
   on('deposit:depleted', (d) => { if (d.type === 'tree') sfx.treeFall(d.x, d.z); });
   on('combat:swing', (d) => { const e = world().entities[d.id]; if (e && allowed('swing', 60)) sfx.swing(e.x, e.z); });
   on(EV.COMBAT_HIT, (d) => { if (!allowed('hit', 45)) return; if (d.targetKind === 'building') sfx.thud(d.x, d.z); else sfx.clash(d.x, d.z); });
-  on(EV.COMBAT_SHOT, (d) => { if (allowed('shot', 70)) (d.kind === 'arrow' ? sfx.arrow : sfx.sling)(d.fx, d.fz); });
+  on(EV.COMBAT_SHOT, (d) => { if (d.kind === 'boulder') { sfx.catapult(d.fx, d.fz); return; } if (allowed('shot', 70)) (d.kind === 'stone' ? sfx.sling : d.kind === 'bolt' ? sfx.bolt : sfx.arrow)(d.fx, d.fz); });
+  on('combat:impact', (d) => { if (allowed('impact', 120)) sfx.impact(d.x, d.z); });
   on(EV.BUILDING_DESTROYED, (d) => sfx.collapse(d.x, d.z));
   on(EV.BUILDING_COMPLETED, (d) => { const b = world().entities[d.id]; if (b && d.owner === PLAYER) sfx.complete(b.x, b.z); });
   on(EV.HERO_ABILITY, (d) => { if (d.ability === 'flare') sfx.flare(d.x, d.z); else if (d.ability === 'kindle') sfx.kindle(d.x, d.z); else if (d.ability === 'volley') { sfx.arrow(d.x, d.z); } else if (d.ability === 'mark') sfx.kindle(d.x, d.z); else if (d.ability === 'horn') sfx.horn(); });

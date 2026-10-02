@@ -143,6 +143,39 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Rückmeldung 2026-10-02: Leistung, Formationen, Belagerung, Schwierigkeit
+
+**F3-Log** (Safari, Mittel, Kapitel 2, 21 Minuten):
+- Keine Lecks, Simulation < 1 ms.
+- Die Dreiecke stiegen 1,6 → 2,25 Mio., die Bildrate fiel 40 → 28 fps.
+- Ab Minute 19 drehte der Regler zuerst Glow und MSAA ab, dann die Auflösung (1 → 0,6).
+- Ursache: Alle ~1800 Bäume und alle Figuren wurden samt Schatten gezeichnet, auch außerhalb
+  des Bildes.
+- Jetzt gibt es `createInstanceCuller` (`render/instancing.js`) für Bäume und einen Kegel-Test
+  für Figuren in `units/view.js`.
+- Gleiche Szene: 1,73 → 1,05 Mio. Dreiecke.
+
+**Fehlerbehebungen:**
+- Startsoldaten standen in Kapitel 2–6 in Burg oder Kaserne. Jetzt bekommen sie den nächsten
+  freien Platz (`setup.js`, `front()`), mit Test in `campaign.test.js`.
+- Musik nach 8×: Verpasste Noten werden übersprungen.
+- Geschosse haben eine Art (`missile`: Pfeil, Bolzen, Stein, Felsbrocken) mit eigenen Geräuschen.
+
+**Formationen:** Block, Linie, Keil, Ring (`formationSlots`). Die Wahl liegt im Eingabe-Zustand
+und geht mit jedem Marschbefehl mit.
+
+**Belagerungshof:** Kaserne Stufe 3, mit Ballista und Mangonel (Klasse `siege`, `minRange`,
+Splash). Modelle in `units/engines.js`; Werte und Balance-Duelle in GAME_DESIGN.
+
+**Schwierigkeitsregel** steht in CLAUDE.md und GAME_DESIGN.
+- Geprüft wurde zuerst „Idle hands“: messbar leichter.
+- Jetzt gestaffelt: Story wie bisher, Normal knapper, Hard aus (`AUTO_GATHER_RULES`).
+
+**Transport** (Analyse, nichts geändert):
+- Träger sind gut 40 % der Siedler, mit vollen Ladungen (Schnitt 4,9 von 6).
+- Werkstätten warten 34–51 % der Zeit auf Abholung.
+- Vorschläge mit Preis: siehe Antwort an den Nutzer vom 2026-10-02.
+
 ## Rückmeldung 2026-10-01: Held, Ton, Titelbild, Turmstufen
 
 - **Fehler „This building cannot be moved“ beim Bewegen von Einheiten:** Der Gebäude-Befehl hieß
