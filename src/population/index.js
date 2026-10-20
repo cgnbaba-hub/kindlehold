@@ -32,8 +32,15 @@ export const RATIONS = [
   { id: 'normal', name: 'Normal', portion: 1, stability: 0 },
   { id: 'generous', name: 'Generous', portion: 1.5, stability: 8 },
 ];
-// A feast in the hall: costs goods up front, lifts the mood for three minutes
-export const FEAST = { cost: { taler: 80, provisions: 30 }, duration: 180 * 20, stability: 15 };
+// A feast in the hall: costs goods up front, lifts the mood for three minutes; the next one can
+// be held five minutes after it ends
+export const FEAST = { cost: { taler: 80, provisions: 30 }, duration: 180 * 20, stability: 15, cooldown: 300 * 20 };
+// Strains on motivation that reward planning: they weigh half on Story and half again on Hard
+export const MOTIVATION_STRAIN = { story: 0.5, normal: 1, hard: 1.5 };
+// townsfolk with no workplace to go to, beyond the labourers the town needs for hauling
+export const IDLE_STRAIN = { each: 2, max: 10 };
+// the average walk from a workplace to the nearest house: free up to `free` m, then 1 per `per` m
+export const COMMUTE = { free: 30, per: 6, max: 8 };
 
 /** What everybody is doing right now (for the HUD census and the advisor). */
 export function censusOf(world, owner) {
@@ -79,6 +86,39 @@ export function handsCap(world, owner) { const k = keepOf(world, owner); return 
 export const WELL_MOTIVATION = 4, WELLS_COUNTED = 3;
 
 /** What raises and lowers motivation right now, as [label, points]; the target is their sum (0-100). */
+export function strainOf(world) { return MOTIVATION_STRAIN[world.meta.difficulty] ?? 1; }
+
+/** Townsfolk without work: jobless beyond the labourers kept free for hauling and the open
+ *  places in the workshops (Hearthhands, newcomers and recruits aside). */
+export function unemployedOf(world, owner) {
+  let jobless = 0, open = 0, workplaces = 0;
+  for (const s of all(world, 'settler')) if (s.owner === owner && !s.hand && !s.job && !s.arriving && !s.leaving && !s.enlisting) jobless++;
+  for (const b of all(world, 'building')) {
+    if (b.owner !== owner || b.state !== 'active') continue;
+    const n = slotsOf(b);
+    if (!n) continue;
+    workplaces++;
+    if (!b.paused) open += Math.max(0, n - (b.workers ? b.workers.length : 0));
+  }
+  return Math.max(0, jobless - MIN_FREE_LABOURERS - Math.floor(workplaces / 2) - open);
+}
+
+/** The average walk (m) from each worker's workplace to the nearest house (Cottage or Keep). */
+export function commuteOf(world, owner) {
+  const houses = [];
+  for (const b of all(world, 'building')) if (b.owner === owner && b.state === 'active' && (b.type === 'cottage' || b.type === 'keep')) houses.push(b);
+  if (!houses.length) return 0;
+  let sum = 0, n = 0;
+  for (const b of all(world, 'building')) {
+    if (b.owner !== owner || b.state !== 'active' || !b.workers || !b.workers.length) continue;
+    let d = Infinity;
+    for (const h of houses) d = Math.min(d, Math.hypot(h.x - b.x, h.z - b.z));
+    sum += d * b.workers.length; n += b.workers.length;
+  }
+  return n ? sum / n : 0;
+}
+
+/** What motivation drifts toward, part by part: [name, value]. The target is their sum (0..100). */
 export function motivationParts(world, owner) {
   const p = world.players[owner];
   const keep = keepOf(world, owner);
@@ -86,20 +126,23 @@ export function motivationParts(world, owner) {
   const fed = p.lastMealFed ?? 1;
   let wells = 0;
   for (const b of all(world, 'building')) if (b.owner === owner && b.type === 'well' && b.state === 'active') wells++;
+  const strain = strainOf(world);
   const parts = [
     ['Base', 40],
-    ['Meals', Math.round(35 * fed)],
+    ['Meals', 35 * fed],
     ['Housing', headroom >= 1 ? 10 : headroom < 0 ? -20 : 0],
     ['Hearth', keep && keep.lit ? 10 : -10],
     ['Taxes', (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability],
-    ['Rations', Math.round((RATIONS[p.rations ?? 1] || RATIONS[1]).stability * Math.min(1, fed))],
-    ['Hot meals', Math.round(HOT_MEAL_STABILITY * (p.hotMeals || 0))],
-    ['Bread', Math.round(BREAD_STABILITY * (p.breadMeals || 0))],
+    ['Rations', (RATIONS[p.rations ?? 1] || RATIONS[1]).stability * Math.min(1, fed)],
+    ['Hot meals', HOT_MEAL_STABILITY * (p.hotMeals || 0)],
+    ['Bread', BREAD_STABILITY * (p.breadMeals || 0)],
     ['Feast', (p.feastUntil || 0) > world.tick ? FEAST.stability : 0],
     ['Wells', Math.min(wells, WELLS_COUNTED) * WELL_MOTIVATION],
+    ['No work', -Math.min(IDLE_STRAIN.max, IDLE_STRAIN.each * unemployedOf(world, owner)) * strain],
+    ['Long walks', -Math.min(COMMUTE.max, Math.max(0, commuteOf(world, owner) - COMMUTE.free) / COMMUTE.per) * strain],
     ['Burnt homes', -(p.burnPenalty || 0)],
   ];
-  return parts.filter(([, v]) => v !== 0);
+  return parts.filter(([, v]) => Math.abs(v) >= 0.5);
 }
 
 /** Expected income at the next payday: { taxes, pay, net }. */
@@ -256,15 +299,8 @@ export function createPopulationModule() {
 
     // stability drifts toward a target every second
     if (world.tick % 20 === 0) {
-      // Hearthhands bunk in the Keep: they take no house and do not count toward crowding
-      const headroom = p.popCap - p.housed;
-      let wells = 0;
-      for (const b of all(world, 'building')) if (b.owner === owner && b.type === 'well' && b.state === 'active') wells++;
-      const target = Math.max(0, Math.min(100,
-        40 + 35 * p.lastMealFed + (headroom >= 1 ? 10 : 0) + (headroom < 0 ? -20 : 0) + (keep && keep.lit ? 10 : -10) - p.burnPenalty
-        + (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability + HOT_MEAL_STABILITY * (p.hotMeals || 0) + BREAD_STABILITY * (p.breadMeals || 0)
-        + (RATIONS[p.rations ?? 1] || RATIONS[1]).stability * Math.min(1, p.lastMealFed) + ((p.feastUntil || 0) > world.tick ? FEAST.stability : 0)
-        + Math.min(wells, WELLS_COUNTED) * WELL_MOTIVATION));
+      // the parts the HUD shows are what it drifts toward (Hearthhands take no house: see motivationParts)
+      const target = Math.max(0, Math.min(100, motivationParts(world, owner).reduce((t, [, v]) => t + v, 0)));
       const step = 0.5;
       if (p.stability < target) p.stability = Math.min(target, p.stability + step);
       else if (p.stability > target) p.stability = Math.max(target, p.stability - step);
@@ -394,6 +430,7 @@ export function createPopulationModule() {
     } else if (cmd.type === 'feast') {
       const keep = keepOf(world, owner);
       if (!keep || !keep.lit || (p.feastUntil || 0) > world.tick) { emit(world, EV.COMMAND_REJECTED, { cmd, reason: 'A feast is already under way' }); return; }
+      if (p.feastUntil && p.feastUntil + FEAST.cooldown > world.tick) { emit(world, EV.COMMAND_REJECTED, { cmd, reason: 'The hall is still recovering from the last feast' }); return; }
       if (!canAfford(world, owner, FEAST.cost)) { emit(world, EV.COMMAND_REJECTED, { cmd, reason: 'Not enough Taler or provisions for a feast' }); return; }
       pay(world, owner, FEAST.cost, 'feast');
       p.feastUntil = world.tick + FEAST.duration;

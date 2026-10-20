@@ -150,7 +150,8 @@ banner button next to the clock:
   is a warning, a red **!** (and a raised finger) means act now. Click him, or press Enter
   while he is focused, for his next piece of advice.
 * **Rations** (at the Keep): half, normal or generous portions — less food or a better mood.
-* **Feast** (at the Keep): 80 Taler and 30 provisions for three minutes of high spirits.
+* **Feast** (at the Keep): 80 Taler and 30 provisions for three minutes of high spirits. The hall
+  needs five minutes after a feast before it can hold the next.
 * **Game speed:** click the speed next to the clock to pick 0.5× to 8×.
 * **Graphics:** High has smooth edges, soft contact shadows (ambient occlusion), glowing
   lights at night, sky lighting, drifting cloud shadows and a soft miniature focus in close
@@ -337,6 +338,16 @@ carrying and building when they have no workplace.
 * Below 30 nobody new comes; below 15 settlers start to leave.
 * Hover the bar to see what makes it up: meals, housing, the hearth, taxes, rations, hot meals,
   bread, feasts and Wells.
+* **No work:** townsfolk with no workplace to go to grumble (−2 each, at most −10). A few free
+  labourers are fine: the town keeps two, plus one for every two workshops, to carry and build.
+  Build workshops for the newcomers, or fewer Cottages.
+* **Long walks:** when workers walk on average more than 30 m from the nearest Cottage (or the
+  Keep) to their workshop, motivation drops by 1 for every 6 m more (at most −8). Build houses
+  near the workshops.
+* Both weigh half as much on Story and half again as much on Hard.
+
+The optional goals *Hands for the hearth* (chapter one: four Hearthhands and a Well) and *Sweet
+water* (chapter two: three Wells and motivation 80) walk you through them.
 
 **Well** (10 timber, 30 stone): a stone well on the village green, worth +4 motivation. Only
 three Wells count. They are the way to bear higher taxes: three Wells offset the High tax rate.

@@ -245,7 +245,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       ['provisions', 'Feed them', 'Everyone eats every 90 s. Hunger lowers motivation, and low motivation slows all work.'],
       ['storehouse', 'Storehouses', 'Labourers carry goods to and from the nearest store — build Storehouses for outlying quarters. Any building can be moved (Move): materials come along, only building time is spent.'],
       ['hearthhand', 'Hearthhands', 'Hire them at the Keep (50 Taler, 1 Taler wage each payday). They sleep in the Keep, need no house, build, carry and fell trees or cut stone by hand — but never take a workplace or join the army. The Keep level sets how many it holds.'],
-      ['stability', 'Motivation', 'Motivated townsfolk work faster; below 30 nobody new comes, below 15 settlers leave. Meals, bread, low taxes, feasts and Wells lift it — hover the bar to see why it is where it is.'],
+      ['stability', 'Motivation', 'Motivated townsfolk work faster; below 30 nobody new comes, below 15 settlers leave. Meals, bread, low taxes, feasts and Wells lift it; townsfolk without work and long walks to work lower it. Hover the bar to see why it is where it is.'],
       ['mill', 'Production chains', 'A Windmill grinds grain into flour, a Bakery bakes it into bread (one loaf feeds two and cheers people up), a Smithy forges iron into tools for the third workshop level.'],
       ['alertWarn', 'Read the warnings', 'Selected buildings tell you exactly why they stall: no worker, storage full, no input, nothing in range.'],
       ['research', 'Research at the Keep', 'Keen Axes, Braced Timber, Tempered Blades and the March Charter (which unlocks Watchtowers).'],

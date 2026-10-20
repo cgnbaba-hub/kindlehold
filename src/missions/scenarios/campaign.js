@@ -86,6 +86,14 @@ export const GREYFEN_SCENARIO = {
       completeWhen: { destroyed: 'warhall' },
     },
     {
+      id: 'sweetwater', title: 'Optional: Sweet water',
+      text: 'Dig three Wells and raise motivation to 80.',
+      hint: 'Each Well lifts motivation by 4, up to three. Idle townsfolk and long walks to work lower it: build workshops for newcomers and Cottages near the workshops.', optional: true,
+      highlight: 'build:well', activeWhen: { completed: 'town' },
+      completeWhen: { all: [{ built: 'well', count: 3 }, { motivation: 80 }] },
+      onComplete: [{ speaker: 'hild', text: 'Clean wells and busy hands. Millbrook folk will hear of it, and some will come.' }],
+    },
+    {
       id: 'veterans', title: 'Optional: Seasoned blades',
       text: 'Have three soldiers become Veterans.',
       hint: 'A soldier becomes a Veteran after three victories.', optional: true,

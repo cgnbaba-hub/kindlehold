@@ -4,7 +4,7 @@
 import { h, icon, portrait, osricAvatar, clear, setText, fmtTime } from './dom.js';
 import { portraitKey } from './portraits.js';
 import { seasonAt } from '../weather/index.js';
-import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf, HAND, handsOf, handsCap, motivationParts } from '../population/index.js';
+import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf, HAND, handsOf, handsCap, motivationParts, unemployedOf, commuteOf, COMMUTE } from '../population/index.js';
 import { POI_INFO, TRADES, poiName, priceOf } from '../pois/index.js';
 import { createMinimap } from './minimap.js';
 import { createFloaters } from './floaters.js';
@@ -194,6 +194,8 @@ export function createHud({ root, session, input, settings, actions }) {
     if (c.labourers - c.asleep <= 1 && c.people > 4 && !(w.time.hour >= 22 || w.time.hour < 5)) warn('No hands are free to carry goods or build. Pause a workplace or house more people.');
     if (p.stability < 40) warn('The people grumble, Warden. Lower the taxes, serve hot meals, give more rations or hold a feast.');
     if (p.tax === 2 && p.stability < 60) warn('High taxes weigh on the people.');
+    if (unemployedOf(w, PLAYER) > 0) warn('Some townsfolk have no work and grumble. Build a workshop for them, or house fewer newcomers.');
+    if (commuteOf(w, PLAYER) > COMMUTE.free + COMMUTE.per) warn('Our workers walk a long way from their Cottages to the workshops. Build houses closer to the work.');
     const ss = seasonAt(w.tick);
     if (!ss.winter && ss.untilNext < 90 * 20) warn('Winter is close. Fill the stores — the fields will grow slowly under the snow.');
     if (has('barracks') && !c.soldierCount && w.tick > 8 * 1200) warn(`A Barracks and no soldiers? Train a few before the ${enemyFaction(w).short} come.`);
@@ -791,8 +793,11 @@ export function createHud({ root, session, input, settings, actions }) {
         }
         if (one.lit) {
           const feasting = (p.feastUntil || 0) > w.tick;
+          const rest = p.feastUntil ? p.feastUntil + FEAST.cooldown - w.tick : 0;
           const canFeast = canAfford(w, PLAYER, FEAST.cost);
-          cmdGrid.append(cmdButton({ ic: 'feast', label: 'Hold a feast', tipTitle: 'Hold a feast', tip: feasting ? 'The feast is under way.' : canFeast ? `Everyone celebrates in the great hall: motivation +${FEAST.stability} for three minutes.` : 'Not enough Taler or provisions for a feast.', cost: FEAST.cost, disabled: feasting || !canFeast, onClick: () => input.issue({ type: 'feast' }) }));
+          const tip = feasting ? 'The feast is under way.' : rest > 0 ? `The hall is still recovering from the last feast: ready in ${fmtTime(rest / 20)}.`
+            : canFeast ? `Everyone celebrates in the great hall: motivation +${FEAST.stability} for three minutes. The next feast can follow five minutes after it.` : 'Not enough Taler or provisions for a feast.';
+          cmdGrid.append(cmdButton({ ic: 'feast', label: 'Hold a feast', tipTitle: 'Hold a feast', tip, cost: FEAST.cost, disabled: feasting || rest > 0 || !canFeast, onClick: () => input.issue({ type: 'feast' }) }));
         }
         cmdGrid.append(cmdButton({ ic: 'build', label: 'Build…', key: bb.buildMenu, tip: 'Open the construction menu.', highlight: hl && hl.startsWith('build'), onClick: () => { cmdMode = 'build'; dirtySel = true; } }));
         return;
@@ -887,8 +892,8 @@ export function createHud({ root, session, input, settings, actions }) {
     stabEl.setAttribute('aria-label', `Motivation ${Math.round(p.stability)} of 100`);
     // what lifts and lowers it, refreshed once a second (the tooltip reads it when shown)
     if (w.tick % 20 === 0) {
-      const parts = motivationParts(w, PLAYER).map(([k, v]) => `${k} ${v > 0 ? '+' : ''}${v}`).join(' · ');
-      const tip = `${Math.round(p.stability)} of 100, heading for ${Math.round(p.stabilityTarget ?? p.stability)}. ${parts}. Motivated townsfolk work faster; below 30 nobody new comes, below 15 settlers leave. Feasts, hot meals, bread, low taxes and Wells lift it.`;
+      const parts = motivationParts(w, PLAYER).map(([k, v]) => { const r = Math.round(v); return `${k} ${r > 0 ? '+' : ''}${r}`; }).join(' · ');
+      const tip = `${Math.round(p.stability)} of 100, heading for ${Math.round(p.stabilityTarget ?? p.stability)}. ${parts}. Motivated townsfolk work faster; below 30 nobody new comes, below 15 settlers leave. Feasts, hot meals, bread, low taxes and Wells lift it; townsfolk without work and long walks from the Cottages to the workshops lower it.`;
       if (tip !== motTip) { motTip = tip; stabEl.setAttribute('data-tip', tip); }
     }
     // clock
