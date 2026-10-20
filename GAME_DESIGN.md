@@ -384,8 +384,25 @@ with Kindlehold's own names, numbers and rules.
 
 **Motivation** is the player-facing name of `player.stability`.
 - `motivationParts()` lists its parts, shown in the bar's tooltip: base, meals, housing, hearth,
-  taxes, rations, hot meals, bread, feast, Wells, burnt homes.
+  taxes, rations, hot meals, bread, feast, Wells, no work, long walks, burnt homes. The target
+  is their sum (0..100), so the tooltip and the simulation can never disagree.
 - **Well** (10 T, 30 S, 15 s): +4 motivation; three count. Three Wells offset the High tax rate.
+- **No work** (`unemployedOf`): townsfolk standing idle (not building, carrying or gathering)
+  beyond 2 free labourers and the open workplaces, −2 each, at most −10; only once the hearth
+  burns.
+- **Long walks** (`commuteOf`): the average distance from each worker's workshop to the nearest
+  Cottage or Keep; −1 per 6 m above 30 m, at most −8.
+- Both scale with `MOTIVATION_STRAIN` (Story ×0.5, Normal ×1, Hard ×1.5). They reward planning
+  (houses near the work, workshops for the newcomers) and make no bottleneck disappear.
+- **Feast cooldown:** the next feast can be held 5 minutes after one ends (`FEAST.cooldown`), so
+  feasts cannot keep motivation up permanently.
+- Campaign: optional goals *Hands for the hearth* (chapter one: 4 Hearthhands and a Well) and
+  *Sweet water* (chapter two: 3 Wells and motivation 80), with the conditions `hands` and
+  `motivation`.
+- Measured with the bot, this changes almost nothing, because the bot builds compactly and
+  keeps everyone busy (average walk 12 to 20 m). Hard over 20 seeds: 12/20 won, 37.0 min, the
+  same as without. Story over 8 seeds: 22.6, the same. Normal over 8 seeds: 26.2 → 26.7. The
+  strains hit sprawling towns and towns with more people than work, which the bot does not build.
 
 **Balance** (bot, chapter one, minutes to victory):
 

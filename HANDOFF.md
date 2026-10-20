@@ -154,6 +154,29 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Motivation mit Tiefgang, Kampagnenziele (Paket C, 2026-10-20)
+
+- Neue Motivationsteile in `motivationParts()`; das Ziel ist jetzt genau ihre Summe:
+  - **No work** (`unemployedOf`): −2 je untätig Herumstehendem (nicht bauend, tragend,
+    sammelnd) über 2 freien Trägern und den offenen Plätzen, höchstens −10; erst wenn die Burg brennt.
+    Erster Entwurf zählte alle ohne Werkstattplatz und verdrängte zu Beginn von Kapitel 6
+    (12 Siedler, keine Werkstätten) den Aufgabenhinweis des Ratgebers (Browser-Test rot).
+  - **Long walks** (`commuteOf`): mittlerer Weg Werkstatt → nächstes Haus; −1 je 6 m über 30 m,
+    höchstens −8.
+  - Beide mal `MOTIVATION_STRAIN` (Story 0,5, Normal 1, Hard 1,5).
+- **Fest-Pause:** Das nächste Fest geht erst 5 min nach dem Ende des letzten (`FEAST.cooldown`).
+  Der HUD-Knopf zeigt die Restzeit.
+- **Ratgeber** warnt bei Arbeitslosen und langen Wegen.
+- **Kampagne:** optionale Ziele „Hands for the hearth“ (Kapitel 1: 4 Hearthhands und ein
+  Brunnen) und „Sweet water“ (Kapitel 2: 3 Brunnen, Motivation 80). Neue Bedingungen `hands`
+  und `motivation` in `missions/conditions.js`.
+- Alles erschwert nur, nichts erleichtert. Der Bot spürt es praktisch nicht, weil er kompakt
+  baut (Wege 12–20 m) und alle beschäftigt: Hard über 20 Seeds unverändert 12/20, Story gleich,
+  Normal +0,5 min.
+- **Messrauschen:** Kleinste Änderungen verschieben einzelne Partien um ±10 min. Auf Hard
+  streuen zwei fast gleiche Stände über 10 Seeds zwischen 5/10 und 9/10 Siegen. Für Hard
+  20 Seeds nehmen (`node scripts/balance-seeds.mjs hard 7,42,99,3,11,23,5,1337,64,2,8,13,17,19,29,31,37,41,43,47`).
+
 ## Gegner-Formationen, Belagerung, härteres Hard (Paket B, 2026-10-20)
 
 - Überfälle formieren sich vor dem Tor in der Formation ihrer Fraktion (`FACTIONS[...].formation`)

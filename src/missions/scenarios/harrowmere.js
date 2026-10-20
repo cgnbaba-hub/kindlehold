@@ -82,6 +82,14 @@ export const HARROWMERE_SCENARIO = {
       completeWhen: { destroyed: 'warhall' },
     },
     {
+      id: 'hearthhands', title: 'Optional: Hands for the hearth',
+      text: 'Have four Hearthhands bunk in the Keep and dig a Well.',
+      hint: 'Select the Keep and hire Hearthhands (70 Taler, then 2 Taler each payday). They fell timber and break stone by hand when the store runs low. A Well lifts motivation by 4.', optional: true,
+      highlight: 'keep', activeWhen: { completed: 'timber-food' },
+      completeWhen: { all: [{ hands: 4 }, { built: 'well', count: 1 }] },
+      onComplete: [{ speaker: 'osric', text: 'Four strong backs and sweet water by the hall. The old Keep feels like a home again.' }],
+    },
+    {
       id: 'charter', title: 'Optional: The March Charter',
       text: 'Research the March Charter and build a Watchtower.',
       hint: 'Research at the Keep. Watchtowers shoot raiders within 16 m.', optional: true,
