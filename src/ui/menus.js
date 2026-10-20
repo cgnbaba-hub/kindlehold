@@ -106,7 +106,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
     const opts = [
       ['story', 'Story', 'Smaller raids, more starting goods. Relaxed pace.', 'cottage', ['Starting goods ×1.5', 'First raid: 6 raiders', 'Plunderers from minute 11']],
       ['normal', 'Normal', 'The intended challenge.', 'shield', ['Starting goods ×1', 'First raid: 9 raiders', 'Plunderers from minute 8']],
-      ['hard', 'Hard', 'Larger, faster raids. Rustfang troops have +10% health (documented AI advantage).', 'reaver', ['Starting goods ×0.8', 'First raid: 11 raiders', 'Plunderers from minute 6']],
+      ['hard', 'Hard', 'Larger, faster raids with siege engines from the second raid. Rustfang troops have +10% health (documented AI advantage).', 'reaver', ['Starting goods ×0.8', 'First raid: 11 raiders', 'Plunderers from minute 6']],
     ];
     const list = h('div.diff-list.cards', { role: 'radiogroup', 'aria-label': 'Difficulty' });
     for (const [id, name, desc, ic, facts] of opts) {

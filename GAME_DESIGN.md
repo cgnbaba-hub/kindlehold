@@ -143,16 +143,27 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 - Enemy AI: camp musters units from the Warhall at a difficulty-scaled rate out of finite reserves (none while the Warhall is below half health), sends a
   scout toward the player's territory every ~3 min, assembles a raid at a gather point,
   gathers visibly outside the gate for 20 s, targets one of the most valuable buildings (production first, then Keep; seeded variety), retreats when
-  the wave loses 75% of its strength, regroups and returns later.
+  the wave loses 75% of its strength (80% on Hard), regroups and returns later.
+- Raids form up and march in the faction's formation (`FACTIONS[...].formation`: Rustfang wedge,
+  Varr line, Morrow and Stag block), at the pace of the slowest member (`order.pace`, ignored
+  while a unit fights), and charge once the column is within 28 m of the target.
+- From wave `siegeFrom` on, a raid brings siege engines (`FACTIONS[...].engines`; up to
+  `siegeMax`, each draws `ENGINE_RESERVE` = 2 from the reserves). An engine stops at 85% of its
+  reach from the tower (or lit Keep) guarding the target, which outranges every tower, and
+  `escort` shields or blades guard it. A chapter can shift `siegeFrom` (`ai.siegeFrom`; the
+  Tollbreaker chapter brings them one raid earlier). Enemy engines fly the faction colour.
 
 ## Difficulty
 
 | | Story | Normal | Hard |
 |---|---|---|---|
 | First raid size | 6 | 9 | 11 |
+| Raid growth per wave | +2 | +3 | +5 |
 | Enemy spawn interval | 50 s | 35 s | 24 s |
-| Garrison cap | 8 | 12 | 16 |
-| Fort reserves (total musters) | 22 | 32 | 40 |
+| Garrison cap | 8 | 12 | 18 |
+| Fort reserves (total musters) | 22 | 32 | 48 |
+| Siege engines | never | from raid 4, 1, 1 guard | from raid 2, up to 2, 2 guards each |
+| Raid turns back at | 25% strength | 25% | 20% |
 | Raid warning (if not triggered earlier) | 18 min | 14 min | 11 min |
 | Warning → raid delay | 3:00 | 2:00 | 1:30 |
 | Starting resources | ×1.5 | ×1 | ×0.8 |
@@ -388,4 +399,29 @@ with Kindlehold's own names, numbers and rules.
   far easier, so price, bunks and gathering limits were raised or lowered.
 - A bot that hires as many Hearthhands as it can pay for wins Normal about 3 minutes sooner.
   That is a priced easing.
+
+## Enemy formations and siege; a harder Hard
+
+Raids march in formation and bring siege engines later on (see the Enemy AI notes above).
+
+**Path fix and its cost.** A squad sharing a path corner pushed itself off it (separation) and
+could stall there for half a minute, worst at an engine's slow pace. Soldiers now pass a corner
+within 0.7 m (`navigation.followPath`, units only). Applied to settlers as well, the same fix made
+the economy clearly easier (Story −3.2, Normal −2.6 minutes over 3 and 8 seeds), because
+settlers walk a little shorter; they do not jostle, so they keep the old behaviour. For soldiers
+alone Story and Normal stay the same, but the bot's assaults got better: on Hard it won 5 of 6
+instead of 3 of 6. Hard got larger raids, a fuller fort and engines as the counterweight.
+
+**Balance** (bot, minutes to victory, unfinished counted as 40; `scripts/balance-seeds.mjs`):
+
+| | before | after |
+|---|---|---|
+| Story (3 seeds) | 3/3 won, 24.1 | 3/3, 25.9 |
+| Normal (8 seeds) | 8/8, 26.3 | 8/8, 26.2 |
+| Hard (10 seeds) | 6/10, 36.3 | 5/10, 37.3, two of them lost |
+| Greyfen Normal (8 seeds) | 8/8, 19.4 | 7/8, 23.3 (one bot run stuck on the diplomacy goal) |
+| Tollbreaker Normal / Hard (4 seeds) | 4/4, 25.9 / 4/4, 24.1 | 4/4, 26.4 / 4/4, 25.3 |
+
+Hard is now a little harder for the bot than before the package, and its raids can take the
+Keep. Story and Normal stay where they were.
 

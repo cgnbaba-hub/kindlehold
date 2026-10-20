@@ -46,7 +46,17 @@ export function unitSpeed(world, u) {
   let s = def.speed * soldierMods(world, u).speed;
   if (u.hasteUntil > world.tick) s *= 1.2;
   if (u.retreating) s *= 1.1;
+  // a column on the march keeps to the pace of its slowest member until it meets the enemy
+  if (u.order && u.order.pace > 0 && u.target == null) s = Math.min(s, u.order.pace);
   return s;
+}
+
+/** Formation order: shields and blades in the front rows, heroes in the middle, archers and
+ *  engines at the back. Returns the sorted units and how many of them belong inside a ring. */
+export function formationOrder(units) {
+  const rank = (u) => ({ defensive: 0, melee: 1, hero: 2, commander: 2, ranged: 3, siege: 4 }[UNITS[u.type].cls] ?? 1);
+  const sorted = [...units].sort((a, b) => rank(a) - rank(b) || a.id - b.id);
+  return { sorted, inner: sorted.filter((u) => rank(u) >= 2).length };
 }
 
 export function createUnitsModule() {
@@ -70,10 +80,8 @@ export function createUnitsModule() {
     for (const u of units) { cx += u.x; cz += u.z; }
     cx /= units.length; cz /= units.length;
     if (Number.isFinite(facing)) { cx = x - Math.sin(facing); cz = z - Math.cos(facing); }
-    // melee/defensive in front rows, ranged behind, hero in the middle
-    const rank = (u) => ({ defensive: 0, melee: 1, hero: 2, commander: 2, ranged: 3, siege: 4 }[UNITS[u.type].cls] ?? 1);
-    const sorted = [...units].sort((a, b) => rank(a) - rank(b) || a.id - b.id);
-    const inner = sorted.filter((u) => rank(u) >= 2).length; // archers and heroes stand inside a ring
+    // melee/defensive in front rows, ranged behind, hero in the middle; archers and heroes stand inside a ring
+    const { sorted, inner } = formationOrder(units);
     const slots = units.length === 1 ? [[x, z]] : formationSlots(sorted.length, x, z, cx, cz, 1.9, FORMATIONS.includes(shape) ? shape : 'block', inner);
     const nav = ctx.services.nav;
     sorted.forEach((u, i) => {
@@ -247,7 +255,8 @@ export function createUnitsModule() {
         if (def.cls === 'ranged' && o.type !== 'hold' && kite(world, u)) return;
         if (reach > def.range * 0.95) {
           if (o.type === 'hold') { u.target = null; u.moving = false; return; }
-          if (t.kind === 'building') moveToward(world, u, t.x, t.z, BUILDINGS[t.type].radius * 0.8 + def.range * 0.6);
+          // engines stop near the end of their reach, out of most towers' range; the rest close in
+          if (t.kind === 'building') moveToward(world, u, t.x, t.z, BUILDINGS[t.type].radius * 0.8 + def.range * (def.cls === 'siege' ? 0.88 : 0.6));
           else if (def.cls !== 'ranged' && reach < 6 && UNITS[t.type] && UNITS[t.type].cls !== 'ranged' && !t.moving) {
             // close in on a personal slot around the target so melee fights spread into a ring
             const a = (u.id * 2.399) % (Math.PI * 2);

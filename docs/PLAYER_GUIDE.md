@@ -56,6 +56,14 @@ Before the great raid, small **plunder parties** slip out of the ford fort to hi
 workshop and run home again (a war horn warns you). The main raids prefer buildings nobody
 guards — keep a few soldiers near your farms and mines.
 
+Raids form up before the gate and march in their faction's formation (the Rustfang in a wedge,
+the Legion of Varr in a line, House Morrow and the White Stag in a block), at the pace of their
+slowest member, and charge once they are close. Later raids roll **siege engines** out of the
+fort: from the fourth raid on Normal, from the second on Hard, never on Story, and earlier in the
+last Rustfang chapter. An engine stops at the edge of its reach, beyond your towers' range, and
+bombards the tower that guards the raid's target, while a few shields guard it. Sally out with
+blades: engines are helpless up close. Enemy engines fly their faction's pennant, yours a blue one.
+
 ## The campaign
 
 Choose **Campaign** in the main menu. Six chapters tell the story of Kindlehold:

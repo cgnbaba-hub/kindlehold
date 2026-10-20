@@ -127,7 +127,7 @@ export const TOLLBREAKER_SCENARIO = {
     soldiers: ['shield', 'shield', 'shield', 'blade', 'blade', 'fletcher', 'fletcher', 'fletcher'],
     buildings: [...TOWN, ['canteen', -54, 38], ['fisher', -44, 14], ['cottage', -48, 84], ['tower', -30, 30]],
   },
-  ai: { reserves: 2, hpMult: 1.1, spawnInterval: 0.6, waveInterval: 0.85, garrisonCap: 2, growth: 3, firstRaid: 7 },
+  ai: { reserves: 2, hpMult: 1.1, spawnInterval: 0.6, waveInterval: 0.85, garrisonCap: 2, growth: 3, firstRaid: 7, siegeFrom: -1 },
   enemy: { commanderLate: true, hallBarred: true, extraTowers: [[-2, 24], [20, -4]], garrison: ['brute', 'brute', 'reaver', 'reaver', 'reaver', 'slinger', 'slinger', 'slinger', 'brute', 'reaver', 'slinger', 'reaver'] },
   // the Greyfen remember chapter two: allied if Morwen was won over, gone if the hold fell
   greyfen: 'campaign',
