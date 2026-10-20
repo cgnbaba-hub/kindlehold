@@ -26,6 +26,7 @@ function geometries() {
     paint(place(box(0.12, 0.12, 1.6), { x: -0.6, y: 0.8, z: -1.6, rx: 0.5 }), TIMBER, 0, null, P.planks), // trail
     paint(place(box(0.12, 0.12, 1.6), { x: 0.6, y: 0.8, z: -1.6, rx: 0.5 }), TIMBER, 0, null, P.planks),
     paint(place(cyl(0.12, 0.16, 0.6, 6), { y: 0.98 }), DARK, 0, null, P.planks),
+    paint(place(cyl(0.04, 0.04, 1.9, 5), { x: -0.62, y: 1.6, z: -0.95 }), DARK, 0, null, P.planks), // banner pole
   ]);
   const ballistaTop = merge([
     paint(place(box(0.26, 0.2, 2.4), { y: 0.1, z: 0.1 }), TIMBER, 0, null, P.planks), // stock
@@ -48,6 +49,7 @@ function geometries() {
     paint(place(cyl(0.3, 0.3, 1.6, 8), { y: 1.05, z: -0.7, rz: Math.PI / 2 }), ROPE, 0, null, P.cloth), // torsion skein
     paint(place(box(0.3, 0.55, 0.3), { x: -0.85, y: 1.05, z: -0.7 }), IRON, 0, null, P.metal),
     paint(place(box(0.3, 0.55, 0.3), { x: 0.85, y: 1.05, z: -0.7 }), IRON, 0, null, P.metal),
+    paint(place(cyl(0.04, 0.04, 2.2, 5), { x: -0.9, y: 1.95, z: -1.45 }), DARK, 0, null, P.planks), // banner pole
   ]);
   // the arm rests pointing back (-z) along the frame; rotating it about x swings it up and forward
   const mangonelArm = merge([
@@ -55,22 +57,30 @@ function geometries() {
     paint(place(cyl(0.34, 0.24, 0.26, 8), { y: 0.14, z: -2.9 }), TIMBER, 0, null, P.planks), // cup
     paint(place(cyl(0.22, 0.22, 0.24, 6), { y: 0.3, z: -2.9 }), '#8b8a84', 0, null, P.stone), // the boulder
   ]);
-  return { ballista: { base: ballistaBase, part: ballistaTop, pivot: [0, 1.28, 0] }, mangonel: { base: mangonelBase, part: mangonelArm, pivot: [0, 1.05, -0.7] } };
+  // the pennant on the pole, tinted per instance with its side's colour
+  const pennant = (x, y, z) => place(box(0.03, 0.42, 0.62), { x, y, z: z - 0.31 });
+  return {
+    ballista: { base: ballistaBase, part: ballistaTop, pivot: [0, 1.28, 0], flag: pennant(-0.62, 2.3, -0.95) },
+    mangonel: { base: mangonelBase, part: mangonelArm, pivot: [0, 1.05, -0.7], flag: pennant(-0.9, 2.8, -1.45) },
+  };
 }
 
 export function createEngineRenderer({ scene, max = 24 }) {
   const geos = geometries();
   const mat = createStructureMaterial({ roughness: 0.85 }, 'kh-structure');
+  const cloth = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.9, side: THREE.DoubleSide });
   const kinds = {};
   for (const [name, g] of Object.entries(geos)) {
-    const mk = (geo) => { const m = new THREE.InstancedMesh(geo, mat, max); m.count = 0; m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; scene.add(m); return m; };
-    kinds[name] = { base: mk(g.base), part: mk(g.part), pivot: new THREE.Vector3(...g.pivot), n: 0 };
+    const mk = (geo, m0 = mat) => { const m = new THREE.InstancedMesh(geo, m0, max); m.count = 0; m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; scene.add(m); return m; };
+    kinds[name] = { base: mk(g.base), part: mk(g.part), flag: mk(g.flag, cloth), pivot: new THREE.Vector3(...g.pivot), n: 0 };
+    kinds[name].flag.setColorAt(0, new THREE.Color('#ffffff')); // allocate the colour buffer up front
   }
+  const tint = new THREE.Color();
   const m4 = new THREE.Matrix4(), local = new THREE.Matrix4(), q = new THREE.Quaternion(), qp = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0), xAxis = new THREE.Vector3(1, 0, 0);
   return {
     begin() { for (const k in kinds) kinds[k].n = 0; },
     /**
-     * Draw one engine. f: { engine, x, y, z, heading, scale, since (s since the last shot), reload (s) }.
+     * Draw one engine. f: { engine, x, y, z, heading, scale, since (s since the last shot), reload (s), banner (its side's colour) }.
      */
     draw(f) {
       const k = kinds[f.engine];
@@ -79,6 +89,8 @@ export function createEngineRenderer({ scene, max = 24 }) {
       q.setFromAxisAngle(up, f.heading || 0);
       m4.compose(p.set(f.x, f.y, f.z), q, s.setScalar(f.scale || 1));
       k.base.setMatrixAt(i, m4);
+      k.flag.setMatrixAt(i, m4);
+      k.flag.setColorAt(i, tint.set(f.banner || '#d8d0b8'));
       // the moving part, posed in the engine's own frame and placed at its pivot
       const t = f.since ?? 99;
       if (f.engine === 'mangonel') {
@@ -97,13 +109,13 @@ export function createEngineRenderer({ scene, max = 24 }) {
     end() {
       for (const k in kinds) {
         const e = kinds[k];
-        e.base.count = e.n; e.part.count = e.n;
-        if (e.n) { flushInstances(e.base); flushInstances(e.part); }
+        e.base.count = e.n; e.part.count = e.n; e.flag.count = e.n;
+        if (e.n) { flushInstances(e.base); flushInstances(e.part); flushInstances(e.flag); }
       }
     },
     dispose() {
-      for (const k in kinds) { scene.remove(kinds[k].base, kinds[k].part); kinds[k].base.geometry.dispose(); kinds[k].part.geometry.dispose(); }
-      mat.dispose();
+      for (const k in kinds) { scene.remove(kinds[k].base, kinds[k].part, kinds[k].flag); for (const m of ['base', 'part', 'flag']) kinds[k][m].geometry.dispose(); }
+      mat.dispose(); cloth.dispose();
     },
   };
 }

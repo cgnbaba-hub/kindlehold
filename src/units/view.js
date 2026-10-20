@@ -2,7 +2,8 @@
 // state-driven animation; keeps short-lived fallen bodies after deaths.
 import * as THREE from 'three';
 import { all } from '../world/world.js';
-import { EV } from '../core/contracts.js';
+import { EV, PLAYER } from '../core/contracts.js';
+import { enemyFaction } from '../ai/factions.js';
 import { UNITS } from './defs.js';
 import { createFigureRenderer } from './figures.js';
 import { createSkinnedFigureRenderer } from './skinned-figures.js';
@@ -141,6 +142,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         if (def.engine) {
           eng.engine = def.engine; eng.x = x; eng.y = f.y; eng.z = z; eng.heading = f.heading; eng.scale = zk;
           eng.since = (w.tick - (u.attackT ?? -1e6) + alpha) / 20; eng.reload = def.cooldown;
+          eng.banner = u.owner === PLAYER ? '#4fb0dc' : u.owner === 'p3' ? '#8fb85a' : enemyFaction(w).color;
           engines.draw(eng);
           continue;
         }

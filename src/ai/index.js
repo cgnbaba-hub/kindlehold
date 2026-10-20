@@ -6,19 +6,23 @@
 import { EV, PLAYER, ENEMY } from '../core/contracts.js';
 import { all, emit, alert, worldRng } from '../world/world.js';
 import { doorOf, BUILDINGS } from '../buildings/defs.js';
-import { spawnUnit, isAlive } from '../units/sim.js';
+import { spawnUnit, isAlive, formationOrder } from '../units/sim.js';
+import { formationSlots } from '../navigation/index.js';
 import { UNITS } from '../units/defs.js';
 import { enemyFaction } from './factions.js';
 
 export const AI_DIFFICULTY = {
   // harass: first plunder party (minutes), interval between parties (minutes), party size
-  story: { harassAt: 11, harassEvery: 6, harassSize: 2, firstRaid: 6, growth: 2, spawnInterval: 50, waveInterval: 300, garrisonCap: 8, hpMult: 1, raidDelay: 180, reserves: 22 },
-  normal: { harassAt: 8, harassEvery: 4.5, harassSize: 2, firstRaid: 9, growth: 3, spawnInterval: 35, waveInterval: 240, garrisonCap: 12, hpMult: 1, raidDelay: 120, reserves: 32 },
-  hard: { harassAt: 6, harassEvery: 3.5, harassSize: 3, firstRaid: 11, growth: 4, spawnInterval: 24, waveInterval: 210, garrisonCap: 16, hpMult: 1.1, raidDelay: 105, reserves: 40 },
+  // siegeFrom: the first raid (0 = the first) that brings siege engines, null = never; siegeMax: at most this many;
+  // escort: shields or blades told off to guard each engine; retreatAt: a raid turns back below this share of its strength
+  story: { harassAt: 11, harassEvery: 6, harassSize: 2, firstRaid: 6, growth: 2, spawnInterval: 50, waveInterval: 300, garrisonCap: 8, hpMult: 1, raidDelay: 180, reserves: 22, siegeFrom: null, siegeMax: 0, escort: 0, retreatAt: 0.25 },
+  normal: { harassAt: 8, harassEvery: 4.5, harassSize: 2, firstRaid: 9, growth: 3, spawnInterval: 35, waveInterval: 240, garrisonCap: 12, hpMult: 1, raidDelay: 120, reserves: 32, siegeFrom: 3, siegeMax: 1, escort: 1, retreatAt: 0.25 },
+  hard: { harassAt: 6, harassEvery: 3.5, harassSize: 3, firstRaid: 11, growth: 5, spawnInterval: 24, waveInterval: 210, garrisonCap: 18, hpMult: 1.1, raidDelay: 105, reserves: 48, siegeFrom: 1, siegeMax: 2, escort: 2, retreatAt: 0.2 },
 };
+// an engine draws this many places from the fort's reserves
+export const ENGINE_RESERVE = 2;
 
 const TARGET_PRIORITY = { lodge: 0, farm: 0, quarry: 0, mine: 0, cottage: 1, barracks: 1, tower: 2, keep: 3 };
-const RETREAT_AT = 0.25;
 
 export function aiSettings(world) {
   const base = Object.hasOwn(AI_DIFFICULTY, world.meta.difficulty) ? AI_DIFFICULTY[world.meta.difficulty] : AI_DIFFICULTY.normal;
@@ -34,6 +38,8 @@ export function aiSettings(world) {
     garrisonCap: Math.round(base.garrisonCap * (m.garrisonCap || 1)),
     growth: base.growth + (m.growth || 0),
     firstRaid: base.firstRaid + (m.firstRaid || 0),
+    siegeFrom: base.siegeFrom == null ? null : Math.max(0, base.siegeFrom + (m.siegeFrom || 0)),
+    siegeMax: base.siegeFrom == null ? 0 : base.siegeMax + (m.siegeMax || 0),
   };
 }
 
@@ -65,8 +71,51 @@ export function pickRaidTarget(world, fromX, fromZ, vary = false) {
   return top[Math.floor(worldRng(world).next() * top.length)].b;
 }
 
+const isEngine = (u) => UNITS[u.type].cls === 'siege';
+
+/** What a raid's engines shoot at: the tower (or lit Keep) guarding the raid's target that lies
+ *  nearest the approach, otherwise the target itself. */
+export function siegeTargetFor(world, target, fromX, fromZ) {
+  let best = null, bd = Infinity;
+  for (const b of all(world, 'building')) {
+    if (b.owner !== PLAYER || b.state !== 'active' || !BUILDINGS[b.type].attack) continue;
+    if (Math.hypot(b.x - target.x, b.z - target.z) > 34) continue;
+    const d = Math.hypot(b.x - fromX, b.z - fromZ);
+    if (d < bd) { bd = d; best = b; }
+  }
+  return best || target;
+}
+
 export function createAiModule() {
   let ctx = null;
+
+  function walkableNear(x, z) {
+    const nav = ctx.services && ctx.services.nav;
+    if (!nav || nav.walkable(x, z)) return [x, z];
+    const p = nav.nearestWalkablePoint(x, z, 4);
+    return p ? [p.x, p.z] : [x, z];
+  }
+
+  /** Engines for this raid: the ones already at the fort, and new ones rolled out of it while
+   *  the reserves last (each costs ENGINE_RESERVE places). Later raids bring more. */
+  function rollOutEngines(world, hall, cfg) {
+    const ai = world.ai;
+    if (cfg.siegeFrom == null || ai.wave < cfg.siegeFrom || cfg.siegeMax <= 0) return [];
+    const want = Math.min(cfg.siegeMax, 1 + Math.floor((ai.wave - cfg.siegeFrom) / 2));
+    const out = all(world, 'unit').filter((u) => u.owner === ENEMY && !u.downed && isEngine(u)).slice(0, want);
+    const fac = enemyFaction(world), d = doorOf(hall);
+    while (out.length < want && (ai.spawned || 0) + ENGINE_RESERVE <= cfg.reserves && hall.hp > hall.maxHp * 0.5) {
+      const type = fac.engines[(ai.enginesBuilt || 0) % fac.engines.length];
+      const u = spawnEnemy(world, type, d.x + out.length * 2.5, d.z);
+      if (!u) break;
+      ai.spawned = (ai.spawned || 0) + ENGINE_RESERVE;
+      ai.enginesBuilt = (ai.enginesBuilt || 0) + 1;
+      out.push(u);
+      alert(world, 'danger', `The ${fac.short} are rolling a ${UNITS[type].name} out of the ${fac.fort}! Engines cannot fight up close: meet it with blades.`, u.x, u.z);
+      emit(world, 'ai:engine', { id: u.id, type });
+    }
+    return out;
+  }
 
   function campAnchor(world, u, hall) {
     const ang = (u.id * 2.399) % (Math.PI * 2);
@@ -78,6 +127,7 @@ export function createAiModule() {
     const [ax, az] = campAnchor(world, u, hall);
     u.order = { type: 'guard', ax, az, leash: 28 };
     u.retreating = false;
+    u.escort = null;
   }
 
   function garrison(world) {
@@ -91,7 +141,7 @@ export function createAiModule() {
     const cfg = aiSettings(world);
     const ai = world.ai;
     const size = cfg.firstRaid + ai.wave * cfg.growth;
-    const pool = garrison(world).filter((u) => !u.downed);
+    const pool = garrison(world).filter((u) => !u.downed && !isEngine(u));
     if (pool.length < Math.ceil(size * 0.6) && (ai.postponed || 0) < 2) {
       ai.postponed = (ai.postponed || 0) + 1;
       ai.raidTick = world.tick + 45 * 20;
@@ -102,14 +152,18 @@ export function createAiModule() {
     const raid = pool.slice(0, size);
     if (!raid.length) { ai.raidTick = world.tick + 60 * 20; return; }
     ai.postponed = 0;
+    raid.push(...rollOutEngines(world, hall, cfg));
     // gather outside the gate for 20 s, visibly, before marching
     const keep = all(world, 'building').find((b) => b.type === 'keep' && b.owner === PLAYER);
     const dirX = keep ? keep.x - hall.x : -1, dirZ = keep ? keep.z - hall.z : 1;
     const len = Math.hypot(dirX, dirZ) || 1;
     const gx = hall.x + (dirX / len) * 34, gz = hall.z + (dirZ / len) * 34;
-    raid.forEach((u, i) => {
-      const ang = (i / raid.length) * Math.PI * 2;
-      u.order = { type: 'move', x: gx + Math.sin(ang) * 3, z: gz + Math.cos(ang) * 3, ax: gx, az: gz };
+    // form up in the faction's formation, facing the Keep: shields first, archers and engines behind
+    const { sorted, inner } = formationOrder(raid);
+    const slots = formationSlots(sorted.length, gx, gz, hall.x, hall.z, 2, enemyFaction(world).formation, inner);
+    sorted.forEach((u, i) => {
+      const [sx, sz] = walkableNear(slots[i][0], slots[i][1]);
+      u.order = { type: 'move', x: sx, z: sz, ax: gx, az: gz };
       u.target = null; u.path = null; u.dest = null;
     });
     ai.raidIds = raid.map((u) => u.id);
@@ -127,7 +181,7 @@ export function createAiModule() {
   function startHarass(world, hall) {
     const cfg = aiSettings(world);
     const ai = world.ai;
-    const pool = garrison(world).filter((u) => !u.downed && UNITS[u.type].cls !== 'defensive');
+    const pool = garrison(world).filter((u) => !u.downed && UNITS[u.type].cls !== 'defensive' && !isEngine(u));
     if (pool.length < cfg.harassSize + 3) return; // keep the fort manned
     // the least-defended workshop, farthest from the Keep
     const keep = all(world, 'building').find((b) => b.type === 'keep' && b.owner === PLAYER);
@@ -171,18 +225,57 @@ export function createAiModule() {
     ai.raidTarget = target.id;
     ai.state = 'raid';
     ai.raidStartedTick = world.tick;
-    orderRaid(world, raid, target);
+    orderRaid(world, raid, target, true);
     emit(world, EV.AI_WAVE, { wave: ai.wave + 1, size: raid.length, target: target.id, x: target.x, z: target.z });
     alert(world, 'danger', `${enemyFaction(world).short} attack! ${raid.length} ${enemyFaction(world).fighters} are marching on your ${BUILDINGS[target.type].name}.`, target.x, target.z);
   }
 
-  function orderRaid(world, raid, target) {
+  /** March on a target in formation. On the first approach (`march`) the column keeps the pace
+   *  of its slowest member, so it arrives together; it charges once it is close (updateRaid).
+   *  Engines stop at the edge of their reach and bombard the tower that guards the target. */
+  function orderRaid(world, raid, target, march = false) {
+    const ai = world.ai;
     const d = doorOf(target);
-    raid.forEach((u, i) => {
-      const ang = (i / Math.max(1, raid.length)) * Math.PI * 2;
-      u.order = { type: 'attackMove', x: d.x + Math.sin(ang) * 3, z: d.z + Math.cos(ang) * 3, ax: u.x, az: u.z, targetBuilding: target.id };
-      u.target = null;
-      u.path = null; u.dest = null;
+    let cx = 0, cz = 0;
+    for (const u of raid) { cx += u.x; cz += u.z; }
+    cx /= raid.length; cz /= raid.length;
+    const pace = march ? Math.min(...raid.map((u) => UNITS[u.type].speed)) : 0;
+    const paced = pace ? { pace } : {};
+    ai.charged = !march;
+    const engines = raid.filter(isEngine);
+    // each engine gets a guard of shields (or blades) that stays with it instead of storming
+    const guards = new Map();
+    const fighters = formationOrder(raid.filter((u) => !isEngine(u) && ['defensive', 'melee'].includes(UNITS[u.type].cls))).sorted;
+    for (const e of engines) for (let k = 0; k < aiSettings(world).escort && fighters.length; k++) guards.set(fighters.shift().id, e);
+    for (const u of raid) u.escort = guards.has(u.id) ? guards.get(u.id).id : null;
+    const troops = raid.filter((u) => !isEngine(u) && !u.escort);
+    const len = Math.hypot(cx - d.x, cz - d.z) || 1;
+    const fx = d.x + ((cx - d.x) / len) * 4, fz = d.z + ((cz - d.z) / len) * 4;
+    const { sorted, inner } = formationOrder(troops);
+    const slots = formationSlots(sorted.length, fx, fz, cx, cz, 2, enemyFaction(world).formation, inner);
+    sorted.forEach((u, i) => {
+      const [sx, sz] = walkableNear(slots[i][0], slots[i][1]);
+      u.order = { type: 'attackMove', x: sx, z: sz, ax: u.x, az: u.z, targetBuilding: target.id, ...paced };
+      u.target = null; u.path = null; u.dest = null;
+    });
+    if (!engines.length) return;
+    const st = siegeTargetFor(world, target, cx, cz);
+    ai.siegeTarget = st.id;
+    const sl = Math.hypot(cx - st.x, cz - st.z) || 1, ux = (cx - st.x) / sl, uz = (cz - st.z) / sl;
+    engines.forEach((u, i) => {
+      const r = BUILDINGS[st.type].radius + UNITS[u.type].range * 0.85, side = (i - (engines.length - 1) / 2) * 3;
+      const [sx, sz] = walkableNear(st.x + ux * r - uz * side, st.z + uz * r + ux * side);
+      u.order = { type: 'attackMove', x: sx, z: sz, ax: u.x, az: u.z, targetBuilding: st.id, ...paced };
+      u.target = null; u.path = null; u.dest = null;
+      // its guard walks a few steps ahead of it, between the engine and the defenders
+      let k = 0;
+      for (const g of raid) {
+        if (g.escort !== u.id) continue;
+        const off = (k++ - 0.5) * 2.4;
+        const [gx, gz] = walkableNear(sx - ux * 3 - uz * off, sz - uz * 3 + ux * off);
+        g.order = { type: 'attackMove', x: gx, z: gz, ax: g.x, az: g.z, targetBuilding: st.id, ...paced };
+        g.target = null; g.path = null; g.dest = null;
+      }
     });
   }
 
@@ -192,13 +285,13 @@ export function createAiModule() {
     ai.raidIds = raid.map((u) => u.id);
     const strength = raid.reduce((s, u) => s + u.hp, 0);
     if (ai.state === 'raid') {
-      if (raid.length === 0 || strength <= ai.raidStartStrength * RETREAT_AT) {
+      if (raid.length === 0 || strength <= ai.raidStartStrength * aiSettings(world).retreatAt) {
         ai.state = 'retreat';
         ai.retreatTick = world.tick;
         for (const u of raid) {
           const [ax, az] = hall ? campAnchor(world, u, hall) : [u.x, u.z];
           u.order = { type: 'move', x: ax, z: az, ax, az };
-          u.target = null; u.retreating = true; u.path = null; u.dest = null;
+          u.target = null; u.retreating = true; u.path = null; u.dest = null; u.escort = null;
         }
         if (raid.length) alert(world, 'success', `The ${enemyFaction(world).fighters} are breaking and fleeing back to the ${enemyFaction(world).fort}!`);
         emit(world, 'ai:retreat', { wave: ai.wave + 1, survivors: raid.length });
@@ -209,8 +302,38 @@ export function createAiModule() {
         target = pickRaidTarget(world, raid[0].x, raid[0].z);
         if (target) { ai.raidTarget = target.id; orderRaid(world, raid, target); }
       } else {
-        // re-issue for units that arrived and went idle
-        for (const u of raid) if (u.order.type === 'idle' && u.target == null) { const d = doorOf(target); u.order = { type: 'attackMove', x: d.x, z: d.z, ax: u.x, az: u.z, targetBuilding: target.id }; u.target = target.id; }
+        // close to the target the column breaks into a charge
+        const troops = raid.filter((u) => !isEngine(u) && !u.escort);
+        if (!ai.charged && troops.length) {
+          let cx = 0, cz = 0;
+          for (const u of troops) { cx += u.x; cz += u.z; }
+          if (Math.hypot(cx / troops.length - target.x, cz / troops.length - target.z) < 28) {
+            for (const u of troops) delete u.order.pace;
+            ai.charged = true;
+          }
+        }
+        // re-issue for units that arrived and went idle; engines keep shooting from where they stand
+        for (const u of raid) {
+          if (u.escort && u.order.type === 'guard') {
+            const e = world.entities[u.escort];
+            if (!isAlive(e)) { u.escort = null; u.order = { type: 'idle', ax: u.x, az: u.z }; }
+            else if (Math.hypot(e.x - u.order.ax, e.z - u.order.az) > 6) { u.order.ax = e.x; u.order.az = e.z; } // keep up with it
+          }
+          if (u.order.type !== 'idle' || u.target != null) continue;
+          if (isEngine(u)) {
+            let st = world.entities[ai.siegeTarget];
+            if (!st || st.state === 'destroyed') { st = siegeTargetFor(world, target, u.x, u.z); ai.siegeTarget = st.id; }
+            u.target = st.id;
+            continue;
+          }
+          if (u.escort) {
+            // guard the engine where it stands; with the engine gone, join the attack
+            const e = world.entities[u.escort];
+            if (e && isAlive(e)) { u.order = { type: 'guard', ax: e.x + (u.x - e.x) * 0.5, az: e.z + (u.z - e.z) * 0.5, leash: 12 }; continue; }
+            u.escort = null;
+          }
+          const d = doorOf(target); u.order = { type: 'attackMove', x: d.x, z: d.z, ax: u.x, az: u.z, targetBuilding: target.id }; u.target = target.id;
+        }
       }
     } else if (ai.state === 'retreat') {
       const home = raid.every((u) => u.order.type !== 'move') || world.tick - ai.retreatTick > 90 * 20;

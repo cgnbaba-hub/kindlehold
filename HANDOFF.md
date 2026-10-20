@@ -154,6 +154,30 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Gegner-Formationen, Belagerung, härteres Hard (Paket B, 2026-10-20)
+
+- Überfälle formieren sich vor dem Tor in der Formation ihrer Fraktion (`FACTIONS[...].formation`)
+  und marschieren im Tempo des Langsamsten (`order.pace`, gilt nicht im Kampf). Ab 28 m vor dem
+  Ziel stürmen sie.
+- Ab Welle `siegeFrom` rollen Maschinen mit (`FACTIONS[...].engines`, `ENGINE_RESERVE` = 2
+  Reserveplätze). Story nie, Normal ab Welle 4, Hard ab Welle 2 (bis 2 Maschinen),
+  Tollbreaker-Kapitel eine Welle früher (`ai.siegeFrom: -1`).
+- Die Maschine hält bei 85 % ihrer Reichweite vor dem Turm, der das Ziel deckt
+  (`siegeTargetFor`), und liegt damit außerhalb jeder Turmreichweite. `escort` Schilde
+  bewachen sie (`u.escort`). Gegnerische Maschinen tragen einen Wimpel in Fraktionsfarbe.
+- Belagerungsmaschinen beider Seiten bleiben jetzt am Ende ihrer Reichweite stehen (0,88 statt
+  0,6). Für den Spieler ist das Komfort: mit „Hold“ ging das vorher auch von Hand.
+- Wegpunkt-Fehler: Ein Trupp schob sich gegenseitig vom gemeinsamen Pfadknick weg und hing dort
+  bis zu 40 s fest. Jetzt gilt für Soldaten ein Knick ab 0,7 m als passiert
+  (`followPath`, nur `kind === 'unit'`). Für Siedler hätte derselbe Fix die Wirtschaft
+  spürbar erleichtert (Story −3,2, Normal −2,6 min), deshalb nicht. Für Soldaten allein gewann
+  der Bot Hard öfter (3/6 → 5/6). Gegengewicht auf Hard: Wachstum +5 pro Welle, Garnison 18,
+  Reserven 48, Rückzug erst bei 20 %.
+- Messung (Bot, unvollendet = 40 min): Hard (10 Seeds) 6/10, 36,3 → 5/10, 37,3, zweimal
+  verloren. Normal 26,3 → 26,2, Story 24,1 → 25,9. Mehr dazu in GAME_DESIGN.
+- Messen über viele Seeds: `node scripts/balance-seeds.mjs [hard | greyfen:normal] [seeds]`
+  (Mittelwerte statt Einzelläufe, die um ±5 min schwanken). Tests: `tests/simulation/ai-siege.test.js`.
+
 ## Hearthhands und Motivation (Wunsch: „Siedler-5-ähnlicher“, 2026-10-20)
 
 Mechaniken nach dem Vorbild des Genres, mit eigenen Namen, Werten und Grafiken (kein Nachbau).

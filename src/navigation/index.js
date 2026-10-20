@@ -92,6 +92,9 @@ export function followPath(e, speed, dt) {
     const [tx, tz] = e.path[e.pathI];
     const dx = tx - e.x, dz = tz - e.z;
     const d = Math.hypot(dx, dz);
+    // soldiers pass a corner once close enough: a squad sharing a waypoint pushes itself off it
+    // (settlers do not jostle, so their paths stay as they were)
+    if (e.kind === 'unit' && d < 0.7 && e.pathI < e.path.length - 1) { e.pathI++; continue; }
     if (d > 1e-4) e.heading = Math.atan2(dx, dz);
     if (d <= remaining) {
       e.x = tx; e.z = tz; remaining -= d; e.pathI++;
