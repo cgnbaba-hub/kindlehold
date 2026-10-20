@@ -4,7 +4,7 @@
 import { h, icon, portrait, osricAvatar, clear, setText, fmtTime } from './dom.js';
 import { portraitKey } from './portraits.js';
 import { seasonAt } from '../weather/index.js';
-import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf } from '../population/index.js';
+import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf, HAND, handsOf, handsCap, motivationParts } from '../population/index.js';
 import { POI_INFO, TRADES, poiName, priceOf } from '../pois/index.js';
 import { createMinimap } from './minimap.js';
 import { createFloaters } from './floaters.js';
@@ -29,7 +29,7 @@ import { enemyFaction } from '../ai/factions.js';
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler', flour: 'Flour', bread: 'Bread', tools: 'Tools' };
 const RES_TIPS = {
   flour: 'Flour in the Keep store, ground by a Windmill. The Bakery bakes it into bread.',
-  bread: 'Bread in the Keep store, from a Bakery. Eaten after hot meals and before plain provisions: one loaf feeds two, and bread lifts stability.',
+  bread: 'Bread in the Keep store, from a Bakery. Eaten after hot meals and before plain provisions: one loaf feeds two, and bread lifts motivation.',
   tools: 'Tools in the Keep store, forged at a Smithy. Needed for the third level of every workshop.',
 };
 // goods of the longer chains show in the ribbon only once the settlement has them
@@ -87,7 +87,8 @@ export function createHud({ root, session, input, settings, actions }) {
   const idleVal = h('span.res-rate', { text: '' });
   const popEl = h('div.res', { 'data-tip-title': 'Your people', 'data-tip': 'People / housing. Build Cottages for more housing. Idle = labourers free to haul and build.', tabindex: 0 }, [icon('pop'), h('div.res-text', {}, [popVal, idleVal])]);
   const stabBar = h('div.meter-fill');
-  const stabEl = h('div.res.stab', { 'data-tip': 'Stability: fed, housed people work faster. Below 30 no newcomers arrive.', tabindex: 0 }, [icon('stability'), h('div.meter', {}, [stabBar])]);
+  const stabEl = h('div.res.stab', { 'data-tip-title': 'Motivation', 'data-tip': 'Motivated townsfolk work faster. Below 30 no newcomers arrive; below 15 settlers start to leave.', tabindex: 0 }, [icon('stability'), h('div.meter', {}, [stabBar])]);
+  let motTip = '';
   ribbon.append(popEl, stabEl);
   hud.append(ribbon, goodsRibbon);
 
@@ -189,7 +190,7 @@ export function createHud({ root, session, input, settings, actions }) {
     if (p.lastMealFed < 1 || p.res.provisions + 2 < p.pop * 0.5) danger('Our stores are nearly bare, Warden. We need farms, a hunter or a fisher, or smaller rations.');
     if (p.res.timber < 15) warn(has('lodge') ? 'Timber runs short, Warden. Another Woodcutter\'s Lodge, or send idle labourers to fell trees by hand.' : 'We have no woodcutters! Build a Woodcutter\'s Lodge near the forest.');
     if (p.res.stone < 10 && w.tick > 3 * 1200) warn(has('quarry') ? 'Stone is running low. A second quarry would help.' : 'We will need stone soon — build a Quarry by the rock outcrops.');
-    if (p.pop >= p.popCap) warn('Every bed is taken. Build Cottages, or upgrade them to Stone Houses, so more folk can settle.');
+    if ((p.housed ?? p.pop) >= p.popCap) warn('Every bed is taken. Build Cottages, or upgrade them to Stone Houses, so more folk can settle.');
     if (c.labourers - c.asleep <= 1 && c.people > 4 && !(w.time.hour >= 22 || w.time.hour < 5)) warn('No hands are free to carry goods or build. Pause a workplace or house more people.');
     if (p.stability < 40) warn('The people grumble, Warden. Lower the taxes, serve hot meals, give more rations or hold a feast.');
     if (p.tax === 2 && p.stability < 60) warn('High taxes weigh on the people.');
@@ -496,7 +497,7 @@ export function createHud({ root, session, input, settings, actions }) {
       const idle = all(w, 'settler').filter((s) => s.owner === PLAYER && !s.job).length;
       selPanel.append(h('div.sel-empty', {}, [
         h('h3', { text: 'Kindlehold' }),
-        h('p', { text: `${p.pop} people · ${idle} labourers · stability ${Math.round(p.stability)}` }),
+        h('p', { text: `${p.housed ?? p.pop} townsfolk${p.hands ? ` and ${p.hands} Hearthhands` : ''} · ${idle} labourers · motivation ${Math.round(p.stability)}` }),
         h('p.muted', { text: 'Left-click to select, drag to select soldiers (or labourers), right-click to command.' }),
       ]));
       return;
@@ -550,7 +551,7 @@ export function createHud({ root, session, input, settings, actions }) {
           const f = paydayForecast(w, PLAYER);
           const taxRow = h('div.tax-row', { role: 'group', 'aria-label': 'Tax level' }, [h('span', { text: 'Taxes' })]);
           TAX_LEVELS.forEach((lvl, i) => {
-            const b = h(`button.tax-btn${(p.tax ?? 1) === i ? '.active' : ''}`, { type: 'button', 'aria-pressed': (p.tax ?? 1) === i ? 'true' : 'false', 'data-tip': `${lvl.perSettler} Taler per settler each payday · stability ${lvl.stability > 0 ? '+' : ''}${lvl.stability}` , text: lvl.name });
+            const b = h(`button.tax-btn${(p.tax ?? 1) === i ? '.active' : ''}`, { type: 'button', 'aria-pressed': (p.tax ?? 1) === i ? 'true' : 'false', 'data-tip': `${lvl.perSettler} Taler per settler each payday · motivation ${lvl.stability > 0 ? '+' : ''}${lvl.stability}` , text: lvl.name });
             b.addEventListener('click', () => { input.issue({ type: 'setTax', level: i }); setTimeout(() => { dirtySel = true; }, 120); });
             taxRow.append(b);
           });
@@ -558,7 +559,7 @@ export function createHud({ root, session, input, settings, actions }) {
           const rationRow = h('div.tax-row', { role: 'group', 'aria-label': 'Rations' }, [h('span', { text: 'Rations' })]);
           RATIONS.forEach((r, i) => {
             const cur = (p.rations ?? 1) === i;
-            const b = h(`button.tax-btn${cur ? '.active' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'data-tip': `${r.portion}× food per person at mealtime · stability ${r.stability > 0 ? '+' : ''}${r.stability}`, text: r.name });
+            const b = h(`button.tax-btn${cur ? '.active' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'data-tip': `${r.portion}× food per person at mealtime · motivation ${r.stability > 0 ? '+' : ''}${r.stability}`, text: r.name });
             b.addEventListener('click', () => { input.issue({ type: 'setRations', level: i }); setTimeout(() => { dirtySel = true; }, 120); });
             rationRow.append(b);
           });
@@ -576,7 +577,7 @@ export function createHud({ root, session, input, settings, actions }) {
             gatherRow.append(b);
           });
           selPanel.append(gatherRow);
-          if ((p.feastUntil || 0) > w.tick) selPanel.append(h('div.sel-row.small', { text: `Feast in the hall: ${fmtTime((p.feastUntil - w.tick) / 20)} left (stability +${FEAST.stability})` }));
+          if ((p.feastUntil || 0) > w.tick) selPanel.append(h('div.sel-row.small', { text: `Feast in the hall: ${fmtTime((p.feastUntil - w.tick) / 20)} left (motivation +${FEAST.stability})` }));
           selPanel.append(h('div.sel-row.small', { text: `Payday in ${fmtTime(Math.max(0, (p.nextPayTick ?? 0) - w.tick) / 20)}: +${f.taxes} taxes from ${f.settlers} settlers${f.pay ? `, −${f.pay} pay for ${f.soldiers} soldiers` : ''}` }));
         }
         if (e.type === 'barracks' && e.queue.length) {
@@ -766,8 +767,13 @@ export function createHud({ root, session, input, settings, actions }) {
       if (one.type === 'keep') {
         if (!one.lit) cmdGrid.append(cmdButton({ ic: 'rekindle', label: 'Rekindle the Hearth', tip: 'Light the keep fire. Settlers will return to Kindlehold.', highlight: hl === 'keep', onClick: () => input.issue({ type: 'rekindle' }) }));
         else {
-          const full = p.pop >= p.popCap;
+          const full = (p.housed ?? p.pop) >= p.popCap;
           cmdGrid.append(cmdButton({ ic: 'settler', label: 'Hire labourer', tipTitle: `Hire a labourer (${HIRE_COST} Taler)`, tip: full ? 'No free housing — build Cottages first.' : p.res.taler < HIRE_COST ? `Not enough Taler. Taxes come in every payday.` : 'A labourer joins at once, straight from the Keep.', cost: { taler: HIRE_COST }, disabled: full || p.res.taler < HIRE_COST, onClick: () => input.issue({ type: 'hireSettler' }) }));
+          // Hearthhands: bunk in the Keep (no house), build, carry and gather by hand; fed and paid
+          const nh = handsOf(w, PLAYER), capH = handsCap(w, PLAYER), cantH = nh >= capH || !canAfford(w, PLAYER, HAND.cost);
+          cmdGrid.append(cmdButton({ ic: 'hearthhand', label: `Hire Hearthhand (${nh}/${capH})`, tipTitle: `Hire a Hearthhand (${HAND.cost.taler} Taler, ${HAND.wage} Taler wage each payday)`,
+            tip: nh >= capH ? 'Every bunk in the Keep is taken — upgrade the Keep for more.' : !canAfford(w, PLAYER, HAND.cost) ? 'Not enough Taler. Taxes come in every payday.' : 'A Hearthhand sleeps in the Keep, needs no house and eats with everyone. Builds, carries and fells trees or cuts stone by hand; never takes a workplace or joins the army.',
+            cost: HAND.cost, disabled: cantH, onClick: () => input.issue({ type: 'hireHand' }) }));
         }
         for (const id of TECH_ORDER) {
           const t = TECHS[id];
@@ -786,7 +792,7 @@ export function createHud({ root, session, input, settings, actions }) {
         if (one.lit) {
           const feasting = (p.feastUntil || 0) > w.tick;
           const canFeast = canAfford(w, PLAYER, FEAST.cost);
-          cmdGrid.append(cmdButton({ ic: 'feast', label: 'Hold a feast', tipTitle: 'Hold a feast', tip: feasting ? 'The feast is under way.' : canFeast ? `Everyone celebrates in the great hall: stability +${FEAST.stability} for three minutes.` : 'Not enough Taler or provisions for a feast.', cost: FEAST.cost, disabled: feasting || !canFeast, onClick: () => input.issue({ type: 'feast' }) }));
+          cmdGrid.append(cmdButton({ ic: 'feast', label: 'Hold a feast', tipTitle: 'Hold a feast', tip: feasting ? 'The feast is under way.' : canFeast ? `Everyone celebrates in the great hall: motivation +${FEAST.stability} for three minutes.` : 'Not enough Taler or provisions for a feast.', cost: FEAST.cost, disabled: feasting || !canFeast, onClick: () => input.issue({ type: 'feast' }) }));
         }
         cmdGrid.append(cmdButton({ ic: 'build', label: 'Build…', key: bb.buildMenu, tip: 'Open the construction menu.', highlight: hl && hl.startsWith('build'), onClick: () => { cmdMode = 'build'; dirtySel = true; } }));
         return;
@@ -864,7 +870,7 @@ export function createHud({ root, session, input, settings, actions }) {
       if (resEls[r].rate.className !== rc) resEls[r].rate.className = rc; // untouched DOM is not repainted
     }
     if (goodsRibbon.hidden === goods) { goodsRibbon.hidden = !goods; hud.classList.toggle('has-goods', goods); }
-    setText(popVal, `${p.pop}/${p.popCap}`);
+    setText(popVal, `${p.housed ?? p.pop}/${p.popCap}${p.hands ? ` +${p.hands}` : ''}`);
     { const c = censusOf(w, PLAYER); const tip = `${censusLines(c).join('\n')}\nClick for the full list.`; if (popEl.getAttribute('data-tip') !== tip) popEl.setAttribute('data-tip', tip); }
     renderPeople();
     renderDiplomacy();
@@ -875,10 +881,16 @@ export function createHud({ root, session, input, settings, actions }) {
     if (adviceTimer >= 12) { adviceTimer = 0; adviceIdx++; updateAdvisor(true); } else updateAdvisor();
     const idle = all(w, 'settler').filter((s) => s.owner === PLAYER && !s.job).length;
     setText(idleVal, `${idle} labourers`);
-    popEl.classList.toggle('warn', p.pop >= p.popCap);
+    popEl.classList.toggle('warn', (p.housed ?? p.pop) >= p.popCap);
     stabBar.style.width = `${Math.round(p.stability)}%`;
     stabBar.className = `meter-fill ${p.stability < 30 ? 'bad' : p.stability < 55 ? 'mid' : 'good'}`;
-    stabEl.setAttribute('aria-label', `Stability ${Math.round(p.stability)} of 100`);
+    stabEl.setAttribute('aria-label', `Motivation ${Math.round(p.stability)} of 100`);
+    // what lifts and lowers it, refreshed once a second (the tooltip reads it when shown)
+    if (w.tick % 20 === 0) {
+      const parts = motivationParts(w, PLAYER).map(([k, v]) => `${k} ${v > 0 ? '+' : ''}${v}`).join(' · ');
+      const tip = `${Math.round(p.stability)} of 100, heading for ${Math.round(p.stabilityTarget ?? p.stability)}. ${parts}. Motivated townsfolk work faster; below 30 nobody new comes, below 15 settlers leave. Feasts, hot meals, bread, low taxes and Wells lift it.`;
+      if (tip !== motTip) { motTip = tip; stabEl.setAttribute('data-tip', tip); }
+    }
     // clock
     const hour = w.time.hour;
     const hh = Math.floor(hour), mm = Math.floor((hour - hh) * 60);

@@ -22,14 +22,14 @@ export const GATHER = {
   rock: { res: 'stone', perTrip: 2, work: 7.5, strike: 0.8, anim: 'pick', stand: 2.2 },
 };
 export const GATHER_RADIUS = 16; // keeps working the same grove / outcrop within this range
-// Idle labourers go gathering on their own while the store is below these amounts, within
-// `range` metres of the nearest store, leaving `keepFree` idle for hauling and new workplaces.
-export const AUTO_GATHER = { timber: 120, stone: 80, range: 45, keepFree: 1 };
-// Idle hands is a real easing (measured with the bot: up to 9 minutes sooner and a much larger
-// town), so it scales with the difficulty: Story as above, Normal only when the store runs low
-// and with fewer hands, Hard not at all. See CLAUDE.md, "Schwierigkeit".
-export const AUTO_GATHER_RULES = { story: { timber: 120, stone: 80, share: 1 / 3 }, normal: { timber: 60, stone: 40, share: 1 / 4 }, hard: null };
-/** The idle-hands rules for this game's difficulty (null: not available). */
+// Hearthhands gather on their own within `range` metres of the nearest store.
+export const AUTO_GATHER = { range: 45 };
+// Hand gathering is done by Hearthhands only (hired for Taler, fed and paid: see population).
+// Townsfolk without a workplace no longer go felling on their own — free gathering made the game
+// measurably easier (the bot won up to 9 minutes sooner). The hands stop once the store holds
+// this much; the cap is lower on harder difficulties. See CLAUDE.md, "Schwierigkeit".
+export const AUTO_GATHER_RULES = { story: { timber: 300, stone: 200 }, normal: { timber: 200, stone: 150 }, hard: { timber: 120, stone: 80 } };
+/** Up to which stock Hearthhands gather on their own in this game. */
 export function autoGatherRules(world) {
   const d = world.meta && world.meta.difficulty;
   return Object.hasOwn(AUTO_GATHER_RULES, d) ? AUTO_GATHER_RULES[d] : AUTO_GATHER_RULES.normal;
@@ -425,27 +425,14 @@ export function createEconomyModule() {
     }
   }
 
-  function countCrew(world) {
-    const out = {};
-    for (const s of all(world, 'settler')) {
-      if (s.job || s.arriving || s.leaving || s.enlisting) continue;
-      const c = out[s.owner] ||= { labourers: 0, idle: 0, auto: 0 };
-      c.labourers++;
-      if (s.order && s.order.auto) c.auto++;
-      else if (isIdleLabourer(s)) c.idle++;
-    }
-    return out;
-  }
-
   /**
-   * A labourer with nothing to do fells a tree or cuts stone by hand when the store runs short,
-   * one trip at a time (then the task board decides again). Some always stay free for hauling.
+   * A Hearthhand with nothing to do fells a tree or cuts stone by hand while the store runs short,
+   * one trip at a time (then the task board decides again: building and carrying come first).
    */
-  function autoGather(world, s, c) {
+  function autoGather(world, s) {
     const p = world.players[s.owner];
+    if (!s.hand || !p || p.autoGather === false) return false;
     const rules = autoGatherRules(world);
-    if (!rules || !c || !p || p.autoGather === false) return false;
-    if (c.idle <= AUTO_GATHER.keepFree || c.auto >= Math.max(1, Math.floor(c.labourers * rules.share))) return false;
     const needT = p.res.timber / rules.timber, needS = p.res.stone / rules.stone;
     if (needT >= 1 && needS >= 1) return false;
     const kind = needT <= needS ? 'tree' : 'rock';
@@ -463,7 +450,6 @@ export function createEconomyModule() {
     stopWalking(s);
     s.task = null;
     s.order = { type: 'gather', kind, x: best.x, z: best.z, deposit: best.id, auto: true };
-    c.idle--; c.auto++;
     return true;
   }
 
@@ -509,7 +495,6 @@ export function createEconomyModule() {
     },
     update() {
       const world = ctx.world;
-      let crew = null; // idle and self-sent labourers per owner, counted once a tick when needed
       for (const s of all(world, 'settler')) {
         if (s.job || s.arriving || s.leaving || s.sleep) continue;
         if (s.enlisting) continue; // handled by recruitment
@@ -520,7 +505,7 @@ export function createEconomyModule() {
         if (!s.task || (s.task.type === 'idle' && (world.tick + s.id) % 10 === 0)) {
           const task = isIdleLabourer(s) || s.task === null ? chooseTask(world, s, keep) : null;
           if (task) { stopWalking(s); s.task = task; }
-          else if (s.task && (world.tick + s.id) % 40 === 0 && (crew ||= countCrew(world)) && autoGather(world, s, crew[s.owner])) continue;
+          else if (s.hand && s.task && (world.tick + s.id) % 40 === 0 && autoGather(world, s)) continue;
           else if (!s.task) {
             const door = doorOf(keep);
             const ang = (s.id * 1.7 + Math.floor(world.tick / 400)) % (Math.PI * 2);

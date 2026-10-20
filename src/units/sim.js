@@ -160,7 +160,7 @@ export function createUnitsModule() {
           for (const c of all(world, 'settler')) {
             // the Barracks rouses sleeping labourers too: a call to arms does not wait for dawn
             const roused = c.sleep && !c.job && !c.order && !c.carry;
-            if (c.owner !== b.owner || !(isIdleLabourer(c) || roused) || c.leaving || c.enlisting) continue;
+            if (c.owner !== b.owner || !(isIdleLabourer(c) || roused) || c.leaving || c.enlisting || c.hand) continue; // Hearthhands do not enlist
             const d = (c.x - b.x) ** 2 + (c.z - b.z) ** 2;
             if (d < bestD) { bestD = d; best = c; }
           }

@@ -1,5 +1,5 @@
 import { UPGRADES, BUILDINGS } from '../buildings/defs.js';
-import { keepOf } from '../population/index.js';
+import { keepOf, HAND, handsOf, handsCap } from '../population/index.js';
 // Scripted player ("bot") that plays the scenario only through the public command API.
 // Used by the happy-path simulation test, balancing, and verification demo states.
 import { PLAYER, ENEMY } from '../core/contracts.js';
@@ -86,6 +86,11 @@ export function createBot(sim, { aggressive = true } = {}) {
     const world = w();
     const p = world.players[PLAYER];
     if (!world.mission.flags.keepLit) { sim.issue({ type: 'rekindle' }); return; }
+    // Hearthhands: a few more as the town grows, while the treasury can spare them
+    if (world.tick % 400 === 7) {
+      const built = all(world, 'building').filter((b) => b.owner === PLAYER && b.state === 'active').length;
+      if (handsOf(world, PLAYER) < Math.min(handsCap(world, PLAYER), 2 + Math.floor(built / 4)) && p.res.taler >= HAND.cost.taler + 40) sim.issue({ type: 'hireHand' });
+    }
     const sites = all(world, 'building').filter((b) => b.owner === PLAYER && b.state === 'site').length;
     if (sites >= 2) return;
     if (count('lodge') < 1) { place('lodge'); return; }
@@ -113,6 +118,8 @@ export function createBot(sim, { aggressive = true } = {}) {
     if (count('farm') < 2) { place('farm', [-60, 78]); return; }
     if (count('hunter') < 1) { place('hunter', [-72, 30]); return; }
     if (count('cottage') < 3) { place('cottage', [-40, 74]); return; }
+    // a Well or two once motivation sags (high taxes, plain food)
+    if (count('well') < 2 && p.stability < 80 && p.res.stone >= 60) { place('well', [-50, 60]); return; }
     // a fisher on the Harrow once the territory reaches the bank (tried now and then)
     if (count('fisher') < 1 && world.tick % 1200 < 20 && place('fisher', [-44, 14])) return;
     if (count('barracks') < 1 && (world.stats.produced.iron >= 10 || p.res.iron >= 10)) { place('barracks'); return; }

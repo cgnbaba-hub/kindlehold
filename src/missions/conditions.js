@@ -27,7 +27,8 @@ export function evaluate(world, cond, owner = PLAYER) {
   if (cond.completed) { const o = world.mission.objectives.find((x) => x.id === cond.completed); return !!o && o.state === 'done'; }
   if (cond.flag) return !!world.mission.flags[cond.flag];
   if (cond.built) return countBuilt(world, owner, cond.built) >= (cond.count || 1);
-  if (cond.pop !== undefined) return world.players[owner].pop >= cond.pop;
+  // townsfolk and soldiers: hired Hearthhands do not make a town grow
+  if (cond.pop !== undefined) { const p = world.players[owner]; return p.pop - (p.hands || 0) >= cond.pop; }
   if (cond.stock) return (world.players[owner].res[cond.stock] || 0) >= cond.amount;
   if (cond.produced) return (world.stats.produced[cond.produced] || 0) >= cond.amount;
   if (cond.units) return all(world, 'unit').filter((u) => u.owner === owner && u.type === cond.units && !u.downed).length >= (cond.count || 1);

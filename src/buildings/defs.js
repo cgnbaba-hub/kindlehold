@@ -81,7 +81,7 @@ export const BUILDINGS = {
   },
   canteen: {
     id: 'canteen', name: 'Tavern', owner: 'p1', buildable: true,
-    desc: 'The cook turns provisions into hot meals: one provision feeds one and a half people, and warm meals lift stability.',
+    desc: 'The cook turns provisions into hot meals: one provision feeds one and a half people, and warm meals lift motivation.',
     cost: { timber: 30, stone: 20 }, buildTime: 24, hp: 450, radius: 4.4, navRadius: 3.6, slots: 1, job: 'cook',
     inputs: { provisions: 10 }, mealCap: 30, door: [0, 4.4],
   },
@@ -89,6 +89,11 @@ export const BUILDINGS = {
     id: 'storehouse', name: 'Storehouse', owner: 'p1', buildable: true,
     desc: 'A second store for all goods. Labourers bring goods to the nearest store and fetch them from there, so outlying workshops and building sites are served much faster.',
     cost: { timber: 35, stone: 25 }, buildTime: 26, hp: 550, radius: 4.2, navRadius: 3.4, door: [0, 4.2],
+  },
+  well: {
+    id: 'well', name: 'Well', owner: 'p1', buildable: true,
+    desc: 'A stone well on the green where folk meet: motivation +4 (up to three Wells count). Needs no worker.',
+    cost: { timber: 10, stone: 30 }, buildTime: 15, hp: 300, radius: 1.8, navRadius: 1.4, door: [0, 1.8],
   },
   // --- the longer production chains: grain -> flour -> bread, iron -> tools ---
   mill: {
@@ -99,7 +104,7 @@ export const BUILDINGS = {
   },
   bakery: {
     id: 'bakery', name: 'Bakery', owner: 'p1', buildable: true,
-    desc: 'The baker bakes flour into bread, firing the oven with timber. One loaf feeds two people, and fresh bread lifts stability.',
+    desc: 'The baker bakes flour into bread, firing the oven with timber. One loaf feeds two people, and fresh bread lifts motivation.',
     cost: { timber: 25, stone: 25 }, buildTime: 24, hp: 420, radius: 3.8, navRadius: 3.2, slots: 1, job: 'baker',
     inputs: { flour: 8, timber: 4 }, outCap: 12, door: [0, 3.8],
   },
@@ -252,7 +257,7 @@ export function displayName(b) {
   return BUILDINGS[b.type].name;
 }
 
-export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'fisher', 'canteen', 'quarry', 'mine', 'storehouse', 'saltworks', 'mill', 'bakery', 'smithy', 'barracks', 'tower'];
+export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'fisher', 'canteen', 'quarry', 'mine', 'storehouse', 'well', 'saltworks', 'mill', 'bakery', 'smithy', 'barracks', 'tower'];
 
 export function buildingDef(type) {
   const d = BUILDINGS[type];

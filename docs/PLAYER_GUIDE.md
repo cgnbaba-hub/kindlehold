@@ -202,16 +202,19 @@ the Keep: **Steel Mail** (tougher) and **Veteran Drill** (faster).
 
 ## Storehouses, idle hands, moving buildings
 
+See also **Hearthhands and motivation** below.
+
 * **Storehouse** — a second store for all goods. Labourers bring goods to the nearest store
   (the Keep or a Storehouse) and fetch them from the best one for the trip, so outlying
   workshops and building sites are served much faster. Build one where a new quarter grows.
-* **Idle hands** (at the Keep): with *Gather* on, labourers who have nothing to do fell a tree
-  or cut stone by hand near a store while timber or stone run short — one trip at a time, then
-  they look for work again, and one always stays free for hauling. *Wait* keeps them at the Keep.
-  Gathering is a help, so it depends on the difficulty:
-  * **Story:** labourers gather while timber is below 120 or stone below 80, up to a third of them.
-  * **Normal:** only below 60 timber or 40 stone, and only a quarter of them.
-  * **Hard:** never.
+* **Idle hands** (at the Keep): with *Gather* on, Hearthhands with nothing to do fell a tree or
+  cut stone by hand near a store while timber or stone run short. They go one trip at a time and
+  then look for work again; *Wait* keeps them at the Keep. They stop once the store holds enough:
+  * **Story:** 300 timber or 200 stone;
+  * **Normal:** 200 timber or 150 stone;
+  * **Hard:** 120 timber or 80 stone.
+
+  Townsfolk without a workplace no longer go felling on their own.
 * **Move** (select a building): choose a new place; the building is taken down and put up again
   there. The materials come along and it keeps its level — only the building time is spent.
   (The Keep stays where it was founded.)
@@ -306,3 +309,27 @@ threatened. If the Keep is destroyed — or everyone is gone — the scenario is
 
 **F5** quick-saves, **F9** quick-loads; the pause menu (**Esc**) has three save slots.
 The game autosaves every two minutes. Saves are stored in this browser only.
+
+## Hearthhands and motivation
+
+**Hearthhands** are labourers sworn to the Keep. Hire them there for 70 Taler; each draws a wage
+of 2 Taler every payday.
+* They sleep in the Keep and need no house. The Keep holds 4 of them, the Castle 7 and the
+  Fortress 10.
+* They eat at every meal like everyone else.
+* They build, carry, repair, and fell trees or cut stone by hand (see *Idle hands*).
+* They never take a workplace, never join the army and pay no taxes.
+* Every chapter starts with two of them (one on Hard).
+
+Townsfolk, the settlers who come for houses and work, take the workplaces and still help with
+carrying and building when they have no workplace.
+
+**Motivation**, the flame bar at the top, is how willing your townsfolk are:
+* Motivated townsfolk work faster.
+* Below 30 nobody new comes; below 15 settlers start to leave.
+* Hover the bar to see what makes it up: meals, housing, the hearth, taxes, rations, hot meals,
+  bread, feasts and Wells.
+
+**Well** (10 timber, 30 stone): a stone well on the village green, worth +4 motivation. Only
+three Wells count. They are the way to bear higher taxes: three Wells offset the High tax rate.
+

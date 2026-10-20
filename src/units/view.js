@@ -7,6 +7,7 @@ import { UNITS } from './defs.js';
 import { createFigureRenderer } from './figures.js';
 import { createSkinnedFigureRenderer } from './skinned-figures.js';
 import { createEngineRenderer } from './engines.js';
+import { HAND_TUNIC } from './cast.js';
 
 const CORPSE_SECONDS = 6;
 const BLEND = 0.22; // seconds to cross-fade from one animation into the next
@@ -121,7 +122,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         if (!inView(x, f.y, z)) continue;
         const chat = talk.get(s.id);
         f.heading = smoothHeading(s, frame.dt, chat);
-        f.style = 'settler'; f.scale = 1.25 * zk; f.tunic = figs.tunicFor(s.id); f.capColor = null;
+        f.style = 'settler'; f.scale = 1.25 * zk; f.tunic = s.hand ? HAND_TUNIC : figs.tunicFor(s.id); f.capColor = null;
         f.ack = null; f.id = s.id; f.dt = frame.dt;
         f.anim = chat !== undefined ? 'talk' : s.anim || 'idle'; f.t = tickTime + s.id * 0.37; f.phase = s.id; f.job = s.job || null; f.hit = 0; f.rank = 0; f.attack = null; f.gestures = true;
         animate(s, x, z, f.anim, 1.25 * zk, frame.dt);

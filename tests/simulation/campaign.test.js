@@ -34,7 +34,8 @@ test('chapter two starts in an established town', () => {
   const mine = all(w, 'building').filter((b) => b.owner === 'p1' && b.type !== 'keep');
   assert.ok(mine.length >= 10, `town buildings: ${mine.length}`);
   assert.ok(mine.every((b) => b.state === 'active'));
-  assert.equal(all(w, 'settler').length, 16);
+  assert.equal(all(w, 'settler').filter((s) => !s.hand).length, 16);
+  assert.equal(all(w, 'settler').filter((s) => s.hand).length, 2, 'and two Hearthhands');
   assert.equal(all(w, 'unit').filter((u) => u.owner === 'p1' && !u.hero).length, 5);
   assert.ok(w.players.p1.techs.axes);
   assert.ok(w.ai.mods && w.ai.mods.reserves > 1);

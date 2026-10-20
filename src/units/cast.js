@@ -60,6 +60,9 @@ const FOLK = [
   { body: 'Rogue', head: 'Mage_Head' },
 ];
 
+/** Hearthhands wear a plain hemp smock and a hood, whatever their face: easy to tell from townsfolk. */
+export const HAND_TUNIC = '#9a8462';
+
 const cache = new Map();
 /**
  * The costume of a figure. Soldiers wear their style's; settlers vary by id (look, colours, hair,
@@ -76,9 +79,10 @@ export function costume(style, phase = 0, tunic = null) {
   if (!c) {
     const look = FOLK[phase % FOLK.length];
     const cloth = tunic || SETTLER_TUNICS[phase % SETTLER_TUNICS.length];
+    const hand = tunic === HAND_TUNIC;
     c = {
-      ...look, rigid: [], right: null, left: null, weapon: 'unarmed', scale: 1,
-      tints: { clothA: cloth, clothB: SETTLER_TUNICS[(phase * 3 + 1) % SETTLER_TUNICS.length], clothC: look.body === 'Barbarian' ? FUR[phase % FUR.length] : TROUSERS[phase % TROUSERS.length], hair: HAIR[phase % HAIR.length], skin: SKIN[(phase * 5 + 1) % SKIN.length], metal: '#8a8d92' },
+      ...look, ...(hand ? { body: 'Rogue', head: 'Rogue_Head_Hooded' } : {}), rigid: [], right: null, left: null, weapon: 'unarmed', scale: 1,
+      tints: { clothA: cloth, clothB: hand ? '#6b5a40' : SETTLER_TUNICS[(phase * 3 + 1) % SETTLER_TUNICS.length], clothC: look.body === 'Barbarian' ? FUR[phase % FUR.length] : TROUSERS[phase % TROUSERS.length], hair: HAIR[phase % HAIR.length], skin: SKIN[(phase * 5 + 1) % SKIN.length], metal: '#8a8d92' },
     };
     if (cache.size > 2000) cache.clear();
     cache.set(key, c);
