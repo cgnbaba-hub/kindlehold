@@ -33,6 +33,17 @@ done
 
 mkdir -p "$STATE"
 log() { echo "[auto-deploy $(date -u +%H:%M:%SZ)] $*"; }
+# optional push message (e.g. an ntfy.sh topic URL, or a Discord/Slack webhook taking {"text"}/{"content"}):
+# set KINDLEHOLD_NOTIFY_URL in .deploy-local/auto-deploy.env (read by the systemd unit) or the environment
+notify() {
+  local url="${KINDLEHOLD_NOTIFY_URL:-}"; [[ -n "$url" ]] || return 0
+  [[ "$url" =~ ^https://[A-Za-z0-9._/:%?=\&-]+$ ]] || { log "KINDLEHOLD_NOTIFY_URL must be an https URL"; return 0; }
+  case "$url" in
+    *discord.com/api/webhooks/*) curl -fsS --max-time 10 -H 'Content-Type: application/json' -d "{\"content\":\"$1\"}" "$url" >/dev/null || true ;;
+    *hooks.slack.com/*) curl -fsS --max-time 10 -H 'Content-Type: application/json' -d "{\"text\":\"$1\"}" "$url" >/dev/null || true ;;
+    *) curl -fsS --max-time 10 -d "$1" "$url" >/dev/null || true ;;
+  esac
+}
 status() { printf '%s %s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" "${2:-}" > "$STATE/AUTO_STATUS"; }
 
 # one run at a time (a slow build must not overlap the next timer tick)
@@ -52,7 +63,7 @@ if [[ "$FORCE" -eq 0 ]]; then
 fi
 log "new commit on $BRANCH: $SHORT"
 status running "$SHORT"
-fail() { log "FAILED: $*"; echo "$TARGET" > "$STATE/AUTO_FAILED"; status failed "$SHORT $*"; exit 1; }
+fail() { log "FAILED: $*"; echo "$TARGET" > "$STATE/AUTO_FAILED"; status failed "$SHORT $*"; notify "Kindlehold auto-deploy FAILED for $SHORT: $* (the live version is unchanged)"; exit 1; }
 
 # a clean worktree of exactly that commit
 if git -C "$SRC" rev-parse --git-dir >/dev/null 2>&1; then
@@ -115,4 +126,5 @@ live="$(curl -fsS --max-time 10 "http://127.0.0.1:${PORT}/RELEASE" 2>/dev/null |
 echo "$TARGET" > "$STATE/AUTO_DEPLOYED"
 rm -f "$STATE/AUTO_FAILED"
 status deployed "$SHORT"
+notify "Kindlehold $SHORT is live"
 log "live: $SHORT"

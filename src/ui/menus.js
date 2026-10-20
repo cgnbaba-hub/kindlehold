@@ -271,6 +271,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       h('p', { text: 'Characters and their animations: KayKit Adventurers Character Pack by Kay Lousberg (kaylousberg.com), CC0 1.0 — recoloured and dressed for Kindlehold\'s roles and factions.' }),
       h('p', { text: 'Building models and props: KayKit Medieval Hexagon Pack by Kay Lousberg (kaylousberg.com), CC0 1.0.' }),
       h('p', { text: 'Deer and stags: Ultimate Animated Animal Pack by Quaternius (quaternius.com), CC0 1.0.' }),
+      h('p.muted.build-id', { text: `Version ${typeof __KH_BUILD__ !== 'undefined' ? __KH_BUILD__ : 'dev'}${typeof __KH_BUILT_AT__ !== 'undefined' ? `, built ${__KH_BUILT_AT__} UTC` : ''}` }),
       h('p', { text: 'Rendering: three.js (MIT licence) including its Sky shader addon. Build tooling: Vite (MIT). No other third-party art, audio or fonts are shipped.' }),
       h('p.muted', { text: 'Inspired only by the general conventions of economy-focused real-time strategy games. Not affiliated with, endorsed by, or a remake of any existing game.' }),
       menuButton('Back', onBack, { primary: true }),

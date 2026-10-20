@@ -58,7 +58,9 @@ try {
     await page.waitForSelector('.cinematic', { timeout: 30000 }); // it is there at once, but the first frames keep the page busy
     assert(/Chapter 1/.test(await page.textContent('.cinematic')), 'chapter intro shown');
     await page.mouse.click(640, 400);
-    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 20000 });
+    // the click is handled once the first heavy frames (shader compiles) let the page breathe:
+    // on a slow runner that alone can take longer than 20 s
+    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 60000 });
     await page.waitForSelector('.hud .objectives .obj-title');
     const first = await page.textContent('.objectives .obj-list');
     assert(/Rekindle the hearth/.test(first), 'first objective shown');
@@ -129,8 +131,14 @@ try {
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
     await game(page, () => { const g = window.__GAME__; g.issue({ type: 'rekindle' }); g.runTicks(400); });
     const before = await game(page, () => ({ tick: window.__GAME__.world().tick, hash: window.__GAME__.getWorldHash(), n: Object.keys(window.__GAME__.world().entities).length }));
+    // record every toast from now on: a toast lives 2.6 s and at most four are shown, so on a slow
+    // runner "Quick-saved" can come and go between two polls (and be pushed out by start-up toasts)
+    await game(page, () => { window.__toastLog = []; const t = document.querySelector('.toasts'); new MutationObserver(() => window.__toastLog.push(t.textContent)).observe(t, { childList: true, subtree: true }); });
     await page.keyboard.press('F5');
-    await page.waitForFunction(() => /Quick-saved/.test(document.querySelector('.toasts').textContent), null, { timeout: 30000 });
+    await page.waitForFunction((t) => {
+      const meta = JSON.parse(localStorage.getItem('kindlehold.save.quick.meta') || 'null');
+      return meta && meta.tick >= t && window.__toastLog.some((x) => /Quick-saved/.test(x));
+    }, before.tick, { timeout: 60000 });
     await game(page, () => window.__GAME__.runTicks(300));
     await page.keyboard.press('F9');
     await page.waitForFunction((t) => window.__GAME_READY__ && window.__GAME__ && window.__GAME__.world().tick < t + 100, before.tick, { timeout: 120000 });
