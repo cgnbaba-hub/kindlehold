@@ -322,6 +322,19 @@ const MODELS = {
     body.push(...barrel(3.9, 1.6), ...barrel(4.0, 0.7), ...barrel(3.95, 1.15, 0.85));
     return { body, glow, height: 7.4 };
   },
+  well(rnd) {
+    const body = [], glow = [];
+    // a round stone well with a little shingled roof, a winch and a bucket on the rim
+    body.push(paint(place(cyl(1.25, 1.35, 0.9, 12), { y: 0.45 }), C.stone, 0.08, rnd, P.stone));
+    body.push(paint(place(cyl(0.95, 0.95, 0.12, 12), { y: 0.86 }), '#3c6f86', 0, null, P.plain));
+    for (const x of [-1.05, 1.05]) body.push(b(0.18, 2.1, 0.18, C.timberDark, P.planks, { x, y: 1.95 }));
+    body.push(roof(2.9, 1.7, 0.9, C.slate, P.shingles, { y: 3.0 }));
+    body.push(paint(place(cyl(0.12, 0.12, 2.1, 6), { y: 2.35, rz: Math.PI / 2 }), C.timberDark, 0, null, P.planks));
+    body.push(paint(place(cyl(0.015, 0.015, 1.0, 4), { y: 1.8 }), '#c9b58a', 0, null, P.plain));
+    body.push(paint(place(cyl(0.2, 0.16, 0.3, 8), { x: 0.9, y: 1.05, z: 0.55 }), '#7a5634', 0, null, P.planks));
+    body.push(...stoneBlocks(-1.8, 1.0, 2, rnd));
+    return { body, glow, height: 3.9 };
+  },
   storehouse(rnd) {
     const body = [], glow = [];
     // a long timber store on a stone footing with a wide double door, goods stacked outside

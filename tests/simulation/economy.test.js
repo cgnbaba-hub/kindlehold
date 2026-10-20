@@ -115,7 +115,7 @@ test('settlers arrive only after the hearth is lit and while housing is free', (
   for (let i = 0; i < 20 * 40; i++) sim.step();
   assert.ok(settlers(sim).length > n0, 'arrivals after rekindling');
   const p = sim.world.players.p1;
-  assert.ok(p.pop <= p.popCap);
+  assert.ok(p.housed <= p.popCap, 'the houses are not overfull (Hearthhands bunk in the Keep)');
 });
 
 test('worker assignment keeps labourers free for hauling', () => {

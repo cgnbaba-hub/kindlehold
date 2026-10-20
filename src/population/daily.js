@@ -20,7 +20,8 @@ export function isAsleep(s) { return !!(s.sleep && s.sleep.in); }
 function homeFor(world, s) {
   let best = null, bd = Infinity;
   for (const b of all(world, 'building')) {
-    if (b.owner !== s.owner || b.state !== 'active' || (b.type !== 'cottage' && b.type !== 'keep')) continue;
+    // Hearthhands bunk in the Keep; townsfolk sleep in the nearest house
+    if (b.owner !== s.owner || b.state !== 'active' || (s.hand ? b.type !== 'keep' : b.type !== 'cottage' && b.type !== 'keep')) continue;
     const d = Math.hypot(b.x - s.x, b.z - s.z);
     if (d < bd) { bd = d; best = b; }
   }

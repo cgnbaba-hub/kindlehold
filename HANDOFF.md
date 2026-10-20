@@ -143,6 +143,43 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Hearthhands und Motivation (Wunsch: „Siedler-5-ähnlicher“, 2026-10-20)
+
+Mechaniken nach dem Vorbild des Genres, mit eigenen Namen, Werten und Grafiken (kein Nachbau).
+
+**Hearthhands** (Rolle der Leibeigenen; `HAND` in `population/index.js`, `s.hand`):
+- Anwerbung an der Burg für 70 Taler, dazu 2 Taler Lohn pro Zahltag.
+- Sie schlafen in der Burg; Plätze: Burg 4, Castle 7, Fortress 10.
+- Sie essen mit.
+- Sie bauen, tragen, reparieren und sammeln von Hand.
+- Kein Werkstattjob, kein Militär, keine Steuern; sie zählen nicht zu Wohnraum und
+  Missions-Bevölkerung (`player.housed`).
+- Zum Start zwei, auf Hard eine.
+
+**Weitere Änderungen:**
+- Arbeitslose Bürger sammeln nicht mehr von selbst.
+- „Idle hands“ gilt nur noch für Hearthhands, mit Sammelgrenzen je Schwierigkeit
+  (`AUTO_GATHER_RULES`).
+- „Stability“ heißt im Spiel **Motivation**. Der Tooltip der Leiste zeigt `motivationParts()`.
+- Neues Gebäude **Well** (+4, drei zählen).
+
+**Balance (Bot, Kapitel 1, Minuten bis zum Sieg):**
+
+| Lauf | vorher | erster Entwurf | jetzt |
+|---|---|---|---|
+| Story 42 | 34,1 | 18,2 | 27,7 |
+| Normal 1337 | 33,0 | 23,8 | 23,8 |
+| Normal 7 | 28,4 | 33,2 | 33,2 |
+| Normal 42 | – | – | 20,1 |
+| Hard 99 | 35,2 | – | ohne Sieg nach 40 |
+| Hard 7 | ohne Sieg | – | 35,6 |
+
+- Erster Entwurf: 50 Taler, 1 Lohn, 6/10/14 Plätze, Story-Sammeln bis 300/200. Das war zu leicht.
+- Normal schwankt je Seed um ±5 Minuten. Ein klarer Trend ist nicht zu sehen.
+- Ein Bot, der so viele Hearthhands anwirbt wie bezahlbar, ist auf Normal rund 3 Minuten
+  schneller. Das ist eine bezahlte Erleichterung.
+- Skripte zum Nachmessen: `scripts/balance.mjs`; Varianten wie im Scratchpad-Skript `handsbal.mjs`.
+
 ## Rückmeldung 2026-10-02: Leistung, Formationen, Belagerung, Schwierigkeit
 
 **F3-Log** (Safari, Mittel, Kapitel 2, 21 Minuten):

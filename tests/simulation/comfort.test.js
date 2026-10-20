@@ -1,9 +1,9 @@
-// Settler comfort: storehouses as extra stores, idle labourers gathering on their own,
-// moving buildings, soldiers healing at home.
+// Settler comfort: storehouses as extra stores, moving buildings, soldiers healing at home.
+// (Gathering on their own is the Hearthhands' trade now: see hearthhands.test.js.)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { newSim, keep, place, runUntil, grant, all, units } from '../helpers/sim.js';
-import { pickStore, AUTO_GATHER, autoGatherRules } from '../../src/economy/index.js';
+import { pickStore } from '../../src/economy/index.js';
 import { findSpot } from '../../src/demo/bot.js';
 import { spawnUnit } from '../../src/units/sim.js';
 
@@ -32,44 +32,6 @@ test('labourers use the nearest store: a Storehouse by an outlying lodge takes i
   // and the store choice itself
   const s = all(sim.world, 'settler')[0];
   assert.equal(pickStore(sim.world, s, lodge, 'drop').id, store.id);
-});
-
-test('idle labourers fell trees on their own while timber runs short, and can be told to wait', () => {
-  const sim = started({ timber: 10, stone: 300 });
-  const p = sim.world.players.p1;
-  let auto = 0;
-  for (let i = 0; i < 20 * 90; i++) {
-    sim.step();
-    p.res.timber = Math.min(p.res.timber, 20);
-    if (all(sim.world, 'settler').some((s) => s.order && s.order.auto)) auto++;
-  }
-  assert.ok(auto > 0, 'someone went gathering on their own');
-  assert.ok(sim.world.stats.produced.timber > 0, 'hand-felled timber reached the store');
-  // switched off: nobody leaves on their own
-  sim.issue({ type: 'setAutoGather', on: false });
-  sim.step();
-  assert.equal(p.autoGather, false);
-  for (let i = 0; i < 20 * 60; i++) sim.step();
-  for (let i = 0; i < 20 * 30; i++) {
-    sim.step();
-    assert.ok(!all(sim.world, 'settler').some((s) => s.order && s.order.auto && s.task && s.task.stage === 'find'), 'no new self-sent trips');
-  }
-  // a full store needs no help
-  const sim2 = started({ timber: AUTO_GATHER.timber + 200, stone: AUTO_GATHER.stone + 200 });
-  for (let i = 0; i < 20 * 60; i++) sim2.step();
-  assert.ok(!all(sim2.world, 'settler').some((s) => s.order && s.order.auto), 'nobody gathers when the store is full');
-});
-
-test('idle hands scale with the difficulty: not at all on Hard', () => {
-  const sim = newSim({ difficulty: 'hard' });
-  sim.issue({ type: 'rekindle' });
-  grant(sim, { timber: 0, stone: 0, provisions: 200 });
-  for (let i = 0; i < 20 * 90; i++) {
-    sim.step();
-    assert.ok(!all(sim.world, 'settler').some((s) => s.order && s.order.auto), 'nobody sets out on their own on Hard');
-  }
-  assert.equal(autoGatherRules(sim.world), null);
-  assert.ok(autoGatherRules(newSim({ difficulty: 'story' }).world).timber > autoGatherRules(newSim().world).timber, 'Story helps more than Normal');
 });
 
 test('a moved building is taken down and put up elsewhere with its materials and level', () => {

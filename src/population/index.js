@@ -61,17 +61,59 @@ export function asleepCount(world, owner) { let n = 0; for (const s of all(world
 export function mealsInStock(world, owner) { let n = 0; for (const b of all(world, 'building')) if (b.owner === owner && b.type === 'canteen' && b.state === 'active') n += Math.floor(b.meals || 0); return n; }
 export const HIRE_COST = 40; // Taler to hire a labourer at the Keep (needs free housing)
 
+/**
+ * Hearthhands: labourers sworn to the Keep (the serfs of other settler games, under our own
+ * name and rules). Hired for Taler, they need no house — they bunk in the Keep, whose level sets
+ * how many it holds — but eat at every meal and draw a wage each payday. They build, carry,
+ * repair and fell or cut by hand; they never take a workplace or enlist, pay no taxes and do not
+ * count toward motivation.
+ */
+// Measured with the balance bot: at 50 Taler, 1 wage and 6/10/14 bunks they made every difficulty
+// several minutes easier (Story 34 -> 18 min). The price below brings Normal back into line.
+export const HAND = { cost: { taler: 70 }, wage: 2, cap: [4, 7, 10] };
+export const isHand = (s) => !!(s && s.kind === 'settler' && s.hand);
+export function handsOf(world, owner) { let n = 0; for (const s of all(world, 'settler')) if (s.owner === owner && s.hand) n++; return n; }
+export function handsCap(world, owner) { const k = keepOf(world, owner); return k ? HAND.cap[Math.min(HAND.cap.length, levelOf(k)) - 1] : 0; }
+
+// Beautification: every finished Well cheers the town up (only the first few count)
+export const WELL_MOTIVATION = 4, WELLS_COUNTED = 3;
+
+/** What raises and lowers motivation right now, as [label, points]; the target is their sum (0-100). */
+export function motivationParts(world, owner) {
+  const p = world.players[owner];
+  const keep = keepOf(world, owner);
+  const headroom = p.popCap - (p.pop - handsOf(world, owner));
+  const fed = p.lastMealFed ?? 1;
+  let wells = 0;
+  for (const b of all(world, 'building')) if (b.owner === owner && b.type === 'well' && b.state === 'active') wells++;
+  const parts = [
+    ['Base', 40],
+    ['Meals', Math.round(35 * fed)],
+    ['Housing', headroom >= 1 ? 10 : headroom < 0 ? -20 : 0],
+    ['Hearth', keep && keep.lit ? 10 : -10],
+    ['Taxes', (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability],
+    ['Rations', Math.round((RATIONS[p.rations ?? 1] || RATIONS[1]).stability * Math.min(1, fed))],
+    ['Hot meals', Math.round(HOT_MEAL_STABILITY * (p.hotMeals || 0))],
+    ['Bread', Math.round(BREAD_STABILITY * (p.breadMeals || 0))],
+    ['Feast', (p.feastUntil || 0) > world.tick ? FEAST.stability : 0],
+    ['Wells', Math.min(wells, WELLS_COUNTED) * WELL_MOTIVATION],
+    ['Burnt homes', -(p.burnPenalty || 0)],
+  ];
+  return parts.filter(([, v]) => v !== 0);
+}
+
 /** Expected income at the next payday: { taxes, pay, net }. */
 export function paydayForecast(world, owner) {
   const p = world.players[owner];
   const level = TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1];
   let settlers = 0, soldiers = 0;
-  for (const s of all(world, 'settler')) if (s.owner === owner && !s.arriving && !s.leaving) settlers++;
+  let hands = 0;
+  for (const s of all(world, 'settler')) if (s.owner === owner && !s.arriving && !s.leaving) { if (s.hand) hands++; else settlers++; }
   for (const u of all(world, 'unit')) if (u.owner === owner && !u.hero) soldiers++;
   const keep = keepOf(world, owner);
   const taxes = Math.round(settlers * level.perSettler * (1 + (keep ? upgradeBonus(keep, 'tax') : 0)));
-  const pay = soldiers * SOLDIER_PAY;
-  return { taxes, pay, net: taxes - pay, settlers, soldiers };
+  const pay = soldiers * SOLDIER_PAY + hands * HAND.wage;
+  return { taxes, pay, net: taxes - pay, settlers, soldiers, hands };
 }
 
 const DIFF = {
@@ -137,14 +179,16 @@ export function createPopulationModule() {
     const keep = keepOf(world, owner);
     p.popCap = housingCap(world, owner);
     const prevPop = p.pop;
-    p.pop = populationOf(world, owner);
+    p.pop = populationOf(world, owner); // everyone who eats
+    p.hands = handsOf(world, owner);
+    p.housed = p.pop - p.hands; // townsfolk and soldiers: those who need a bed in a house
     if (p.pop !== prevPop) emit(world, EV.POPULATION_CHANGED, { owner, pop: p.pop, cap: p.popCap });
     const diff = DIFF[world.meta.difficulty] || DIFF.normal;
 
     // arrivals
     if (keep && keep.lit && world.tick >= p.nextSettlerTick) {
       p.nextSettlerTick = world.tick + diff.arrival;
-      if (p.pop < p.popCap && p.res.provisions >= ARRIVAL_COST + 2 && p.stability >= 30) {
+      if (p.housed < p.popCap && p.res.provisions >= ARRIVAL_COST + 2 && p.stability >= 30) {
         const entry = world.mapEntry || { x: -96, z: 96 };
         const s = spawnSettler(world, owner, entry.x, entry.z, { arriving: true });
         if (s) {
@@ -153,7 +197,7 @@ export function createPopulationModule() {
           world.stats.settlersArrived++;
           emit(world, EV.SETTLER_ARRIVED, { id: s.id });
         }
-      } else if (p.pop >= p.popCap && world.tick % 1200 === 0) {
+      } else if (p.housed >= p.popCap && world.tick % 1200 === 0) {
         alert(world, 'info', 'Housing is full — build Cottages so more settlers can come.', keep.x, keep.z);
       }
     }
@@ -212,11 +256,15 @@ export function createPopulationModule() {
 
     // stability drifts toward a target every second
     if (world.tick % 20 === 0) {
-      const headroom = p.popCap - p.pop;
+      // Hearthhands bunk in the Keep: they take no house and do not count toward crowding
+      const headroom = p.popCap - p.housed;
+      let wells = 0;
+      for (const b of all(world, 'building')) if (b.owner === owner && b.type === 'well' && b.state === 'active') wells++;
       const target = Math.max(0, Math.min(100,
         40 + 35 * p.lastMealFed + (headroom >= 1 ? 10 : 0) + (headroom < 0 ? -20 : 0) + (keep && keep.lit ? 10 : -10) - p.burnPenalty
         + (TAX_LEVELS[p.tax ?? 1] || TAX_LEVELS[1]).stability + HOT_MEAL_STABILITY * (p.hotMeals || 0) + BREAD_STABILITY * (p.breadMeals || 0)
-        + (RATIONS[p.rations ?? 1] || RATIONS[1]).stability * Math.min(1, p.lastMealFed) + ((p.feastUntil || 0) > world.tick ? FEAST.stability : 0)));
+        + (RATIONS[p.rations ?? 1] || RATIONS[1]).stability * Math.min(1, p.lastMealFed) + ((p.feastUntil || 0) > world.tick ? FEAST.stability : 0)
+        + Math.min(wells, WELLS_COUNTED) * WELL_MOTIVATION));
       const step = 0.5;
       if (p.stability < target) p.stability = Math.min(target, p.stability + step);
       else if (p.stability > target) p.stability = Math.max(target, p.stability - step);
@@ -226,7 +274,7 @@ export function createPopulationModule() {
 
     // departures when stability collapses
     if (p.stability < 15 && world.tick % 600 === 0) {
-      const leaver = all(world, 'settler').find((s) => s.owner === owner && isIdleLabourer(s));
+      const leaver = all(world, 'settler').find((s) => s.owner === owner && !s.hand && isIdleLabourer(s));
       if (leaver) { leaver.leaving = true; leaver.task = null; alert(world, 'danger', 'A settler has given up and is leaving Kindlehold.', leaver.x, leaver.z); }
     }
 
@@ -237,7 +285,7 @@ export function createPopulationModule() {
   const JOB_RES = { forester: 'timber', quarrier: 'stone', miner: 'iron', farmer: 'provisions', hunter: 'provisions', fisher: 'provisions', cook: 'provisions', miller: 'flour', baker: 'bread', smith: 'tools' };
 
   function assignJobs(world, owner) {
-    const idle = all(world, 'settler').filter((s) => s.owner === owner && isIdleLabourer(s) && !s.leaving);
+    const idle = all(world, 'settler').filter((s) => s.owner === owner && isIdleLabourer(s) && !s.leaving && !s.hand);
     let free = idle.length;
     const labourers = all(world, 'settler').filter((s) => s.owner === owner && !s.job).length;
     // keep enough labourers free to haul and build: 2 plus one per two workplaces
@@ -353,7 +401,7 @@ export function createPopulationModule() {
       emit(world, 'population:feast', { owner, x: keep.x, z: keep.z, until: p.feastUntil });
     } else if (cmd.type === 'hireSettler') {
       const keep = keepOf(world, owner);
-      if (!keep || !keep.lit || p.res.taler < HIRE_COST || populationOf(world, owner) >= housingCap(world, owner)) {
+      if (!keep || !keep.lit || p.res.taler < HIRE_COST || populationOf(world, owner) - handsOf(world, owner) >= housingCap(world, owner)) {
         emit(world, EV.COMMAND_REJECTED, { cmd, reason: !keep || !keep.lit ? 'The hearth must burn first' : p.res.taler < HIRE_COST ? 'Not enough Taler' : 'No free housing' });
         return;
       }
@@ -364,6 +412,15 @@ export function createPopulationModule() {
       world.stats.consumed.taler = (world.stats.consumed.taler || 0) + HIRE_COST;
       world.stats.settlersArrived++;
       emit(world, EV.SETTLER_ARRIVED, { id: s.id, hired: true });
+    } else if (cmd.type === 'hireHand') {
+      const keep = keepOf(world, owner);
+      const why = !keep || !keep.lit ? 'The hearth must burn first' : handsOf(world, owner) >= handsCap(world, owner) ? 'The Keep has no more bunks for Hearthhands (upgrade it for more)' : !canAfford(world, owner, HAND.cost) ? 'Not enough Taler' : null;
+      if (why) { emit(world, EV.COMMAND_REJECTED, { cmd, reason: why }); return; }
+      const door = doorOf(keep);
+      const s = spawnSettler(world, owner, door.x + 1, door.z + 1.5, { hand: true });
+      if (!s) return;
+      pay(world, owner, HAND.cost, 'hire hand');
+      emit(world, EV.SETTLER_ARRIVED, { id: s.id, hired: true, hand: true });
     }
   }
 

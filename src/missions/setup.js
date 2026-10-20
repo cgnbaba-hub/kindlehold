@@ -150,6 +150,9 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   };
   const settlers = st.settlers || 5;
   for (let i = 0; i < settlers; i++) { const p = front(((i % 5) - 2) * 1.4, 1.5 + (i < 5 ? i % 2 : Math.floor(i / 5) * 1.3)); spawnSettler(world, PLAYER, p.x, p.z); }
+  // two Hearthhands from the Keep's own household (more can be hired there for Taler)
+  const startHands = st.hands ?? (world.meta.difficulty === 'hard' ? 1 : 2);
+  for (let i = 0; i < startHands; i++) { const p = front(-3.5 - i * 1.4, 0.5); spawnSettler(world, PLAYER, p.x, p.z, { hand: true }); }
   // soldiers: 'type' or [type, rank] (veterans of earlier chapters keep their stars)
   (st.soldiers || []).forEach((spec, i) => {
     const [type, rank] = Array.isArray(spec) ? spec : [spec, 0];
