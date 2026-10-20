@@ -28,7 +28,9 @@ export const AUTO_GATHER = { range: 45 };
 // Townsfolk without a workplace no longer go felling on their own — free gathering made the game
 // measurably easier (the bot won up to 9 minutes sooner). The hands stop once the store holds
 // this much; the cap is lower on harder difficulties. See CLAUDE.md, "Schwierigkeit".
-export const AUTO_GATHER_RULES = { story: { timber: 300, stone: 200 }, normal: { timber: 200, stone: 150 }, hard: { timber: 120, stone: 80 } };
+// Measured: with Story at 300/200 the bot won chapter one in 18 instead of 34 minutes; at 120/80
+// (the old Story rule for townsfolk) in about 28. Normal and Hard sit below that.
+export const AUTO_GATHER_RULES = { story: { timber: 120, stone: 80 }, normal: { timber: 100, stone: 70 }, hard: { timber: 80, stone: 50 } };
 /** Up to which stock Hearthhands gather on their own in this game. */
 export function autoGatherRules(world) {
   const d = world.meta && world.meta.difficulty;

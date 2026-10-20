@@ -354,3 +354,38 @@ The first Ballista (40 damage, 3.6 s) was too strong and was cut back.
 - Every walking order of a group carries it.
 - A re-form order carries the group's facing.
 
+## Hearthhands and motivation
+
+The roles follow the familiar settler-game split between bought labourers and free townsfolk,
+with Kindlehold's own names, numbers and rules.
+
+**Hearthhands** (`population/index.js`, `HAND`):
+- Hire at the Keep: 70 Taler, then a wage of 2 Taler each payday.
+- They bunk in the Keep and need no house. Bunks: Keep 4, Castle 7, Fortress 10.
+- They eat at meals.
+- They build, carry, repair and gather by hand (`economy` `autoGather`, toggled by *Idle hands*).
+- They never take a workplace (`assignJobs`), never enlist, pay no taxes and do not count toward
+  housing or mission population goals (`player.housed`).
+- Each chapter starts with two (one on Hard).
+- Townsfolk no longer gather on their own.
+- Hand gathering stops at a store level set per difficulty (`AUTO_GATHER_RULES`):
+  Story 120/80, Normal 100/70, Hard 80/50 (timber/stone).
+
+**Motivation** is the player-facing name of `player.stability`.
+- `motivationParts()` lists its parts, shown in the bar's tooltip: base, meals, housing, hearth,
+  taxes, rations, hot meals, bread, feast, Wells, burnt homes.
+- **Well** (10 T, 30 S, 15 s): +4 motivation; three count. Three Wells offset the High tax rate.
+
+**Balance** (bot, chapter one, minutes to victory):
+
+| Run | before | first draft | final |
+|---|---|---|---|
+| Story 42 | 34.1 | 18.2 | 27.7 |
+| Normal 1337 / 7 / 42 | 33.0 / 28.4 / – | 23.8 / 33.2 / – | 23.8 / 33.2 / 20.1 |
+| Hard 99 / 7 | 35.2 / unfinished | – | unfinished / 35.6 |
+
+- The first draft (50 Taler, 1 wage, 6/10/14 bunks, Story gathering up to 300/200) made Story
+  far easier, so price, bunks and gathering limits were raised or lowered.
+- A bot that hires as many Hearthhands as it can pay for wins Normal about 3 minutes sooner.
+  That is a priced easing.
+

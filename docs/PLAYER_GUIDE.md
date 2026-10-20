@@ -210,9 +210,9 @@ See also **Hearthhands and motivation** below.
 * **Idle hands** (at the Keep): with *Gather* on, Hearthhands with nothing to do fell a tree or
   cut stone by hand near a store while timber or stone run short. They go one trip at a time and
   then look for work again; *Wait* keeps them at the Keep. They stop once the store holds enough:
-  * **Story:** 300 timber or 200 stone;
-  * **Normal:** 200 timber or 150 stone;
-  * **Hard:** 120 timber or 80 stone.
+  * **Story:** 120 timber or 80 stone;
+  * **Normal:** 100 timber or 70 stone;
+  * **Hard:** 80 timber or 50 stone.
 
   Townsfolk without a workplace no longer go felling on their own.
 * **Move** (select a building): choose a new place; the building is taken down and put up again
