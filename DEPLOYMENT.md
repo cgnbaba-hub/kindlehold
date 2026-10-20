@@ -110,6 +110,31 @@ script. For a permanent address, add a public hostname for `http://localhost:809
 existing Cloudflare tunnel in the Zero Trust dashboard (needs a domain in the account).
 Updates: `deploy/scripts/publish-vps.sh` (rebuilds and switches releases atomically).
 
+### Automatic deployment on this VPS (auto-deploy timer)
+
+A systemd timer checks GitHub every 5 minutes. When `main` has a new commit it:
+1. checks the commit out into its own worktree, `.deploy-local/auto-src`, so local edits in the
+   main checkout are never touched;
+2. runs `npm ci` when the lockfile changed, then `npm test`;
+3. builds, switches the release atomically, refreshes and reloads the nginx config and runs
+   `health-check.sh` against `127.0.0.1:8098`;
+4. rolls back to the previous release if the check fails.
+
+A commit that failed is not retried until a newer one arrives (or `--force`). It fetches over
+HTTPS and needs no SSH key; `~/.ssh/authorized_keys` is not involved.
+
+```bash
+deploy/scripts/install-auto-deploy.sh            # once, as the user who runs publish-vps.sh
+deploy/scripts/auto-deploy.sh --dry-run          # by hand: fetch, test, build, no switch
+deploy/scripts/auto-deploy.sh --force            # by hand: redeploy the current main
+cat .deploy-local/AUTO_STATUS                    # last result: deployed / failed / running
+journalctl -u kindlehold-autodeploy -n 50        # log of the runs
+deploy/scripts/install-auto-deploy.sh --uninstall
+```
+
+`publish-vps.sh` stays the tool for the first setup (nginx container, tunnel) and for manual
+deploys. The timer only builds what is on GitHub.
+
 ## 7. Subsequent deployments
 
 ```bash

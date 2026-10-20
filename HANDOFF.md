@@ -17,8 +17,16 @@ fasst zusammen, was eine neue Session (z. B. Claude Code im Web) wissen muss.
 
 - Live: https://kindlehold.js-automata.work. Das ist ein nginx-Container `kindlehold-web` auf dem
   VPS (127.0.0.1:8098), erreichbar über einen Cloudflare-Tunnel.
-- **Deployen geht nur auf dem VPS** (`SKIP_TUNNEL=1 deploy/scripts/publish-vps.sh`). Eine
-  Cloud-Session kann nicht deployen. Änderungen pushen, der Nutzer deployt danach vom VPS aus.
+- **Deployen geht nur auf dem VPS.** Seit 2026-10-20 gibt es dafür einen Auto-Deploy
+  (`deploy/scripts/auto-deploy.sh` und ein systemd-Timer alle 5 min, Installation mit
+  `deploy/scripts/install-auto-deploy.sh`).
+  - Ablauf je neuem Commit auf `main`: Tests, Build, atomarer Wechsel, Health-Check,
+    bei Fehler Rollback.
+  - Status steht in `.deploy-local/AUTO_STATUS`.
+  - Ist der Timer installiert, ist ein Merge nach ein paar Minuten live, ohne Prompt an den
+    VPS-Claude.
+  - Manuell geht weiterhin `SKIP_TUNNEL=1 deploy/scripts/publish-vps.sh`.
+  - Eine Cloud-Session kann nicht selbst deployen.
 - Zuletzt deployt: Commit `072565d`. Die Stufe-2-Änderungen liegen auf dem Branch
   `claude/dreamy-ptolemy-ef0rzl` und sind noch nicht deployt.
 

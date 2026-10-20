@@ -1,0 +1,13 @@
+# Installed by deploy/scripts/install-auto-deploy.sh. Checks GitHub every 5 minutes; a run with
+# nothing new only fetches and ends in seconds.
+[Unit]
+Description=Check GitHub for a new Kindlehold release every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
