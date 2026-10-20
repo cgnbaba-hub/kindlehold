@@ -88,19 +88,20 @@ export const WELL_MOTIVATION = 4, WELLS_COUNTED = 3;
 /** What raises and lowers motivation right now, as [label, points]; the target is their sum (0-100). */
 export function strainOf(world) { return MOTIVATION_STRAIN[world.meta.difficulty] ?? 1; }
 
-/** Townsfolk without work: jobless beyond the labourers kept free for hauling and the open
- *  places in the workshops (Hearthhands, newcomers and recruits aside). */
+/** Townsfolk with nothing to do: standing idle (not building, carrying or gathering) beyond the
+ *  two kept free for hauling and the open places in the workshops. Only once the hearth burns:
+ *  before that nobody has come to work. Hearthhands, newcomers and recruits aside. */
 export function unemployedOf(world, owner) {
-  let jobless = 0, open = 0, workplaces = 0;
-  for (const s of all(world, 'settler')) if (s.owner === owner && !s.hand && !s.job && !s.arriving && !s.leaving && !s.enlisting) jobless++;
+  const keep = keepOf(world, owner);
+  if (!keep || !keep.lit) return 0;
+  let idle = 0, open = 0;
+  for (const s of all(world, 'settler')) if (s.owner === owner && !s.hand && !s.leaving && isIdleLabourer(s)) idle++;
   for (const b of all(world, 'building')) {
-    if (b.owner !== owner || b.state !== 'active') continue;
+    if (b.owner !== owner || b.state !== 'active' || b.paused) continue;
     const n = slotsOf(b);
-    if (!n) continue;
-    workplaces++;
-    if (!b.paused) open += Math.max(0, n - (b.workers ? b.workers.length : 0));
+    if (n) open += Math.max(0, n - (b.workers ? b.workers.length : 0));
   }
-  return Math.max(0, jobless - MIN_FREE_LABOURERS - Math.floor(workplaces / 2) - open);
+  return Math.max(0, idle - MIN_FREE_LABOURERS - open);
 }
 
 /** The average walk (m) from each worker's workplace to the nearest house (Cottage or Keep). */

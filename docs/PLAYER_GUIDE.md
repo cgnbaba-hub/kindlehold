@@ -338,9 +338,9 @@ carrying and building when they have no workplace.
 * Below 30 nobody new comes; below 15 settlers start to leave.
 * Hover the bar to see what makes it up: meals, housing, the hearth, taxes, rations, hot meals,
   bread, feasts and Wells.
-* **No work:** townsfolk with no workplace to go to grumble (−2 each, at most −10). A few free
-  labourers are fine: the town keeps two, plus one for every two workshops, to carry and build.
-  Build workshops for the newcomers, or fewer Cottages.
+* **No work:** townsfolk who stand idle, with nothing to build, carry or gather, grumble (−2
+  each beyond two, at most −10). Labourers who build and carry are busy and content. Build
+  workshops for the newcomers, or fewer Cottages.
 * **Long walks:** when workers walk on average more than 30 m from the nearest Cottage (or the
   Keep) to their workshop, motivation drops by 1 for every 6 m more (at most −8). Build houses
   near the workshops.
