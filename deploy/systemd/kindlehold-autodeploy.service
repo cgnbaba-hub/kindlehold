@@ -1,0 +1,14 @@
+# Installed by deploy/scripts/install-auto-deploy.sh (it fills in @USER@ and @REPO@).
+[Unit]
+Description=Kindlehold auto-deploy: publish the newest main from GitHub
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=@USER@
+WorkingDirectory=@REPO@
+Environment=HOME=@HOME@
+ExecStart=@REPO@/deploy/scripts/auto-deploy.sh
+TimeoutStartSec=30min
+Nice=10
