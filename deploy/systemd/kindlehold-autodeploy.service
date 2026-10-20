@@ -9,6 +9,8 @@ Type=oneshot
 User=@USER@
 WorkingDirectory=@REPO@
 Environment=HOME=@HOME@
+# optional: KINDLEHOLD_NOTIFY_URL=https://ntfy.sh/<your-topic> for a push message on every deploy
+EnvironmentFile=-@REPO@/.deploy-local/auto-deploy.env
 ExecStart=@REPO@/deploy/scripts/auto-deploy.sh
 TimeoutStartSec=30min
 Nice=10

@@ -38,7 +38,10 @@ export function playCinematic({ root, rts, scenario, reducedMotion = false, onDo
     finished = true;
     window.removeEventListener('keydown', skip, true);
     el.removeEventListener('pointerdown', skip);
+    // fade out, but stop catching clicks at once and leave the page even if timers run late
     el.classList.add('out');
+    el.style.pointerEvents = 'none';
+    el.addEventListener('transitionend', () => el.remove(), { once: true });
     setTimeout(() => el.remove(), 450);
     const s = shots[shots.length - 1];
     rts.jumpTo(s.x, s.z, s.yaw, s.zoom);

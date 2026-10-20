@@ -26,6 +26,9 @@ fasst zusammen, was eine neue Session (z. B. Claude Code im Web) wissen muss.
   - Ist der Timer installiert, ist ein Merge nach ein paar Minuten live, ohne Prompt an den
     VPS-Claude.
   - Manuell geht weiterhin `SKIP_TUNNEL=1 deploy/scripts/publish-vps.sh`.
+  - Optional: Push-Nachricht bei jedem Deploy oder Fehler. Dafür `KINDLEHOLD_NOTIFY_URL` in
+    `.deploy-local/auto-deploy.env` setzen (ntfy-Topic, Discord- oder Slack-Webhook).
+  - Unter Credits zeigt das Spiel seinen Commit (`__KH_BUILD__` aus `vite.config.js`).
   - Eine Cloud-Session kann nicht selbst deployen.
 - Zuletzt deployt: Commit `072565d`. Die Stufe-2-Änderungen liegen auf dem Branch
   `claude/dreamy-ptolemy-ef0rzl` und sind noch nicht deployt.

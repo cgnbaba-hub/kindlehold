@@ -132,6 +132,11 @@ journalctl -u kindlehold-autodeploy -n 50        # log of the runs
 deploy/scripts/install-auto-deploy.sh --uninstall
 ```
 
+**Notifications (optional).** Put `KINDLEHOLD_NOTIFY_URL=<https URL>` into
+`.deploy-local/auto-deploy.env` and every deploy, or failure, sends a short message. The URL can
+be an [ntfy.sh](https://ntfy.sh) topic (free phone app), a Discord webhook or a Slack webhook.
+Without it nothing is sent.
+
 `publish-vps.sh` stays the tool for the first setup (nginx container, tunnel) and for manual
 deploys. The timer only builds what is on GitHub.
 
