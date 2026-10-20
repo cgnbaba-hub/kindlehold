@@ -21,7 +21,9 @@ const OUT = path.resolve('public/buildings');
 const MODELS = [
   ...['archeryrange', 'barracks', 'blacksmith', 'castle', 'church', 'home_A', 'home_B', 'lumbermill', 'market', 'mine', 'tavern', 'tower_A', 'tower_B', 'tower_base', 'watermill', 'well', 'windmill'].map((n) => [n, `buildings/blue/building_${n}_blue.gltf`]),
   ...['grain', 'scaffolding', 'stage_A', 'stage_B', 'stage_C', 'destroyed', 'dirt', 'fence_wood_straight', 'fence_stone_straight'].map((n) => [n, `buildings/neutral/${n.startsWith('fence') ? '' : 'building_'}${n}.gltf`]),
-  ...['barrel', 'crate_A_big', 'crate_B_small', 'crate_long_A', 'crate_open', 'sack', 'resource_lumber', 'resource_stone', 'wheelbarrow', 'pallet', 'weaponrack', 'target', 'tent', 'ladder', 'bucket_water', 'flag_blue'].map((n) => [n, `decoration/props/${n}.gltf`]),
+  ...['barrel', 'crate_A_big', 'crate_B_small', 'crate_long_A', 'crate_open', 'sack', 'resource_lumber', 'resource_stone', 'wheelbarrow', 'pallet', 'weaponrack', 'target', 'tent', 'ladder', 'bucket_water', 'flag_blue',
+    'crate_A_small', 'crate_B_big', 'crate_long_B', 'bucket_arrows', 'bucket_empty', 'flag_red', 'flag_green'].map((n) => [n, `decoration/props/${n}.gltf`]),
+  ...['rock_single_A', 'rock_single_B', 'rock_single_C', 'rock_single_D'].map((n) => [n, `decoration/nature/${n}.gltf`]),
 ];
 // nodes that move on their own
 const MOVING = /(_fan|_wheel)/;
@@ -55,6 +57,9 @@ function push(typed) {
   return at;
 }
 
+// natural rocks share the palette cells of cut stone: they get the rock surface, not bricks
+let forcePattern = null;
+
 /** Triangles of a set of (mesh, matrix) pairs as one part. */
 function bake(g, list) {
   const pos = [], nor = [], col = [], idx = [];
@@ -72,7 +77,7 @@ function bake(g, list) {
         const c = sample(u, vv);
         const cell = `${Math.min(7, Math.floor(u * 8))},${Math.min(3, Math.floor(vv * 4))}`;
         // alpha: the surface pattern, +16 on window panes (the darkest cell), which glow at night
-        col.push(c[0], c[1], c[2], PATTERN[CELL_PATTERN[cell] || 'plain'] + (cell === '0,0' ? 16 : 0));
+        col.push(c[0], c[1], c[2], PATTERN[forcePattern || CELL_PATTERN[cell] || 'plain'] + (cell === '0,0' ? 16 : 0));
       }
       const I = p.indices != null ? g.read(p.indices).data : Uint32Array.from({ length: n }, (_, i) => i);
       for (let i = 0; i < I.length; i++) idx.push(base + I[i]);
@@ -94,6 +99,7 @@ for (const [name, file] of MODELS) {
   const full = path.join(DIR, file);
   if (!fs.existsSync(full)) { console.warn(`missing ${file}`); continue; }
   const g = readGltf(full);
+  forcePattern = name.startsWith('rock_') ? 'rock' : null;
   tex ||= readPng(path.join(path.dirname(full), g.images[0].uri));
   // walk the scene: static meshes into the body, moving nodes into parts of their own
   const body = [], moving = [];

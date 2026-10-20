@@ -142,6 +142,7 @@ export function createSkinnedFigureRenderer({ scene, assets, maxFigures = 512 })
   const skinMat = figureMaterial(uniforms, B * 3, true), rigidMat = figureMaterial(uniforms, B * 3, false);
   const depthMat = depthMaterial(uniforms);
   const kinds = {}; // name -> { mesh, row attribute, count, skinned }
+  let shadows = true; // figures cast shadows only while the camera is close
   function kind(name, names, skinned) {
     if (kinds[name]) return kinds[name];
     const geo = partGeometry(names, skinned);
@@ -150,7 +151,7 @@ export function createSkinnedFigureRenderer({ scene, assets, maxFigures = 512 })
     row.setUsage(THREE.DynamicDrawUsage);
     geo.setAttribute('khRow', row);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    mesh.count = 0; mesh.castShadow = true; mesh.receiveShadow = false; mesh.frustumCulled = false;
+    mesh.count = 0; mesh.castShadow = shadows; mesh.receiveShadow = false; mesh.frustumCulled = false;
     if (skinned) mesh.customDepthMaterial = depthMat;
     scene.add(mesh);
     return (kinds[name] = { mesh, row, n: 0 });
@@ -179,7 +180,7 @@ export function createSkinnedFigureRenderer({ scene, assets, maxFigures = 512 })
     if (owns[k]) return owns[k];
     const mesh = new THREE.InstancedMesh(own[k], ownMat, maxFigures);
     mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    mesh.count = 0; mesh.castShadow = true; mesh.frustumCulled = false;
+    mesh.count = 0; mesh.castShadow = shadows; mesh.frustumCulled = false;
     scene.add(mesh);
     return (owns[k] = { mesh, n: 0 });
   }
@@ -456,6 +457,13 @@ export function createSkinnedFigureRenderer({ scene, assets, maxFigures = 512 })
   return {
     begin, draw, end, meshes: kinds, skinned: true,
     setOutline() {},
+    /** Figures cast shadows only while the camera is close (see the units view). */
+    setShadows(on) {
+      if (on === shadows) return;
+      shadows = on;
+      for (const k in kinds) kinds[k].mesh.castShadow = on;
+      for (const k in owns) owns[k].mesh.castShadow = on;
+    },
     /** Advance the renderer's own clock (for forgetting figures that are gone). */
     tick(dt) {
       time.now += dt;

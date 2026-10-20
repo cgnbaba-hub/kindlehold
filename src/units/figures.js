@@ -193,7 +193,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
   for (const k in parts) {
     const n = maxFigures * (caps[k] || 1);
     const m = new THREE.InstancedMesh(parts[k], k === 'lantern' ? mat : mat, n);
-    m.count = 0; m.castShadow = true; m.receiveShadow = false; m.frustumCulled = false;
+    m.count = 0; m.castShadow = true; m.receiveShadow = false; m.frustumCulled = false; m.userData.khFigure = true;
     m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     scene.add(m);
     meshes[k] = m;
@@ -407,6 +407,7 @@ export function createFigureRenderer({ scene, maxFigures = 420 }) {
   return {
     begin, draw, end, meshes,
     setOutline(w) { uOutline.value = w; },
+    setShadows(on) { for (const m of scene.children) if (m.userData.khFigure) m.castShadow = on; },
     toolFor: (job) => TOOL[job] || null,
     tunicFor: (id) => SETTLER_TUNICS[id % SETTLER_TUNICS.length],
     dispose() {
