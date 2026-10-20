@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { all } from '../world/world.js';
 import { EV } from '../core/contracts.js';
 import { BUILDINGS } from '../buildings/defs.js';
-import { chimneyOf } from '../buildings/meshes.js';
+import { chimneyOf, hearthOf } from '../buildings/meshes.js';
 import { viewRng } from '../render/geometry-kit.js';
 import { shroudOverlay } from '../render/structure-material.js';
 import { flushInstances } from '../render/instancing.js';
@@ -199,8 +199,14 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
       if (b.state === 'active') {
         if (b.type === 'cottage' && rnd() < step * 1.8) { const ch = chimneyOf('cottage', b.level || 1) || [-1.5, 6.4, -0.8]; const [x, z] = toW(ch[0], ch[2]); emit('smoke', x, y + ch[1], z, 1, 0.2, [0.25, 0.6, 0.1], 0.2); }
         if (b.type === 'keep') {
-          if (rnd() < step * 1.4) { const [x, z] = toW(2.6, 0.8); emit('smoke', x, y + 7.8, z, 1, 0.2, [0.25, 0.6, 0.1], 0.2); }
-          if (b.lit) { const [x, z] = toW(0, -2.2); emit('fire', x, y + 12.2, z, Math.ceil(step * 18), 0.6, [0, 1.2, 0], 0.4); if (rnd() < step * 5) emit('ember', x, y + 12.6, z, 1, 0.5, [0, 1.5, 0], 1); }
+          const ch = chimneyOf('keep') || [2.6, 7.8, 0.8], fh = hearthOf('keep') || [0, 12.2, -2.2];
+          if (rnd() < step * 1.4) { const [x, z] = toW(ch[0], ch[2]); emit('smoke', x, y + ch[1], z, 1, 0.2, [0.25, 0.6, 0.1], 0.2); }
+          if (b.lit) { const [x, z] = toW(fh[0], fh[2]); emit('fire', x, y + fh[1], z, Math.ceil(step * 18), 0.6, [0, 1.2, 0], 0.4); if (rnd() < step * 5) emit('ember', x, y + fh[1] + 0.4, z, 1, 0.5, [0, 1.5, 0], 1); }
+        }
+        // the ovens of the Bakery and the salt pans' fire smoke while they work (on the modelled buildings)
+        if ((b.type === 'bakery' || b.type === 'saltworks') && b.workers && b.workers.length && rnd() < step * 1.2) {
+          const ch = chimneyOf(b.type, b.level || 1);
+          if (ch) { const [x, z] = toW(ch[0], ch[2]); emit('smoke', x, y + ch[1], z, 1, 0.2, [0.25, 0.6, 0.1], 0.2); }
         }
         if (b.type === 'mine' && rnd() < step * 0.7) { const [x, z] = toW(0, 2); emit('dust', x, y + 0.5, z, 1, 0.6, [0, 0.3, 0.2], 0.3); }
         if (isFactionHall(b.type) && rnd() < step * 2) { const [x, z] = toW(4, -2); emit('smoke', x, y + 8, z, 1, 0.4, [0.3, 0.8, 0], 0.3); }

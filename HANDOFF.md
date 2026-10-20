@@ -154,6 +154,20 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Paket D (2026-10-20): restliche KayKit-Gebäude, Figurenschatten
+
+- Gebäude: siehe Abschnitt „Modellierte Gebäude“. Das Paket hat nur 17 Gebäude, daher teilen
+  sich Hof/Fischer (`home_A`) und Bäckerei/Salzsiederei (`home_B`) ein Haus und unterscheiden sich
+  über Dachfarbe und Deko. Neu gebacken mit Felsen und mehr Requisiten (53 Modelle, 1,9 MB).
+- Figuren werfen ab Zoom 95 (Übersicht) keine Schatten mehr (`FIGURE_SHADOW_ZOOM` in
+  `units/view.js`, `setShadows` in beiden Figuren-Renderern). Gemessen nach 20 Bot-Minuten,
+  112 Figuren: Übersicht 1,36 → 1,22 Mio. Dreiecke, 173 → 145 Draw Calls; Siedlungsansicht
+  unverändert. Die Figuren kosten 1–1,6 ms CPU je Bild; ein Detailstufen-Modell lohnt sich
+  dafür nicht (KayKit hat nur eine Detailstufe).
+- Gelände: hat bereits prozedurale, kachelbare Texturen mit Relief, Makrovariation und
+  Trampelpfaden (`terrain/textures.js`). Fotobasierte CC0-Texturen würden den Stil ändern.
+  Das ist eine Stilentscheidung für den Nutzer und noch offen.
+
 ## Motivation mit Tiefgang, Kampagnenziele (Paket C, 2026-10-20)
 
 - Neue Motivationsteile in `motivationParts()`; das Ziel ist jetzt genau ihre Summe:
@@ -342,8 +356,15 @@ Vom Nutzer freigegeben („Grafik-Prototyp“, externes CC0-Paket). Aufbau wie b
   Palettenzelle (Stein, Bretter, Schindeln…), Fensterflächen markiert (leuchten nachts), bewegliche
   Teile (Mühlenflügel, Wasserrad) getrennt.
 - `src/buildings/kaykit.js`: `BUILDING_STYLE` ordnet unseren Typen Modell, Größe, Drehung und Deko
-  zu (Stufe 2/3: eigene Modelle oder Kisten/Flagge). Ohne Eintrag (Burg, Steinbruch, Hof, Bäckerei,
-  Salzsiederei, Jäger, Fischer) bleibt das prozedurale Modell.
+  zu (Stufe 2/3: eigene Modelle oder Kisten/Flagge).
+- Seit Paket D (2026-10-20) haben alle Siedlungsgebäude ein Modell:
+  - Burg = `castle` (`squash` 0,55 drückt das sehr hohe Modell; Herdfeuer `hearth`, von
+    `hearthOf()` in Effekten und Nachtlicht genutzt).
+  - Jäger = `archeryrange`, Steinbruch = Felsen und Steinblöcke.
+  - Hof, Bäckerei, Fischer, Salzsiederei = Packhäuser mit eigener Dachfarbe (`roof`: alle
+    blauen Paketfarben werden beim Laden umgefärbt, die Schattierung bleibt) und eigener Deko.
+  - Bäckerei und Salzsiederei rauchen, solange jemand arbeitet.
+- Vergleichsansicht: `?showcase=buildings` hat eine zweite Reihe mit allen Werkstätten.
 - `meshes.js` `setBuildingAssets()`; `session.js` lädt vor dem Gebäude-View. Einstellung
   „Modelled buildings“ (Standard an) oder `?blds=classic` für den Vergleich.
 

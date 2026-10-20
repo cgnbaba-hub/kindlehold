@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { all, structureVersion } from '../world/world.js';
 import { BUILDINGS } from './defs.js';
-import { buildingGeometries, disposeBuildingGeometries } from './meshes.js';
+import { buildingGeometries, disposeBuildingGeometries, hearthOf } from './meshes.js';
 import { createStructureMaterial, PATTERN } from '../render/structure-material.js';
 import { paint, place, merge, box, cyl, viewRng } from '../render/geometry-kit.js';
 
@@ -301,8 +301,9 @@ export function createBuildingsView({ scene, terrain, world, renderer, sky }) {
         const b = litList[i];
         if (!b || night < 0.05) { l.intensity = 0; continue; }
         const r = records.get(b.id);
-        const hy = b.type === 'keep' ? 12.6 : b.type === 'tower' ? 9.6 : 2.6;
-        const dz = b.type === 'keep' ? -2.2 : b.type === 'tower' ? 1.2 : BUILDINGS[b.type].radius * 0.9;
+        const fh = b.type === 'keep' && hearthOf('keep');
+        const hy = b.type === 'keep' ? (fh ? fh[1] + 0.4 : 12.6) : b.type === 'tower' ? 9.6 : 2.6;
+        const dz = b.type === 'keep' ? (fh ? fh[2] : -2.2) : b.type === 'tower' ? 1.2 : BUILDINGS[b.type].radius * 0.9;
         const c = Math.cos(b.rot || 0), sn = Math.sin(b.rot || 0);
         l.position.set(b.x + dz * sn, r.root.position.y + hy, b.z + dz * c);
         l.intensity = night * (b.type === 'keep' ? 60 : 22) * (0.9 + 0.1 * Math.sin(frame.time * 9 + i * 2));

@@ -13,6 +13,8 @@ import { HAND_TUNIC } from './cast.js';
 const CORPSE_SECONDS = 6;
 const BLEND = 0.22; // seconds to cross-fade from one animation into the next
 const STRIDE = 1.8; // metres per full stride cycle at figure scale 1: 4 x hip height x sin(swing 0.52), so feet do not slide
+// above this camera zoom (the overview) figures cast no shadows: they would be a pixel or two
+export const FIGURE_SHADOW_ZOOM = 95;
 
 export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60, figureAssets = null, camera = null }) {
   // only figures in view (plus a margin for their shadows) are skinned and drawn
@@ -97,6 +99,8 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
       // figures grow a little when zoomed out so they stay readable (and outlines thicken)
       const zk = 1 + Math.min(0.45, Math.max(0, (getZoom() - 45) / 110));
       figs.setOutline(0.025 + (zk - 1) * 0.06);
+      // far out a figure's shadow is a pixel or two: only the near view pays for them
+      if (figs.setShadows) figs.setShadows(getZoom() < FIGURE_SHADOW_ZOOM);
       const w = world();
       const tickTime = (w.tick + alpha) / 20;
       if (figs.tick) figs.tick(frame.dt);

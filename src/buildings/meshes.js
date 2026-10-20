@@ -804,6 +804,12 @@ export function chimneyOf(type, level = 1) {
   return smoke;
 }
 
+/** Where the Keep's hearth fire burns in local space on its model (else null: the procedural one). */
+export function hearthOf(type) {
+  const s = kaykitAssets && BUILDING_STYLE[type];
+  return (s && s.hearth) || null;
+}
+
 /** Build (and cache) the geometries for a building type. */
 export function buildingGeometries(type, radius, level = 1) {
   const key = level > 1 ? `${type}:${level}` : type;
