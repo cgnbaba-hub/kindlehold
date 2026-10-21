@@ -353,6 +353,7 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
       }
       return;
     }
+    if (code === 'KeyZ' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); if (hooks.onUndo) hooks.onUndo(); return; }
     if (code === b.pause) {
       if (state.mode !== 'select') { cancelMode(); return; }
       if (hooks.onPause) hooks.onPause();
@@ -373,6 +374,7 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
       case b.quickLoad: ev.preventDefault(); if (hooks.onQuickLoad) hooks.onQuickLoad(); break;
       case b.diagnostics: ev.preventDefault(); if (hooks.onDiagnostics) hooks.onDiagnostics(); break;
       case b.economy: if (hooks.onEconomy) hooks.onEconomy(); break;
+      case b.help: ev.preventDefault(); if (hooks.onHelp) hooks.onHelp(); break;
       case b.speedUp: if (hooks.onSpeed) hooks.onSpeed(1); break;
       case b.speedDown: if (hooks.onSpeed) hooks.onSpeed(-1); break;
       default: break;

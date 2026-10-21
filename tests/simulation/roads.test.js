@@ -121,6 +121,32 @@ test('a building on a road takes its cells; lifting a road refunds nothing', () 
   assert.equal(sim.world.players.p1.res.stone, stone);
 });
 
+test('a fresh stretch can be undone with full refund, but only for a few seconds', () => {
+  const sim = lit();
+  const s = openStretch(sim);
+  const p = sim.world.players.p1;
+  const stone0 = p.res.stone, taler0 = p.res.taler;
+  sim.issue({ type: 'buildRoad', ax: s.ax, az: s.az, bx: s.bx, bz: s.bz });
+  sim.step();
+  assert.ok(sim.world.roads.cells.length > 0);
+  // a save in between keeps the chance to take it back
+  const { world } = deserializeWorld(serializeWorld(sim.world, 'undo'));
+  assert.ok(world.roads.last, 'the last stretch is saved');
+  sim.issue({ type: 'undoRoad' });
+  sim.step();
+  assert.equal(sim.world.roads.cells.length, 0, 'the stretch is gone');
+  assert.equal(p.res.stone, stone0, 'stone back');
+  assert.equal(p.res.taler, taler0, 'wages back');
+  // too late: the window has passed
+  sim.issue({ type: 'buildRoad', ax: s.ax, az: s.az, bx: s.bx, bz: s.bz });
+  for (let i = 0; i <= ROADS.undoTicks + 1; i++) sim.step();
+  const n = sim.world.roads.cells.length, stone1 = p.res.stone;
+  sim.issue({ type: 'undoRoad' });
+  sim.step();
+  assert.equal(sim.world.roads.cells.length, n, 'too late to undo');
+  assert.ok(p.res.stone <= stone1 + 1, 'and nothing returned');
+});
+
 test('roads survive a save and the game continues identically', () => {
   const a = lit();
   const s = openStretch(a, 30);

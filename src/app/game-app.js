@@ -111,6 +111,8 @@ export async function startApp(params) {
           onPause: () => togglePause(),
           onBuildMenu: () => hud && hud.openBuildMenu(),
           onEconomy: () => hud && hud.toggleEconomy(),
+          onHelp: () => hud && hud.toggleHelp(),
+          onUndo: () => hud && hud.undo(),
           onSelection: () => { if (hud) hud.selectionChanged(); if (session) session.audio.ui(); },
           onMarker: (k, x, z) => session && session.marker(k, x, z),
           onToast: (t) => hud && hud.toast(t),
@@ -129,7 +131,8 @@ export async function startApp(params) {
       return;
     }
     session.loop.setSpeed(settings.gameSpeed);
-    hud = createHud({ root: uiRoot, session, input: session.input, settings, actions: {
+    // first-time tips stay out of scripted test sessions unless asked for (?tips=1)
+    hud = createHud({ root: uiRoot, session, input: session.input, settings, tips: !(verify || debugApi) || params.get('tips') === '1', actions: {
       pause: () => togglePause(),
       cycleSpeed: () => { const sp = SPEEDS; const i = (sp.indexOf(session.loop.getSpeed()) + 1) % sp.length; session.loop.setSpeed(sp[i]); },
     } });

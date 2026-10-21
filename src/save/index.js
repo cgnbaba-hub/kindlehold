@@ -111,7 +111,14 @@ const worldSchema = v.object({
   }, { allowExtra: false })),
   herds: v.optional(v.array(v.object({ id: v.number({ min: 1, max: 64, int: true }), x: coord, z: coord, nextBirth: nonNeg(1e10) }, { allowExtra: false }), { max: 32 })),
   market: v.optional(v.record(v.number({ min: 0.1, max: 5 }), { max: 8, keyPattern: /^(timber|stone|iron|provisions)$/ })),
-  roads: v.optional(v.object({ cells: v.array(v.number({ min: 0, max: 1e6, int: true }), { max: ROADS.maxCells }) }, { allowExtra: false })),
+  roads: v.optional(v.object({
+    cells: v.array(v.number({ min: 0, max: 1e6, int: true }), { max: ROADS.maxCells }),
+    last: v.optional(v.object({
+      owner: v.string({ oneOf: ['p1', 'p2', 'p3'] }), tick: nonNeg(1e9),
+      cells: v.array(v.number({ min: 0, max: 1e6, int: true }), { max: ROADS.perCommand }),
+      cost: v.record(nonNeg(1e6), { max: 4, keyPattern: /^(stone|taler)$/ }),
+    }, { allowExtra: false })),
+  }, { allowExtra: false })),
   explored: v.optional(v.array(v.number({ min: 0, max: 4294967295, int: true }), { max: 128 })),
   players: v.object({ p1: playerFull, p2: playerFull, p3: v.optional(playerFull) }, { allowExtra: false }),
   diplomacy: v.optional(v.object({

@@ -211,6 +211,20 @@ try {
     assert(/Largest town/.test(await page.textContent('.end')) && /Average motivation/.test(await page.textContent('.end')), 'end-of-game stats');
   });
 
+  await test('first-time-tip', async (page) => {
+    await page.goto(url('?debug=1&start=1&quality=low&tips=1'), { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    if (await page.getByRole('button', { name: 'Skip tutorial' }).count()) await page.getByRole('button', { name: 'Skip tutorial' }).click();
+    // a minute in, with an empty larder: the hunger tip explains meals and points at the Food tab
+    await game(page, () => { const g = window.__GAME__; g.issue({ type: 'rekindle' }); g.runTicks(1300); g.world().players.p1.res.provisions = 0; });
+    await page.waitForSelector('.tip-card:not([hidden])', { timeout: 90000 });
+    assert(/Everyone eats/.test(await page.textContent('.tip-card')), 'the hunger tip');
+    await page.getByRole('button', { name: 'Food buildings' }).click();
+    await page.waitForFunction(() => /Build · Food/.test(document.querySelector('.cmd-title').textContent), null, { timeout: 15000 });
+    const seen = await page.evaluate(() => JSON.parse(localStorage.getItem('kindlehold.settings.v1')).seenTips);
+    assert(seen.includes('hunger'), 'the tip is remembered as seen');
+  });
+
   await test('stone-road-through-the-ui', async (page) => {
     await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
@@ -244,6 +258,27 @@ try {
     await page.mouse.click(pts.b.x, pts.b.y, { button: 'right' });
     await page.mouse.click(pts.b.x, pts.b.y, { button: 'right' });
     await page.waitForFunction(() => window.__GAME__.session.input.state.mode === 'select', null, { timeout: 5000 });
+  });
+
+  await test('undo-right-after-placing', async (page) => {
+    await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    if (await page.getByRole('button', { name: 'Skip tutorial' }).count()) await page.getByRole('button', { name: 'Skip tutorial' }).click();
+    const before = await game(page, () => {
+      const g = window.__GAME__; const w = g.world();
+      g.issue({ type: 'rekindle' }); g.runTicks(5);
+      Object.assign(w.players.p1.res, { timber: 300, stone: 300 });
+      const k = w.entities[g.find('building', 'keep')[0]];
+      const s = g.findSpot('cottage', k.x + 16, k.z + 4);
+      g.issue({ type: 'place', buildingType: 'cottage', x: s.x, z: s.z }); g.runTicks(1);
+      return { n: g.find('building', 'cottage').length, timber: w.players.p1.res.timber };
+    });
+    await page.waitForSelector('.undo-bar:not([hidden])', { timeout: 30000 });
+    assert(/Cottage placed/.test(await page.textContent('.undo-bar')), 'the undo bar names the building');
+    await page.keyboard.press('Control+z');
+    await page.waitForFunction((n) => window.__GAME__.find('building', 'cottage').length < n, before.n, { timeout: 15000 });
+    const after = await game(page, () => window.__GAME__.world().players.p1.res.timber);
+    assert(after >= before.timber + 20, `the timber came back (${before.timber} -> ${after})`);
   });
 
   await test('campaign-chapter-two', async (page) => {

@@ -4,7 +4,7 @@
 import { h, icon, portrait, osricAvatar, clear, setText, fmtTime } from './dom.js';
 import { portraitKey } from './portraits.js';
 import { seasonAt } from '../weather/index.js';
-import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf, HAND, handsOf, handsCap, motivationParts, unemployedOf, commuteOf, COMMUTE } from '../population/index.js';
+import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf, HAND, handsOf, handsCap, motivationParts, unemployedOf, commuteOf, COMMUTE, asleepCount, BREAD_PORTIONS, mealsInStock } from '../population/index.js';
 import { POI_INFO, TRADES, poiName, priceOf } from '../pois/index.js';
 import { createMinimap } from './minimap.js';
 import { createFloaters } from './floaters.js';
@@ -23,10 +23,12 @@ import { scenarioOf } from '../missions/index.js';
 import { aiSettings } from '../ai/index.js';
 import { RANKS, rankOf } from '../combat/index.js';
 import { BRIGANDS, relation, stance, TRUCE, GIFT, PEACE, WAR_AT, ALLY_AT } from '../diplomacy/index.js';
-import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
+import { keyLabel, DEFAULT_BINDINGS, BINDING_LABELS } from '../input/bindings.js';
 import { enemyFaction } from '../ai/factions.js';
 import { BUILD_TABS, buildTabOf } from './build-tabs.js';
 import { economyOverview } from '../economy/overview.js';
+import { nextTip } from './tips.js';
+import { saveSettings } from '../app/settings.js';
 import { ROADS, roadCellCost, donkeysFor, donkeyFodder, donkeyWage } from '../transport/defs.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler', flour: 'Flour', bread: 'Bread', tools: 'Tools' };
@@ -62,7 +64,7 @@ function costRow(cost, have = null) {
 }
 
 
-export function createHud({ root, session, input, settings, actions }) {
+export function createHud({ root, session, input, settings, actions, tips = true }) {
   const sim = session.sim;
   const world = () => sim.world;
   const bus = sim.bus;
@@ -137,6 +139,16 @@ export function createHud({ root, session, input, settings, actions }) {
     if (!c.soldierCount) peopleBody.append(h('p.muted', { text: 'No soldiers yet — build a Barracks.' }));
     for (const t in c.soldiers) peopleBody.append(row(t, `${UNITS[t].name}s`, c.soldiers[t]));
   }
+  const GLOSSARY = [
+    ['Townsfolk', 'Everyone who lives in your Cottages. They come when there is a free bed, food and a burning hearth.'],
+    ['Workers', 'Townsfolk with a workplace (forester, farmer, miner …). A free settler takes a job by itself.'],
+    ['Labourers', 'Everyone without a workplace. They are your carriers: they bring goods to the store and materials to building sites, and they build.'],
+    ['Hearthhands', 'Labourers you hire at the Keep for Taler. They sleep in the Keep, need no house and are paid each payday, but never take a workplace or become soldiers.'],
+    ['Soldiers', 'Trained at the Barracks, each from one free settler, who leaves the workforce for good.'],
+    ['Pack donkeys', 'Kept at a Donkey Stable: they carry goods like labourers, twice the load, but eat and want a wage.'],
+  ];
+  // who is who: the words the game uses for its people (built once: the list above it refreshes)
+  peoplePanel.append(h('details.people-gloss', {}, [h('summary', { text: 'Who is who?' }), h('dl', {}, GLOSSARY.flatMap(([k, v]) => [h('dt', { text: k }), h('dd', { text: v })]))]));
 
   // --- advisor: Osric reports the mood of the people and what is needed -------------------
   // Osric is a character, not a status line: an animated bust (breathes, blinks, talks while his
@@ -263,8 +275,83 @@ export function createHud({ root, session, input, settings, actions }) {
   nightBtn.addEventListener('click', () => { if (skipping == null) { skipping = session.loop.getSpeed(); session.loop.setSpeed(8); } });
   const diploBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Diplomacy', 'data-tip': 'Diplomacy: relations with the other powers of the valley' }, [icon('banner', 'icon icon-sm')]);
   const econBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Economy overview', 'data-tip-title': `Economy (${keyLabel(bindings().economy)})`, 'data-tip': 'What holds the town back right now, who carries, and how the stores change.' }, [icon('ledger', 'icon icon-sm')]);
-  const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, econBtn, diploBtn, pauseBtn]);
+  const helpBtn = h('button.btn-ghost.help-btn', { type: 'button', 'aria-label': 'Controls overview', 'data-tip-title': `Controls (${keyLabel(bindings().help)})`, 'data-tip': 'Mouse and keys at a glance.', text: '?' });
+  const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, econBtn, diploBtn, helpBtn, pauseBtn]);
   hud.append(topbar, nightBtn, speedMenu);
+
+  // --- first-time tips: the tutorial's second part, one card at a time ---------------------------
+  // own classes (styled like the tutorial card): '.tutorial' and '.tut-title' mean the tutorial alone
+  const tipTitle = h('h3.tip-title'), tipText = h('p.tip-text');
+  const tipAction = h('button.btn', { type: 'button' });
+  const tipOk = h('button.btn.btn-primary', { type: 'button' }, ['Got it']);
+  const tipCard = h('section.tip-card.panel', { role: 'dialog', 'aria-label': 'Tip', 'aria-live': 'polite' }, [
+    h('div.tut-head', {}, [h('span.tut-badge', { text: 'Tip' })]), tipTitle, tipText, h('div.tut-actions', {}, [tipAction, tipOk]),
+  ]);
+  tipCard.hidden = true;
+  hud.append(tipCard);
+  let tipNow = null, tipCheck = 0, tipQuiet = 30, tipShown = 0;
+  function closeTip() {
+    if (tipNow && !settings.seenTips.includes(tipNow.id)) { settings.seenTips.push(tipNow.id); saveSettings(settings); }
+    tipNow = null; tipCard.hidden = true; tipQuiet = 40; root.classList.remove('tip-on');
+  }
+  tipOk.addEventListener('click', closeTip);
+  tipAction.addEventListener('click', () => {
+    const a = tipNow && tipNow.action && tipNow.action[0];
+    if (a === 'economy') toggleEconomy(true);
+    else if (a && a.startsWith('build:')) { pickedTab = a.slice(6); cmdMode = 'build'; dirtySel = true; }
+    else if (a === 'keep') { const k = all(world(), 'building').find((b) => b.type === 'keep' && b.owner === PLAYER); if (k) { session.rc.rts.focus(k.x, k.z); input.setSelection([k.id]); } }
+    closeTip();
+  });
+  let tipClock = null;
+  function updateTips() {
+    // wall-clock seconds: the frame time is capped, and slow machines draw few frames
+    const now = performance.now() / 1000, dt = tipClock == null ? 0 : Math.min(5, now - tipClock);
+    tipClock = now;
+    if (tipNow) { tipShown += dt; if (tipShown > 60) closeTip(); return; } // a tip left alone fades after a minute
+    if (!tips || !settings.firstTips || !Array.isArray(settings.seenTips)) return;
+    tipQuiet -= dt; tipCheck += dt;
+    if (tipQuiet > 0 || tipCheck < 1) return;
+    tipCheck = 0;
+    if (root.classList.contains('tutorial-on') || world().mission.result) return; // the tutorial speaks first
+    const t = nextTip(world(), PLAYER, settings.seenTips);
+    if (!t) return;
+    tipNow = t; tipShown = 0;
+    setText(tipTitle, t.title); setText(tipText, t.text);
+    tipAction.hidden = !t.action;
+    if (t.action) setText(tipAction, t.action[1]);
+    tipCard.hidden = false;
+    root.classList.add('tip-on'); // Osric steps aside, as for the tutorial
+  }
+
+  // --- controls at a glance (F1) ---------------------------------------------------------------
+  const helpBody = h('div.help-body');
+  const helpPanel = h('section.help-panel.panel', { 'aria-label': 'Controls overview' }, [
+    h('div.people-head', {}, [h('h2', { text: 'Controls' }), h('button.btn-ghost.help-close', { type: 'button', 'aria-label': 'Close', text: '×' })]),
+    helpBody,
+  ]);
+  helpPanel.hidden = true;
+  hud.append(helpPanel);
+  const MOUSE_HELP = [
+    ['Left-click', 'Select a building, settler or soldier'], ['Left-drag', 'Select soldiers in a box (labourers if there are none)'],
+    ['Right-click', 'Command: move, attack, gather, set the rally point'], ['Right-drag', 'Grab and pull the map'],
+    ['Mouse wheel', 'Zoom towards the cursor'], ['Middle-drag', 'Rotate the view'],
+    ['Right-click while placing', 'Cancel (on a road: end it, twice: stop)'], ['Shift + left-click', 'Add to the selection; keep placing the same building'],
+    ['Ctrl + 1–9 / 1–9', 'Store / recall a control group'],
+    ['Ctrl + Z', 'Undo the building or road just placed (a few seconds, before work starts)'],
+  ];
+  function toggleHelp(open = helpPanel.hidden) {
+    helpPanel.hidden = !open;
+    if (!open) return;
+    econPanel.hidden = true; diploPanel.hidden = true;
+    clear(helpBody);
+    const b = bindings();
+    const table = (rows) => h('dl.help-list', {}, rows.flatMap(([k, v]) => [h('dt', { text: k }), h('dd', { text: v })]));
+    helpBody.append(h('h3', { text: 'Mouse' }), table(MOUSE_HELP));
+    helpBody.append(h('h3', { text: 'Keys' }), table(Object.keys(DEFAULT_BINDINGS).map((a) => [keyLabel(b[a]), BINDING_LABELS[a] || a])));
+    helpBody.append(h('p.small.muted', { text: 'Keys can be changed in Settings → Controls.' }));
+  }
+  helpBtn.addEventListener('click', () => toggleHelp());
+  helpPanel.querySelector('.help-close').addEventListener('click', () => toggleHelp(false));
 
   // --- economy: the town at a glance — bottlenecks first, then carriers and the stores ----------
   const econBody = h('div.econ-body');
@@ -451,7 +538,47 @@ export function createHud({ root, session, input, settings, actions }) {
   const toasts = h('div.toasts', { 'aria-live': 'polite' });
   const tooltip = h('div.tooltip', { role: 'tooltip', hidden: true });
   const boxEl = h('div.drag-box', { hidden: true });
-  hud.append(banner, toasts, tooltip, boxEl);
+  // undo right after placing: a misclick costs nothing while the site is untouched or the road fresh
+  const undoText = h('span');
+  const undoBtn = h('button.undo-btn', { type: 'button', text: 'Undo', 'aria-keyshortcuts': 'Control+Z' });
+  const undoBar = h('div.undo-bar', { role: 'status', hidden: true }, [undoText, undoBtn, h('kbd', { text: 'Ctrl+Z' })]);
+  let undoable = null; // { kind: 'site'|'road', id?, tick }
+  function undoValid() {
+    if (!undoable) return false;
+    const w = world();
+    if (w.tick - undoable.tick > ROADS.undoTicks) return false;
+    if (undoable.kind === 'road') return !!(w.roads && w.roads.last && w.roads.last.tick === undoable.tick);
+    const b = w.entities[undoable.id];
+    return !!(b && b.state === 'site' && !(b.build.progress > 0));
+  }
+  function updateUndo() {
+    const ok = undoValid();
+    if (!ok) undoable = null;
+    if (undoBar.hidden === ok) undoBar.hidden = !ok;
+  }
+  function undo() {
+    if (!undoValid()) { undoable = null; updateUndo(); return false; }
+    if (undoable.kind === 'road') input.issue({ type: 'undoRoad' });
+    else { input.issue({ type: 'cancel', id: undoable.id }); if (world().selection.ids.includes(undoable.id)) input.setSelection([]); }
+    toast(undoable.kind === 'road' ? 'Road taken back' : 'Building site taken back');
+    undoable = null;
+    updateUndo();
+    return true;
+  }
+  undoBtn.addEventListener('click', () => undo());
+  unsub.push(bus.on(EV.BUILDING_PLACED, (d) => {
+    if (d.owner !== PLAYER) return;
+    undoable = { kind: 'site', id: d.id, tick: world().tick };
+    setText(undoText, `${BUILDINGS[d.type].name} placed`);
+    updateUndo();
+  }));
+  unsub.push(bus.on('road:built', (d) => {
+    if (d.owner !== PLAYER) return;
+    undoable = { kind: 'road', tick: world().tick };
+    setText(undoText, 'Road laid');
+    updateUndo();
+  }));
+  hud.append(banner, toasts, undoBar, tooltip, boxEl);
 
   // tooltips for any [data-tip]
   let tipTarget = null;
@@ -492,6 +619,7 @@ export function createHud({ root, session, input, settings, actions }) {
       const go = () => session.rc.rts.focus(d.x, d.z);
       li.addEventListener('click', go);
       li.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+      if (d.level === 'danger' || d.level === 'warn') minimap.ping(d.x, d.z, d.level);
     }
     alerts.prepend(li);
     while (alerts.children.length > 5) alerts.lastChild.remove();
@@ -660,15 +788,21 @@ export function createHud({ root, session, input, settings, actions }) {
           const f = paydayForecast(w, PLAYER);
           const taxRow = h('div.tax-row', { role: 'group', 'aria-label': 'Tax level' }, [h('span', { text: 'Taxes' })]);
           TAX_LEVELS.forEach((lvl, i) => {
-            const b = h(`button.tax-btn${(p.tax ?? 1) === i ? '.active' : ''}`, { type: 'button', 'aria-pressed': (p.tax ?? 1) === i ? 'true' : 'false', 'data-tip': `${lvl.perSettler} Taler per settler each payday · motivation ${lvl.stability > 0 ? '+' : ''}${lvl.stability}` , text: lvl.name });
+            // what the level means for this town, not only per head
+            const taxes = Math.round(f.settlers * lvl.perSettler * (1 + upgradeBonus(e, 'tax')));
+            const b = h(`button.tax-btn${(p.tax ?? 1) === i ? '.active' : ''}`, { type: 'button', 'aria-pressed': (p.tax ?? 1) === i ? 'true' : 'false', 'data-tip': `${lvl.perSettler} Taler per settler each payday: ${taxes} Taler from your ${f.settlers} settlers · motivation ${lvl.stability > 0 ? '+' : ''}${lvl.stability}`, text: lvl.name });
             b.addEventListener('click', () => { input.issue({ type: 'setTax', level: i }); setTimeout(() => { dirtySel = true; }, 120); });
             taxRow.append(b);
           });
           selPanel.append(taxRow);
           const rationRow = h('div.tax-row', { role: 'group', 'aria-label': 'Rations' }, [h('span', { text: 'Rations' })]);
+          const eaters = Math.max(0, p.pop - asleepCount(w, PLAYER));
+          const food = Math.floor(p.res.provisions) + Math.floor(p.res.bread || 0) * BREAD_PORTIONS + mealsInStock(w, PLAYER);
           RATIONS.forEach((r, i) => {
             const cur = (p.rations ?? 1) === i;
-            const b = h(`button.tax-btn${cur ? '.active' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'data-tip': `${r.portion}× food per person at mealtime · motivation ${r.stability > 0 ? '+' : ''}${r.stability}`, text: r.name });
+            const need = Math.ceil(eaters * r.portion);
+            const meals = need ? Math.floor(food / need) : 0;
+            const b = h(`button.tax-btn${cur ? '.active' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'data-tip': `${r.portion}× food per person at mealtime: ${need} portions for ${eaters} people, the store lasts ${meals} meal${meals === 1 ? '' : 's'} · motivation ${r.stability > 0 ? '+' : ''}${r.stability}`, text: r.name });
             b.addEventListener('click', () => { input.issue({ type: 'setRations', level: i }); setTimeout(() => { dirtySel = true; }, 120); });
             rationRow.append(b);
           });
@@ -765,7 +899,7 @@ export function createHud({ root, session, input, settings, actions }) {
 
   // --- command grid ------------------------------------------------------------------------------
   let cmdMode = 'auto'; // 'auto' | 'build'
-  let buildTab = 'goods', lastTabHint = null, buildShown = false; // the open group of the build menu
+  let buildTab = 'goods', lastTabHint = null, pickedTab = null, buildShown = false; // the open group of the build menu
   let confirmDemolish = 0;
   const SHORT = { 'Hold a feast': 'Feast', "Hunter's Hut": 'Hunter', 'Keen Axes': 'Axes', 'Braced Timber': 'Bracing', 'Tempered Blades': 'Blades', 'March Charter': 'Charter', 'Hire labourer': 'Hire', 'Back to work': 'Release', 'Upgrading…': 'Upgrading', 'Steel Mail': 'Mail', 'Veteran Drill': 'Drill', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Priority on': 'Priority', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
   function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
@@ -823,13 +957,15 @@ export function createHud({ root, session, input, settings, actions }) {
       buildShown = true;
       const want = hl && hl.startsWith('build:') ? hl.slice(6) : hl === 'build' ? 'lodge' : null;
       if (want && BUILDINGS[want] && lastTabHint !== hl && !wasShown) { lastTabHint = hl; buildTab = buildTabOf(want); }
+      // a tab the player (or a tip) picked wins over the objective's
+      if (pickedTab) { buildTab = pickedTab; pickedTab = null; lastTabHint = hl; }
       const tab = BUILD_TABS.find((t) => t.id === buildTab) || BUILD_TABS[1];
       setText(cmdTitle, `Build · ${tab.label}`);
       const tabRow = h('div.build-tabs', { role: 'tablist', 'aria-label': 'Building groups' });
       for (const t of BUILD_TABS) {
         const lit = t.id !== tab.id && (hl === 'build' ? ['lodge', 'farm'] : want ? [want] : []).some((x) => t.types.includes(x));
         const tb = h(`button.build-tab${t.id === tab.id ? '.active' : ''}${lit ? '.pulse' : ''}`, { type: 'button', role: 'tab', 'aria-selected': t.id === tab.id ? 'true' : 'false', 'aria-label': `${t.label} buildings`, 'data-tip': t.tip, 'data-tip-title': t.label }, [icon(t.ic, 'icon icon-sm'), h('span', { text: t.label })]);
-        tb.addEventListener('click', () => { buildTab = t.id; dirtySel = true; });
+        tb.addEventListener('click', () => { pickedTab = t.id; dirtySel = true; });
         tabRow.append(tb);
       }
       cmdGrid.append(tabRow);
@@ -1046,6 +1182,8 @@ export function createHud({ root, session, input, settings, actions }) {
     renderDiplomacy();
     lastRates = rates;
     renderEconomy();
+    updateTips();
+    updateUndo();
     adviceTimer += 0.25;
     // Osric blinks now and then (one quarter-second tick every few seconds)
     blinkTick = (blinkTick + 1) % 19;
@@ -1110,7 +1248,9 @@ export function createHud({ root, session, input, settings, actions }) {
     toast,
     openBuildMenu() { cmdMode = cmdMode === 'build' ? 'auto' : 'build'; dirtySel = true; },
     toggleEconomy: () => toggleEconomy(),
+    toggleHelp: () => toggleHelp(),
+    undo: () => undo(),
     selectionChanged() { cmdMode = 'auto'; dirtySel = true; },
-    dispose() { unsub.forEach((u) => u()); floaters.dispose(); hud.remove(); },
+    dispose() { unsub.forEach((u) => u()); floaters.dispose(); hud.remove(); root.classList.remove('tip-on'); },
   };
 }

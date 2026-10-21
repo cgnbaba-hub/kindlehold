@@ -4,7 +4,7 @@
 import { PLAYER, EV } from '../core/contracts.js';
 import { all, emit } from '../world/world.js';
 import { territorySources, territoryOwner } from '../world/territory.js';
-import { pay } from '../economy/stock.js';
+import { pay, refund } from '../economy/stock.js';
 import { CELL } from '../navigation/nav-grid.js';
 import { ROADS, roadCellCost } from './defs.js';
 
@@ -85,9 +85,26 @@ export function createRoadsModule() {
   function reject(reason, cmd) { emit(ctx.world, EV.COMMAND_REJECTED, { type: cmd.type, reason }); }
 
   function onCommand(cmd) {
-    if (cmd.type !== 'buildRoad' && cmd.type !== 'removeRoad') return;
+    if (cmd.type !== 'buildRoad' && cmd.type !== 'removeRoad' && cmd.type !== 'undoRoad') return;
     const world = ctx.world;
     const owner = cmd.owner || PLAYER;
+    if (cmd.type === 'undoRoad') {
+      // take back the stretch just laid, stones and wages returned (only a misclick: it expires fast)
+      const roads = roadsOf(world);
+      const last = roads.last;
+      if (!last || last.owner !== owner || world.tick - last.tick > ROADS.undoTicks) return reject('Nothing to undo', cmd);
+      const lift = new Set(last.cells);
+      const before = roads.cells.length;
+      roads.cells = roads.cells.filter((k) => !lift.has(k));
+      delete roads.last;
+      // cells a building has covered since are already gone and return nothing
+      const lifted = before - roads.cells.length;
+      if (!lifted) return reject('Nothing to undo', cmd);
+      refund(world, owner, last.cost, lifted / lift.size, 'undo road');
+      sync();
+      emit(world, 'road:removed', { owner, cells: lifted, undo: true });
+      return;
+    }
     const ax = Number(cmd.ax), az = Number(cmd.az), bx = Number(cmd.bx), bz = Number(cmd.bz);
     if (![ax, az, bx, bz].every(Number.isFinite)) return reject('Invalid position', cmd);
     const grid = ctx.services.nav.grid();
@@ -97,6 +114,7 @@ export function createRoadsModule() {
       if (!chk.ok) return reject(chk.reason, cmd);
       if (!pay(world, owner, chk.cost, 'road')) return reject('Not enough resources', cmd);
       roads.cells.push(...chk.cells);
+      roads.last = { owner, tick: world.tick, cells: chk.cells.slice(), cost: { ...chk.cost } };
       sync();
       emit(world, 'road:built', { owner, cells: chk.cells.length, cost: chk.cost, ax, az, bx, bz });
     } else {
@@ -105,6 +123,7 @@ export function createRoadsModule() {
       const before = roads.cells.length;
       roads.cells = roads.cells.filter((k) => !lift.has(k));
       if (roads.cells.length === before) return reject('No road there', cmd);
+      delete roads.last;
       sync();
       emit(world, 'road:removed', { owner, cells: before - roads.cells.length });
     }

@@ -8,6 +8,7 @@ import { CELL } from '../navigation/nav-grid.js';
 import { h } from './dom.js';
 
 const SIZE = 256; // drawn at native resolution, scaled down by CSS
+const PING_MS = 6000; // how long an alert's ring stays on the minimap
 
 export function createMinimap({ terrain, world, rts, onMoveOrder }) {
   const canvas = h('canvas.minimap-canvas', { width: SIZE, height: SIZE, 'aria-label': 'Minimap. Click to move the camera, right-click to send selected units.' });
@@ -100,6 +101,17 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
       const r = u.hero || u.commander ? 2.4 : 1.5;
       ctx.beginPath(); ctx.arc(toPx(u.x), toPx(u.z), r, 0, Math.PI * 2); ctx.fill();
     }
+    // alert pings: a ring that widens where the alert happened (wall-clock: the frame time is capped)
+    const now = performance.now();
+    for (let i = pings.length - 1; i >= 0; i--) {
+      const pg = pings[i], age = (now - pg.t) / PING_MS;
+      if (age >= 1) { pings.splice(i, 1); continue; }
+      const still = document.documentElement.classList.contains('reduced-motion');
+      const phase = still ? 0.5 : (age * 3) % 1;
+      ctx.strokeStyle = pg.level === 'danger' ? `rgba(255,96,72,${(1 - phase) * 0.95})` : `rgba(255,200,90,${(1 - phase) * 0.9})`;
+      ctx.lineWidth = 2.8;
+      ctx.beginPath(); ctx.arc(toPx(pg.x), toPx(pg.z), 5 + phase * 16, 0, Math.PI * 2); ctx.stroke();
+    }
     // camera footprint
     const st = rts.state;
     const reach = st.zoom * 0.9;
@@ -111,8 +123,21 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
     ctx.closePath(); ctx.stroke();
   }
 
+  const pings = [];
   return {
     el: canvas,
+    /** Mark where an alert happened (danger red, warn amber). */
+    ping(x, z, level = 'danger') {
+      if (!Number.isFinite(x) || !Number.isFinite(z)) return;
+      // only on land you have seen: a ping never shows more than the map already does
+      const w = world();
+      if (w.explored && !isExplored(w, terrain.half, x, z)) return;
+      // one ring per place: a repeated alert renews it
+      const near = pings.find((p) => (p.x - x) ** 2 + (p.z - z) ** 2 < 64);
+      if (near) { near.t = performance.now(); near.level = level; return; }
+      pings.push({ x, z, level, t: performance.now() });
+      if (pings.length > 6) pings.shift();
+    },
     update(dt) { timer += dt; if (timer > 0.25) { timer = 0; draw(); } },
     draw,
   };

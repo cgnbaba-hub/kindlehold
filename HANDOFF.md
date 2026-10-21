@@ -154,6 +154,46 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Einsteigerfreundlichkeit, Paket 6: Warnungen auf der Minikarte (2026-10-21)
+
+- Jede Warnung/Gefahr mit Ort (`EV.ALERT` mit x/z) zeichnet 6 s lang einen sich weitenden Ring auf
+  die Minikarte (`minimap.ping`, rot/bernstein, echte Uhrzeit; bei reduzierter Bewegung ruhig).
+  Nur auf erkundetem Land, sonst nichts: der Ring zeigt nie mehr als Meldung und Karte schon zeigen
+  (keine Erleichterung, die Feldlager bleiben im Nebel). Eine Wiederholung am selben Ort erneuert
+  den Ring, höchstens 6 zugleich.
+
+## Einsteigerfreundlichkeit, Paket 5: Rückgängig nach dem Platzieren (2026-10-21)
+
+- Leiste „… placed · Undo · Ctrl+Z“ über den Meldungen (`hud.js`, `undoable`), solange die
+  Baustelle unberührt ist (Fortschritt 0) bzw. die Straße frisch: höchstens `ROADS.undoTicks`
+  (15 Spielsekunden). Gebäude: der bestehende Befehl `cancel` (vor Baubeginn ohnehin voll erstattet,
+  also keine Erleichterung). Straße: neuer Befehl `undoRoad` (`transport/roads.js`) mit
+  `world.roads.last` (im Speicherschema), voll erstattet für die Zellen, die noch liegen.
+- Schwierigkeit: entschärft nur Fehlklicks, nicht die Planung (der Bot klickt nie falsch, also
+  messbar neutral). Danach bleibt es beim alten Preis: halbe Erstattung nach Baubeginn, Straße
+  heben gibt nichts.
+- Tests: `tests/simulation/roads.test.js` (Rückgabe, Zeitfenster, Speichern).
+
+## Einsteigerfreundlichkeit, Paket 4: Begriffe und Steuerung (2026-10-21)
+
+- Bevölkerungsfenster endet mit „Who is who?“ (statisches `details`, außerhalb von `peopleBody`,
+  sonst schluckt das Neuzeichnen alle 0,25 s den Klick): Townsfolk, Workers, Labourers,
+  Hearthhands, Soldiers, Pack donkeys.
+- Steuerungsübersicht: Taste F1 (Belegung `help`) oder „?“ oben; listet Maus und alle
+  `DEFAULT_BINDINGS` mit der aktuellen Belegung. Schließt Wirtschafts- und Diplomatiefenster.
+
+## Einsteigerfreundlichkeit, Paket 3: Tipps beim ersten Mal (2026-10-21)
+
+- Tutorial Teil 2 als Tipps (`src/ui/tips.js`, reine Bedingungen; Anzeige in `hud.js` mit der
+  Tutorial-Karte, Abzeichen „Tip“): Hunger, Träger, Werkstatt ohne Arbeiter, volle Betten,
+  Zulieferung, erster Überfall, mehrere Baustellen (Vorrang), lange Wege, sinkende Motivation, erste Nacht (alle schlafen, Nacht läuft schneller).
+  Je Spieler einmal (`settings.seenTips`), höchstens einer zugleich, 30 s Ruhe zu Spielbeginn,
+  40 s zwischen zwei Tipps, nach einer Minute ohne Klick vorbei. Echte Uhrzeit, nicht die
+  gedeckelte Bildzeit (in SwiftShader lief die Ruhezeit sonst minutenlang). Knopf führt hin
+  (Wirtschaftsfenster, Bau-Reiter, Bergfried). Abschaltbar in den Einstellungen; in Testsitzungen
+  (`?verify=1`, `?debug=1`) aus, außer mit `&tips=1`.
+- Tests: `tests/unit/tips.test.js`, e2e `first-time-tip`.
+
 ## Einsteigerfreundlichkeit, Paket 2: Wirtschaftsübersicht (2026-10-21)
 
 - Fenster „Economy“ (Taste O, Knopf neben der Uhr, Klick auf eine Ware oben): zuerst „What holds
