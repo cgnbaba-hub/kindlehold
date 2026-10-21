@@ -191,7 +191,7 @@ export function createHud({ root, session, input, settings, actions }) {
     if (p.res.timber < 15) warn(has('lodge') ? 'Timber runs short, Warden. Another Woodcutter\'s Lodge, or send idle labourers to fell trees by hand.' : 'We have no woodcutters! Build a Woodcutter\'s Lodge near the forest.');
     if (p.res.stone < 10 && w.tick > 3 * 1200) warn(has('quarry') ? 'Stone is running low. A second quarry would help.' : 'We will need stone soon — build a Quarry by the rock outcrops.');
     if ((p.housed ?? p.pop) >= p.popCap) warn('Every bed is taken. Build Cottages, or upgrade them to Stone Houses, so more folk can settle.');
-    if (c.labourers - c.asleep <= 1 && c.people > 4 && !(w.time.hour >= 22 || w.time.hour < 5)) warn('No hands are free to carry goods or build. Pause a workplace or house more people.');
+    if (c.labourers - c.asleep <= 1 && c.people > 4 && !(w.time.hour >= 22 || w.time.hour < 5)) warn('No hands are free to carry goods or build. Hire Hearthhands at the Keep, pause a workplace or house more people.');
     if (p.stability < 40) warn('The people grumble, Warden. Lower the taxes, serve hot meals, give more rations or hold a feast.');
     if (p.tax === 2 && p.stability < 60) warn('High taxes weigh on the people.');
     if (unemployedOf(w, PLAYER) > 0) warn('Some townsfolk have no work and grumble. Build a workshop for them, or house fewer newcomers.');

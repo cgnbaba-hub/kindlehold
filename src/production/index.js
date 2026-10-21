@@ -63,7 +63,7 @@ function setStall(world, b, reason) {
   // goods piling up: one combined hint at most every 3 minutes
   if (b.owner === 'p1' && reason === 'storageFull' && world.tick - (world.stats.lastFullAlert ?? -1e9) > 3600) {
     world.stats.lastFullAlert = world.tick;
-    alert(world, 'info', `Goods are piling up at the ${BUILDINGS[b.type].name}: labourers are busy. Pause a workplace or build Cottages for more people.`, b.x, b.z);
+    alert(world, 'info', `Goods are piling up at the ${BUILDINGS[b.type].name}: labourers are busy. Hire Hearthhands at the Keep, pause a workplace or build Cottages for more people.`, b.x, b.z);
   }
 }
 
