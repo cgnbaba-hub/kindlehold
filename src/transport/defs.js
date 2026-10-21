@@ -15,6 +15,7 @@ export const ROADS = {
   perCommand: 48,      // cells in one stretch (about 96 m)
   maxCells: 1200,      // per world
   clearOfDeposits: 1.4, // metres a road keeps from trees and rocks
+  undoTicks: 300,      // a fresh stretch can be taken back with full refund for 15 game seconds (a misclick, not a plan)
 };
 
 /** Stone for one road cell in this game. */

@@ -183,6 +183,11 @@ button { font: inherit; color: inherit; }
 .alert.fade { opacity: 0; transition: opacity 1s; }
 .toasts { position: absolute; left: 50%; bottom: calc(210px * var(--ui-scale, 1)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; }
 .toast { padding: 5px 14px; border-radius: 14px; background: rgba(20,24,28,0.92); border: 1px solid var(--brass-dim); font-size: 0.92em; animation: msgIn 0.25s; }
+.undo-bar { position: absolute; left: 50%; bottom: calc(176px * var(--ui-scale, 1)); transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 14px; border-radius: 16px; background: rgba(20,24,28,0.92); border: 1px solid var(--brass-dim); font-size: 0.92em; pointer-events: auto; }
+.undo-bar[hidden] { display: none; }
+.undo-bar kbd { opacity: 0.7; font-size: 0.85em; }
+.undo-btn { padding: 2px 12px; border-radius: 12px; border: 1px solid var(--brass); background: rgba(80,62,30,0.6); color: inherit; font: inherit; cursor: pointer; }
+.undo-btn:hover, .undo-btn:focus-visible { background: rgba(120,92,40,0.8); }
 .toast-warn { border-color: var(--warn); color: #ffe3a8; } .toast-success { border-color: var(--ok); color: #d2f0c0; }
 .banner { position: absolute; left: 50%; transform: translateX(-50%); top: 64px; padding: 6px 16px; border-radius: 6px; background: rgba(20,24,28,0.92); border: 1px solid #5fb3d6; font-size: 0.95em; pointer-events: none; }
 .banner.bad { border-color: var(--bad); color: #ffd2c4; }

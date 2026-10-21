@@ -336,6 +336,7 @@ export function createHud({ root, session, input, settings, actions, tips = true
     ['Mouse wheel', 'Zoom towards the cursor'], ['Middle-drag', 'Rotate the view'],
     ['Right-click while placing', 'Cancel (on a road: end it, twice: stop)'], ['Shift + left-click', 'Add to the selection; keep placing the same building'],
     ['Ctrl + 1–9 / 1–9', 'Store / recall a control group'],
+    ['Ctrl + Z', 'Undo the building or road just placed (a few seconds, before work starts)'],
   ];
   function toggleHelp(open = helpPanel.hidden) {
     helpPanel.hidden = !open;
@@ -536,7 +537,47 @@ export function createHud({ root, session, input, settings, actions, tips = true
   const toasts = h('div.toasts', { 'aria-live': 'polite' });
   const tooltip = h('div.tooltip', { role: 'tooltip', hidden: true });
   const boxEl = h('div.drag-box', { hidden: true });
-  hud.append(banner, toasts, tooltip, boxEl);
+  // undo right after placing: a misclick costs nothing while the site is untouched or the road fresh
+  const undoText = h('span');
+  const undoBtn = h('button.undo-btn', { type: 'button', text: 'Undo', 'aria-keyshortcuts': 'Control+Z' });
+  const undoBar = h('div.undo-bar', { role: 'status', hidden: true }, [undoText, undoBtn, h('kbd', { text: 'Ctrl+Z' })]);
+  let undoable = null; // { kind: 'site'|'road', id?, tick }
+  function undoValid() {
+    if (!undoable) return false;
+    const w = world();
+    if (w.tick - undoable.tick > ROADS.undoTicks) return false;
+    if (undoable.kind === 'road') return !!(w.roads && w.roads.last && w.roads.last.tick === undoable.tick);
+    const b = w.entities[undoable.id];
+    return !!(b && b.state === 'site' && !(b.build.progress > 0));
+  }
+  function updateUndo() {
+    const ok = undoValid();
+    if (!ok) undoable = null;
+    if (undoBar.hidden === ok) undoBar.hidden = !ok;
+  }
+  function undo() {
+    if (!undoValid()) { undoable = null; updateUndo(); return false; }
+    if (undoable.kind === 'road') input.issue({ type: 'undoRoad' });
+    else { input.issue({ type: 'cancel', id: undoable.id }); if (world().selection.ids.includes(undoable.id)) input.setSelection([]); }
+    toast(undoable.kind === 'road' ? 'Road taken back' : 'Building site taken back');
+    undoable = null;
+    updateUndo();
+    return true;
+  }
+  undoBtn.addEventListener('click', () => undo());
+  unsub.push(bus.on(EV.BUILDING_PLACED, (d) => {
+    if (d.owner !== PLAYER) return;
+    undoable = { kind: 'site', id: d.id, tick: world().tick };
+    setText(undoText, `${BUILDINGS[d.type].name} placed`);
+    updateUndo();
+  }));
+  unsub.push(bus.on('road:built', (d) => {
+    if (d.owner !== PLAYER) return;
+    undoable = { kind: 'road', tick: world().tick };
+    setText(undoText, 'Road laid');
+    updateUndo();
+  }));
+  hud.append(banner, toasts, undoBar, tooltip, boxEl);
 
   // tooltips for any [data-tip]
   let tipTarget = null;
@@ -1134,6 +1175,7 @@ export function createHud({ root, session, input, settings, actions, tips = true
     lastRates = rates;
     renderEconomy();
     updateTips();
+    updateUndo();
     adviceTimer += 0.25;
     // Osric blinks now and then (one quarter-second tick every few seconds)
     blinkTick = (blinkTick + 1) % 19;
@@ -1199,6 +1241,7 @@ export function createHud({ root, session, input, settings, actions, tips = true
     openBuildMenu() { cmdMode = cmdMode === 'build' ? 'auto' : 'build'; dirtySel = true; },
     toggleEconomy: () => toggleEconomy(),
     toggleHelp: () => toggleHelp(),
+    undo: () => undo(),
     selectionChanged() { cmdMode = 'auto'; dirtySel = true; },
     dispose() { unsub.forEach((u) => u()); floaters.dispose(); hud.remove(); root.classList.remove('tip-on'); },
   };

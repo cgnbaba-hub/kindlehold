@@ -17,6 +17,10 @@ fort and will not share the valley.
   without a worker or waiting for goods, stores running out — with what helps and a *Show* button
   that jumps to the buildings concerned; below, how busy the carriers are and how each store
   changed over the last minute.
+* **Misplaced something?** Right after you place a building or lay a road, *Undo* (or
+  **Ctrl+Z**) takes it back with everything refunded — for a few seconds, and for a building only
+  until work on it begins. Later, *Cancel construction* refunds less once work has started, and a
+  lifted road returns nothing.
 * **All keys and mouse controls:** press **F1** (or the **?** button in the top bar). Keys can
   be changed under *Settings → Controls*.
 * **Who is who?** The people panel (click the population in the top bar) ends with a short

@@ -353,6 +353,7 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
       }
       return;
     }
+    if (code === 'KeyZ' && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); if (hooks.onUndo) hooks.onUndo(); return; }
     if (code === b.pause) {
       if (state.mode !== 'select') { cancelMode(); return; }
       if (hooks.onPause) hooks.onPause();

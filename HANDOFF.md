@@ -154,6 +154,18 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Einsteigerfreundlichkeit, Paket 5: Rückgängig nach dem Platzieren (2026-10-21)
+
+- Leiste „… placed · Undo · Ctrl+Z“ über den Meldungen (`hud.js`, `undoable`), solange die
+  Baustelle unberührt ist (Fortschritt 0) bzw. die Straße frisch: höchstens `ROADS.undoTicks`
+  (15 Spielsekunden). Gebäude: der bestehende Befehl `cancel` (vor Baubeginn ohnehin voll erstattet,
+  also keine Erleichterung). Straße: neuer Befehl `undoRoad` (`transport/roads.js`) mit
+  `world.roads.last` (im Speicherschema), voll erstattet für die Zellen, die noch liegen.
+- Schwierigkeit: entschärft nur Fehlklicks, nicht die Planung (der Bot klickt nie falsch, also
+  messbar neutral). Danach bleibt es beim alten Preis: halbe Erstattung nach Baubeginn, Straße
+  heben gibt nichts.
+- Tests: `tests/simulation/roads.test.js` (Rückgabe, Zeitfenster, Speichern).
+
 ## Einsteigerfreundlichkeit, Paket 4: Begriffe und Steuerung (2026-10-21)
 
 - Bevölkerungsfenster endet mit „Who is who?“ (statisches `details`, außerhalb von `peopleBody`,
