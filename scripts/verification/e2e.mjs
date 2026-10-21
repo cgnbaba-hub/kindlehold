@@ -260,6 +260,27 @@ try {
     await page.waitForFunction(() => window.__GAME__.session.input.state.mode === 'select', null, { timeout: 5000 });
   });
 
+  await test('undo-right-after-placing', async (page) => {
+    await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    if (await page.getByRole('button', { name: 'Skip tutorial' }).count()) await page.getByRole('button', { name: 'Skip tutorial' }).click();
+    const before = await game(page, () => {
+      const g = window.__GAME__; const w = g.world();
+      g.issue({ type: 'rekindle' }); g.runTicks(5);
+      Object.assign(w.players.p1.res, { timber: 300, stone: 300 });
+      const k = w.entities[g.find('building', 'keep')[0]];
+      const s = g.findSpot('cottage', k.x + 16, k.z + 4);
+      g.issue({ type: 'place', buildingType: 'cottage', x: s.x, z: s.z }); g.runTicks(1);
+      return { n: g.find('building', 'cottage').length, timber: w.players.p1.res.timber };
+    });
+    await page.waitForSelector('.undo-bar:not([hidden])', { timeout: 30000 });
+    assert(/Cottage placed/.test(await page.textContent('.undo-bar')), 'the undo bar names the building');
+    await page.keyboard.press('Control+z');
+    await page.waitForFunction((n) => window.__GAME__.find('building', 'cottage').length < n, before.n, { timeout: 15000 });
+    const after = await game(page, () => window.__GAME__.world().players.p1.res.timber);
+    assert(after >= before.timber + 20, `the timber came back (${before.timber} -> ${after})`);
+  });
+
   await test('campaign-chapter-two', async (page) => {
     await page.goto(url('?debug=1&quality=low'), { waitUntil: 'load' });
     await page.getByRole('button', { name: 'Campaign' }).click();
