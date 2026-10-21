@@ -18,7 +18,9 @@ fort and will not share the valley.
 
 1. **Rekindle the hearth.** Left-click the round stone Keep, then press *Rekindle the
    Hearth* in the command panel (bottom right). Settlers only come home to a burning hearth.
-2. **Timber and food.** Press **B** (or *Build…* at the Keep). Place a *Woodcutter's Lodge*
+2. **Timber and food.** Press **B** (or *Build…* at the Keep). The build menu has four tabs —
+   *Town* (houses, Wells, stores, roads), *Goods*, *Food* and *Army*; the tab your current
+   objective needs opens by itself and pulses. Missing materials show in red on each button. Place a *Woodcutter's Lodge*
    near the western trees (it needs trees within 28 m — the ghost turns green when a spot
    is valid) and a *Farmstead* on open grass. Your labourers carry the materials from the
    Keep and build.
@@ -232,7 +234,7 @@ See also **Hearthhands and motivation** below.
 * **Storehouse** — a second store for all goods. Labourers bring goods to the nearest store
   (the Keep or a Storehouse) and fetch them from the best one for the trip, so outlying
   workshops and building sites are served much faster. Build one where a new quarter grows.
-* **Roads** (Build menu → Road) — click where the road starts, then each bend; right-click ends
+* **Roads** (Build menu → Town → Road) — click where the road starts, then each bend; right-click ends
   the road, a second right-click leaves the mode. Everyone walks half again as fast on a road,
   and routes keep to it — enemy raiders too, so a road to the gate also speeds the attack.
   Roads stay inside your territory and off water, trees and rocks; a building placed on a road

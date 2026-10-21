@@ -232,6 +232,7 @@ try {
     });
     assert(pts, 'an open stretch beside the Keep');
     await page.keyboard.press('KeyB');
+    await page.getByRole('tab', { name: 'Town buildings' }).click();
     await page.getByRole('button', { name: 'Road' }).click();
     await page.mouse.click(pts.a.x, pts.a.y);
     await page.mouse.move(pts.b.x, pts.b.y);
