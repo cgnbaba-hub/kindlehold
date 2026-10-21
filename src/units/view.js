@@ -2,7 +2,8 @@
 // state-driven animation; keeps short-lived fallen bodies after deaths.
 import * as THREE from 'three';
 import { all } from '../world/world.js';
-import { EV, PLAYER } from '../core/contracts.js';
+import { EV, PLAYER, RIVAL } from '../core/contracts.js';
+import { RIVAL_COLOR } from '../rival/defs.js';
 import { enemyFaction } from '../ai/factions.js';
 import { UNITS } from './defs.js';
 import { createFigureRenderer } from './figures.js';
@@ -127,7 +128,7 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         if (!inView(x, f.y, z)) continue;
         const chat = talk.get(s.id);
         f.heading = smoothHeading(s, frame.dt, chat);
-        f.style = 'settler'; f.scale = 1.25 * zk; f.tunic = s.hand ? HAND_TUNIC : figs.tunicFor(s.id); f.capColor = null;
+        f.style = 'settler'; f.scale = 1.25 * zk; f.tunic = s.hand ? HAND_TUNIC : s.owner === RIVAL ? RIVAL_COLOR : figs.tunicFor(s.id); f.capColor = null;
         f.ack = null; f.id = s.id; f.dt = frame.dt;
         f.anim = chat !== undefined ? 'talk' : s.anim || 'idle'; f.t = tickTime + s.id * 0.37; f.phase = s.id; f.job = s.job || null; f.hit = 0; f.rank = 0; f.attack = null; f.gestures = true;
         animate(s, x, z, f.anim, 1.25 * zk, frame.dt);
@@ -146,11 +147,11 @@ export function createUnitsView({ scene, terrain, world, bus, getZoom = () => 60
         if (def.engine) {
           eng.engine = def.engine; eng.x = x; eng.y = f.y; eng.z = z; eng.heading = f.heading; eng.scale = zk;
           eng.since = (w.tick - (u.attackT ?? -1e6) + alpha) / 20; eng.reload = def.cooldown;
-          eng.banner = u.owner === PLAYER ? '#4fb0dc' : u.owner === 'p3' ? '#8fb85a' : enemyFaction(w).color;
+          eng.banner = u.owner === PLAYER ? '#4fb0dc' : u.owner === 'p3' ? '#8fb85a' : u.owner === RIVAL ? RIVAL_COLOR : enemyFaction(w).color;
           engines.draw(eng);
           continue;
         }
-        f.style = u.type; f.scale = 1.3 * zk; f.tunic = null; f.tool = null; f.carry = null; f.lean = 0;
+        f.style = u.type; f.scale = 1.3 * zk; f.tunic = u.owner === RIVAL ? RIVAL_COLOR : null; f.tool = null; f.carry = null; f.lean = 0;
         f.t = tickTime + u.id * 0.29; f.phase = u.id;
         f.kneel = !!u.downed; f.fallen = 0; f.job = null; f.hit = u.downed ? 0 : hitAmount(u); f.rank = u.rank || 0;
         f.ranged = def.cls === 'ranged' || !!def.ranged; f.attack = null; f.gestures = false; f.ack = null; f.id = u.id; f.dt = frame.dt;

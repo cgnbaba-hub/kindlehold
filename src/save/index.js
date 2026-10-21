@@ -14,7 +14,7 @@ import { SALTROAD_SCENARIO } from '../missions/scenarios/saltroad.js';
 import { WHITESTAG_SCENARIO } from '../missions/scenarios/whitestag.js';
 import { IRONDEBT_SCENARIO } from '../missions/scenarios/irondebt.js';
 import { FREE_SCENARIOS } from '../missions/scenarios/freeplay.js';
-import { SKIRMISH_GOODS, SKIRMISH_PEACE, SKIRMISH_FACTIONS } from '../missions/skirmish.js';
+import { SKIRMISH_GOODS, SKIRMISH_PEACE, SKIRMISH_FACTIONS, SKIRMISH_OPPONENTS } from '../missions/skirmish.js';
 
 export const SAVE_FORMAT = 'kindlehold-save';
 
@@ -81,17 +81,19 @@ const entitySchema = (x, p) => {
     id: v.number({ min: 1, int: true }),
     kind: v.string({ oneOf: ENTITY_KINDS }),
     x: coord, z: coord, px: optNum({ min: -300, max: 300 }), pz: optNum({ min: -300, max: 300 }),
-    owner: v.string({ oneOf: ['p1', 'p2', 'p3', 'none'] }),
+    owner: v.string({ oneOf: ['p1', 'p2', 'p3', 'p4', 'none'] }),
   })(x, p);
   KIND_SCHEMAS[x.kind](x, p);
 };
 
 const playerFull = v.object({
-  id: v.string({ oneOf: ['p1', 'p2', 'p3'] }),
+  id: v.string({ oneOf: ['p1', 'p2', 'p3', 'p4'] }),
   res: stockSchema,
   techs: v.record(v.boolean(), { max: 16, keyPattern: /^(axes|bracing|blades|charter|mail|drill)$/ }),
   stability: v.number({ min: 0, max: 100 }),
   research: v.optional(v.object({ techId: v.string({ oneOf: Object.keys(TECHS) }), progress: nonNeg(1) })),
+  // a rival town's own tallies (world.stats are the player's)
+  stats: v.optional(v.object({ produced: stockSchema, consumed: stockSchema, settlersArrived: nonNeg(1e6), unitsRecruited: nonNeg(1e6) })),
   popCap: nonNeg(1e4), pop: nonNeg(1e4), tax: v.optional(v.number({ min: 0, max: 2, int: true })), rations: v.optional(v.number({ min: 0, max: 2, int: true })), autoGather: v.optional(v.boolean()), feastUntil: v.optional(nonNeg(1e10)), nextPayTick: v.optional(nonNeg(1e10)), nextMealTick: nonNeg(1e9), nextSettlerTick: nonNeg(1e9), lastMealFed: nonNeg(1), burnPenalty: nonNeg(1e4),
 });
 
@@ -102,6 +104,7 @@ const worldSchema = v.object({
     campaign: v.optional(v.object({ greyfen: v.optional(v.string({ oneOf: ['allied', 'defeated', 'neutral'] })) }, { allowExtra: false })),
     skirmish: v.optional(v.object({
       goods: v.string({ oneOf: Object.keys(SKIRMISH_GOODS) }), peace: v.string({ oneOf: Object.keys(SKIRMISH_PEACE) }), faction: v.string({ oneOf: SKIRMISH_FACTIONS }),
+      opponent: v.optional(v.string({ oneOf: Object.keys(SKIRMISH_OPPONENTS) })),
     }, { allowExtra: false })),
   }),
   tick: v.number({ min: 0, max: 1e9, int: true }),
@@ -118,17 +121,17 @@ const worldSchema = v.object({
   roads: v.optional(v.object({
     cells: v.array(v.number({ min: 0, max: 1e6, int: true }), { max: ROADS.maxCells }),
     last: v.optional(v.object({
-      owner: v.string({ oneOf: ['p1', 'p2', 'p3'] }), tick: nonNeg(1e9),
+      owner: v.string({ oneOf: ['p1', 'p2', 'p3', 'p4'] }), tick: nonNeg(1e9),
       cells: v.array(v.number({ min: 0, max: 1e6, int: true }), { max: ROADS.perCommand }),
       cost: v.record(nonNeg(1e6), { max: 4, keyPattern: /^(stone|taler)$/ }),
     }, { allowExtra: false })),
   }, { allowExtra: false })),
   explored: v.optional(v.array(v.number({ min: 0, max: 4294967295, int: true }), { max: 128 })),
-  players: v.object({ p1: playerFull, p2: playerFull, p3: v.optional(playerFull) }, { allowExtra: false }),
+  players: v.object({ p1: playerFull, p2: playerFull, p3: v.optional(playerFull), p4: v.optional(playerFull) }, { allowExtra: false }),
   diplomacy: v.optional(v.object({
-    rel: v.record(v.number({ min: -100, max: 100 }), { max: 8, keyPattern: /^p[1-3]\|p[1-3]$/ }),
-    truceUntil: v.record(nonNeg(1e10), { max: 8, keyPattern: /^p[1-3]\|p[1-3]$/ }),
-    giftTick: v.record(v.number({ min: -1e10, max: 1e10 }), { max: 8, keyPattern: /^p[1-3]\|p[1-3]$/ }),
+    rel: v.record(v.number({ min: -100, max: 100 }), { max: 8, keyPattern: /^p[1-4]\|p[1-4]$/ }),
+    truceUntil: v.record(nonNeg(1e10), { max: 8, keyPattern: /^p[1-4]\|p[1-4]$/ }),
+    giftTick: v.record(v.number({ min: -1e10, max: 1e10 }), { max: 8, keyPattern: /^p[1-4]\|p[1-4]$/ }),
   }, { allowExtra: false })),
   brigands: v.optional(v.object({ raidIds: ids(64), helpIds: ids(64), trespassed: ids(400), spawned: nonNeg(1e4), nextSpawnTick: nonNeg(1e10) })),
   entities: v.record(entitySchema, { max: ENTITY_CAP, keyPattern: /^\d{1,9}$/ }),
@@ -140,6 +143,13 @@ const worldSchema = v.object({
   combat: v.object({ pending: v.array(v.object({ target: v.number({ min: 1, max: 1e9, int: true }), damage: nonNeg(1e5), arrive: nonNeg(1e10) }), { max: 4000 }) }),
   selection: v.object({ ids: v.array(num, { max: 2000 }), groups: v.record(ids(200), { max: 10, keyPattern: /^[1-9]$/ }) }),
   stats: v.object({ produced: stockSchema, consumed: stockSchema }),
+  // free play against a rival town (src/rival)
+  rival: v.optional(v.object({
+    name: v.number({ min: 0, max: 64, int: true }), phase: v.string({ oneOf: ['economy', 'defend', 'assault'] }),
+    lastAct: v.number({ min: -1e4, max: 1e10 }), waves: nonNeg(1000), firstAttackTick: nonNeg(1e10),
+    noSpot: v.optional(v.record(nonNeg(1e10), { max: 32, keyPattern: /^[a-z]{2,16}$/ })),
+  }, { allowExtra: false })),
+  townEntries: v.optional(v.record(v.object({ x: coord, z: coord }, { allowExtra: false }), { max: 4, keyPattern: /^p[1-4]$/ })),
 });
 
 /** Walk every value: reject non-finite numbers, huge strings, excessive depth. */

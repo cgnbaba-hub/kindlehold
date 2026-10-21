@@ -41,6 +41,8 @@ export function evaluate(world, cond, owner = PLAYER) {
   if (cond.raidsRepelled !== undefined) return (world.ai.wave || 0) >= cond.raidsRepelled;
   if (cond.destroyed) return !all(world, 'building').some((b) => b.type === cond.destroyed && b.state !== 'destroyed');
   // the enemy faction's seat, whichever faction holds the map (random maps draw it by lot)
+  // a town is broken when its Keep has fallen (free play against a rival)
+  if (cond.townFallen) return !all(world, 'building').some((b) => b.type === 'keep' && b.owner === cond.townFallen && b.state !== 'destroyed');
   if (cond.destroyedSeat) { const hall = enemyFaction(world).hall; return !all(world, 'building').some((b) => b.type === hall && b.state !== 'destroyed'); }
   if (cond.tickAtLeast !== undefined) return world.tick >= cond.tickAtLeast;
   if (cond.minutes !== undefined) return world.tick >= cond.minutes * 1200;

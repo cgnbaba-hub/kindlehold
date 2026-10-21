@@ -11,6 +11,8 @@ export const RESOURCES = /** @type {const} */ (['timber', 'stone', 'iron', 'prov
 
 export const PLAYER = 'p1';
 export const ENEMY = 'p2';
+/** A rival town in free play: a second Warden who builds, trains and attacks like the player. */
+export const RIVAL = 'p4';
 
 /** Canonical event names (ARCHITECTURE.md §5). */
 export const EV = Object.freeze({

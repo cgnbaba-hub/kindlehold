@@ -44,7 +44,8 @@ export const TIPS = [
     id: 'raid', title: 'A raid is coming',
     text: 'Build a Barracks (Army tab) and train soldiers there — each one takes a free settler. Drag a box around soldiers to select them, right-click to move them, A to attack-move. Watchtowers shoot raiders, and raiders go for what nobody guards.',
     action: ['build:army', 'Army buildings'],
-    when: (w) => !!w.mission.flags.raidWarned || w.ai.state === 'gather' || w.ai.state === 'raid' || !!w.ai.harass,
+    // (or a free-play rival's army on the march)
+    when: (w) => !!w.mission.flags.raidWarned || w.ai.state === 'gather' || w.ai.state === 'raid' || !!w.ai.harass || !!(w.rival && w.rival.waves > 0),
   },
   {
     id: 'night', title: 'Night falls',

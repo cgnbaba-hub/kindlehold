@@ -302,7 +302,7 @@ export function createConstructionModule() {
       const keep = all(world, 'building').find((b) => b.type === 'keep' && b.owner === owner);
       if (!keep || keep.lit) return;
       keep.lit = true;
-      world.mission.flags.keepLit = true;
+      if (owner === PLAYER) world.mission.flags.keepLit = true;
       emit(world, 'keep:rekindled', { id: keep.id });
     }
   }

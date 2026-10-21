@@ -14,6 +14,7 @@ import { createRoadsModule } from '../transport/roads.js';
 import { createWorldServicesModule } from '../world/services-module.js';
 import { createMissionsModule, SCENARIOS } from '../missions/index.js';
 import { createAiModule } from '../ai/index.js';
+import { createRivalModule } from '../rival/index.js';
 import { createTechnologyModule } from '../technology/index.js';
 import { createConstructionModule } from '../construction/index.js';
 import { createPopulationModule } from '../population/index.js';
@@ -53,6 +54,7 @@ export const SIM_MODULE_FACTORIES = [
   createMissionsModule,
   createDiplomacyModule,
   createAiModule,
+  createRivalModule,
   createBrigandsModule,
   createTechnologyModule,
   createConstructionModule,
@@ -103,7 +105,11 @@ export function createSimulation({ seed = 1337, difficulty = 'normal', scenarioI
         const cmds = pending.splice(0, pending.length);
         for (const cmd of cmds) {
           commandLog.push({ tick: w.tick, cmd });
+          // whose command this is, while it runs: rejections carry no owner, and the HUD only
+          // reports the player's own (a rival town issues commands too)
+          sim.commandOwner = cmd.owner || 'p1';
           bus.emit('command', cmd);
+          sim.commandOwner = null;
         }
       }
       host.update({ tick: w.tick, dt: DT });

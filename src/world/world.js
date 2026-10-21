@@ -166,6 +166,16 @@ export function emit(world, name, payload) {
   if (bus) bus.emit(name, payload);
 }
 
+/**
+ * A town's tallies (produced, consumed, arrivals, recruits). The player's are the game's statistics
+ * (end screen, objectives, balance); every other town (a free-play rival) keeps its own.
+ */
+export function statsOf(world, owner) {
+  if (owner === 'p1' || !world.players[owner]) return world.stats;
+  const p = world.players[owner];
+  return p.stats || (p.stats = { produced: emptyStock(), consumed: emptyStock(), settlersArrived: 0, unitsRecruited: 0 });
+}
+
 export function alert(world, level, text, x, z, owner = 'p1') {
   emit(world, EV.ALERT, { level, text, x, z, owner, tick: world.tick });
 }
