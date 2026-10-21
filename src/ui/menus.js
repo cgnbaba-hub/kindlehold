@@ -8,6 +8,7 @@ import { SCENARIOS, CAMPAIGN, FREE_PLAY } from '../missions/index.js';
 import { loadProgress, isUnlocked } from '../app/campaign.js';
 import { HAND, FEAST } from '../population/index.js';
 import { ROADS, DONKEYS } from '../transport/defs.js';
+import { PRIORITY } from '../construction/index.js';
 
 function focusFirst(el) { const f = el.querySelector('button:not([disabled]), [tabindex="0"], input, select'); if (f) f.focus(); }
 
@@ -250,6 +251,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       ['hearthhand', 'Hearthhands', `Hire them at the Keep (${HAND.cost.taler} Taler, ${HAND.wage} Taler wage each payday). They sleep in the Keep, need no house, build, carry and fell trees or cut stone by hand — but never take a workplace or join the army. The Keep holds ${HAND.cap.join(', then ')} of them as it grows.`],
       ['stability', 'Motivation', `Motivated townsfolk work faster; below 30 nobody new comes, below 15 settlers leave. Meals, bread, low taxes, feasts and Wells lift it; townsfolk without work and long walks to work lower it. A feast needs ${FEAST.cooldown / 1200} minutes of rest before the next. Hover the bar to see why it is where it is.`],
       ['mill', 'Production chains', 'A Windmill grinds grain into flour, a Bakery bakes it into bread (one loaf feeds two and cheers people up), a Smithy forges iron into tools for the third workshop level.'],
+      ['priority', 'Priority', `Select a workshop or building site and press Priority: workers fill it first and carriers serve it first. It adds no hands — everything else waits — so take it away once the job is done. ${PRIORITY.max.story}/${PRIORITY.max.normal}/${PRIORITY.max.hard} buildings at a time on Story/Normal/Hard.`],
       ['alertWarn', 'Read the warnings', 'Selected buildings tell you exactly why they stall: no worker, storage full, no input, nothing in range.'],
       ['research', 'Research at the Keep', 'Keen Axes, Braced Timber, Tempered Blades and the March Charter (which unlocks Watchtowers).'],
       ['shield', 'Soldiers', 'Shieldbearers beat blades, Bladesmen beat archers, Fletchers beat shields. Right-click to move or attack; A = attack-move.'],

@@ -16,7 +16,8 @@ for (const [scenarioId, difficulty, seed] of runs) {
   // KH_TRANSPORT=1 (or roads / donkeys): the bot lays roads and keeps a Donkey Stable, to measure
   // how much they ease the game
   const tr = process.env.KH_TRANSPORT;
-  const bot = createBot(sim, { transport: tr === '1' ? true : tr === 'roads' || tr === 'donkeys' ? tr : false });
+  // KH_PRIORITY=1: the bot gives priority to the Barracks site
+  const bot = createBot(sim, { transport: tr === '1' ? true : tr === 'roads' || tr === 'donkeys' ? tr : false, priority: process.env.KH_PRIORITY === '1' });
   const result = bot.play(40 * 1200);
   const s = bot.summary();
   const p = sim.world.players.p1;

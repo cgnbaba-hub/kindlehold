@@ -234,6 +234,11 @@ See also **Hearthhands and motivation** below.
     materials to sites.
   * **Normal:** one donkey, 2 provisions per meal, 3 Taler each payday.
   * **Hard:** one donkey, 3 provisions per meal, 4 Taler each payday.
+* **Priority** (select a workshop or a building site) — workers fill it first, and carriers
+  pick up, deliver and bring building materials there first. It adds no hands: everything
+  else waits, so a priority left on a busy mine can starve the rest of the town. Take it away
+  once the job is done. At most 4 buildings at a time on Story, 3 on Normal, 2 on Hard; a gold
+  pennant marks them.
 * **Idle hands** (at the Keep): with *Gather* on, Hearthhands with nothing to do fell a tree or
   cut stone by hand near a store while timber or stone run short. They go one trip at a time and
   then look for work again; *Wait* keeps them at the Keep. They stop once the store holds enough:

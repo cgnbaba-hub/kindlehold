@@ -39,7 +39,7 @@ const isActive = (world, id) => (world.mission.objectives.find((o) => o.id === i
  * 'roads' or 'donkeys' only one of them (off by default, so balance runs can measure how much
  * they ease the game).
  */
-export function createBot(sim, { aggressive = true, transport = false } = {}) {
+export function createBot(sim, { aggressive = true, transport = false, priority = false } = {}) {
   const w = () => sim.world;
   const services = sim.services;
   const log = [];
@@ -124,6 +124,12 @@ export function createBot(sim, { aggressive = true, transport = false } = {}) {
     const p = world.players[PLAYER];
     if (!world.mission.flags.keepLit) { sim.issue({ type: 'rekindle' }); return; }
     if ((transport === true || transport === 'roads') && world.tick % 200 === 100) roadStep(world, p);
+    // priority: the Barracks site while it is being built
+    if (priority && world.tick % 200 === 60) {
+      const want = all(world, 'building').filter((b) => b.owner === PLAYER && b.type === 'barracks' && b.state === 'site');
+      for (const b of all(world, 'building')) if (b.owner === PLAYER && b.priority && !want.includes(b)) sim.issue({ type: 'setPriority', id: b.id, on: false });
+      for (const b of want) if (!b.priority) sim.issue({ type: 'setPriority', id: b.id, on: true });
+    }
     if ((transport === true || transport === 'donkeys') && count('donkeystable') < 1 && count('mine') >= 1 && count('cottage') >= 3 && p.res.taler >= 120 && place('donkeystable', [-38, 58])) return;
     // Hearthhands: a few more as the town grows, while the treasury can spare them
     if (world.tick % 400 === 7) {

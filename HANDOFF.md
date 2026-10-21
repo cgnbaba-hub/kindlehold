@@ -154,6 +154,17 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Arbeitsprioritäten („Vorrang“, 2026-10-21)
+
+- Befehl `setPriority {id, on}` (construction), `building.priority` (gespeichert): Arbeiter
+  besetzen das Gebäude zuerst (`assignJobs`), Träger rechnen es 50 m näher (`chooseTask`).
+  Für Werkstätten und Baustellen, höchstens 4/3/2 gleichzeitig (Story/Normal/Hard). Knopf
+  „Priority“ im Gebäudefeld, goldener Wimpel darüber (`selection/view.js`).
+- Messung (`KH_PRIORITY=1`): sinnvoll genutzt neutral (Normal 28,0 statt 27,7 min, Hard 11/20
+  statt 13/20); dauerhaft auf den Minen bricht die Wirtschaft ein (Normal 9/16 Siege). Kein
+  Gratis-Vorteil, daher kein weiteres Gegengewicht.
+- Tests: `tests/simulation/priority.test.js`.
+
 ## Transport: Steinstraßen und Eselstall (2026-10-21)
 
 Wunsch des Nutzers: Vorschläge 1 (Straßen) und 2 (Packesel), mit Preis. Einzelheiten und
@@ -610,8 +621,8 @@ Plünderzüge der Rustfang, schönere Menüs, abwechslungsreiche Kampfgeräusche
 
 - Vollständigen e2e-Lauf wiederholen, danach `docs/STATUS.json` und `docs/KNOWN_ISSUES.md`
   aktualisieren.
-- Reihenfolge laut Nutzer (2026-10-21): Transport ist erledigt; als Nächstes Arbeitsprioritäten
-  („Vorrang“ je Werkstatt), dann Kampf-Rückmeldung (Meldung „Soldat gefallen“ mit Sprung,
+- Reihenfolge laut Nutzer (2026-10-21): Transport und Arbeitsprioritäten sind erledigt; als
+  Nächstes Kampf-Rückmeldung (Meldung „Soldat gefallen“ mit Sprung,
   Belagerungsgerät im Auswahlfeld) und Endstatistik, dann abwechslungsreichere Überfälle als
   Gegengewicht (Plünderer gegen Lager/Brunnen, Angriffe aus zwei Richtungen, Nachtangriffe auf Hard).
 - Fotobasierte CC0-Texturen vergleichen, sobald ambientcg.com / polyhaven.com erreichbar sind.
