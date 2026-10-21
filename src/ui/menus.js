@@ -6,6 +6,7 @@ import { DEFAULT_BINDINGS, BINDING_LABELS, keyLabel } from '../input/bindings.js
 import { HARROWMERE_SCENARIO } from '../missions/scenarios/harrowmere.js';
 import { SCENARIOS, CAMPAIGN, FREE_PLAY } from '../missions/index.js';
 import { loadProgress, isUnlocked } from '../app/campaign.js';
+import { HAND, FEAST } from '../population/index.js';
 
 function focusFirst(el) { const f = el.querySelector('button:not([disabled]), [tabindex="0"], input, select'); if (f) f.focus(); }
 
@@ -244,14 +245,14 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       ['pop', 'People are everything', 'Cottages house five. New settlers need free housing and provisions. Every workplace and soldier uses one person.'],
       ['provisions', 'Feed them', 'Everyone eats every 90 s. Hunger lowers motivation, and low motivation slows all work.'],
       ['storehouse', 'Storehouses', 'Labourers carry goods to and from the nearest store — build Storehouses for outlying quarters. Any building can be moved (Move): materials come along, only building time is spent.'],
-      ['hearthhand', 'Hearthhands', 'Hire them at the Keep (50 Taler, 1 Taler wage each payday). They sleep in the Keep, need no house, build, carry and fell trees or cut stone by hand — but never take a workplace or join the army. The Keep level sets how many it holds.'],
-      ['stability', 'Motivation', 'Motivated townsfolk work faster; below 30 nobody new comes, below 15 settlers leave. Meals, bread, low taxes, feasts and Wells lift it; townsfolk without work and long walks to work lower it. Hover the bar to see why it is where it is.'],
+      ['hearthhand', 'Hearthhands', `Hire them at the Keep (${HAND.cost.taler} Taler, ${HAND.wage} Taler wage each payday). They sleep in the Keep, need no house, build, carry and fell trees or cut stone by hand — but never take a workplace or join the army. The Keep holds ${HAND.cap.join(', then ')} of them as it grows.`],
+      ['stability', 'Motivation', `Motivated townsfolk work faster; below 30 nobody new comes, below 15 settlers leave. Meals, bread, low taxes, feasts and Wells lift it; townsfolk without work and long walks to work lower it. A feast needs ${FEAST.cooldown / 1200} minutes of rest before the next. Hover the bar to see why it is where it is.`],
       ['mill', 'Production chains', 'A Windmill grinds grain into flour, a Bakery bakes it into bread (one loaf feeds two and cheers people up), a Smithy forges iron into tools for the third workshop level.'],
       ['alertWarn', 'Read the warnings', 'Selected buildings tell you exactly why they stall: no worker, storage full, no input, nothing in range.'],
       ['research', 'Research at the Keep', 'Keen Axes, Braced Timber, Tempered Blades and the March Charter (which unlocks Watchtowers).'],
       ['shield', 'Soldiers', 'Shieldbearers beat blades, Bladesmen beat archers, Fletchers beat shields. Right-click to move or attack; A = attack-move.'],
       ['fmWedge', 'Formations', 'With two or more soldiers selected, pick Block, Line, Wedge or Ring: every march keeps that shape.'],
-      ['mangonel', 'Siege engines', 'The Siege Yard (Barracks level 3, needs the Castle) builds the Ballista and the Mangonel: deadly at range, helpless up close.'],
+      ['mangonel', 'Siege engines', 'The Siege Yard (Barracks level 3, needs the Castle) builds the Ballista and the Mangonel: deadly at range, helpless up close. Later raids bring engines of their own (from the second raid on Hard, the fourth on Normal): they shell your towers from beyond their reach, so meet them with blades.'],
       ['maren', 'Maren Ashgrove', 'F: Beacon Flare (damages and dazzles enemies). G: Kindle the Line (wards nearby allies). Allies near her heal.'],
       ['wren', 'Wren Fenmore (from chapter 6)', 'F: Arrow Storm (arrows rain on a circle). G: Hunter\'s Mark (marked enemies take 30% more damage; reveals the land). She sees further than anyone.'],
       ['warhall', 'Win', 'Survive the Rustfang raid, then destroy the Warhall at the ford fort. Lose the Keep and the scenario is lost.'],
