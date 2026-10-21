@@ -1,5 +1,6 @@
 // Player settings: defaults, validation, persistence (localStorage, failure-tolerant).
 import { safeParse, assertNoDangerousKeys } from '../core/validate.js';
+import { sanitizeSkirmish } from '../missions/skirmish.js';
 import { DEFAULT_BINDINGS } from '../input/bindings.js';
 import { log } from '../core/logger.js';
 
@@ -22,6 +23,7 @@ export const DEFAULT_SETTINGS = {
   tutorialDone: false,
   firstTips: true,          // explain things the first time they matter (src/ui/tips.js)
   seenTips: [],             // ids of the tips already shown
+  skirmish: null,           // the last free-play setup (src/missions/skirmish.js)
   gameSpeed: 1,
   difficulty: 'normal',
   bindings: {},
@@ -39,7 +41,9 @@ export function sanitizeSettings(raw) {
     const v = raw[k];
     const d = DEFAULT_SETTINGS[k];
     if (v === undefined) continue;
-    if (k === 'seenTips') {
+    if (k === 'skirmish') {
+      if (v && typeof v === 'object') out.skirmish = sanitizeSkirmish(v);
+    } else if (k === 'seenTips') {
       if (Array.isArray(v)) out.seenTips = v.filter((x) => typeof x === 'string' && /^[a-z-]{1,24}$/.test(x)).slice(0, 64);
     } else if (k === 'bindings') {
       if (v && typeof v === 'object') for (const a of Object.keys(DEFAULT_BINDINGS)) if (typeof v[a] === 'string' && /^[A-Za-z0-9]{1,20}$/.test(v[a])) out.bindings[a] = v[a];

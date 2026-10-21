@@ -9,6 +9,8 @@ import { loadProgress, isUnlocked } from '../app/campaign.js';
 import { HAND, FEAST } from '../population/index.js';
 import { ROADS, DONKEYS } from '../transport/defs.js';
 import { PRIORITY } from '../construction/index.js';
+import { SKIRMISH_GOODS, SKIRMISH_PEACE, SKIRMISH_FACTIONS, sanitizeSkirmish, cleanSeed } from '../missions/skirmish.js';
+import { FACTIONS } from '../ai/factions.js';
 
 function focusFirst(el) { const f = el.querySelector('button:not([disabled]), [tabindex="0"], input, select'); if (f) f.focus(); }
 
@@ -96,12 +98,57 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
         h('span.chapter-text', {}, [h('strong', { text: name }), h('span', { text: sc.blurb })]),
         h('span.chapter-state', { text: 'Play' }),
       ]);
-      b.addEventListener('click', () => difficultyPicker({ scenario: sc, onPick: (d) => onPick(d, id), onBack: back }));
+      b.addEventListener('click', () => freePlaySetup({ scenario: sc, onPick: (d, extra) => onPick(d, id, extra), onBack: back }));
       list.append(b);
     });
     return show(screen('sub-menu', [backdrop(), h('div.menu-card.wide', {}, [
       h('h2', { text: 'Free Play' }), h('p.lore', { text: 'Pick a land, build your settlement at your own pace and break the lord who holds it. Every building and technology is open to research.' }),
       list, menuButton('Back', onBack),
+    ])], { onEsc: onBack }));
+  }
+
+  /**
+   * Free play setup: difficulty, starting goods and peace time; on the random map also the seed and
+   * the lord. Easier and harder choices say so (CLAUDE.md, "Schwierigkeit").
+   */
+  function freePlaySetup({ scenario, onPick, onBack }) {
+    const wild = scenario.map === 'wild';
+    const sk = sanitizeSkirmish(settings.skirmish);
+    let diff = settings.difficulty;
+    const group = (label, options, cur, set) => {
+      const row = h('div.setup-options', { role: 'radiogroup', 'aria-label': label });
+      for (const [v, name, note] of options) {
+        const b = h(`button.setup-opt${v === cur ? '.active' : ''}`, { type: 'button', role: 'radio', 'aria-checked': v === cur ? 'true' : 'false', 'aria-label': `${label}: ${name}` }, [h('span', { text: name }), note ? h('small', { text: note }) : null]);
+        b.addEventListener('click', () => {
+          for (const o of row.children) { o.classList.toggle('active', o === b); o.setAttribute('aria-checked', o === b ? 'true' : 'false'); }
+          set(v);
+        });
+        row.append(b);
+      }
+      return h('div.setup-row', {}, [h('h3', { text: label }), row]);
+    };
+    const rows = [];
+    let seedInput = null;
+    if (wild) {
+      seedInput = h('input.setup-seed', { type: 'text', maxlength: '16', placeholder: 'drawn by chance', 'aria-label': 'Valley seed', autocomplete: 'off', spellcheck: 'false' });
+      const dice = h('button.btn', { type: 'button', text: 'New valley' });
+      // (a menu choice only: the simulation never draws its own randomness)
+      dice.addEventListener('click', () => { seedInput.value = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000); });
+      rows.push(h('div.setup-row', {}, [h('h3', { text: 'Valley' }), h('div.setup-seed-row', {}, [seedInput, dice]), h('p.small.muted', { text: 'The same seed always grows the same valley (and, by lot, the same lord): share it to play the same map.' })]));
+      rows.push(group('Lord of the valley', SKIRMISH_FACTIONS.map((f) => [f, f === 'random' ? 'By lot' : FACTIONS[f].short, f === 'random' ? '' : FACTIONS[f].name]), sk.faction, (v) => { sk.faction = v; }));
+    }
+    rows.push(group('Starting goods', Object.entries(SKIRMISH_GOODS).map(([k, g]) => [k, g.name, g.note]), sk.goods, (v) => { sk.goods = v; }));
+    rows.push(group('Peace before the first raid', Object.entries(SKIRMISH_PEACE).map(([k, g]) => [k, g.name, g.note]), sk.peace, (v) => { sk.peace = v; }));
+    rows.push(group('Difficulty', [['story', 'Story', 'smaller raids'], ['normal', 'Normal', 'the intended challenge'], ['hard', 'Hard', 'larger, faster raids']], diff, (v) => { diff = v; }));
+    const start = menuButton('Start', () => {
+      settings.difficulty = diff;
+      settings.skirmish = { ...sk };
+      onSettingsChange(settings);
+      onPick(diff, { skirmish: { ...sk }, seed: wild && seedInput ? cleanSeed(seedInput.value) : null });
+    }, { primary: true });
+    return show(screen('sub-menu', [backdrop(), h('div.menu-card.wide', {}, [
+      h('h2', { text: scenario.title }), h('p.lore', { text: scenario.blurb }),
+      h('div.setup-grid', {}, rows), h('div.setup-actions', {}, [menuButton('Back', onBack), start]),
     ])], { onEsc: onBack }));
   }
 
@@ -150,15 +197,18 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
     return show(screen('sub-menu.dim', [h('div.menu-card.wide', {}, [h('h2', { text: 'Save game' }), list, menuButton('Back', onBack)])], { onEsc: onBack }));
   }
 
-  function pauseMenu({ onResume, onSave, onLoad, onQuit, onRestart }) {
+  function pauseMenu(opts) {
+    const { onResume, onSave, onLoad, onQuit, onRestart, note = null } = opts;
+    const again = () => pauseMenu(opts);
     return show(screen('pause.dim', [h('div.menu-card', {}, [
       h('h2', { text: 'Paused' }),
+      note ? h('p.small.muted', { text: note }) : null,
       h('nav.menu-list', {}, [
         menuButton('Resume', onResume, { primary: true }),
-        menuButton('Save Game', () => saveDialog({ onSave, onBack: () => pauseMenu({ onResume, onSave, onLoad, onQuit, onRestart }) })),
-        menuButton('Load Game', () => loadDialog({ onLoad, onBack: () => pauseMenu({ onResume, onSave, onLoad, onQuit, onRestart }) })),
-        menuButton('Settings', () => settingsScreen({ onBack: () => pauseMenu({ onResume, onSave, onLoad, onQuit, onRestart }), inGame: true })),
-        menuButton('How to Play', () => howTo({ onBack: () => pauseMenu({ onResume, onSave, onLoad, onQuit, onRestart }) })),
+        menuButton('Save Game', () => saveDialog({ onSave, onBack: again })),
+        menuButton('Load Game', () => loadDialog({ onLoad, onBack: again })),
+        menuButton('Settings', () => settingsScreen({ onBack: again, inGame: true })),
+        menuButton('How to Play', () => howTo({ onBack: again })),
         menuButton('Restart Scenario', onRestart),
         menuButton('Quit to Main Menu', onQuit),
       ]),

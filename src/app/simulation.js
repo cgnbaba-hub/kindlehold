@@ -1,5 +1,6 @@
 // Headless simulation composition (runs in Node and in the browser; no three/DOM).
 import { createEventBus } from '../core/events.js';
+import { sanitizeSkirmish } from '../missions/skirmish.js';
 import { createModuleHost } from '../core/module-host.js';
 import { DT } from '../core/contracts.js';
 import { log } from '../core/logger.js';
@@ -67,7 +68,7 @@ export const SIM_MODULE_FACTORIES = [
   createPoisModule,
 ];
 
-export function createSimulation({ seed = 1337, difficulty = 'normal', scenarioId = 'harrowmere', campaign = null, world = null, modules = SIM_MODULE_FACTORIES, onCritical = null, setup = true } = {}) {
+export function createSimulation({ seed = 1337, difficulty = 'normal', scenarioId = 'harrowmere', campaign = null, skirmish = null, world = null, modules = SIM_MODULE_FACTORIES, onCritical = null, setup = true } = {}) {
   const bus = createEventBus();
   const host = createModuleHost({ bus, onCritical, now: () => (sim.world ? sim.world.tick * 50 : 0) });
   // the scenario (or the loaded save's scenario) decides which map is played
@@ -79,7 +80,9 @@ export function createSimulation({ seed = 1337, difficulty = 'normal', scenarioI
 
   const sim = {
     bus, host, terrain,
-    world: world || createWorld({ seed, difficulty, scenarioId: Object.hasOwn(SCENARIOS, scenarioId) ? scenarioId : 'harrowmere', title: (SCENARIOS[scenarioId] || SCENARIOS.harrowmere).title, campaign }),
+    world: world || createWorld({ seed, difficulty, scenarioId: Object.hasOwn(SCENARIOS, scenarioId) ? scenarioId : 'harrowmere', title: (SCENARIOS[scenarioId] || SCENARIOS.harrowmere).title, campaign,
+      // free-play choices from the setup screen (only for free scenarios)
+      skirmish: skirmish && (SCENARIOS[scenarioId] || {}).free ? sanitizeSkirmish(skirmish) : null }),
     services: { terrain },
     commandLog,
     issue(cmd) {

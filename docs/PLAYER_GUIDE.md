@@ -21,6 +21,10 @@ fort and will not share the valley.
   **Ctrl+Z**) takes it back with everything refunded — for a few seconds, and for a building only
   until work on it begins. Later, *Cancel construction* refunds less once work has started, and a
   lifted road returns nothing.
+* **Free Play setup:** before a free game you choose the difficulty, the starting goods (Lean is
+  harder, Rich easier) and the peace before the first raid (Short is harder, Long easier). On the
+  random map you also choose the valley by its seed (the same seed grows the same valley; the
+  pause menu shows the seed of the running game) and the lord who holds it.
 * **Alerts on the minimap:** a warning or danger alert also rings on the minimap where it
   happened (a scout at the border, a raid on its way, a building on fire); click the alert to look.
 * **All keys and mouse controls:** press **F1** (or the **?** button in the top bar). Keys can
