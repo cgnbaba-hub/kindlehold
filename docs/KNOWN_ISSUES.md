@@ -26,7 +26,8 @@ report or script that shows them.
   The AI reads the world directly; this is documented in `src/ai/index.js`, and the AI gains
   no resource or vision advantage beyond what the player can also see.
 - Labourers can be ordered to gather timber or stone by hand; building, hauling and
-  workplace jobs stay automatic. Work priorities cannot be set.
+  workplace jobs stay automatic. Priority (a few buildings at a time) reorders who is served
+  first; there is no per-good or per-carrier priority.
 - Transport: carriers are a large share of the town (about 45% in a measured game) and
   workshops wait for pickups a third to half of the time. Stone roads and the Donkey Stable
   help, priced so that the bot gains nothing measurable on Normal and Hard (GAME_DESIGN,

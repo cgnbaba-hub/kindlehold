@@ -14,7 +14,7 @@ import { BUILDINGS, PLAYER_BUILD_ORDER, UPGRADES, nextUpgrade, levelOf, displayN
 import { UNITS, RECRUITABLE, COUNTERS } from '../units/defs.js';
 import { TECHS, TECH_ORDER } from '../technology/defs.js';
 import { researchBlocker } from '../technology/index.js';
-import { buildCost, upgradeBlocker, canMove } from '../construction/index.js';
+import { buildCost, upgradeBlocker, canMove, canPrioritise, priorityCap } from '../construction/index.js';
 import { canAfford } from '../economy/stock.js';
 import { autoGatherRules } from '../economy/index.js';
 import { ABILITIES, heroAbilities } from '../heroes/index.js';
@@ -532,6 +532,7 @@ export function createHud({ root, session, input, settings, actions }) {
       const def = BUILDINGS[e.type];
       const lvl = levelOf(e);
       selPanel.append(head(e.type, `${displayName(e)}${UPGRADES[e.type] ? ` · Level ${lvl}` : ''}`, e.owner === PLAYER ? (e.state === 'site' ? 'Under construction' : e.state === 'destroyed' ? 'Ruins' : def.desc) : def.desc));
+      if (e.priority && e.owner === PLAYER) selPanel.append(h('div.sel-row.small', { text: 'Priority: served first by workers and carriers' }));
       if (e.upgrade) selPanel.append(h('div.sel-row', {}, [h('span', { text: `Upgrading ${Math.round(e.upgrade.progress * 100)}%` }), hpBar(e.upgrade.progress, 'upgrade progress')]));
       if (e.state === 'site') {
         const need = [];
@@ -666,7 +667,7 @@ export function createHud({ root, session, input, settings, actions }) {
   // --- command grid ------------------------------------------------------------------------------
   let cmdMode = 'auto'; // 'auto' | 'build'
   let confirmDemolish = 0;
-  const SHORT = { 'Hold a feast': 'Feast', "Hunter's Hut": 'Hunter', 'Keen Axes': 'Axes', 'Braced Timber': 'Bracing', 'Tempered Blades': 'Blades', 'March Charter': 'Charter', 'Hire labourer': 'Hire', 'Back to work': 'Release', 'Upgrading…': 'Upgrading', 'Steel Mail': 'Mail', 'Veteran Drill': 'Drill', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
+  const SHORT = { 'Hold a feast': 'Feast', "Hunter's Hut": 'Hunter', 'Keen Axes': 'Axes', 'Braced Timber': 'Bracing', 'Tempered Blades': 'Blades', 'March Charter': 'Charter', 'Hire labourer': 'Hire', 'Back to work': 'Release', 'Upgrading…': 'Upgrading', 'Steel Mail': 'Mail', 'Veteran Drill': 'Drill', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Priority on': 'Priority', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
   function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
   const FORMATION_BUTTONS = [
     ['block', 'fmBlock', 'Block', 'A few deep rows: shields in front, archers behind. Every later march keeps this shape.'],
@@ -774,7 +775,18 @@ export function createHud({ root, session, input, settings, actions }) {
     if (one && one.kind === 'building' && one.owner === PLAYER) {
       const def = BUILDINGS[one.type];
       setText(cmdTitle, def.name);
+      // priority: served first by workers and carriers (a few buildings at a time)
+      const prioButton = () => {
+        if (!canPrioritise(one)) return;
+        const n = all(w, 'building').filter((x) => x.owner === PLAYER && x.priority && x.state !== 'destroyed').length;
+        const cap = priorityCap(w);
+        const full = !one.priority && n >= cap;
+        cmdGrid.append(cmdButton({ ic: 'priority', label: one.priority ? 'Priority on' : 'Priority', tipTitle: `Priority (${n}/${cap} in use)`,
+          tip: one.priority ? 'Served first by workers and carriers. Click to take the priority away.' : full ? `At most ${cap} buildings can have priority at once. Take it away from another first.` : one.state === 'site' ? 'Carriers bring this site its materials first and builders come here first. Adds no hands: other work waits.' : 'Workers fill this workshop first, and carriers pick up and deliver here first. Adds no hands: other work waits.',
+          active: !!one.priority, disabled: full, onClick: () => { input.issue({ type: 'setPriority', id: one.id, on: !one.priority }); setTimeout(() => { dirtySel = true; }, 120); } }));
+      };
       if (one.state === 'site') {
+        prioButton();
         cmdGrid.append(cmdButton({ ic: 'cancel', label: 'Cancel construction', tip: 'Refunds undelivered materials in full, delivered ones by half once work has begun.', onClick: () => { input.issue({ type: 'cancel', id: one.id }); input.setSelection([]); } }));
         return;
       }
@@ -836,6 +848,7 @@ export function createHud({ root, session, input, settings, actions }) {
         cmdGrid.append(cmdButton({ ic: 'patrol', label: 'Set rally point', tip: 'Right-click the ground while the Barracks is selected.', onClick: () => toast('Right-click the ground to set the rally point', 'info') }));
       }
       if (def.slots) {
+        prioButton();
         cmdGrid.append(cmdButton({ ic: one.paused ? 'play' : 'pause', label: one.paused ? 'Resume work' : 'Pause work', tip: one.paused ? 'Let workers return to this building.' : 'Frees its workers for other work: hauling, building, other workplaces or soldier training. Useful when goods pile up or people are short.', active: !!one.paused, onClick: () => input.issue({ type: 'toggleWork', id: one.id }) }));
       }
       if (canMove(one)) {

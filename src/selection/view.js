@@ -82,6 +82,19 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   const stallMarks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.1, 1.1), markMat, 64);
   stallMarks.count = 0; stallMarks.frustumCulled = false; stallMarks.renderOrder = 11;
   scene.add(stallMarks);
+  // priority marks: a gold pennant over workshops and sites the player gave priority
+  const prioCanvas = document.createElement('canvas');
+  prioCanvas.width = prioCanvas.height = 64;
+  const pctx = prioCanvas.getContext('2d');
+  pctx.strokeStyle = '#3a2a10'; pctx.lineWidth = 5; pctx.beginPath(); pctx.moveTo(18, 60); pctx.lineTo(18, 6); pctx.stroke();
+  pctx.fillStyle = '#e8b84a'; pctx.beginPath(); pctx.moveTo(20, 8); pctx.lineTo(58, 8); pctx.lineTo(48, 21); pctx.lineTo(58, 34); pctx.lineTo(20, 34); pctx.closePath(); pctx.fill();
+  pctx.lineWidth = 3; pctx.stroke();
+  const prioTex = new THREE.CanvasTexture(prioCanvas);
+  prioTex.colorSpace = THREE.SRGBColorSpace;
+  const prioMat = new THREE.MeshBasicMaterial({ map: prioTex, transparent: true, depthTest: false, fog: false });
+  const prioMarks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.3, 1.3), prioMat, 16);
+  prioMarks.count = 0; prioMarks.frustumCulled = false; prioMarks.renderOrder = 11;
+  scene.add(prioMarks);
   const STALL_SHOWN = new Set(['noWorker', 'storageFull', 'noDeposit', 'noInput', 'noAccess', 'noSettler']);
 
   // command markers
@@ -237,6 +250,14 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
         stallMarks.setMatrixAt(stallMarks.count++, m4);
       }
       flushInstances(stallMarks);
+      prioMarks.count = 0;
+      for (const b of all(w, 'building')) {
+        if (b.owner !== PLAYER || !b.priority || b.state === 'destroyed' || prioMarks.count >= 16) continue;
+        const shifted = b.state === 'active' && STALL_SHOWN.has(b.stall) && !(nightNow && b.stall !== 'noAccess') ? 1.4 : 0; // beside a stall mark
+        m4.compose(p.set(b.x + shifted, terrain.height(b.x, b.z) + BUILDINGS[b.type].radius * 1.1 + 4.5, b.z), camera.quaternion, s.set(1, 1, 1));
+        prioMarks.setMatrixAt(prioMarks.count++, m4);
+      }
+      flushInstances(prioMarks);
 
       // resource highlights
       pulseT += frame.dt || 0;
@@ -333,10 +354,11 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
       borderMat.color.setScalar(1 - snow * 0.62); // darker dashes that read on white ground
     },
     /** Photo mode (key art, trailers): hide all overlays drawn by this module. */
-    setVisible(v) { roadTiles.visible = v; for (const o of [rings, bars, barsBg, border, stallMarks, discs, ghost, foot, range, aoe, castRange]) o.visible = v && o !== ghost && o !== foot && o !== range && o !== aoe && o !== castRange ? true : v ? o.visible : false; },
+    setVisible(v) { roadTiles.visible = v; prioMarks.visible = v; for (const o of [rings, bars, barsBg, border, stallMarks, discs, ghost, foot, range, aoe, castRange]) o.visible = v && o !== ghost && o !== foot && o !== range && o !== aoe && o !== castRange ? true : v ? o.visible : false; },
     getHealthStatus() { return { status: 'ok' }; },
     dispose() {
-      scene.remove(rings, bars, barsBg, ghost, foot, range, aoe, castRange, border, stallMarks, discs, roadTiles);
+      scene.remove(rings, bars, barsBg, ghost, foot, range, aoe, castRange, border, stallMarks, discs, roadTiles, prioMarks);
+      prioTex.dispose(); prioMat.dispose(); prioMarks.geometry.dispose();
       roadTiles.geometry.dispose(); roadTileMat.dispose();
       discGeo.dispose(); discMat.dispose();
       markTex.dispose(); markMat.dispose(); stallMarks.geometry.dispose();

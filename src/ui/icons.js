@@ -72,6 +72,7 @@ export const ICONS = {
   build: S('<path d="M4 20h16M6 20V10l6-5 6 5v10" stroke-width="1.8"/><path d="M14 6l4-3 2 2-3 4" stroke="#e3b04b"/>'),
   sword: S('<path d="M14 3l6 1-1 6-9 9-3-3z" stroke-width="1.6"/><path d="M5 15l4 4" stroke-width="2"/>'),
   menu: S('<path d="M4 7h16M4 12h16M4 17h16" stroke-width="2"/>'),
+  priority: S('<path d="M6 21V4" stroke-width="2"/><path d="M6 4h11l-2.5 4L17 12H6z" fill="#e0a83a" stroke="#5a3a10" stroke-width="1.4"/><path d="M10.5 6.5l1 2h2l-1.6 1.2.6 2-2-1.3-2 1.3.6-2L8 8.5h2z" fill="#fff6d6" stroke="none"/>'),
   pause: S('<path d="M8 5v14M16 5v14" stroke-width="2.4"/>'),
   play: S('<path d="M7 5l12 7-12 7z" fill="currentColor"/>'),
   speed: S('<path d="M4 6l8 6-8 6zM12 6l8 6-8 6z" fill="currentColor"/>'),

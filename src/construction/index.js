@@ -11,6 +11,22 @@ import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
 export const MAX_BUILDERS = 3;
 export const CANCEL_REFUND_STARTED = 0.5;
 export const DEMOLISH_REFUND = 0.3;
+// Priority ("Vorrang"): a workshop or building site the player marks is served first by workers
+// and carriers. It adds no hands, it only reorders who is served, and only a few buildings can
+// have it at once (fewer on harder difficulties).
+export const PRIORITY = { max: { story: 4, normal: 3, hard: 2 }, carry: 50 };
+/** How many buildings may have priority at once in this game. */
+export function priorityCap(world) {
+  const d = world.meta && world.meta.difficulty;
+  return Object.hasOwn(PRIORITY.max, d) ? PRIORITY.max[d] : PRIORITY.max.normal;
+}
+/** Can this building be given priority (a workshop with workers or goods, or a building site)? */
+export function canPrioritise(b) {
+  if (!b || b.kind !== 'building' || b.type === 'keep') return false;
+  if (b.state === 'site') return true;
+  const def = BUILDINGS[b.type];
+  return b.state === 'active' && !!(def.slots || def.inputs || def.outCap);
+}
 
 /** Effective cost (tech discounts applied). */
 export function buildCost(world, owner, type) {
@@ -244,6 +260,7 @@ export function createConstructionModule() {
       site.build.supplied = { ...site.build.required };
       if (levelOf(b) > 1) site.movedLevel = levelOf(b);
       if (b.paused) site.paused = true;
+      if (b.priority) site.priority = true;
       // goods waiting in the old building go to the store
       for (const r in b.stock.out) if (b.stock.out[r] > 0) addRes(world, owner, r, b.stock.out[r], 'move');
       for (const r in b.stock.in) if (b.stock.in[r] > 0) addRes(world, owner, r, b.stock.in[r], 'move');
@@ -258,6 +275,15 @@ export function createConstructionModule() {
       b.paused = !b.paused;
       if (b.paused) { releaseWorkers(world, b); b.stall = 'paused'; } else if (b.stall === 'paused') b.stall = null;
       emit(world, 'building:paused', { id: b.id, paused: b.paused });
+    } else if (cmd.type === 'setPriority') {
+      const b = world.entities[cmd.id];
+      if (!canPrioritise(b) || b.owner !== owner) return reject('This building cannot have priority', cmd);
+      if (!cmd.on) { delete b.priority; emit(world, 'building:priority', { id: b.id, on: false }); return; }
+      if (b.priority) return;
+      const n = all(world, 'building').filter((x) => x.owner === owner && x.priority && x.state !== 'destroyed').length;
+      if (n >= priorityCap(world)) return reject(`At most ${priorityCap(world)} buildings can have priority`, cmd);
+      b.priority = true;
+      emit(world, 'building:priority', { id: b.id, on: true });
     } else if (cmd.type === 'upgrade') {
       const b = world.entities[cmd.id];
       if (!b || b.kind !== 'building' || b.owner !== owner || b.state !== 'active') return reject('Nothing to upgrade', cmd);

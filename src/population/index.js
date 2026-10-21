@@ -340,7 +340,8 @@ export function createPopulationModule() {
       b.workers = b.workers.filter((id) => world.entities[id] && world.entities[id].workplace === b.id);
       places.push(b);
     }
-    const need = (b) => (b.workers.length ? 1e6 : 0) + (store[JOB_RES[BUILDINGS[b.type].job]] ?? 1e5);
+    // a workplace with priority is filled up first
+    const need = (b) => (b.priority ? -2e6 : 0) + (b.workers.length ? 1e6 : 0) + (store[JOB_RES[BUILDINGS[b.type].job]] ?? 1e5);
     places.sort((a, c) => need(a) - need(c) || a.id - c.id);
     for (const b of places) {
       const def = BUILDINGS[b.type];

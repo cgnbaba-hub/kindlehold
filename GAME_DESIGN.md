@@ -312,6 +312,13 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
     stone price alone did not bind the bot, which has stone to spare. With the final prices
     Normal and Hard are unchanged within the noise (single variants swing by ±1.5 min even over
     16 seeds); Story is much easier, on purpose.
+- **Priority** (command `setPriority`, `building.priority`, `PRIORITY` in `construction/index.js`):
+  - A workshop or site with priority is filled with workers first (`assignJobs`) and its
+    carrying tasks count 50 m nearer (`chooseTask`). At most 4/3/2 buildings at once
+    (Story/Normal/Hard). It adds no capacity; it only reorders.
+  - Measured (bot, `KH_PRIORITY=1`): priority on the Barracks site while it is built — Normal
+    28.0 min (27.7 without, 16 seeds), Hard 11/20 won (13/20) — no easing. Left on the mines for
+    good, carriers hauled iron while the cottages waited: Normal 9 of 16 won, Hard 1 of 20.
 - **Idle hands** (`AUTO_GATHER`, `AUTO_GATHER_RULES`):
   - An idle labourer (checked every 2 s) fells a tree or cuts stone within 45 m of a store.
   - One trip at a time (`order.auto`); one labourer always stays idle.

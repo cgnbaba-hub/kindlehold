@@ -5,7 +5,7 @@ import { all, emit, alert, spawn, remove } from '../world/world.js';
 import { BUILDINGS, doorOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { addRes } from './stock.js';
-import { siteNeeds, applyBuildWork, MAX_BUILDERS } from '../construction/index.js';
+import { siteNeeds, applyBuildWork, MAX_BUILDERS, PRIORITY } from '../construction/index.js';
 import { isIdleLabourer, keepOf, stabilityFactor } from '../population/index.js';
 import { walkTo, stopWalking } from '../navigation/agent.js';
 import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
@@ -120,7 +120,8 @@ export function createEconomyModule() {
     const consider = (score, task) => { if (score < bestScore) { bestScore = score; best = task; } };
     for (const b of all(world, 'building')) {
       if (b.owner !== owner) continue;
-      const d = Math.hypot(b.x - s.x, b.z - s.z);
+      // buildings with priority are served first (the distance still counts)
+      const d = Math.hypot(b.x - s.x, b.z - s.z) - (b.priority ? PRIORITY.carry : 0);
       if (b.state === 'site') {
         const needs = siteNeeds(b);
         let needAny = false;
