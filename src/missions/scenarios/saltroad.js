@@ -91,7 +91,7 @@ export const SALTROAD_SCENARIO = {
     {
       id: 'paved', title: 'Optional: Pave the Salt Road',
       text: 'Lay 60 m of stone road and keep a Donkey Stable.',
-      hint: 'Build menu → Road: click the start, then each bend. A Donkey Stable keeps pack donkeys that carry salt and goods to and from the stores.', optional: true,
+      hint: 'Build menu → Town → Road: click the start, then each bend. A Donkey Stable keeps pack donkeys that carry salt and goods to and from the stores.', optional: true,
       highlight: 'build', activeWhen: { completed: 'salt' },
       completeWhen: { all: [{ roads: 60 }, { built: 'donkeystable', count: 1 }] },
       onComplete: [{ speaker: 'wren', text: 'Cobbles under the cart wheels and a donkey braying at the waystation. The road is alive again.' }],

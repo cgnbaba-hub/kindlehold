@@ -154,6 +154,15 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Einsteigerfreundlichkeit, Paket 1: Baumenü mit Reitern (2026-10-21)
+
+- Vier Reiter (`src/ui/build-tabs.js`): Town (Cottage, Well, Storehouse, Donkey Stable, Road),
+  Goods (Lodge, Quarry, Mine, Salt Works, Smithy), Food (Farm, Hunter, Fisher, Mill, Bakery,
+  Tavern), Army (Barracks, Tower). Der Reiter mit dem Gebäude des aktuellen Ziels öffnet sich
+  einmal von selbst und pulsiert; volle Gebäudenamen (zwei Zeilen); fehlende Rohstoffe rot
+  (`costRow(cost, have)`, gilt für alle Knöpfe mit Kosten); Tooltip nennt, was fehlt.
+- Test: `tests/unit/build-tabs.test.js` (jedes Gebäude genau einmal); e2e klickt „Town buildings“.
+
 ## Kampf-Rückmeldung, Endstatistik, abwechslungsreichere Überfälle (2026-10-21)
 
 - Verluste: eine Meldung je Gefecht, die mitzählt („3 soldiers have fallen“), Klick springt hin

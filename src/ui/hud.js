@@ -10,7 +10,7 @@ import { createMinimap } from './minimap.js';
 import { createFloaters } from './floaters.js';
 import { all } from '../world/world.js';
 import { PLAYER, EV, RESOURCES } from '../core/contracts.js';
-import { BUILDINGS, PLAYER_BUILD_ORDER, UPGRADES, nextUpgrade, levelOf, displayName, upgradeBonus, slotsOf, attackOf } from '../buildings/defs.js';
+import { BUILDINGS, UPGRADES, nextUpgrade, levelOf, displayName, upgradeBonus, slotsOf, attackOf } from '../buildings/defs.js';
 import { UNITS, RECRUITABLE, COUNTERS } from '../units/defs.js';
 import { TECHS, TECH_ORDER } from '../technology/defs.js';
 import { researchBlocker } from '../technology/index.js';
@@ -25,6 +25,7 @@ import { RANKS, rankOf } from '../combat/index.js';
 import { BRIGANDS, relation, stance, TRUCE, GIFT, PEACE, WAR_AT, ALLY_AT } from '../diplomacy/index.js';
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 import { enemyFaction } from '../ai/factions.js';
+import { BUILD_TABS, buildTabOf } from './build-tabs.js';
 import { ROADS, roadCellCost, donkeysFor, donkeyFodder, donkeyWage } from '../transport/defs.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler', flour: 'Flour', bread: 'Bread', tools: 'Tools' };
@@ -52,11 +53,13 @@ function patchChildren(target, fresh, full) {
   }
 }
 
-function costRow(cost) {
+/** A cost as icons and numbers; with `have` (the store), what is missing shows in red. */
+function costRow(cost, have = null) {
   const row = h('span.cost');
-  for (const r of RESOURCES) if (cost[r]) row.append(h('span.cost-item', {}, [icon(r, 'icon icon-xs'), String(cost[r])]));
+  for (const r of RESOURCES) if (cost[r]) row.append(h(`span.cost-item${have && (have[r] || 0) < cost[r] ? '.lack' : ''}`, {}, [icon(r, 'icon icon-xs'), String(cost[r])]));
   return row;
 }
+
 
 export function createHud({ root, session, input, settings, actions }) {
   const sim = session.sim;
@@ -703,6 +706,7 @@ export function createHud({ root, session, input, settings, actions }) {
 
   // --- command grid ------------------------------------------------------------------------------
   let cmdMode = 'auto'; // 'auto' | 'build'
+  let buildTab = 'goods', lastTabHint = null; // the open group of the build menu
   let confirmDemolish = 0;
   const SHORT = { 'Hold a feast': 'Feast', "Hunter's Hut": 'Hunter', 'Keen Axes': 'Axes', 'Braced Timber': 'Bracing', 'Tempered Blades': 'Blades', 'March Charter': 'Charter', 'Hire labourer': 'Hire', 'Back to work': 'Release', 'Upgrading…': 'Upgrading', 'Steel Mail': 'Mail', 'Veteran Drill': 'Drill', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Priority on': 'Priority', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
   function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
@@ -712,10 +716,10 @@ export function createHud({ root, session, input, settings, actions }) {
     ['wedge', 'fmWedge', 'Wedge', 'A spearhead with the toughest at the tip: breaks into a crowd. Every later march keeps this shape.'],
     ['ring', 'fmRing', 'Ring', 'A circle facing out, archers and heroes inside: nobody is caught from behind. Every later march keeps this shape.'],
   ];
-  function cmdButton({ ic, label, key, tip, tipTitle, onClick, disabled = false, cost = null, progress = null, cooldown = null, active = false, highlight = false }) {
+  function cmdButton({ ic, label, key, tip, tipTitle, onClick, disabled = false, cost = null, progress = null, cooldown = null, active = false, highlight = false, fullName = false }) {
     const b = h(`button.cmd${active ? '.active' : ''}${highlight ? '.pulse' : ''}`, { type: 'button', 'aria-label': label, 'data-tip': tip || label, 'data-tip-title': tipTitle || label, 'aria-disabled': disabled ? 'true' : 'false' }, [icon(ic, 'icon icon-md'), cost ? null : h('span.cmd-label', { text: shortLabel(label) })]);
     if (key) b.append(h('span.cmd-key', { text: keyLabel(key) }));
-    if (cost) { b.append(h('span.cmd-name', { text: /^(Buy|Sell) /.test(label) ? label.replace(/\d+ /, '') : shortLabel(label) })); b.append(costRow(cost)); }
+    if (cost) { b.append(h('span.cmd-name', { text: /^(Buy|Sell) /.test(label) ? label.replace(/\d+ /, '') : (fullName ? label : shortLabel(label)) })); b.append(costRow(cost, world().players[PLAYER].res)); }
     if (progress !== null) b.append(h('div.cmd-progress', { style: { height: `${Math.round(progress * 100)}%` } }));
     if (cooldown) b.append(h('div.cmd-cooldown', { text: String(Math.ceil(cooldown)) }));
     if (disabled) b.classList.add('disabled');
@@ -752,31 +756,47 @@ export function createHud({ root, session, input, settings, actions }) {
       return;
     }
     if (cmdMode === 'build' || (!items.length) || (serfs.length && serfs.length === items.length)) {
-      setText(cmdTitle, 'Build');
       const hasSalt = all(w, 'deposit').some((d) => d.type === 'salt');
-      for (const type of PLAYER_BUILD_ORDER) {
+      // the tab with the building the current objective asks for opens by itself (once per objective)
+      const want = hl && hl.startsWith('build:') ? hl.slice(6) : hl === 'build' ? 'lodge' : null;
+      if (want && BUILDINGS[want] && lastTabHint !== hl) { lastTabHint = hl; buildTab = buildTabOf(want); }
+      const tab = BUILD_TABS.find((t) => t.id === buildTab) || BUILD_TABS[1];
+      setText(cmdTitle, `Build · ${tab.label}`);
+      const tabRow = h('div.build-tabs', { role: 'tablist', 'aria-label': 'Building groups' });
+      for (const t of BUILD_TABS) {
+        const lit = t.id !== tab.id && (hl === 'build' ? ['lodge', 'farm'] : want ? [want] : []).some((x) => t.types.includes(x));
+        const tb = h(`button.build-tab${t.id === tab.id ? '.active' : ''}${lit ? '.pulse' : ''}`, { type: 'button', role: 'tab', 'aria-selected': t.id === tab.id ? 'true' : 'false', 'aria-label': `${t.label} buildings`, 'data-tip': t.tip, 'data-tip-title': t.label }, [icon(t.ic, 'icon icon-sm'), h('span', { text: t.label })]);
+        tb.addEventListener('click', () => { buildTab = t.id; dirtySel = true; });
+        tabRow.append(tb);
+      }
+      cmdGrid.append(tabRow);
+      for (const type of tab.types) {
+        if (type === 'road') {
+          // stone roads: paid per 2 m stretch as they are laid
+          const perCell = roadCellCost(w);
+          const perText = Object.entries(perCell).map(([r, n]) => `${n} ${r === 'taler' ? 'Taler' : RES_NAMES[r].toLowerCase()}`).join(' + ');
+          cmdGrid.append(cmdButton({
+            ic: 'road', label: 'Road', tipTitle: `Stone road (${perText} per 2 m)`,
+            tip: `Click where the road starts, then every bend. Everyone walks ${Math.round((ROADS.speed - 1) * 100)}% faster on it — raiders too — and routes keep to it. Only inside your territory; lifting a road gives nothing back.`,
+            cost: perCell, disabled: !canAfford(w, PLAYER, perCell), active: input.state.mode === 'road' && !input.state.roadRemove,
+            onClick: () => { input.startRoad(); cmdMode = 'auto'; },
+          }));
+          if (w.roads && w.roads.cells.length) cmdGrid.append(cmdButton({ ic: 'roadRemove', label: 'Lift road', tip: 'Click two points: the road between them is taken up. The stone is not returned.', active: input.state.mode === 'road' && !!input.state.roadRemove, onClick: () => { input.startRoad({ remove: true }); cmdMode = 'auto'; } }));
+          continue;
+        }
         const def = BUILDINGS[type];
         if (type === 'saltworks' && !hasSalt) continue; // only where the map has salt pans
         const cost = buildCost(w, PLAYER, type);
         const locked = def.requiresTech && !p.techs[def.requiresTech];
         const afford = canAfford(w, PLAYER, cost);
+        const short = Object.keys(cost).filter((r) => (p.res[r] || 0) < cost[r]).map((r) => `${cost[r] - Math.floor(p.res[r] || 0)} ${r === 'taler' ? 'Taler' : RES_NAMES[r].toLowerCase()}`);
         cmdGrid.append(cmdButton({
-          ic: type, label: def.name, tipTitle: def.name,
-          tip: locked ? `Requires the March Charter (research at the Keep). ${def.desc}` : afford ? def.desc : `Not enough resources. ${def.desc}`,
+          ic: type, label: def.name, tipTitle: def.name, fullName: true,
+          tip: locked ? `Requires the March Charter (research at the Keep). ${def.desc}` : afford ? def.desc : `Still missing: ${short.join(', ')}. ${def.desc}`,
           disabled: locked || !afford, cost, highlight: hl === `build:${type}` || (hl === 'build' && (type === 'lodge' || type === 'farm')),
           onClick: () => { input.startPlacement(type); cmdMode = 'auto'; },
         }));
       }
-      // stone roads: paid per 2 m stretch as they are laid
-      const perCell = roadCellCost(w);
-      const perText = Object.entries(perCell).map(([r, n]) => `${n} ${r === 'taler' ? 'Taler' : RES_NAMES[r].toLowerCase()}`).join(' + ');
-      cmdGrid.append(cmdButton({
-        ic: 'road', label: 'Road', tipTitle: `Stone road (${perText} per 2 m)`,
-        tip: `Click where the road starts, then every bend. Everyone walks ${Math.round((ROADS.speed - 1) * 100)}% faster on it — raiders too — and routes keep to it. Only inside your territory; lifting a road gives nothing back.`,
-        cost: perCell, disabled: !canAfford(w, PLAYER, perCell), active: input.state.mode === 'road' && !input.state.roadRemove,
-        onClick: () => { input.startRoad(); cmdMode = 'auto'; },
-      }));
-      if (w.roads && w.roads.cells.length) cmdGrid.append(cmdButton({ ic: 'roadRemove', label: 'Lift road', tip: 'Click two points: the road between them is taken up. The stone is not returned.', active: input.state.mode === 'road' && !!input.state.roadRemove, onClick: () => { input.startRoad({ remove: true }); cmdMode = 'auto'; } }));
       if (cmdMode === 'build' && items.length) cmdGrid.append(cmdButton({ ic: 'cancel', label: 'Back', tip: 'Back to commands', onClick: () => { cmdMode = 'auto'; dirtySel = true; } }));
       return;
     }
