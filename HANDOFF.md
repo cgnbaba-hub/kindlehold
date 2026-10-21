@@ -154,6 +154,22 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Kleinere Fixes (2026-10-21)
+
+- KayKit-Fenster leuchten nachts (siehe „Modellierte Gebäude“).
+- Zielliste: Optionale Ziele zeigen ihren Hinweis nur noch als Tooltip.
+- Tutorial und Ratgeber Osric saßen an derselben Stelle (links unten) übereinander. Solange das
+  Tutorial läuft, tritt Osric beiseite (`.tutorial-on`); Warnungen erscheinen weiter oben links.
+- Ladezeit: Die drei Modellpakete (Figuren 2,4 MB, Gebäude 1,9 MB, Tiere 1,7 MB) werden jetzt
+  gleich zu Beginn der Session gleichzeitig angefordert und laden, während Welt und Gelände
+  gebaut werden (etwa 4 s Rechenzeit). Vorher kamen sie nacheinander danach.
+- nginx: `application/octet-stream` in `gzip_types`, damit die `.bin`-Pakete komprimiert
+  übertragen werden: 6,1 → 2,9 MB. Der Auto-Deploy erzeugt die Konfiguration bei jedem Deploy aus
+  `deploy/nginx/game.conf.example` neu und prüft sie mit `nginx -t`. `npm run test:deploy` prüft
+  jetzt auch gzip für `buildings/kaykit.bin` (Docker nötig, in der Cloud-Session nicht vorhanden).
+- Ladezeit gemessen (SwiftShader, ohne GPU): bis zum spielbaren Bild 19–21 s (hoch) bzw. 11 s
+  (niedrig). Die Session steht nach 5 s; der Rest ist Shader-Kompilierung der ersten Bilder.
+
 ## Paket D (2026-10-20): restliche KayKit-Gebäude, Figurenschatten
 
 - Gebäude: siehe Abschnitt „Modellierte Gebäude“. Das Paket hat nur 17 Gebäude, daher teilen
@@ -365,6 +381,12 @@ Vom Nutzer freigegeben („Grafik-Prototyp“, externes CC0-Paket). Aufbau wie b
     blauen Paketfarben werden beim Laden umgefärbt, die Schattierung bleibt) und eigener Deko.
   - Bäckerei und Salzsiederei rauchen, solange jemand arbeitet.
 - Vergleichsansicht: `?showcase=buildings` hat eine zweite Reihe mit allen Werkstätten.
+- Fensterglühen (behoben 2026-10-21): Der Baker markierte das schwarze Palettenfeld 0,0, das kein
+  Modell benutzt. Bis dahin leuchtete nachts kein einziges KayKit-Fenster. Die Scheiben liegen auf
+  dem graubraunen Feld 6,1; Burg und Kaserne nutzen dunkles Schiefergrau 3,0, das anderswo
+  Schornstein und Stollen ist. Gefunden mit `DEBUG_CELLS=1 node scripts/assets/bake-buildings.mjs …`
+  (jedes Feld bekommt eine grelle Farbe). Dabei kam ein zweiter Fehler zutage: `kaykit.js`
+  transformierte die Fensterflächen doppelt.
 - `meshes.js` `setBuildingAssets()`; `session.js` lädt vor dem Gebäude-View. Einstellung
   „Modelled buildings“ (Standard an) oder `?blds=classic` für den Vergleich.
 

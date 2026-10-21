@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { newSim, keep, place, grant, all } from '../helpers/sim.js';
 import { AI_DIFFICULTY, ENGINE_RESERVE, aiSettings, spawnEnemy, warhallOf } from '../../src/ai/index.js';
 import { UNITS } from '../../src/units/defs.js';
+import { serializeWorld, deserializeWorld } from '../../src/save/index.js';
 import { BUILDINGS, attackOf } from '../../src/buildings/defs.js';
 
 const raiders = (sim) => sim.world.ai.raidIds.map((id) => sim.world.entities[id]).filter(Boolean);
@@ -107,4 +108,18 @@ test('chapter modifiers move the first siege raid', () => {
   sim.world.meta.difficulty = 'story';
   assert.equal(aiSettings(sim.world).siegeFrom, null, 'Story stays without engines');
   assert.ok(all(sim.world, 'unit').length > 0);
+});
+
+test('a save in the middle of a siege march loads and continues identically', () => {
+  const a = newSim({ difficulty: 'hard' });
+  startRaid(a, 1);
+  for (let i = 0; i < 20 * 30; i++) a.step(); // gathered, marching at the engine's pace
+  assert.equal(a.world.ai.state, 'raid');
+  assert.ok(engines(a).length && raiders(a).some((u) => u.escort), 'an engine with its guard on the road');
+  const { world } = deserializeWorld(serializeWorld(a.world, 'siege'));
+  const b = newSim({ difficulty: 'hard' });
+  b.replaceWorld(world);
+  assert.equal(b.hash(), a.hash(), 'identical right after load');
+  for (let i = 0; i < 20 * 40; i++) { a.step(); b.step(); }
+  assert.equal(b.hash(), a.hash(), 'identical 40 s later');
 });

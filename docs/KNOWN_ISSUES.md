@@ -1,62 +1,72 @@
 # Known issues and limitations
 
-This list is kept honest and current. "Measured" items cite the report that shows them.
+This list is kept honest and current (last full review: 2026-10-21). "Measured" items cite the
+report or script that shows them.
 
 ## Environment / verification limits
 
-- **GPU frame rate is unmeasured.** The development VPS has no GPU; all browser checks run
-  on SwiftShader (CPU rendering) at roughly 3 FPS for 1920×1080. The 50/60 FPS targets
-  for a mid-range GPU (PERFORMANCE_BUDGET.md, class A) are therefore *not verified*.
-  GPU-independent proxies are measured instead (draw calls ≈ 100–115, triangles ≈ 1.05 M in
-  the overview presets — within the 1,500 / 1.5 M budgets; see `docs/reports/`).
-- Browser verification is slow for the same reason (several minutes per preset).
-- No public deployment was performed: no domain or DNS change was authorised. The
-  production build and nginx configuration are validated locally in Docker
-  (`npm run test:deploy`). Deployed publicly at https://kindlehold.js-automata.work (2026-09-24).
+- **GPU frame rate is unmeasured.** The development machines have no GPU; all browser checks
+  run on SwiftShader (CPU rendering) at a few frames per second. The 50/60 FPS targets for a
+  mid-range GPU (PERFORMANCE_BUDGET.md, class A) are therefore *not verified*. GPU-independent
+  proxies are measured instead: after 20 bot minutes the overview draws about 145 calls and
+  1.2 M triangles, the settlement view about 150 calls and 1.05 M triangles (budgets 1,500 and
+  1.5 M; `docs/reports/`, HANDOFF "Paket D").
+- Browser verification is slow for the same reason (the 17 e2e tests take about 20 minutes).
+- Live at https://kindlehold.js-automata.work. Deploys run on the VPS only (`deploy/`); an
+  optional systemd timer deploys every new commit on `main` after tests, build and a health
+  check, with rollback (DEPLOYMENT.md).
+- Some asset sites are blocked from the cloud sessions (ambientcg.com, polyhaven.com), so
+  photo-based CC0 textures could not be tried there.
 
-## Gameplay scope (Stage 1)
+## Gameplay
 
-- One map, one scenario, one hero. Diplomacy, trading, skirmish and a map editor are not
-  started. Weather is winter/summer only (no rain).
-- Exploration shroud for the player only (explored/unexplored, no live line-of-sight fog:
-  enemies in explored land stay visible). The AI reads the world directly; this is documented in
-  `src/ai/index.js` and the AI gains no resource or vision advantage from it beyond what the
-  player can also see.
-- Labourers can only be ordered to gather timber or stone by hand; building, hauling and
+- Six campaign chapters, four enemy factions, two heroes (Maren, Wren), diplomacy with a third
+  party, free play with random maps. No multiplayer, skirmish lobby or map editor.
+- Exploration shroud for the player only (explored/unexplored, no live line-of-sight fog).
+  The AI reads the world directly; this is documented in `src/ai/index.js`, and the AI gains
+  no resource or vision advantage beyond what the player can also see.
+- Labourers can be ordered to gather timber or stone by hand; building, hauling and
   workplace jobs stay automatic. Work priorities cannot be set.
-- Balance after levels 2/2.5 (`npm run balance`): the scripted bot wins 7 of 8 matches; Hard
-  wins 2 of 3 seeds (before these levels it won all). Figures are improved procedural models,
-  not skinned/animated meshes.
-- Seasons were added after the last full balance measurement: winter slows crops to 30% and
-  freezes the river. The bot tests still win on all difficulties, but the match-length
-  numbers below predate winter.
-- Measured match lengths (scripted bot, seeds 1337/7/42/99): Story 21.8–26.9 min,
-  Normal 23.9–30.2 min, Hard 28.6–32.9 min (Hard slightly above the 15–30 min target).
-  The difficulties feel similar in length; Hard's challenge comes from larger waves.
-  Human playtesting of any difficulty has not been done.
-- The counter triangle holds from 6v6 to 12v12 in the duel harness; at 12v12 Fletchers vs
-  Reavers can run to the 120 s limit (Reavers ahead) instead of a clean wipe.
-- Melee units can visually overlap while fighting in dense clumps (simple separation only).
+- Transport: carriers are a large share of the town (about 45% in a measured game) and
+  workshops wait for pickups a third to half of the time. Roads, pack animals or pack frames are
+  designed (with prices) but not built yet: waiting for a decision.
+- Balance (scripted bot, chapter one, minutes to victory, `scripts/balance-seeds.mjs`):
+  Story 8/8 won, about 23 min; Normal 8/8, about 26 min; Hard about 12 of 20 won, about 37 min
+  (unfinished counted as 40), with some defeats. Single matches vary by ±10 minutes; compare
+  means over many seeds. Human playtesting has been informal.
+- The bot builds compactly, so the motivation strains for idle townsfolk and long walks barely
+  touch it; their effect on human-built towns is untested.
 
 ## Presentation
 
-- All art is procedural and low-poly by design; there are no skeletal animations
-  (figures are segmented and posed procedurally).
+- Buildings and characters are KayKit models (CC0), baked to vertex colours; procedural models
+  remain as the "classic" style and as the fallback. The KayKit pack has 17 buildings, so the
+  farm and the Fisher share a house, and so do the Bakery and the Saltworks; roof colour and
+  props tell them apart.
+- Terrain textures are procedural (tileable noise with relief, macro variation and worn paths).
 - Unit "voice" acknowledgements are wordless synthesized syllables, not recorded speech.
 - Music is generative (procedural lute-like plucks and pads), not a composed score.
 
-## Quality gates (final)
+## Quality gates (stage 1 review, 2026-09-24)
 
-- **Visual 7.0 / 10 and gameplay 6.8 / 10 — below the 8.5 gate** after the maximum critic
-  rounds (see docs/FINAL_REVIEW.md, docs/critiques/). Open visual items: river depth colour and
-  dawn/dusk glints, melee clumping, Beacon Flare glow clipped on slopes, key-art composition,
-  grass tint in close-ups. Open gameplay items: shallow labour decisions, short raids, similar
-  difficulty curves.
-- **Startup time:** 36.6 s to a playable frame for a fresh game in headless SwiftShader (budget
-  15 s); dominated by shader compilation and CPU texture generation. Not measured on a GPU.
+- **Visual 7.0 / 10 and gameplay 6.8 / 10, below the 8.5 gate** after the maximum critic
+  rounds (docs/FINAL_REVIEW.md, docs/critiques/). Much has changed since (modelled figures and
+  buildings, lighting, longer chains, campaign); no new critic round has been run.
+- **Startup time:** measured 2026-10-21 in headless SwiftShader: 19–21 s to a playable frame on
+  High, 11 s on Low (budget 15 s; 36.6 s at the stage 1 review). The session is built after
+  about 5 s; the rest is shader compilation for the first frames. Not measured on a GPU.
 
-## Fixed after release review
+## Fixed
 
+- **2026-10-21: modelled buildings never lit their windows at night (fixed).** The baker
+  flagged a palette cell that no model uses as glass; the glow quads were also transformed
+  twice. See HANDOFF, "Modellierte Gebäude".
+- **Melee clumping (no longer seen).** Measured 2026-10-21 in 10-vs-10 and 20-vs-20 melee: no two
+  allies closer than 0.64 m over a minute of fighting (separation keeps 1.8 m between allies, 1.1 m
+  to foes).
+- **2026-10-20: soldiers stalled at shared path corners (fixed for soldiers).** A squad pushed
+  itself off a common waypoint for up to 40 s. Settlers keep the old behaviour on purpose: the
+  same fix eased the economy measurably (GAME_DESIGN, "a harder Hard").
 - **2026-09-24: ear-splitting sound on first click (fixed).** The lute "pluck" used a feedback
   delay loop whose loop gain exceeded 1 (0.985 feedback × lowpass resonance), so every music
   note grew exponentially. Measured output peak before the fix: 15,613,984 (linear full scale).

@@ -80,10 +80,13 @@ export function createTutorial({ root, session, settings, onFinish }) {
     h('div.tut-head', {}, [h('span.tut-badge', { text: 'Tutorial' }), progress]), title, text, status, h('div.tut-actions', {}, [skip, next]),
   ]);
   root.append(panel);
+  // the tutorial sits where Osric does: he steps aside while it runs (alerts still show at the top)
+  root.classList.add('tutorial-on');
 
   function finish() {
     settings.tutorialDone = true;
     panel.remove();
+    root.classList.remove('tutorial-on');
     if (onFinish) onFinish();
   }
   skip.addEventListener('click', finish);
@@ -128,6 +131,6 @@ export function createTutorial({ root, session, settings, onFinish }) {
         doneDelay = 1.2;
       }
     },
-    dispose() { panel.remove(); },
+    dispose() { panel.remove(); root.classList.remove('tutorial-on'); },
   };
 }

@@ -48,6 +48,8 @@ code="$(curl -s -o /dev/null -w '%{http_code}' "${BASE}.env")"; [[ "$code" == 40
 code="$(curl -s -o /dev/null -w '%{http_code}' "${BASE}assets/does-not-exist.js")"; [[ "$code" == 404 ]] || fail "missing asset returned $code instead of 404"
 gz="$(curl -fsS -H 'Accept-Encoding: gzip' -o /dev/null -D - "${BASE}$(grep -oE 'assets/[^"]+\.js' <<< "$nested" | head -n1)" | tr -d '\r')"
 grep -qi '^content-encoding: gzip' <<< "$gz" || fail "gzip not applied to JS"
+gz="$(curl -fsS -H 'Accept-Encoding: gzip' -o /dev/null -D - "${BASE}buildings/kaykit.bin" | tr -d '\r')"
+grep -qi '^content-encoding: gzip' <<< "$gz" || fail "gzip not applied to the model packs (.bin)"
 [[ "$(curl -fsS "${BASE}RELEASE")" == "$SECOND" ]] || fail "current does not serve the second release"
 
 node scripts/deployment/csp-smoke.mjs "$BASE" || fail "game does not load under the nginx CSP"
