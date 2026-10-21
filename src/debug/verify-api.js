@@ -2,6 +2,7 @@
 // Everything here drives the game through the same paths as the player.
 
 import { findSpot, createBot } from '../demo/bot.js';
+import { checkStretch } from '../transport/roads.js';
 
 export function installVerifyApi(session) {
   const api = {
@@ -53,6 +54,8 @@ export function installVerifyApi(session) {
       return { x: r.left + (p.x * 0.5 + 0.5) * r.width, y: r.top + (-p.y * 0.5 + 0.5) * r.height, visible: p.z < 1 };
     },
     findSpot(type, x, z) { return findSpot(session.sim.world, session.sim.services, type, x, z); },
+    /** Would a road from A to B be accepted (for driving the road mode in e2e tests)? */
+    roadStretch(ax, az, bx, bz) { const r = checkStretch(session.sim.world, session.sim.services, 'p1', ax, az, bx, bz); return { ok: r.ok, reason: r.reason, cells: r.cells.length }; },
     find(kind, type) { return Object.values(session.world.entities).filter((e) => e.kind === kind && (!type || e.type === type)).map((e) => e.id); },
     /** Make a critical module throw (tests the recoverable error screen). */
     forceCriticalFailure() { session.sim.host.register({ id: 'test-critical-' + Date.now(), kind: 'sim', critical: true, update() { throw new Error('forced failure for testing'); } }); },
