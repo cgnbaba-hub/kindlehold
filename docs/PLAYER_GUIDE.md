@@ -12,6 +12,11 @@ fort and will not share the valley.
 * **Move the map:** hold the RIGHT mouse button and drag (or use the arrow keys).
 * **Zoom:** mouse wheel — zooms towards the cursor. **Rotate:** middle mouse button or Q / E.
 * **Select:** left-click; left-drag a box around soldiers. **Command:** short right-click.
+* **Economy overview:** press **O** (or click a good in the top bar, or the ledger button next to
+  the clock). It names what holds the town back right now — hunger, too few carriers, workshops
+  without a worker or waiting for goods, stores running out — with what helps and a *Show* button
+  that jumps to the buildings concerned; below, how busy the carriers are and how each store
+  changed over the last minute.
 * A guided tutorial starts with your first new game; replay it from *How to Play*.
 
 ## Your first ten minutes

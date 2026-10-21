@@ -110,6 +110,7 @@ export async function startApp(params) {
           blocked: () => menus.open,
           onPause: () => togglePause(),
           onBuildMenu: () => hud && hud.openBuildMenu(),
+          onEconomy: () => hud && hud.toggleEconomy(),
           onSelection: () => { if (hud) hud.selectionChanged(); if (session) session.audio.ui(); },
           onMarker: (k, x, z) => session && session.marker(k, x, z),
           onToast: (t) => hud && hud.toast(t),

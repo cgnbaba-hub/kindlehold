@@ -154,6 +154,15 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Einsteigerfreundlichkeit, Paket 2: Wirtschaftsübersicht (2026-10-21)
+
+- Fenster „Economy“ (Taste O, Knopf neben der Uhr, Klick auf eine Ware oben): zuerst „What holds
+  the town back“ (Diagnose in `src/economy/overview.js`, reine Lesefunktion: Hunger, unerreichbare
+  Gebäude, Träger fehlen, Werkstätten ohne Arbeiter, fehlende Zulieferung je Ware, knappe Vorräte,
+  volle Betten; jeweils mit Abhilfe und „Show“, das reihum zu den Gebäuden springt), dann
+  Träger-Auslastung und die Lager mit Änderung der letzten Minute. Nachts keine Werkstatt-Meldungen.
+- Kein Einfluss auf die Simulation (nur Anzeige). Test: `tests/simulation/economy-overview.test.js`.
+
 ## Einsteigerfreundlichkeit, Paket 1: Baumenü mit Reitern (2026-10-21)
 
 - Vier Reiter (`src/ui/build-tabs.js`): Town (Cottage, Well, Storehouse, Donkey Stable, Road),
