@@ -618,6 +618,7 @@ export function createHud({ root, session, input, settings, actions, tips = true
       const go = () => session.rc.rts.focus(d.x, d.z);
       li.addEventListener('click', go);
       li.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+      if (d.level === 'danger' || d.level === 'warn') minimap.ping(d.x, d.z, d.level);
     }
     alerts.prepend(li);
     while (alerts.children.length > 5) alerts.lastChild.remove();

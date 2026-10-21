@@ -154,6 +154,14 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Einsteigerfreundlichkeit, Paket 6: Warnungen auf der Minikarte (2026-10-21)
+
+- Jede Warnung/Gefahr mit Ort (`EV.ALERT` mit x/z) zeichnet 6 s lang einen sich weitenden Ring auf
+  die Minikarte (`minimap.ping`, rot/bernstein, echte Uhrzeit; bei reduzierter Bewegung ruhig).
+  Nur auf erkundetem Land, sonst nichts: der Ring zeigt nie mehr als Meldung und Karte schon zeigen
+  (keine Erleichterung, die Feldlager bleiben im Nebel). Eine Wiederholung am selben Ort erneuert
+  den Ring, höchstens 6 zugleich.
+
 ## Einsteigerfreundlichkeit, Paket 5: Rückgängig nach dem Platzieren (2026-10-21)
 
 - Leiste „… placed · Undo · Ctrl+Z“ über den Meldungen (`hud.js`, `undoable`), solange die

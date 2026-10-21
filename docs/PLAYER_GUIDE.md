@@ -21,6 +21,8 @@ fort and will not share the valley.
   **Ctrl+Z**) takes it back with everything refunded — for a few seconds, and for a building only
   until work on it begins. Later, *Cancel construction* refunds less once work has started, and a
   lifted road returns nothing.
+* **Alerts on the minimap:** a warning or danger alert also rings on the minimap where it
+  happened (a scout at the border, a raid on its way, a building on fire); click the alert to look.
 * **All keys and mouse controls:** press **F1** (or the **?** button in the top bar). Keys can
   be changed under *Settings → Controls*.
 * **Who is who?** The people panel (click the population in the top bar) ends with a short
