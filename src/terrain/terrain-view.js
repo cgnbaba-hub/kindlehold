@@ -5,6 +5,7 @@ import { generateGroundTexture, generateMacroTexture } from './textures.js';
 import { distToPolyline, rawHeight, sceneryRelief } from '../world/terrain-data.js';
 import { all } from '../world/world.js';
 import { BUILDINGS } from '../buildings/defs.js';
+import { CELL } from '../navigation/nav-grid.js';
 import { SHROUD_GLSL, bindShroud, CLOUD_GLSL, bindClouds } from '../render/structure-material.js';
 
 function smoothstep(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
@@ -61,6 +62,13 @@ export function createTerrainView({ scene, terrain, quality, world }) {
   wearTex.magFilter = THREE.LinearFilter; wearTex.minFilter = THREE.LinearFilter;
   wearTex.needsUpdate = true;
   const wearAcc = new Float32Array(WEAR_RES * WEAR_RES);
+  // stone roads: one texel per nav cell (2 m), filled from world.roads
+  const ROAD_RES = Math.floor((terrain.half * 2) / CELL);
+  const roadData = new Uint8Array(ROAD_RES * ROAD_RES);
+  const roadTex = new THREE.DataTexture(roadData, ROAD_RES, ROAD_RES, THREE.RedFormat);
+  roadTex.magFilter = THREE.LinearFilter; roadTex.minFilter = THREE.LinearFilter;
+  roadTex.needsUpdate = true;
+  let roadSig = '';
   // grounding: soft darkening of the ground right around walls and trunks, so nothing floats
   const aoData = new Uint8Array(AO_RES * AO_RES).fill(255);
   const aoTex = new THREE.DataTexture(aoData, AO_RES, AO_RES, THREE.RedFormat);
@@ -93,7 +101,7 @@ export function createTerrainView({ scene, terrain, quality, world }) {
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, metalness: 0 });
   const uniforms = {
     tGrass: { value: tex.grass }, tDirt: { value: tex.dirt }, tRock: { value: tex.rock }, tMud: { value: tex.mud },
-    tWear: { value: wearTex }, tAO: { value: aoTex }, tMacro: { value: tex.macro }, uHalf: { value: terrain.half }, uSize: { value: terrain.size }, uSnow: { value: 0 },
+    tWear: { value: wearTex }, tRoad: { value: roadTex }, uRoadSize: { value: ROAD_RES * CELL }, tAO: { value: aoTex }, tMacro: { value: tex.macro }, uHalf: { value: terrain.half }, uSize: { value: terrain.size }, uSnow: { value: 0 },
   };
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
@@ -105,6 +113,7 @@ export function createTerrainView({ scene, terrain, quality, world }) {
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
 uniform sampler2D tGrass; uniform sampler2D tDirt; uniform sampler2D tRock; uniform sampler2D tMud; uniform sampler2D tWear; uniform sampler2D tMacro; uniform sampler2D tAO;
+uniform sampler2D tRoad; uniform float uRoadSize;
 uniform float uHalf; uniform float uSize; uniform float uSnow;
 ${SHROUD_GLSL}
 ${CLOUD_GLSL}
@@ -129,6 +138,14 @@ cR.rgb *= (0.95 + 0.05 * strata) * 0.82 * mix(vec3(1.0), vec3(1.05, 0.98, 0.9), 
 vec4 cM = sampleAT(tMud, wp);
 float wear = texture2D(tWear, (wp + uHalf) / uSize).r;
 vec4 w = vSplat;
+// stone roads: a ragged edge of trodden earth, cobbles inside (laid over the blend below)
+vec2 ruv = (wp + uHalf) / uRoadSize, rpx = vec2(0.55 / uRoadSize * 2.0);
+// five taps round off the 2 m steps of the cell grid, so a diagonal road reads as a road
+float roadRaw = (texture2D(tRoad, ruv).r * 2.0 + texture2D(tRoad, ruv + rpx).r + texture2D(tRoad, ruv - rpx).r
+  + texture2D(tRoad, ruv + vec2(rpx.x, -rpx.y)).r + texture2D(tRoad, ruv + vec2(-rpx.x, rpx.y)).r) / 6.0;
+float rd = smoothstep(0.3, 0.5, roadRaw + (texture2D(tMacro, wp * 0.09).r - 0.5) * 0.22);
+w.y = max(w.y, smoothstep(0.08, 0.4, roadRaw) * 0.95 * (1.0 - w.z));
+w.x *= 1.0 - smoothstep(0.08, 0.4, roadRaw) * 0.9;
 w.y = max(w.y, wear * 0.9 * (1.0 - w.z));
 w.x *= (1.0 - wear * 0.9);
 // height-based blending for crisp natural transitions
@@ -150,6 +167,21 @@ vec3 grassTint = mix(lush, dry, smoothstep(0.3, 0.75, mac.r)) * (0.8 + mac2.g * 
 grassTint *= mix(0.86, 1.04, smoothstep(0.35, 0.6, mac2.r));
 ground *= mix(vec3(1.0), grassTint, ww.x);
 ground *= 0.9 + mac.b * 0.2;
+if (rd > 0.001) {
+  // cobbles: staggered rows of rounded setts with dark joints, each stone its own tone
+  vec2 sp = wp * 2.3;
+  sp.y += mod(floor(sp.x), 2.0) * 0.5;
+  vec2 cell = floor(sp), f = fract(sp) - 0.5;
+  float tone = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453);
+  // rounded, slightly uneven setts: each one a little off-square, worn in the middle
+  vec2 j = vec2(fract(tone * 7.31), fract(tone * 3.17)) - 0.5;
+  float sd = length(max(abs(f + j * 0.06) - vec2(0.33, 0.31), 0.0)) - 0.1;
+  float body = smoothstep(0.05, -0.03, sd) * (1.0 - dot(f, f) * 0.8);
+  vec3 sett = mix(vec3(0.38, 0.36, 0.33), vec3(0.58, 0.55, 0.49), tone) * (0.88 + cD.a * 0.2) * mix(vec3(1.0), vec3(1.06, 1.0, 0.9), mac2.g);
+  vec3 cob = mix(cD.rgb * 0.42, sett * (0.85 + tone * 0.3), smoothstep(0.0, 0.4, body));
+  ground = mix(ground, cob, rd);
+  kHgt = mix(kHgt, body * 1.6, rd);
+}
 // wet bank darkening near the water line
 ground *= mix(0.72, 1.0, smoothstep(-0.2, 0.6, vWPos.y));
 // mountain cover: dark forest carpet on the less steep flanks, bare rock on steep faces
@@ -162,12 +194,12 @@ ground = mix(ground, forestFloor, cover * 0.9);
 // weathered, lichen-dark mountain rock rather than pale quarry stone
 ground *= mix(vec3(1.0), vec3(0.68, 0.7, 0.62) * (0.85 + mac2.b * 0.3), high * ww.z * (1.0 - cover));
 ground = mix(ground, cG.rgb * vec3(0.5, 0.62, 0.4), high * (1.0 - cover) * smoothstep(0.66, 0.8, up) * 0.6);
-kRough = dot(ww, vec4(0.96, 0.9, 0.78, 0.62));
+kRough = mix(dot(ww, vec4(0.96, 0.9, 0.78, 0.62)), 0.84, rd);
 if (uSnow > 0.001) {
   // winter: snow blankets flat ground, thins on slopes, trodden paths and the wet banks,
   // and drifts unevenly so the relief still reads
   float drift = texture2D(tMacro, wp * 0.035).g * 0.6 + mac2.r * 0.4;
-  float snowK = smoothstep(0.62, 0.86, up + (drift - 0.5) * 0.35) * (1.0 - wear * 0.75) * (1.0 - ww.w * 0.55) * smoothstep(-0.1, 0.5, vWPos.y);
+  float snowK = smoothstep(0.62, 0.86, up + (drift - 0.5) * 0.35) * (1.0 - max(wear, rd * 0.8) * 0.75) * (1.0 - ww.w * 0.55) * smoothstep(-0.1, 0.5, vWPos.y);
   snowK = clamp(snowK * (0.7 + drift * 0.45), 0.0, 0.94) * uSnow;
   vec3 snowCol = vec3(0.8, 0.84, 0.9) * (0.88 + drift * 0.16);
   ground = mix(ground, snowCol, snowK);
@@ -277,6 +309,18 @@ gl_FragColor.rgb = KH_SHROUD_LIN(gl_FragColor.rgb, vWPos);`)
     aoTex.needsUpdate = true;
   }
 
+  function updateRoads() {
+    const cells = (world().roads && world().roads.cells) || [];
+    let sum = 0;
+    for (const k of cells) sum = (sum + k * 31) % 1000003;
+    const sig = cells.length + ':' + sum;
+    if (sig === roadSig) return;
+    roadSig = sig;
+    roadData.fill(0);
+    for (const k of cells) if (k >= 0 && k < roadData.length) roadData[k] = 255;
+    roadTex.needsUpdate = true;
+  }
+
   let wearTimer = 0;
   function updateWear(dt) {
     wearTimer += dt;
@@ -299,7 +343,7 @@ gl_FragColor.rgb = KH_SHROUD_LIN(gl_FragColor.rgb, vWPos);`)
     id: 'terrain-view',
     kind: 'view',
     mesh,
-    render(alpha, frame) { updateWear(frame.dt); updateAO(frame.dt); },
+    render(alpha, frame) { updateWear(frame.dt); updateAO(frame.dt); updateRoads(); },
     setSnow(v) { uniforms.uSnow.value = v; },
     /** Pre-wear paths (used for deterministic screenshot presets that fast-forward). */
     seedWear(amount = 0.4) {
@@ -315,7 +359,7 @@ gl_FragColor.rgb = KH_SHROUD_LIN(gl_FragColor.rgb, vWPos);`)
       scene.remove(mesh, skirt);
       geo.dispose(); mat.dispose(); skirtGeo.dispose();
       for (const k in tex) tex[k].dispose();
-      wearTex.dispose(); aoTex.dispose();
+      wearTex.dispose(); aoTex.dispose(); roadTex.dispose();
     },
   };
 }

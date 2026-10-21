@@ -13,6 +13,10 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
   const cost = new Float32Array(n);
   const ice = new Uint8Array(n); // river cells that become walkable while the Harrow is frozen
   let frozen = false;
+  // stone roads: cheaper to cross, so routes follow them (see transport/roads.js)
+  const road = new Uint8Array(n);
+  let roadCount = 0;
+  let roadCost = 1;
 
   for (let j = 0; j < w; j++) {
     for (let i = 0; i < w; i++) {
@@ -26,6 +30,7 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
       cost[k] = 1 + slope * 1.5 + (depth > 0.05 ? 1.5 : 0);
     }
   }
+  const baseCost = cost.slice();
 
   // A* scratch (reused; no per-request allocation except the output path)
   const g = new Float32Array(n);
@@ -96,6 +101,16 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
     return true;
   }
 
+  function lineOnRoad(ax, az, bx, bz) {
+    const dist = Math.hypot(bx - ax, bz - az);
+    const steps = Math.ceil(dist / (CELL * 0.4));
+    for (let s = 1; s < steps; s++) {
+      const t = s / steps;
+      if (!road[cellOf(az + (bz - az) * t) * w + cellOf(ax + (bx - ax) * t)]) return false;
+    }
+    return true;
+  }
+
   const stats = { requests: 0, expansions: 0, partial: 0, failed: 0 };
   const fords = (terrain.map && terrain.map.river && terrain.map.river.fords) || [];
 
@@ -128,9 +143,12 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
 
     searchId++;
     heapSize = 0;
+    // with roads about, a cell can cost less than 1: the estimate shrinks a little so routes
+    // find the road, but not to the road cost, which would cost the search too many expansions
+    const hScale = roadCount ? Math.max(roadCost, 0.8) : 1;
     const h = (k) => {
       const di = Math.abs((k % w) - goalI), dj = Math.abs(((k / w) | 0) - goalJ);
-      return (di + dj + (SQRT2 - 2) * Math.min(di, dj)) * 1.0;
+      return (di + dj + (SQRT2 - 2) * Math.min(di, dj)) * hScale;
     };
     g[start] = 0; f[start] = h(start); parent[start] = -1; stamp[start] = searchId;
     heapPush(start);
@@ -166,14 +184,18 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
     const cells = [];
     for (let k = end; k !== -1; k = parent[k]) cells.push(k);
     cells.reverse();
-    // string pulling
+    // string pulling; a stretch of road is only straightened along the road itself, so walkers
+    // keep to it instead of cutting the corners over the fields
     const pts = [];
     let ax = sx, az = sz;
     let i = 0;
+    const roadBetween = (a, b) => { for (let q = a + 1; q <= b; q++) if (road[cells[q]]) return true; return false; };
+    const allRoad = (a, b) => { for (let q = a; q <= b; q++) if (!road[cells[q]]) return false; return true; };
     while (i < cells.length - 1) {
       let j = cells.length - 1;
       for (; j > i + 1; j--) {
         const cx = centre(cells[j] % w), cz = centre((cells[j] / w) | 0);
+        if (roadCount && roadBetween(i, j) && !(allRoad(i, j) && lineOnRoad(ax, az, cx, cz))) continue;
         if (lineWalkable(ax, az, cx, cz)) break;
       }
       const cx = centre(cells[j] % w), cz = centre((cells[j] / w) | 0);
@@ -211,6 +233,23 @@ export function createNavGrid(terrain, { maxExpansions = 6000 } = {}) {
     block(x, z, r) { forCircle(x, z, r, (k) => { blockCount[k]++; }); },
     unblock(x, z, r) { forCircle(x, z, r, (k) => { if (blockCount[k] > 0) blockCount[k]--; }); },
     clearDynamic() { blockCount.fill(0); },
+    /** Cells per row; the cell index of a point, and the centre of a cell (for roads). */
+    width: w,
+    cellIndex: (x, z) => cellOf(z) * w + cellOf(x),
+    cellCentre: (k) => [centre(k % w), centre((k / w) | 0)],
+    /** Can a road go here: open ground (not water, cliff or a building). */
+    roadable: (k) => k >= 0 && k < n && staticBlocked[k] === 0 && blockCount[k] === 0,
+    isRoad: (x, z) => road[cellOf(z) * w + cellOf(x)] === 1,
+    isRoadCell: (k) => road[k] === 1,
+    /** Lay or lift road cells; `factor` is the path cost on a road (the inverse of its speed). */
+    setRoads(cells, factor = roadCost) {
+      for (let k = 0; k < n; k++) if (road[k]) { road[k] = 0; cost[k] = baseCost[k]; }
+      roadCount = 0; roadCost = factor;
+      for (const k of cells) {
+        if (k < 0 || k >= n || road[k]) continue;
+        road[k] = 1; cost[k] = baseCost[k] * factor; roadCount++;
+      }
+    },
     /** Nearest walkable point to (x,z) or null. */
     nearestWalkablePoint(x, z, maxR = 10) {
       const k = nearestWalkable(cellOf(x), cellOf(z), maxR);

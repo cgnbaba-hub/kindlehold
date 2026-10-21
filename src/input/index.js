@@ -1,6 +1,6 @@
 // Input: keyboard + mouse -> camera motion, selection, and simulation commands.
 // Modes: 'select' (default), 'place' (building preview), 'target' (attack-move,
-// patrol, ability). Every gameplay action becomes a command for the simulation.
+// patrol, ability), 'road' (lay or lift a stone road, bend by bend). Every gameplay action becomes a command for the simulation.
 import * as THREE from 'three';
 import { all } from '../world/world.js';
 import { PLAYER } from '../core/contracts.js';
@@ -158,8 +158,22 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
   }
 
   function cancelMode() {
-    state.mode = 'select'; state.placeType = null; state.targetKind = null; state.moveId = null;
+    state.mode = 'select'; state.placeType = null; state.targetKind = null; state.moveId = null; state.roadStart = null; state.roadRemove = false;
     if (hooks.onMode) hooks.onMode('select');
+  }
+
+  /** Lay a road (or with { remove } lift one): click the start, then each bend. */
+  function startRoad({ remove = false } = {}) {
+    state.mode = 'road'; state.roadStart = null; state.roadRemove = remove; state.placeType = null;
+    if (hooks.onMode) hooks.onMode('road');
+  }
+  /** Road points snap to the middle of a 2 m cell, so a stretch ends where the next begins. */
+  function roadPoint(x, y) {
+    const g = pickGround(x, y);
+    if (!g) return null;
+    const grid = sim.services.nav.grid();
+    const [cx, cz] = grid.cellCentre(grid.cellIndex(g.x, g.z));
+    return { x: cx, z: cz };
   }
 
   /** Place a new building, or with { moveId } choose the new spot for an existing one. */
@@ -242,6 +256,15 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
         return;
       }
       if (state.mode === 'target') { commitTarget(ev.clientX, ev.clientY); return; }
+      if (state.mode === 'road') {
+        const g = roadPoint(ev.clientX, ev.clientY);
+        if (!g) return;
+        if (state.roadStart && (g.x !== state.roadStart.x || g.z !== state.roadStart.z)) {
+          issue({ type: state.roadRemove ? 'removeRoad' : 'buildRoad', ax: state.roadStart.x, az: state.roadStart.z, bx: g.x, bz: g.z });
+        }
+        state.roadStart = g; // the next stretch starts where this one ended
+        return;
+      }
       state.down = { x: ev.clientX, y: ev.clientY, button: 0, moved: false, shift: ev.shiftKey };
     }
   }
@@ -276,7 +299,11 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
     state.down = null;
     if (d.button === 2) {
       canvas.style.cursor = '';
-      if (!d.moved) { if (state.mode !== 'select') cancelMode(); else contextOrder(ev.clientX, ev.clientY); }
+      if (!d.moved) {
+        if (state.mode === 'road' && state.roadStart) state.roadStart = null; // end this road, keep laying
+        else if (state.mode !== 'select') cancelMode();
+        else contextOrder(ev.clientX, ev.clientY);
+      }
       return;
     }
     if (d.button === 0) {
@@ -376,7 +403,7 @@ export function createInput({ canvas, rc, sim, terrain, settings, hooks = {} }) 
     id: 'input',
     kind: 'view',
     state,
-    pickGround, pickEntity, startPlacement, cancelMode, beginTarget, setSelection, focusSelection, issue,
+    pickGround, pickEntity, startPlacement, startRoad, cancelMode, beginTarget, setSelection, focusSelection, issue,
     render(alpha, frame) {
       const b = bindings();
       const speed = (settings.cameraSpeed || 1) * 55 * frame.dt;

@@ -90,6 +90,11 @@ export const BUILDINGS = {
     desc: 'A second store for all goods. Labourers bring goods to the nearest store and fetch them from there, so outlying workshops and building sites are served much faster.',
     cost: { timber: 35, stone: 25 }, buildTime: 26, hp: 550, radius: 4.2, navRadius: 3.4, door: [0, 4.2],
   },
+  donkeystable: {
+    id: 'donkeystable', name: 'Donkey Stable', owner: 'p1', buildable: true,
+    desc: 'Pack donkeys that only carry: workshop goods to the store and supplies from the store to the workshops (on Story also building materials), twice a carrier\'s load at a slow walk. They take no house, eat at every meal and rest at night.',
+    cost: { timber: 40, stone: 20, taler: 60 }, buildTime: 24, hp: 420, radius: 3.6, navRadius: 3.0, door: [0, 3.6],
+  },
   well: {
     id: 'well', name: 'Well', owner: 'p1', buildable: true,
     desc: 'A stone well on the green where folk meet: motivation +4 (up to three Wells count). Needs no worker.',
@@ -257,7 +262,7 @@ export function displayName(b) {
   return BUILDINGS[b.type].name;
 }
 
-export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'fisher', 'canteen', 'quarry', 'mine', 'storehouse', 'well', 'saltworks', 'mill', 'bakery', 'smithy', 'barracks', 'tower'];
+export const PLAYER_BUILD_ORDER = ['cottage', 'lodge', 'farm', 'hunter', 'fisher', 'canteen', 'quarry', 'mine', 'storehouse', 'donkeystable', 'well', 'saltworks', 'mill', 'bakery', 'smithy', 'barracks', 'tower'];
 
 export function buildingDef(type) {
   const d = BUILDINGS[type];

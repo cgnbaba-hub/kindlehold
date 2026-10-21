@@ -356,6 +356,22 @@ const MODELS = {
     body.push(...barrel(3.6, 3.4));
     return { body, glow, height: 6.6 };
   },
+  donkeystable(rnd) {
+    const body = [], glow = [];
+    // an open-fronted timber stable under a thatched roof, a hay rack, a water trough and a paddock fence
+    body.push(b(6.4, 0.3, 4.2, C.stoneDark, P.stone, { y: 0.15, z: -0.4 }));
+    body.push(b(6.2, 2.6, 0.2, C.plank, P.planks, { y: 1.6, z: -2.4 }));
+    for (const x of [-3.0, 3.0]) body.push(b(0.2, 2.6, 4.0, C.plank, P.planks, { x, y: 1.6, z: -0.4 }));
+    for (const x of [-3.0, -1.0, 1.0, 3.0]) body.push(b(0.22, 2.9, 0.22, C.timberDark, P.planks, { x, y: 1.6, z: 1.6 }));
+    body.push(beam(-3.1, 2.95, 1.6, 3.1, 2.95, 1.6, 0.2, C.timberDark));
+    body.push(roof(7.2, 5.2, 2.2, C.thatchDark, P.thatch, { y: 3.0, z: -0.4 }));
+    for (const x of [-2.0, 0, 2.0]) body.push(b(1.2, 0.5, 0.5, '#c9ad5a', P.thatch, { x, y: 1.1, z: -2.0 }));
+    body.push(b(1.6, 0.45, 0.6, C.timberDark, P.planks, { x: -1.8, y: 0.3, z: 2.6 }), b(1.4, 0.06, 0.45, '#3c6f86', P.plain, { x: -1.8, y: 0.5, z: 2.6 }));
+    for (const x of [2.2, 3.4, 4.6]) body.push(b(0.14, 1.1, 0.14, C.timberDark, P.planks, { x, y: 0.55, z: 3.4 }));
+    body.push(beam(2.2, 0.9, 3.4, 4.6, 0.9, 3.4, 0.08, C.timber), beam(2.2, 0.5, 3.4, 4.6, 0.5, 3.4, 0.08, C.timber));
+    for (let i = 0; i < 3; i++) body.push(paint(place(sphere8(0.3), { x: 3.6 + (i % 2) * 0.5, y: 0.35 + Math.floor(i / 2) * 0.4, z: -1.6, sy: 1.1 }), '#c2a878', 0.05, rnd, P.cloth));
+    return { body, glow, height: 5.4 };
+  },
   mill(rnd) {
     const body = [], glow = [];
     // a tapering stone tower mill with a timber cap; the sails turn separately (see `sails`)

@@ -4,6 +4,7 @@ import { createNavGrid } from './nav-grid.js';
 import { all } from '../world/world.js';
 import { BUILDINGS } from '../buildings/defs.js';
 import { EV } from '../core/contracts.js';
+import { ROADS } from '../transport/defs.js';
 
 export const PATH_BUDGET_PER_TICK = 12;
 
@@ -58,6 +59,8 @@ export function createNavigationModule() {
     setFrozen: (f) => nav.setFrozen(f),
     isFrozen: () => nav.isFrozen(),
     isIce: (x, z) => nav.isIce(x, z),
+    /** Walking speed factor at a point: faster on stone roads (pack donkeys a little less). */
+    roadSpeed: (x, z, kind) => (nav.isRoad(x, z) ? (kind === 'donkey' ? ROADS.donkeySpeed : ROADS.speed) : 1),
     budgetLeft: () => budget,
     rebuildDynamic,
 

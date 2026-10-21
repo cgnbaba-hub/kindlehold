@@ -1,4 +1,5 @@
-// Deer: instanced low-poly bodies with swinging legs and a head that dips to graze.
+// Deer (and the town's pack donkeys): instanced low-poly bodies with swinging legs and a head
+// that dips to graze.
 // View-only: reads the world, never changes it.
 import * as THREE from 'three';
 import { all } from '../world/world.js';
@@ -51,10 +52,10 @@ export function createWildlifeView({ scene, terrain, world, animalAssets = null,
     render(alpha, frame) {
       time += frame.dt || 0;
       let n = 0, nl = 0, na = 0;
-      for (const a of all(world(), 'animal')) {
+      for (const a of [...all(world(), 'animal'), ...all(world(), 'donkey')]) {
         if (n >= MAX) break;
         const x = a.px + (a.x - a.px) * alpha, z = a.pz + (a.z - a.pz) * alpha;
-        const moving = a.anim === 'walk' || a.anim === 'run';
+        const moving = a.anim === 'walk' || a.anim === 'run' || a.anim === 'carry';
         const gait = a.anim === 'run' ? 11 : 6;
         const ph = time * gait + a.id;
         const bob = moving ? Math.abs(Math.sin(ph)) * (a.anim === 'run' ? 0.12 : 0.04) : 0;
@@ -67,7 +68,7 @@ export function createWildlifeView({ scene, terrain, world, animalAssets = null,
         local.compose(p.set(0, 1.12, 0.52), q.setFromEuler(e.set(0.2 + dip * 1.25, 0, 0)), s.set(1, 1, 1));
         m4.multiplyMatrices(root, local);
         heads.setMatrixAt(n, m4);
-        if (a.id % 3 === 0) antlers.setMatrixAt(na++, m4); // stags carry antlers
+        if (a.kind === 'animal' && a.id % 3 === 0) antlers.setMatrixAt(na++, m4); // stags carry antlers
         LEG_AT.forEach(([lx, ly, lz], i) => {
           const swing = moving ? Math.sin(ph + (i === 0 || i === 3 ? 0 : Math.PI)) * (a.anim === 'run' ? 0.7 : 0.4) : 0;
           local.compose(p.set(lx, ly, lz), q.setFromEuler(e.set(swing, 0, 0)), s.set(1, 1, 1));
@@ -88,8 +89,29 @@ export function createWildlifeView({ scene, terrain, world, animalAssets = null,
   };
 }
 
+// pack saddles on the donkeys: two bags slung over the back, and the load on top while they carry
+function packGeometries() {
+  const bag = '#7a5634', strap = '#3a2818';
+  const saddle = merge([
+    paint(place(box(0.62, 0.08, 0.5), { y: 1.0, z: -0.18 }), '#9b3b2c', 0, null, P.cloth),
+    paint(place(box(0.2, 0.36, 0.42), { x: 0.36, y: 0.82, z: -0.18 }), bag, 0, null, P.cloth),
+    paint(place(box(0.2, 0.36, 0.42), { x: -0.36, y: 0.82, z: -0.18 }), bag, 0, null, P.cloth),
+    paint(place(box(0.7, 0.04, 0.06), { y: 1.05, z: 0.0 }), strap, 0, null, P.plain),
+  ]);
+  const load = merge([
+    paint(place(box(0.5, 0.26, 0.46), { y: 1.18, z: -0.2 }), '#a07a4c', 0, null, P.planks),
+    paint(place(box(0.54, 0.05, 0.08), { y: 1.31, z: -0.2 }), strap, 0, null, P.plain),
+  ]);
+  return { saddle, load };
+}
+const DONKEY_MAX = 32;
+
 function skinnedView({ scene, terrain, world, assets, camera }) {
   const herd = createSkinnedAnimals({ scene, assets, max: MAX });
+  const packs = packGeometries();
+  const packMat = createStructureMaterial({ roughness: 0.9 }, 'kh-structure');
+  const mkPack = (g) => { const m = new THREE.InstancedMesh(g, packMat, DONKEY_MAX); m.count = 0; m.castShadow = true; m.frustumCulled = false; scene.add(m); return m; };
+  const saddles = mkPack(packs.saddle), loads = mkPack(packs.load);
   // only animals in view are skinned and drawn (each one is a few thousand triangles, twice with its shadow)
   const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), ball = new THREE.Sphere(new THREE.Vector3(), 3);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
@@ -102,8 +124,8 @@ function skinnedView({ scene, terrain, world, assets, camera }) {
       const dt = frame.dt || 0;
       herd.begin();
       if (camera) frustum.setFromProjectionMatrix(pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
-      let n = 0;
-      for (const a of all(world(), 'animal')) {
+      let n = 0, ns = 0, nld = 0;
+      for (const a of [...all(world(), 'animal'), ...all(world(), 'donkey')]) {
         const x = a.px + (a.x - a.px) * alpha, z = a.pz + (a.z - a.pz) * alpha;
         const l = last.get(a.id) || [x, z, 0];
         const moved = Math.hypot(x - l[0], z - l[1]);
@@ -114,12 +136,24 @@ function skinnedView({ scene, terrain, world, assets, camera }) {
         if (camera && !frustum.intersectsSphere(ball)) continue;
         if (n++ >= MAX) break;
         m4.compose(p.set(x, y, z), q.setFromAxisAngle(up, a.heading || 0), s);
-        f.id = a.id; f.kind = a.id % 3 === 0 ? 'stag' : 'deer'; f.anim = a.anim || 'idle'; f.dt = dt; f.speed = sp;
+        const donkey = a.kind === 'donkey';
+        f.id = a.id; f.kind = donkey ? 'donkey' : a.id % 3 === 0 ? 'stag' : 'deer'; f.dt = dt; f.speed = sp;
+        f.anim = donkey ? (a.anim === 'walk' || a.anim === 'carry' ? 'walk' : 'idle') : a.anim || 'idle';
         herd.draw(f);
+        if (donkey && ns < DONKEY_MAX) {
+          saddles.setMatrixAt(ns++, m4);
+          if (a.carry && nld < DONKEY_MAX) loads.setMatrixAt(nld++, m4);
+        }
       }
       herd.end(dt);
+      saddles.count = ns; loads.count = nld;
+      flushInstances(saddles); flushInstances(loads);
       if (last.size > MAX * 3) last.clear();
     },
-    dispose() { herd.dispose(); },
+    dispose() {
+      herd.dispose();
+      for (const m of [saddles, loads]) { scene.remove(m); m.geometry.dispose(); }
+      packMat.dispose();
+    },
   };
 }

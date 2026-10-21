@@ -28,8 +28,10 @@ report or script that shows them.
 - Labourers can be ordered to gather timber or stone by hand; building, hauling and
   workplace jobs stay automatic. Work priorities cannot be set.
 - Transport: carriers are a large share of the town (about 45% in a measured game) and
-  workshops wait for pickups a third to half of the time. Roads, pack animals or pack frames are
-  designed (with prices) but not built yet: waiting for a decision.
+  workshops wait for pickups a third to half of the time. Stone roads and the Donkey Stable
+  help, priced so that the bot gains nothing measurable on Normal and Hard (GAME_DESIGN,
+  "Settler comfort"); for spread-out human towns they should pay off more. Untested with people.
+- Roads are drawn from the 2 m path grid: a diagonal road has slightly stepped edges up close.
 - Balance (scripted bot, chapter one, minutes to victory, `scripts/balance-seeds.mjs`):
   Story 8/8 won, about 23 min; Normal 8/8, about 26 min; Hard about 12 of 20 won, about 37 min
   (unfinished counted as 40), with some defeats. Single matches vary by ±10 minutes; compare

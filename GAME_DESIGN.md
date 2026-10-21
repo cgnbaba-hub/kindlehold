@@ -283,6 +283,35 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 - **Storehouse** (35 timber, 25 stone): `isStore`/`pickStore` in `economy/index.js`. Fetch trips
   use the store with the shortest way labourer → store → target; drop-offs go to the store
   nearest the goods. Stock stays one pool per player (no per-store inventories).
+- **Stone roads** (`src/transport/`, command `buildRoad`/`removeRoad`, `world.roads.cells`):
+  - Laid stretch by stretch (at most 48 nav cells of 2 m), inside the own territory, on open
+    ground at least 1.4 m from trees and rocks. Paid at once per cell: Story 1 stone, Normal
+    3 stone + 1 Taler, Hard 4 stone + 2 Taler. Lifting returns nothing; a building takes the
+    cells under it.
+  - Path cost on a road is 1/1.5 of the ground's, so routes keep to roads (string pulling only
+    straightens a road stretch along the road). Walkers are 1.5× faster on a road cell
+    (`nav.roadSpeed`), settlers and soldiers alike — raiders too; donkeys 1.2×.
+- **Donkey Stable** (40 timber, 20 stone, 60 Taler; entity kind `donkey`):
+  - Donkeys use the labourers' task board for hauling and deliveries only (12 goods per trip,
+    6 to a workshop's inputs, 2.6 m/s). Building sites only on Story.
+  - Per stable and difficulty: Story 3 donkeys, 1 provision per meal, no wage; Normal 1 donkey,
+    2 provisions, 3 Taler each payday; Hard 1 donkey, 3 provisions, 4 Taler. Without fodder or
+    wage they rest until the next meal or payday; they also rest at night and run off when the
+    stable is gone.
+  - Measured (bot with roads and a stable, `KH_TRANSPORT=1 node scripts/balance-seeds.mjs`,
+    chapter one, 16 Normal and 20 Hard seeds, unfinished counted as 40 min):
+
+    | Variant | Story | Normal | Hard |
+    |---|---|---|---|
+    | Without | 25.9 min | 27.7 min | 13/20 won, 36.1 min |
+    | First prices (2 stone per cell; 3/2/2 donkeys that also supplied sites) | 18.8 | 24.5 | 20/20, 32.8 |
+    | Final prices (above) | 18.7 | 27.6 | 12/20, 35.5 |
+
+    The first prices made Normal three minutes faster (a town of 48 instead of 33 people) and
+    Hard nearly safe; supplying building sites was the donkeys' strongest part. Raising the
+    stone price alone did not bind the bot, which has stone to spare. With the final prices
+    Normal and Hard are unchanged within the noise (single variants swing by ±1.5 min even over
+    16 seeds); Story is much easier, on purpose.
 - **Idle hands** (`AUTO_GATHER`, `AUTO_GATHER_RULES`):
   - An idle labourer (checked every 2 s) fells a tree or cuts stone within 45 m of a store.
   - One trip at a time (`order.auto`); one labourer always stays idle.

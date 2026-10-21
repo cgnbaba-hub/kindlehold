@@ -25,6 +25,7 @@ import { RANKS, rankOf } from '../combat/index.js';
 import { BRIGANDS, relation, stance, TRUCE, GIFT, PEACE, WAR_AT, ALLY_AT } from '../diplomacy/index.js';
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 import { enemyFaction } from '../ai/factions.js';
+import { ROADS, roadCellCost, donkeysPerStable, donkeyFodder, donkeyWage } from '../transport/defs.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler', flour: 'Flour', bread: 'Bread', tools: 'Tools' };
 const RES_TIPS = {
@@ -544,6 +545,14 @@ export function createHud({ root, session, input, settings, actions }) {
         let out = 0; for (const r in e.stock.out) out += e.stock.out[r];
         if (def.outCap) selPanel.append(h('div.sel-row.small', { text: `Waiting for pickup: ${out}/${def.outCap} ${RES_NAMES[WORK[def.job].res].toLowerCase()}` }));
         if (def.inputs) selPanel.append(h('div.sel-row.small', { text: `In store: ${Object.keys(def.inputs).map((r) => `${RES_NAMES[r].toLowerCase()} ${Math.floor(e.stock.in[r] || 0)}/${def.inputs[r]}`).join(' · ')}` }));
+        if (e.type === 'donkeystable') {
+          const herd = all(w, 'donkey').filter((d) => d.stable === e.id);
+          const busy = herd.filter((d) => d.task && d.task.type !== 'idle' && d.task.type !== 'rest').length;
+          const wage = donkeyWage(w);
+          selPanel.append(h('div.sel-row.small', { text: `Donkeys: ${herd.length}/${donkeysPerStable(w)} · ${busy} carrying · ${donkeyFodder(w)} provisions each per meal${wage ? ` · ${wage} Taler each payday` : ''}` }));
+          if (e.hungry) selPanel.append(h('div.sel-warn', { text: 'No fodder at the last meal: the donkeys stay in the stable until the next one.' }));
+          if (e.unpaid) selPanel.append(h('div.sel-warn', { text: 'The drovers were not paid: the donkeys stay in the stable until the next payday.' }));
+        }
         if (e.type === 'canteen') selPanel.append(h('div.sel-row.small', { text: `Hot meals ready: ${Math.floor(e.meals || 0)}/${def.mealCap} — served first at every mealtime` }));
         if (def.housing) selPanel.append(h('div.sel-row.small', { text: `Houses ${def.housing + upgradeBonus(e, 'housing') + (e.type === 'keep' && w.players[PLAYER].techs.charter ? 6 : 0)} people` }));
         if (def.attack && e.owner === PLAYER) { const a = attackOf(e); selPanel.append(h('div.sel-row.small', { text: `Shoots ${a.damage} damage every ${a.cooldown.toFixed(1)} s within ${a.range} m` })); }
@@ -720,6 +729,16 @@ export function createHud({ root, session, input, settings, actions }) {
           onClick: () => { input.startPlacement(type); cmdMode = 'auto'; },
         }));
       }
+      // stone roads: paid per 2 m stretch as they are laid
+      const perCell = roadCellCost(w);
+      const perText = Object.entries(perCell).map(([r, n]) => `${n} ${r === 'taler' ? 'Taler' : RES_NAMES[r].toLowerCase()}`).join(' + ');
+      cmdGrid.append(cmdButton({
+        ic: 'road', label: 'Road', tipTitle: `Stone road (${perText} per 2 m)`,
+        tip: `Click where the road starts, then every bend. Everyone walks ${Math.round((ROADS.speed - 1) * 100)}% faster on it — raiders too — and routes keep to it. Only inside your territory; lifting a road gives nothing back.`,
+        cost: perCell, disabled: !canAfford(w, PLAYER, perCell), active: input.state.mode === 'road' && !input.state.roadRemove,
+        onClick: () => { input.startRoad(); cmdMode = 'auto'; },
+      }));
+      if (w.roads && w.roads.cells.length) cmdGrid.append(cmdButton({ ic: 'roadRemove', label: 'Lift road', tip: 'Click two points: the road between them is taken up. The stone is not returned.', active: input.state.mode === 'road' && !!input.state.roadRemove, onClick: () => { input.startRoad({ remove: true }); cmdMode = 'auto'; } }));
       if (cmdMode === 'build' && items.length) cmdGrid.append(cmdButton({ ic: 'cancel', label: 'Back', tip: 'Back to commands', onClick: () => { cmdMode = 'auto'; dirtySel = true; } }));
       return;
     }
@@ -852,6 +871,14 @@ export function createHud({ root, session, input, settings, actions }) {
       banner.hidden = false;
       const reason = session.overlay ? session.overlay.placementReason : '';
       setText(banner, `${st.moveId != null ? 'Moving' : 'Placing'} ${BUILDINGS[st.placeType].name} — left-click to ${st.moveId != null ? 'choose the new place (materials come along, only building time is spent)' : 'build'}, ${keyLabel(bindings().rotateLeft)}/${keyLabel(bindings().rotateRight)} to rotate, right-click to cancel${reason ? ' · ' + reason : ''}`);
+      banner.classList.toggle('bad', !!reason);
+    } else if (st.mode === 'road') {
+      banner.hidden = false;
+      const info = session.overlay ? session.overlay.roadInfo : null;
+      const reason = info && !info.ok ? info.reason : '';
+      const verb = st.roadRemove ? 'Lifting a road' : 'Laying a stone road';
+      const what = !st.roadStart ? 'left-click where it starts' : st.roadRemove ? 'left-click where the stretch ends' : `left-click the next bend${info && info.cost && info.cost.stone ? ` (${Object.entries(info.cost).map(([r, n]) => `${n} ${r === 'taler' ? 'Taler' : RES_NAMES[r].toLowerCase()}`).join(' + ')})` : ''}`;
+      setText(banner, `${verb} — ${what}, right-click to ${st.roadStart ? 'end the road' : 'stop'}${reason ? ' · ' + reason : ''}`);
       banner.classList.toggle('bad', !!reason);
     } else if (st.mode === 'target') {
       banner.hidden = false; banner.classList.remove('bad');

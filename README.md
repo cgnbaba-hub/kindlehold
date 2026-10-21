@@ -110,7 +110,7 @@ Game design, story, code, terrain, music and sound are original to this project,
 most of it generated procedurally at runtime. Characters and their animations: **KayKit
 Adventurers Character Pack** by Kay Lousberg (CC0), recoloured and dressed for Kindlehold's
 roles. Building models and props: **KayKit Medieval Hexagon Pack** by Kay Lousberg (CC0).
-Deer and stags: **Ultimate Animated Animal Pack** by Quaternius (CC0).
+Deer, stags and pack donkeys: **Ultimate Animated Animal Pack** by Quaternius (CC0).
 Rendering: three.js (MIT). Every external file is listed in
 [ASSET_REGISTER.md](ASSET_REGISTER.md).
 

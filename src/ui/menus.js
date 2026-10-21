@@ -7,6 +7,7 @@ import { HARROWMERE_SCENARIO } from '../missions/scenarios/harrowmere.js';
 import { SCENARIOS, CAMPAIGN, FREE_PLAY } from '../missions/index.js';
 import { loadProgress, isUnlocked } from '../app/campaign.js';
 import { HAND, FEAST } from '../population/index.js';
+import { ROADS, DONKEYS } from '../transport/defs.js';
 
 function focusFirst(el) { const f = el.querySelector('button:not([disabled]), [tabindex="0"], input, select'); if (f) f.focus(); }
 
@@ -245,6 +246,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       ['pop', 'People are everything', 'Cottages house five. New settlers need free housing and provisions. Every workplace and soldier uses one person.'],
       ['provisions', 'Feed them', 'Everyone eats every 90 s. Hunger lowers motivation, and low motivation slows all work.'],
       ['storehouse', 'Storehouses', 'Labourers carry goods to and from the nearest store — build Storehouses for outlying quarters. Any building can be moved (Move): materials come along, only building time is spent.'],
+      ['road', 'Roads and donkeys', `Build menu → Road: click the start, then every bend. A stone road costs ${ROADS.stone.story}/${ROADS.stone.normal}/${ROADS.stone.hard} stone per 2 m on Story/Normal/Hard (plus ${ROADS.taler.normal}/${ROADS.taler.hard} Taler on Normal/Hard); everyone walks ${Math.round((ROADS.speed - 1) * 100)}% faster on it — raiders too. A Donkey Stable keeps pack donkeys (${DONKEYS.count.story} on Story, ${DONKEYS.count.normal} on Normal and Hard) that carry workshop goods to and from the stores, ${DONKEYS.load / 6}× a carrier's load at a slow walk. They eat at every meal and, on Normal and Hard, want a wage each payday.`],
       ['hearthhand', 'Hearthhands', `Hire them at the Keep (${HAND.cost.taler} Taler, ${HAND.wage} Taler wage each payday). They sleep in the Keep, need no house, build, carry and fell trees or cut stone by hand — but never take a workplace or join the army. The Keep holds ${HAND.cap.join(', then ')} of them as it grows.`],
       ['stability', 'Motivation', `Motivated townsfolk work faster; below 30 nobody new comes, below 15 settlers leave. Meals, bread, low taxes, feasts and Wells lift it; townsfolk without work and long walks to work lower it. A feast needs ${FEAST.cooldown / 1200} minutes of rest before the next. Hover the bar to see why it is where it is.`],
       ['mill', 'Production chains', 'A Windmill grinds grain into flour, a Bakery bakes it into bread (one loaf feeds two and cheers people up), a Smithy forges iron into tools for the third workshop level.'],
@@ -271,7 +273,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       h('p', { text: 'Kindlehold is an original game: its setting, story characters, missions, dialogue, buildings, interface, icons, textures, music and sounds were created for this project, mostly generated procedurally at runtime.' }),
       h('p', { text: 'Characters and their animations: KayKit Adventurers Character Pack by Kay Lousberg (kaylousberg.com), CC0 1.0 — recoloured and dressed for Kindlehold\'s roles and factions.' }),
       h('p', { text: 'Building models and props: KayKit Medieval Hexagon Pack by Kay Lousberg (kaylousberg.com), CC0 1.0.' }),
-      h('p', { text: 'Deer and stags: Ultimate Animated Animal Pack by Quaternius (quaternius.com), CC0 1.0.' }),
+      h('p', { text: 'Deer, stags and pack donkeys: Ultimate Animated Animal Pack by Quaternius (quaternius.com), CC0 1.0.' }),
       h('p.muted.build-id', { text: `Version ${typeof __KH_BUILD__ !== 'undefined' ? __KH_BUILD__ : 'dev'}${typeof __KH_BUILT_AT__ !== 'undefined' ? `, built ${__KH_BUILT_AT__} UTC` : ''}` }),
       h('p', { text: 'Rendering: three.js (MIT licence) including its Sky shader addon. Build tooling: Vite (MIT). No other third-party art, audio or fonts are shipped.' }),
       h('p.muted', { text: 'Inspired only by the general conventions of economy-focused real-time strategy games. Not affiliated with, endorsed by, or a remake of any existing game.' }),
