@@ -765,7 +765,7 @@ export function createHud({ root, session, input, settings, actions }) {
 
   // --- command grid ------------------------------------------------------------------------------
   let cmdMode = 'auto'; // 'auto' | 'build'
-  let buildTab = 'goods', lastTabHint = null; // the open group of the build menu
+  let buildTab = 'goods', lastTabHint = null, buildShown = false; // the open group of the build menu
   let confirmDemolish = 0;
   const SHORT = { 'Hold a feast': 'Feast', "Hunter's Hut": 'Hunter', 'Keen Axes': 'Axes', 'Braced Timber': 'Bracing', 'Tempered Blades': 'Blades', 'March Charter': 'Charter', 'Hire labourer': 'Hire', 'Back to work': 'Release', 'Upgrading…': 'Upgrading', 'Steel Mail': 'Mail', 'Veteran Drill': 'Drill', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Priority on': 'Priority', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
   function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
@@ -787,6 +787,8 @@ export function createHud({ root, session, input, settings, actions }) {
   }
 
   function renderCommands(cmdGrid, cmdTitle) {
+    const wasShown = buildShown;
+    buildShown = false;
     const w = world();
     const p = w.players[PLAYER];
     const items = sel();
@@ -816,9 +818,11 @@ export function createHud({ root, session, input, settings, actions }) {
     }
     if (cmdMode === 'build' || (!items.length) || (serfs.length && serfs.length === items.length)) {
       const hasSalt = all(w, 'deposit').some((d) => d.type === 'salt');
-      // the tab with the building the current objective asks for opens by itself (once per objective)
+      // the tab with the building the current objective asks for opens by itself (once per objective),
+      // but only as the menu opens: a new objective while the player browses only makes its tab pulse
+      buildShown = true;
       const want = hl && hl.startsWith('build:') ? hl.slice(6) : hl === 'build' ? 'lodge' : null;
-      if (want && BUILDINGS[want] && lastTabHint !== hl) { lastTabHint = hl; buildTab = buildTabOf(want); }
+      if (want && BUILDINGS[want] && lastTabHint !== hl && !wasShown) { lastTabHint = hl; buildTab = buildTabOf(want); }
       const tab = BUILD_TABS.find((t) => t.id === buildTab) || BUILD_TABS[1];
       setText(cmdTitle, `Build · ${tab.label}`);
       const tabRow = h('div.build-tabs', { role: 'tablist', 'aria-label': 'Building groups' });

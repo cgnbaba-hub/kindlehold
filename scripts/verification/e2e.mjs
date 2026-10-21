@@ -20,6 +20,7 @@ async function test(name, fn, { viewport = { width: 1600, height: 900 }, init = 
   const context = await browser.newContext({ viewport });
   if (init) await context.addInitScript(init);
   const page = await context.newPage();
+  if (process.env.THROTTLE) { const c = await context.newCDPSession(page); await c.send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.THROTTLE) }); }
   const diag = instrument(page);
   const t0 = Date.now();
   let error = null;
@@ -27,7 +28,7 @@ async function test(name, fn, { viewport = { width: 1600, height: 900 }, init = 
   try { await page.screenshot({ path: path.join(shotDir, `${name}.png`), timeout: 60000 }); } catch { /* ignore */ }
   const pass = !error && diag.pageErrors.length === 0 && diag.consoleErrors.filter((e) => !/forced failure|WebGL 2|Web Audio/.test(e)).length === 0;
   results.push({ name, pass, ms: Date.now() - t0, error, pageErrors: diag.pageErrors, consoleErrors: diag.consoleErrors, failedRequests: diag.failedRequests });
-  console.log(`${pass ? 'PASS' : 'FAIL'} ${name} (${((Date.now() - t0) / 1000).toFixed(1)}s)${error ? '\n   ' + error.split('\n')[0] : ''}${diag.pageErrors.length ? '\n   pageErrors: ' + diag.pageErrors[0].split('\n')[0] : ''}${diag.consoleErrors.length ? '\n   console: ' + diag.consoleErrors[0].split('\n')[0] : ''}`);
+  console.log(`${pass ? 'PASS' : 'FAIL'} ${name} (${((Date.now() - t0) / 1000).toFixed(1)}s)${error ? '\n   ' + error.split('\n')[0] + '\n   ' + ((error.match(/e2e\.mjs:\d+/) || [''])[0]) : ''}${diag.pageErrors.length ? '\n   pageErrors: ' + diag.pageErrors[0].split('\n')[0] : ''}${diag.consoleErrors.length ? '\n   console: ' + diag.consoleErrors[0].split('\n')[0] : ''}`);
   await context.close();
 }
 
