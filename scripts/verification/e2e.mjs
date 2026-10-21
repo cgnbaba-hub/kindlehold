@@ -222,7 +222,7 @@ try {
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
     await page.waitForSelector('.cinematic', { timeout: 30000 }); // it is there at once, but the first frames keep the page busy
     await page.keyboard.press('Space');
-    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 20000 });
+    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 60000 }); // as in the tutorial flow: the first frames on a slow runner delay the fade-out
     await page.waitForFunction(() => /A town that feeds itself/.test(document.querySelector('.objectives').textContent), null, { timeout: 20000 });
     const town = await page.evaluate(() => { const w = window.__GAME__.world(); return { id: w.meta.scenarioId, level: Object.values(w.entities).find((e) => e.type === 'keep').level }; });
     assert(town.id === 'greyfen' && town.level === 2, 'chapter two starts in the castle town');
@@ -287,7 +287,7 @@ try {
     // skip the flight over the new valley
     if (await page.waitForSelector('.cinematic', { timeout: 30000 }).catch(() => null)) {
       await page.mouse.click(640, 400);
-      await page.waitForSelector('.cinematic', { state: 'detached', timeout: 20000 });
+      await page.waitForSelector('.cinematic', { state: 'detached', timeout: 60000 }); // see above
     }
     await page.waitForFunction(() => /enemy seat across the river/.test(document.querySelector('.objectives').textContent), null, { timeout: 30000 });
     const info = await page.evaluate(() => { const w = window.__GAME__.world(); const m = window.__GAME__.session.sim.terrain.map; return { seed: String(w.meta.seed), mapSeed: m.seed, faction: w.ai.faction, keep: Object.values(w.entities).some((e) => e.type === 'keep') }; });
