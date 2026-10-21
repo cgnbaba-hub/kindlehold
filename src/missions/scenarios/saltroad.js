@@ -89,6 +89,14 @@ export const SALTROAD_SCENARIO = {
       completeWhen: { all: [{ unitGone: 'ysolde' }, { destroyed: 'varrkeep' }] },
     },
     {
+      id: 'paved', title: 'Optional: Pave the Salt Road',
+      text: 'Lay 60 m of stone road and keep a Donkey Stable.',
+      hint: 'Build menu → Road: click the start, then each bend. A Donkey Stable keeps pack donkeys that carry salt and goods to and from the stores.', optional: true,
+      highlight: 'build', activeWhen: { completed: 'salt' },
+      completeWhen: { all: [{ roads: 60 }, { built: 'donkeystable', count: 1 }] },
+      onComplete: [{ speaker: 'wren', text: 'Cobbles under the cart wheels and a donkey braying at the waystation. The road is alive again.' }],
+    },
+    {
       id: 'cellar', title: 'Optional: The Salt-King\'s cellar',
       text: 'Find the old salt-kings\' cellar under the northern hills.',
       hint: 'Explore north of the Salt Road; anyone who reaches the ruin can open it.', optional: true,

@@ -63,6 +63,22 @@ fort: from the fourth raid on Normal, from the second on Hard, never on Story, a
 last Rustfang chapter. An engine stops at the edge of its reach, beyond your towers' range, and
 bombards the tower that guards the raid's target, while a few shields guard it. Sally out with
 blades: engines are helpless up close. Enemy engines fly their faction's pennant, yours a blue one.
+Select an engine to see its reach, the distance it cannot fire within and what it is shelling.
+
+On Normal and Hard the raids grow less predictable:
+* **Plunderers between raids:** while the fort can spare men, small parties keep slipping out
+  after the first raid too. Besides outlying workshops they go for **Storehouses** (they carry
+  off 15 of your most plentiful good on Normal, 25 on Hard), **Donkey Stables** (they drive off a
+  donkey; the stable buys a new one for 40 Taler) and **Wells**. Guard what lies far from the Keep.
+* **Flanks:** from the fourth raid on Normal and the second on Hard, spare men from the
+  garrison swing round and strike a second building from the side while the main column hits
+  the first. The flank comes on top of the raid.
+* **Dusk raids (Hard):** from the third raid on, every other raid comes at nightfall, while the
+  town goes to sleep.
+
+When soldiers or townsfolk fall, one alert counts them for the fight ("3 soldiers have
+fallen"); click it to look. The end screen shows the largest the town grew, the Hearthhands you
+hired, the average motivation, buildings raised and lost and the roads you laid.
 
 ## The campaign
 

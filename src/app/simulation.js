@@ -30,9 +30,8 @@ import { createDiplomacyModule } from '../diplomacy/index.js';
 import { createBrigandsModule } from '../brigands/index.js';
 
 const terrainCache = new Map();
-export const NIGHT_PACE = 6;
-/** The dark hours (dusk to dawn) that pass at NIGHT_PACE. */
-export function isFastHour(h) { return h >= 20 || h < 6; }
+import { NIGHT_PACE, isFastHour } from '../core/daytime.js';
+export { NIGHT_PACE, isFastHour };
 
 export function terrainFor(map = HARROWMERE_MAP) {
   const key = mapKey(map);

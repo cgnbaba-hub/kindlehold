@@ -196,7 +196,10 @@ export function destroyBuilding(world, b, byOwner = null) {
   const p = world.players[b.owner];
   if (p && p.burnPenalty !== undefined) p.burnPenalty = Math.min(40, p.burnPenalty + 12);
   emit(world, EV.BUILDING_DESTROYED, { id: b.id, type: b.type, owner: b.owner, x: b.x, z: b.z, by: byOwner });
-  if (b.owner === PLAYER) alert(world, 'danger', `${BUILDINGS[b.type].name} was destroyed!`, b.x, b.z);
+  if (b.owner === PLAYER) {
+    world.stats.buildingsLost = (world.stats.buildingsLost || 0) + 1;
+    alert(world, 'danger', `${BUILDINGS[b.type].name} was destroyed!`, b.x, b.z);
+  }
 }
 
 export function createConstructionModule() {

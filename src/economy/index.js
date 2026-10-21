@@ -599,6 +599,19 @@ export function createEconomyModule() {
         }
         if (s.task) stepLabourer(world, s, keep);
       }
+      // a stable that lost a donkey buys a new one while the treasury allows
+      if (world.tick % 200 === 37) {
+        for (const b of all(world, 'building')) {
+          if (b.type !== 'donkeystable' || b.state !== 'active') continue;
+          const p = world.players[b.owner];
+          const herd = all(world, 'donkey').filter((d) => d.stable === b.id).length;
+          if (herd >= donkeysPerStable(world) || !p || p.res.taler < DONKEYS.price + 20) continue;
+          addRes(world, b.owner, 'taler', -DONKEYS.price, 'donkey');
+          const d = doorOf(b);
+          spawn(world, { kind: 'donkey', owner: b.owner, x: d.x, z: d.z + 1.2, heading: b.rot || 0, stable: b.id, task: null, carry: null, anim: 'idle' });
+          alert(world, 'info', `The Donkey Stable bought a new donkey for ${DONKEYS.price} Taler.`, b.x, b.z, b.owner);
+        }
+      }
       const gone = [];
       for (const dn of all(world, 'donkey')) { dn.px = dn.x; dn.pz = dn.z; stepDonkey(world, dn, gone); }
       // a stable that burnt down, was taken down or moved: its donkeys run off

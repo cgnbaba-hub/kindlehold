@@ -436,6 +436,33 @@ export function createHud({ root, session, input, settings, actions }) {
     setTimeout(() => li.classList.add('fade'), 9000);
     setTimeout(() => li.remove(), 10000);
   }));
+  // losses: one alert per fight, counting up while it lasts ("3 soldiers have fallen"), click to look
+  let loss = null;
+  unsub.push(bus.on(EV.UNIT_DIED, (d) => {
+    if (d.owner !== PLAYER || (d.kind !== 'unit' && d.kind !== 'settler')) return;
+    const now = performance.now();
+    const soldier = d.kind === 'unit';
+    if (loss && loss.soldier === soldier && now - loss.t < 6000 && Math.hypot(d.x - loss.x, d.z - loss.z) < 35 && loss.li.isConnected) {
+      loss.n++; loss.t = now; loss.x = d.x; loss.z = d.z;
+      setText(loss.span, soldier ? `${loss.n} soldiers have fallen` : `${loss.n} townsfolk were killed`);
+      loss.li.classList.remove('fade');
+      clearTimeout(loss.fade); clearTimeout(loss.drop);
+    } else {
+      const name = soldier ? (UNITS[d.type] ? UNITS[d.type].name : 'soldier') : 'settler';
+      const span = h('span', { text: soldier ? `A ${name} has fallen` : `A ${name} was killed` });
+      const li = h('li.alert.alert-danger', { tabIndex: 0, role: 'button', 'data-tip': 'Click to look' }, [icon('alertDanger', 'icon icon-sm'), span]);
+      loss = { li, span, n: 1, t: now, x: d.x, z: d.z, soldier };
+      const at = loss;
+      const go = () => session.rc.rts.focus(at.x, at.z);
+      li.addEventListener('click', go);
+      li.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+      alerts.prepend(li);
+      while (alerts.children.length > 5) alerts.lastChild.remove();
+    }
+    const cur = loss;
+    cur.fade = setTimeout(() => cur.li.classList.add('fade'), 9000);
+    cur.drop = setTimeout(() => cur.li.remove(), 10000);
+  }));
   unsub.push(bus.on(EV.MISSION_MESSAGE, (m) => showMessage(m)));
   unsub.push(bus.on(EV.MISSION_OBJECTIVE, (d) => { dirtyObjectives = true; if (d.state === 'done') toast(`Objective complete`, 'success'); }));
   unsub.push(bus.on(EV.TECH_COMPLETED, (d) => { if (d.owner === PLAYER) toast(`${TECHS[d.techId].name} researched`, 'success'); dirtySel = true; }));
@@ -631,6 +658,13 @@ export function createHud({ root, session, input, settings, actions }) {
         h('span', { 'data-tip': 'Attack range (m)' }, [icon('attackMove', 'icon icon-xs'), `${def.range} m`]),
       ]));
       if (counters) selPanel.append(h('div.sel-row.small', { text: `Strong against ${counters}` }));
+      if (def.engine) {
+        // siege engines: what they can and cannot do, and what an enemy one is shelling
+        selPanel.append(h('div.sel-row.small', { text: `Siege engine: fires every ${def.cooldown.toFixed(1)} s, ${def.range} m reach, but not within ${def.minRange} m` }));
+        const t = e.target != null ? w.entities[e.target] : null;
+        if (t && t.kind === 'building') selPanel.append(h(e.owner === PLAYER ? 'div.sel-row.small' : 'div.sel-warn', { text: `${e.owner === PLAYER ? 'Shelling' : 'Shelling your'} ${BUILDINGS[t.type].name} (${Math.ceil(t.hp)}/${t.maxHp})` }));
+        if (e.owner !== PLAYER) selPanel.append(h('div.sel-row.small', { text: 'Helpless up close: send Bladesmen past its guard.' }));
+      }
       selPanel.append(h('div.sel-row.small.muted', { text: def.desc }));
       if (e.hero) selPanel.append(h('div.sel-row.small', { text: def.passive === 'hearthlight' ? 'Hearthlight: allies within 10 m regenerate and take 10% less damage.' : 'Eagle Eye: sees much further than anyone else, and shoots from 16 m.' }));
       return;

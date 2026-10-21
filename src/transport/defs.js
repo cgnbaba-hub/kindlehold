@@ -44,6 +44,7 @@ export const DONKEYS = {
   deliver: 6,      // to a workshop's inputs (a carrier takes 3)
   speed: 2.6,      // m/s (a settler walks 3.9)
   wage: { story: 0, normal: 3, hard: 4 }, // Taler per donkey each payday (the drover's pay)
+  price: 40,       // Taler for a new donkey when one was lost (plunderers drive them off)
 };
 
 const pick = (table, world) => {
