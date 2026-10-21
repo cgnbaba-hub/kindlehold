@@ -154,6 +154,18 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Einsteigerfreundlichkeit, Paket 3: Tipps beim ersten Mal (2026-10-21)
+
+- Tutorial Teil 2 als Tipps (`src/ui/tips.js`, reine Bedingungen; Anzeige in `hud.js` mit der
+  Tutorial-Karte, Abzeichen „Tip“): Hunger, Träger, Werkstatt ohne Arbeiter, volle Betten,
+  Zulieferung, erster Überfall, mehrere Baustellen (Vorrang), lange Wege, sinkende Motivation.
+  Je Spieler einmal (`settings.seenTips`), höchstens einer zugleich, 30 s Ruhe zu Spielbeginn,
+  40 s zwischen zwei Tipps, nach einer Minute ohne Klick vorbei. Echte Uhrzeit, nicht die
+  gedeckelte Bildzeit (in SwiftShader lief die Ruhezeit sonst minutenlang). Knopf führt hin
+  (Wirtschaftsfenster, Bau-Reiter, Bergfried). Abschaltbar in den Einstellungen; in Testsitzungen
+  (`?verify=1`, `?debug=1`) aus, außer mit `&tips=1`.
+- Tests: `tests/unit/tips.test.js`, e2e `first-time-tip`.
+
 ## Einsteigerfreundlichkeit, Paket 2: Wirtschaftsübersicht (2026-10-21)
 
 - Fenster „Economy“ (Taste O, Knopf neben der Uhr, Klick auf eine Ware oben): zuerst „What holds

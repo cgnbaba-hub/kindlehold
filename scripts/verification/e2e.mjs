@@ -211,6 +211,20 @@ try {
     assert(/Largest town/.test(await page.textContent('.end')) && /Average motivation/.test(await page.textContent('.end')), 'end-of-game stats');
   });
 
+  await test('first-time-tip', async (page) => {
+    await page.goto(url('?debug=1&start=1&quality=low&tips=1'), { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    if (await page.getByRole('button', { name: 'Skip tutorial' }).count()) await page.getByRole('button', { name: 'Skip tutorial' }).click();
+    // a minute in, with an empty larder: the hunger tip explains meals and points at the Food tab
+    await game(page, () => { const g = window.__GAME__; g.issue({ type: 'rekindle' }); g.runTicks(1300); g.world().players.p1.res.provisions = 0; });
+    await page.waitForSelector('.tip-card:not([hidden])', { timeout: 90000 });
+    assert(/Everyone eats/.test(await page.textContent('.tip-card')), 'the hunger tip');
+    await page.getByRole('button', { name: 'Food buildings' }).click();
+    await page.waitForFunction(() => /Build · Food/.test(document.querySelector('.cmd-title').textContent), null, { timeout: 15000 });
+    const seen = await page.evaluate(() => JSON.parse(localStorage.getItem('kindlehold.settings.v1')).seenTips);
+    assert(seen.includes('hunger'), 'the tip is remembered as seen');
+  });
+
   await test('stone-road-through-the-ui', async (page) => {
     await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });

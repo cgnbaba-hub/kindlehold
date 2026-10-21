@@ -27,6 +27,8 @@ import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 import { enemyFaction } from '../ai/factions.js';
 import { BUILD_TABS, buildTabOf } from './build-tabs.js';
 import { economyOverview } from '../economy/overview.js';
+import { nextTip } from './tips.js';
+import { saveSettings } from '../app/settings.js';
 import { ROADS, roadCellCost, donkeysFor, donkeyFodder, donkeyWage } from '../transport/defs.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler', flour: 'Flour', bread: 'Bread', tools: 'Tools' };
@@ -62,7 +64,7 @@ function costRow(cost, have = null) {
 }
 
 
-export function createHud({ root, session, input, settings, actions }) {
+export function createHud({ root, session, input, settings, actions, tips = true }) {
   const sim = session.sim;
   const world = () => sim.world;
   const bus = sim.bus;
@@ -265,6 +267,49 @@ export function createHud({ root, session, input, settings, actions }) {
   const econBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Economy overview', 'data-tip-title': `Economy (${keyLabel(bindings().economy)})`, 'data-tip': 'What holds the town back right now, who carries, and how the stores change.' }, [icon('ledger', 'icon icon-sm')]);
   const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, econBtn, diploBtn, pauseBtn]);
   hud.append(topbar, nightBtn, speedMenu);
+
+  // --- first-time tips: the tutorial's second part, one card at a time ---------------------------
+  const tipTitle = h('h3.tut-title'), tipText = h('p.tut-text');
+  const tipAction = h('button.btn', { type: 'button' });
+  const tipOk = h('button.btn.btn-primary', { type: 'button' }, ['Got it']);
+  const tipCard = h('section.tutorial.tip-card.panel', { role: 'dialog', 'aria-label': 'Tip', 'aria-live': 'polite' }, [
+    h('div.tut-head', {}, [h('span.tut-badge', { text: 'Tip' })]), tipTitle, tipText, h('div.tut-actions', {}, [tipAction, tipOk]),
+  ]);
+  tipCard.hidden = true;
+  hud.append(tipCard);
+  let tipNow = null, tipCheck = 0, tipQuiet = 30, tipShown = 0;
+  function closeTip() {
+    if (tipNow && !settings.seenTips.includes(tipNow.id)) { settings.seenTips.push(tipNow.id); saveSettings(settings); }
+    tipNow = null; tipCard.hidden = true; tipQuiet = 40; root.classList.remove('tip-on');
+  }
+  tipOk.addEventListener('click', closeTip);
+  tipAction.addEventListener('click', () => {
+    const a = tipNow && tipNow.action && tipNow.action[0];
+    if (a === 'economy') toggleEconomy(true);
+    else if (a && a.startsWith('build:')) { pickedTab = a.slice(6); cmdMode = 'build'; dirtySel = true; }
+    else if (a === 'keep') { const k = all(world(), 'building').find((b) => b.type === 'keep' && b.owner === PLAYER); if (k) { session.rc.rts.focus(k.x, k.z); input.setSelection([k.id]); } }
+    closeTip();
+  });
+  let tipClock = null;
+  function updateTips() {
+    // wall-clock seconds: the frame time is capped, and slow machines draw few frames
+    const now = performance.now() / 1000, dt = tipClock == null ? 0 : Math.min(5, now - tipClock);
+    tipClock = now;
+    if (tipNow) { tipShown += dt; if (tipShown > 60) closeTip(); return; } // a tip left alone fades after a minute
+    if (!tips || !settings.firstTips || !Array.isArray(settings.seenTips)) return;
+    tipQuiet -= dt; tipCheck += dt;
+    if (tipQuiet > 0 || tipCheck < 1) return;
+    tipCheck = 0;
+    if (root.classList.contains('tutorial-on') || world().mission.result) return; // the tutorial speaks first
+    const t = nextTip(world(), PLAYER, settings.seenTips);
+    if (!t) return;
+    tipNow = t; tipShown = 0;
+    setText(tipTitle, t.title); setText(tipText, t.text);
+    tipAction.hidden = !t.action;
+    if (t.action) setText(tipAction, t.action[1]);
+    tipCard.hidden = false;
+    root.classList.add('tip-on'); // Osric steps aside, as for the tutorial
+  }
 
   // --- economy: the town at a glance — bottlenecks first, then carriers and the stores ----------
   const econBody = h('div.econ-body');
@@ -765,7 +810,7 @@ export function createHud({ root, session, input, settings, actions }) {
 
   // --- command grid ------------------------------------------------------------------------------
   let cmdMode = 'auto'; // 'auto' | 'build'
-  let buildTab = 'goods', lastTabHint = null, buildShown = false; // the open group of the build menu
+  let buildTab = 'goods', lastTabHint = null, pickedTab = null, buildShown = false; // the open group of the build menu
   let confirmDemolish = 0;
   const SHORT = { 'Hold a feast': 'Feast', "Hunter's Hut": 'Hunter', 'Keen Axes': 'Axes', 'Braced Timber': 'Bracing', 'Tempered Blades': 'Blades', 'March Charter': 'Charter', 'Hire labourer': 'Hire', 'Back to work': 'Release', 'Upgrading…': 'Upgrading', 'Steel Mail': 'Mail', 'Veteran Drill': 'Drill', 'Kindle the Line': 'Kindle', 'Beacon Flare': 'Flare', 'Rekindle the Hearth': 'Rekindle', 'Hold position': 'Hold', 'Cancel construction': 'Cancel', 'Set rally point': 'Rally', 'Resume work': 'Resume', 'Pause work': 'Pause', 'Priority on': 'Priority', 'Click again to demolish': 'Confirm', "Woodcutter's Lodge": 'Lodge', 'Iron Mine': 'Mine' };
   function shortLabel(l) { if (SHORT[l]) return SHORT[l]; return l.replace(/^Train /, '').split(' ')[0]; }
@@ -823,13 +868,15 @@ export function createHud({ root, session, input, settings, actions }) {
       buildShown = true;
       const want = hl && hl.startsWith('build:') ? hl.slice(6) : hl === 'build' ? 'lodge' : null;
       if (want && BUILDINGS[want] && lastTabHint !== hl && !wasShown) { lastTabHint = hl; buildTab = buildTabOf(want); }
+      // a tab the player (or a tip) picked wins over the objective's
+      if (pickedTab) { buildTab = pickedTab; pickedTab = null; lastTabHint = hl; }
       const tab = BUILD_TABS.find((t) => t.id === buildTab) || BUILD_TABS[1];
       setText(cmdTitle, `Build · ${tab.label}`);
       const tabRow = h('div.build-tabs', { role: 'tablist', 'aria-label': 'Building groups' });
       for (const t of BUILD_TABS) {
         const lit = t.id !== tab.id && (hl === 'build' ? ['lodge', 'farm'] : want ? [want] : []).some((x) => t.types.includes(x));
         const tb = h(`button.build-tab${t.id === tab.id ? '.active' : ''}${lit ? '.pulse' : ''}`, { type: 'button', role: 'tab', 'aria-selected': t.id === tab.id ? 'true' : 'false', 'aria-label': `${t.label} buildings`, 'data-tip': t.tip, 'data-tip-title': t.label }, [icon(t.ic, 'icon icon-sm'), h('span', { text: t.label })]);
-        tb.addEventListener('click', () => { buildTab = t.id; dirtySel = true; });
+        tb.addEventListener('click', () => { pickedTab = t.id; dirtySel = true; });
         tabRow.append(tb);
       }
       cmdGrid.append(tabRow);
@@ -1046,6 +1093,7 @@ export function createHud({ root, session, input, settings, actions }) {
     renderDiplomacy();
     lastRates = rates;
     renderEconomy();
+    updateTips();
     adviceTimer += 0.25;
     // Osric blinks now and then (one quarter-second tick every few seconds)
     blinkTick = (blinkTick + 1) % 19;
@@ -1111,6 +1159,6 @@ export function createHud({ root, session, input, settings, actions }) {
     openBuildMenu() { cmdMode = cmdMode === 'build' ? 'auto' : 'build'; dirtySel = true; },
     toggleEconomy: () => toggleEconomy(),
     selectionChanged() { cmdMode = 'auto'; dirtySel = true; },
-    dispose() { unsub.forEach((u) => u()); floaters.dispose(); hud.remove(); },
+    dispose() { unsub.forEach((u) => u()); floaters.dispose(); hud.remove(); root.classList.remove('tip-on'); },
   };
 }

@@ -20,6 +20,8 @@ export const DEFAULT_SETTINGS = {
   cameraSpeed: 1,
   tutorialHints: true,
   tutorialDone: false,
+  firstTips: true,          // explain things the first time they matter (src/ui/tips.js)
+  seenTips: [],             // ids of the tips already shown
   gameSpeed: 1,
   difficulty: 'normal',
   bindings: {},
@@ -31,13 +33,15 @@ const RANGES = {
 };
 
 export function sanitizeSettings(raw) {
-  const out = { ...DEFAULT_SETTINGS, bindings: {} };
+  const out = { ...DEFAULT_SETTINGS, bindings: {}, seenTips: [] };
   if (!raw || typeof raw !== 'object') return out;
   for (const k of Object.keys(DEFAULT_SETTINGS)) {
     const v = raw[k];
     const d = DEFAULT_SETTINGS[k];
     if (v === undefined) continue;
-    if (k === 'bindings') {
+    if (k === 'seenTips') {
+      if (Array.isArray(v)) out.seenTips = v.filter((x) => typeof x === 'string' && /^[a-z-]{1,24}$/.test(x)).slice(0, 64);
+    } else if (k === 'bindings') {
       if (v && typeof v === 'object') for (const a of Object.keys(DEFAULT_BINDINGS)) if (typeof v[a] === 'string' && /^[A-Za-z0-9]{1,20}$/.test(v[a])) out.bindings[a] = v[a];
     } else if (typeof d === 'number' && typeof v === 'number' && Number.isFinite(v)) {
       const [lo, hi] = RANGES[k] || [-Infinity, Infinity];

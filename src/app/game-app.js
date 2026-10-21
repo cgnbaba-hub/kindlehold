@@ -129,7 +129,8 @@ export async function startApp(params) {
       return;
     }
     session.loop.setSpeed(settings.gameSpeed);
-    hud = createHud({ root: uiRoot, session, input: session.input, settings, actions: {
+    // first-time tips stay out of scripted test sessions unless asked for (?tips=1)
+    hud = createHud({ root: uiRoot, session, input: session.input, settings, tips: !(verify || debugApi) || params.get('tips') === '1', actions: {
       pause: () => togglePause(),
       cycleSpeed: () => { const sp = SPEEDS; const i = (sp.indexOf(session.loop.getSpeed()) + 1) % sp.length; session.loop.setSpeed(sp[i]); },
     } });

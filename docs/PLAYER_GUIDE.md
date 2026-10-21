@@ -17,7 +17,11 @@ fort and will not share the valley.
   without a worker or waiting for goods, stores running out — with what helps and a *Show* button
   that jumps to the buildings concerned; below, how busy the carriers are and how each store
   changed over the last minute.
-* A guided tutorial starts with your first new game; replay it from *How to Play*.
+* A guided tutorial starts with your first new game; replay it from *How to Play*. After it,
+  **tips** explain each thing once, the moment it first matters — goods waiting for carriers,
+  hunger, full beds, a workshop without a worker, the first raid, several building sites, long
+  walks, sinking motivation — each with a button that opens the right place. Switch them off under
+  *Settings → Gameplay → Tips for new players*.
 
 ## Your first ten minutes
 
