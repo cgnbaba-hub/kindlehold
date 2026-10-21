@@ -11,7 +11,8 @@ const sh = (c) => { try { return execSync(c, { cwd: inRepo(), encoding: 'utf8', 
 
 const testOut = sh('node --test "tests/unit/**/*.test.js" "tests/integration/**/*.test.js" "tests/simulation/**/*.test.js" 2>&1');
 const num = (re) => { const m = testOut.match(re); return m ? Number(m[1]) : null; };
-const tests = { total: num(/ℹ tests (\d+)/), pass: num(/ℹ pass (\d+)/), fail: num(/ℹ fail (\d+)/), ranAt: new Date().toISOString() };
+// the spec reporter prints "ℹ tests 172", the TAP reporter (no terminal) "# tests 172"
+const tests = { total: num(/(?:ℹ|#) tests (\d+)/), pass: num(/(?:ℹ|#) pass (\d+)/), fail: num(/(?:ℹ|#) fail (\d+)/), ranAt: new Date().toISOString() };
 
 const verify = read('docs/reports/latest-verify.json');
 const e2e = read('docs/reports/latest-e2e.json');

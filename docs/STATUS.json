@@ -2,8 +2,8 @@
   "project": "Kindlehold",
   "stage": 1,
   "currentWave": 5,
-  "lastVerifiedCommit": "2198890",
-  "lastVerification": "2026-09-24T15:56:30.650Z",
+  "lastVerifiedCommit": "02d4638",
+  "lastVerification": "2026-10-21T05:28:13.030Z",
   "environment": {
     "node": "v26.7.0",
     "npm": "11.19.0",
@@ -17,143 +17,115 @@
     "agents": "Agent tool (subagents) available; builders executed sequentially by the integrator session under the ownership model; critics run as independent read-only subagents (docs/DECISIONS.md D-007)"
   },
   "tests": {
-    "total": 72,
-    "pass": 72,
+    "total": 172,
+    "pass": 172,
     "fail": 0,
-    "ranAt": "2026-09-24T15:56:30.637Z"
+    "ranAt": "2026-10-21T05:28:13.024Z"
   },
   "verification": {
-    "run": "final",
+    "run": "gfx-after",
     "pass": true,
     "presets": [
-      {
-        "preset": "dawn-overview",
-        "pass": true,
-        "fps": null,
-        "drawCalls": 148,
-        "triangles": 1200083
-      },
       {
         "preset": "midday-overview",
         "pass": true,
         "fps": null,
-        "drawCalls": 148,
-        "triangles": 1200061
+        "drawCalls": 216,
+        "triangles": 1451947
       },
       {
         "preset": "sunset-overview",
         "pass": true,
         "fps": null,
-        "drawCalls": 148,
-        "triangles": 1200057
+        "drawCalls": 220,
+        "triangles": 1453081
       },
       {
         "preset": "night-overview",
         "pass": true,
         "fps": null,
-        "drawCalls": 136,
-        "triangles": 1184077
+        "drawCalls": 191,
+        "triangles": 1420083
       },
       {
         "preset": "settlement-closeup",
         "pass": true,
         "fps": null,
-        "drawCalls": 125,
-        "triangles": 1178959
+        "drawCalls": 185,
+        "triangles": 1431595
       },
       {
         "preset": "production-closeup",
         "pass": true,
         "fps": null,
-        "drawCalls": 140,
-        "triangles": 1187345
-      },
-      {
-        "preset": "construction-closeup",
-        "pass": true,
-        "fps": null,
-        "drawCalls": 107,
-        "triangles": 1146515
+        "drawCalls": 201,
+        "triangles": 1438171
       },
       {
         "preset": "combat-overview",
         "pass": true,
         "fps": null,
-        "drawCalls": 119,
-        "triangles": 1220553
+        "drawCalls": 178,
+        "triangles": 1461159
       },
       {
-        "preset": "hero-ability",
+        "preset": "winter-settlement",
         "pass": true,
         "fps": null,
-        "drawCalls": 127,
-        "triangles": 1228003
+        "drawCalls": 201,
+        "triangles": 1437099
       },
       {
-        "preset": "enemy-raid",
+        "preset": "figures-soldiers",
         "pass": true,
         "fps": null,
-        "drawCalls": 138,
-        "triangles": 1229579
+        "drawCalls": 171,
+        "triangles": 1458003
       },
       {
-        "preset": "ui-1920",
+        "preset": "rain-settlement",
         "pass": true,
         "fps": null,
-        "drawCalls": 137,
-        "triangles": 1184187
+        "drawCalls": 208,
+        "triangles": 1448059
+      },
+      {
+        "preset": "saltmere-lake",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 212,
+        "triangles": 1352153
+      },
+      {
+        "preset": "whitehart-camp",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 206,
+        "triangles": 1422117
+      },
+      {
+        "preset": "ironmarch-fort",
+        "pass": true,
+        "fps": null,
+        "drawCalls": 200,
+        "triangles": 1340612
       },
       {
         "preset": "ui-1280",
         "pass": true,
         "fps": null,
-        "drawCalls": 137,
-        "triangles": 1184095
+        "drawCalls": 199,
+        "triangles": 1434759
       }
     ]
   },
   "e2e": {
-    "run": "e2e-20260924-151208",
+    "run": "e2e-20261020-174105",
     "pass": true,
-    "passed": 9,
-    "total": 9
+    "passed": 17,
+    "total": 17
   },
-  "performance": {
-    "run": "perf-20260924-154421",
-    "pass": true,
-    "gates": {
-      "simMean": true,
-      "simP95": true,
-      "drawCalls": true,
-      "triangles": true,
-      "textures": true,
-      "geometries": true,
-      "heap": true,
-      "noErrors": true
-    },
-    "simMsPerTickMean": 0.16888148333333808,
-    "simMsPerTickP95": 0.32605100000000675,
-    "simEntities": 342,
-    "browser": {
-      "drawCalls": 140,
-      "triangles": 1245203,
-      "textures": 12,
-      "geometries": 73,
-      "heapMB": 35.572052001953125,
-      "fpsSwiftShader": 1.6788933902697176,
-      "frameMsP95SwiftShader": 1383.199999999997,
-      "readyMs": 46445
-    },
-    "gpuFps": null,
-    "gpuFpsNote": "Not measurable: the VPS has no GPU (SwiftShader only). See PERFORMANCE_BUDGET.md.",
-    "timeToReadyFreshGameMs": {
-      "value": 36564,
-      "quality": "high",
-      "renderer": "SwiftShader",
-      "budgetMs": 15000,
-      "pass": false
-    }
-  },
+  "performance": null,
   "consoleErrorCount": 0,
   "failedRequestCount": 0,
   "modules": {
@@ -437,9 +409,10 @@
     }
   },
   "openBlockers": [
-    "Visual gate: overall 7.0 < 8.5 after 4 critic rounds (water depth, melee readability, flare glow clipping, menu key art composition, lime ground in close-ups) \u2014 docs/critiques/visual-final.md",
-    "Gameplay gate: overall 6.8 < 8.5 after 3 critic rounds (no blockers left; labour depth 5.5, raids short, difficulty curve flat) \u2014 docs/critiques/gameplay-round3.md",
-    "GPU frame rate unmeasured (no GPU on the VPS)"
+    "Visual gate: overall 7.0 < 8.5 after 4 critic rounds (water depth, melee readability, flare glow clipping, menu key art composition, lime ground in close-ups) — docs/critiques/visual-final.md",
+    "Gameplay gate: overall 6.8 < 8.5 after 3 critic rounds (no blockers left; labour depth 5.5, raids short, difficulty curve flat) — docs/critiques/gameplay-round3.md",
+    "GPU frame rate unmeasured (no GPU on the VPS)",
+    "Public deployment not performed (no domain / DNS authorised)"
   ],
   "openPolish": [
     "see docs/KNOWN_ISSUES.md"
@@ -464,7 +437,7 @@
         "info": 6
       },
       "report": "docs/critiques/security-round1.md",
-      "verdict": "M1\u2013M3, L1\u2013L5 fixed"
+      "verdict": "M1–M3, L1–L5 fixed"
     },
     {
       "date": "2026-09-24",
@@ -516,20 +489,10 @@
     "visual": 4,
     "security": 1
   },
-  "assetLicences": "All runtime content is procedural/project-authored; three.js (MIT). check-register: see scripts/assets/check-register.mjs",
+  "assetLicences": "Procedural/project-authored content; character models and animations: KayKit Adventurers (Kay Lousberg, CC0); three.js (MIT). check-register: see scripts/assets/check-register.mjs",
   "deployment": {
-    "status": "deployed",
-    "url": "https://kindlehold.js-automata.work",
-    "verifiedAt": "2026-09-24",
-    "evidence": "health-check.sh + csp-smoke.mjs against the public URL passed",
-    "route": "Cloudflare token tunnel public hostname -> localhost:8098 (nginx container kindlehold-web)"
+    "status": "production build + nginx atomic releases, rollback, headers, CSP browser load validated locally in Docker (npm run test:deploy, commit 2198890); not publicly deployed — no domain provided",
+    "remainingAction": "Add a Cloudflare Tunnel public hostname (or DNS + nginx site) pointing at the nginx container/port, see DEPLOYMENT.md §6"
   },
-  "nextRecommendedAction": "Visual: water depth colour + terrain-following ability decals + key-art composition; gameplay: labour priorities and longer, multi-phase raids; then re-run critics",
-  "stageStatus": "Stage 1 vertical slice functionally complete; quality gates NOT passed (visual 7.0, gameplay 6.8 < 8.5); Stage 2 not started",
-  "scores": {
-    "visual": 7,
-    "gameplay": 6.8,
-    "gate": 8.5,
-    "pass": false
-  }
+  "nextRecommendedAction": "Visual: water depth colour + terrain-following ability decals + key-art composition; gameplay: labour priorities and longer, multi-phase raids; then re-run critics"
 }
