@@ -186,7 +186,7 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 
 - Tutorial Teil 2 als Tipps (`src/ui/tips.js`, reine Bedingungen; Anzeige in `hud.js` mit der
   Tutorial-Karte, Abzeichen „Tip“): Hunger, Träger, Werkstatt ohne Arbeiter, volle Betten,
-  Zulieferung, erster Überfall, mehrere Baustellen (Vorrang), lange Wege, sinkende Motivation.
+  Zulieferung, erster Überfall, mehrere Baustellen (Vorrang), lange Wege, sinkende Motivation, erste Nacht (alle schlafen, Nacht läuft schneller).
   Je Spieler einmal (`settings.seenTips`), höchstens einer zugleich, 30 s Ruhe zu Spielbeginn,
   40 s zwischen zwei Tipps, nach einer Minute ohne Klick vorbei. Echte Uhrzeit, nicht die
   gedeckelte Bildzeit (in SwiftShader lief die Ruhezeit sonst minutenlang). Knopf führt hin

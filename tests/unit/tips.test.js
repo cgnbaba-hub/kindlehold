@@ -39,3 +39,15 @@ test('hunger comes before everything else, and the raid warning brings the army 
   const raid = TIPS.find((t) => t.id === 'raid');
   assert.equal(raid.action[0], 'build:army');
 });
+
+test('the first night explains why everyone sleeps', () => {
+  const sim = newSim();
+  sim.issue({ type: 'rekindle' });
+  for (let i = 0; i < 1300; i++) sim.step();
+  sim.world.players.p1.res.provisions = 500;
+  sim.world.time.hour = 21;
+  const seen = TIPS.map((t) => t.id).filter((id) => id !== 'night');
+  assert.equal(nextTip(sim.world, 'p1', seen).id, 'night');
+  sim.world.time.hour = 12;
+  assert.equal(nextTip(sim.world, 'p1', seen), null);
+});

@@ -30,7 +30,7 @@ fort and will not share the valley.
 * A guided tutorial starts with your first new game; replay it from *How to Play*. After it,
   **tips** explain each thing once, the moment it first matters — goods waiting for carriers,
   hunger, full beds, a workshop without a worker, the first raid, several building sites, long
-  walks, sinking motivation — each with a button that opens the right place. Switch them off under
+  walks, sinking motivation, the first night — each with a button that opens the right place. Switch them off under
   *Settings → Gameplay → Tips for new players*.
 
 ## Your first ten minutes

@@ -3,6 +3,7 @@
 // once per player (settings.seenTips). Pure data and conditions, read-only on the world.
 import { all } from '../world/world.js';
 import { BREAD_PORTIONS, mealsInStock, asleepCount, commuteOf, COMMUTE } from '../population/index.js';
+import { NIGHT_PACE, isFastHour } from '../core/daytime.js';
 
 const mine = (world, owner, pred) => all(world, 'building').some((b) => b.owner === owner && pred(b));
 const day = (world) => world.time.hour >= 6 && world.time.hour < 21;
@@ -44,6 +45,11 @@ export const TIPS = [
     text: 'Build a Barracks (Army tab) and train soldiers there — each one takes a free settler. Drag a box around soldiers to select them, right-click to move them, A to attack-move. Watchtowers shoot raiders, and raiders go for what nobody guards.',
     action: ['build:army', 'Army buildings'],
     when: (w) => !!w.mission.flags.raidWarned || w.ai.state === 'gather' || w.ai.state === 'raid' || !!w.ai.harass,
+  },
+  {
+    id: 'night', title: 'Night falls',
+    text: `At night your people go to bed and the workshops rest — nothing is broken. The dark hours pass ${NIGHT_PACE} times as fast, and rested settlers work quicker by day. Skip night (top) jumps to dawn. Some raiders like to come with torches at dusk.`,
+    when: (w) => w.tick > 1200 && isFastHour(w.time.hour) && w.time.hour >= 20.5,
   },
   {
     id: 'sites', title: 'Several building sites at once',
