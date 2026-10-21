@@ -4,7 +4,7 @@
 import { h, icon, portrait, osricAvatar, clear, setText, fmtTime } from './dom.js';
 import { portraitKey } from './portraits.js';
 import { seasonAt } from '../weather/index.js';
-import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf, HAND, handsOf, handsCap, motivationParts, unemployedOf, commuteOf, COMMUTE } from '../population/index.js';
+import { paydayForecast, TAX_LEVELS, HIRE_COST, RATIONS, FEAST, censusOf, HAND, handsOf, handsCap, motivationParts, unemployedOf, commuteOf, COMMUTE, asleepCount, BREAD_PORTIONS, mealsInStock } from '../population/index.js';
 import { POI_INFO, TRADES, poiName, priceOf } from '../pois/index.js';
 import { createMinimap } from './minimap.js';
 import { createFloaters } from './floaters.js';
@@ -787,15 +787,21 @@ export function createHud({ root, session, input, settings, actions, tips = true
           const f = paydayForecast(w, PLAYER);
           const taxRow = h('div.tax-row', { role: 'group', 'aria-label': 'Tax level' }, [h('span', { text: 'Taxes' })]);
           TAX_LEVELS.forEach((lvl, i) => {
-            const b = h(`button.tax-btn${(p.tax ?? 1) === i ? '.active' : ''}`, { type: 'button', 'aria-pressed': (p.tax ?? 1) === i ? 'true' : 'false', 'data-tip': `${lvl.perSettler} Taler per settler each payday · motivation ${lvl.stability > 0 ? '+' : ''}${lvl.stability}` , text: lvl.name });
+            // what the level means for this town, not only per head
+            const taxes = Math.round(f.settlers * lvl.perSettler * (1 + upgradeBonus(e, 'tax')));
+            const b = h(`button.tax-btn${(p.tax ?? 1) === i ? '.active' : ''}`, { type: 'button', 'aria-pressed': (p.tax ?? 1) === i ? 'true' : 'false', 'data-tip': `${lvl.perSettler} Taler per settler each payday: ${taxes} Taler from your ${f.settlers} settlers · motivation ${lvl.stability > 0 ? '+' : ''}${lvl.stability}`, text: lvl.name });
             b.addEventListener('click', () => { input.issue({ type: 'setTax', level: i }); setTimeout(() => { dirtySel = true; }, 120); });
             taxRow.append(b);
           });
           selPanel.append(taxRow);
           const rationRow = h('div.tax-row', { role: 'group', 'aria-label': 'Rations' }, [h('span', { text: 'Rations' })]);
+          const eaters = Math.max(0, p.pop - asleepCount(w, PLAYER));
+          const food = Math.floor(p.res.provisions) + Math.floor(p.res.bread || 0) * BREAD_PORTIONS + mealsInStock(w, PLAYER);
           RATIONS.forEach((r, i) => {
             const cur = (p.rations ?? 1) === i;
-            const b = h(`button.tax-btn${cur ? '.active' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'data-tip': `${r.portion}× food per person at mealtime · motivation ${r.stability > 0 ? '+' : ''}${r.stability}`, text: r.name });
+            const need = Math.ceil(eaters * r.portion);
+            const meals = need ? Math.floor(food / need) : 0;
+            const b = h(`button.tax-btn${cur ? '.active' : ''}`, { type: 'button', 'aria-pressed': cur ? 'true' : 'false', 'data-tip': `${r.portion}× food per person at mealtime: ${need} portions for ${eaters} people, the store lasts ${meals} meal${meals === 1 ? '' : 's'} · motivation ${r.stability > 0 ? '+' : ''}${r.stability}`, text: r.name });
             b.addEventListener('click', () => { input.issue({ type: 'setRations', level: i }); setTimeout(() => { dirtySel = true; }, 120); });
             rationRow.append(b);
           });
