@@ -154,6 +154,24 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Freies Spiel: Einstellungen vor dem Start (2026-10-21)
+
+- Nach der Kartenwahl kommt `freePlaySetup` (`src/ui/menus.js`): Schwierigkeit, Startwaren
+  (Lean ×0,5 / Standard / Rich ×1,5), Frieden bis zum ersten Überfall (Short ×0,65 / Standard /
+  Long ×1,6 auf Warnzeit und erste Plünderer). Auf der Zufallskarte zusätzlich Seed (Text, „New
+  valley“ würfelt; Pausenmenü zeigt den Seed) und der Herr des Tals (per Los oder fest).
+- Daten in `src/missions/skirmish.js`, gespeichert in `world.meta.skirmish` (Speicherschema),
+  angewandt in `missions/setup.js`; nur für `scenario.free`, nie in der Kampagne. Die letzte Wahl
+  merkt sich `settings.skirmish`. Neustart behält Seed und Wahl.
+- Schwierigkeit gemessen (Bot, Free Play Harrowmere, 16 Normal / 20 Hard Seeds; Minuten bis
+  Sieg, Siege): Standard 26,7 / 15; Rich 22,1 / 19 (leichter); Lean ×0,5 29,9 (1 Niederlage) / 12;
+  Short 27,2 / 12 (schwerer). Long macht den Bot langsamer (31,6 / 15), weil er im Takt der
+  Überfälle angreift; für Spieler ist es Luft vor dem ersten Überfall. Lean ×0,7 war kaum
+  spürbar (25,9 / 14), daher ×0,5. Das Menü schreibt „easier“/„harder“ an die Wahl.
+- Messen: `KH_GOODS=lean|rich`, `KH_PEACE=short|long` für `scripts/balance.mjs` und
+  `balance-seeds.mjs free-harrowmere:normal …`.
+- Tests: `tests/simulation/skirmish.test.js`, e2e `free-play-random-map` (Seed, Herr, Waren).
+
 ## Einsteigerfreundlichkeit, Paket 6: Warnungen auf der Minikarte (2026-10-21)
 
 - Jede Warnung/Gefahr mit Ort (`EV.ALERT` mit x/z) zeichnet 6 s lang einen sich weitenden Ring auf

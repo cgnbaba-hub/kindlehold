@@ -71,14 +71,14 @@ export async function startApp(params) {
   function showMain() {
     endSession();
     menus.mainMenu({
-      onNew: (difficulty, scenarioId) => startGame({ difficulty, scenarioId }),
+      onNew: (difficulty, scenarioId, extra = {}) => startGame({ difficulty, scenarioId, ...extra }),
       onContinue: () => { const s = latestSave(); if (s) startGame({ slot: s.slot }); },
       onLoad: (slot) => startGame({ slot }),
       canContinue: hasAnySave(),
     });
   }
 
-  async function startGame({ difficulty = settings.difficulty, slot = null, seed = null, demo = null, scenarioId = 'harrowmere', intro = true } = {}) {
+  async function startGame({ difficulty = settings.difficulty, slot = null, seed = null, demo = null, scenarioId = 'harrowmere', intro = true, skirmish = null } = {}) {
     endSession();
     menus.loading(slot ? 'Unpacking your saved settlement…' : 'Rekindling the hearth…');
     await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
@@ -96,7 +96,7 @@ export async function startApp(params) {
       session = await createSession({
         container, seed: seed || (loaded ? loaded.meta.seed : String(Date.now() % 100000)), quality: ['low', 'medium', 'high'].includes(params.get('quality')) ? params.get('quality') : settings.quality, verify, settings,
         difficulty: loaded ? loaded.meta.difficulty : difficulty, world: loaded, demo,
-        scenarioId: loaded ? loaded.meta.scenarioId : scenarioId, campaign: loaded ? null : campaignMemory(),
+        scenarioId: loaded ? loaded.meta.scenarioId : scenarioId, campaign: loaded ? null : campaignMemory(), skirmish: loaded ? null : skirmish,
         onCritical: (id, err) => showErrorOverlay({
           title: 'The game stopped unexpectedly',
           message: `A core system (${id}) failed. Your last save is safe.`,
@@ -164,7 +164,7 @@ export async function startApp(params) {
         if (!session) return;
         session.loop.pause();
         const diff = session.world.meta.difficulty, sid = session.world.meta.scenarioId, seed = sid === 'free-wild' ? session.world.meta.seed : null;
-        menus.endScreen({ result, world: session.world, onMenu: showMain, onRestart: () => startGame({ difficulty: diff, scenarioId: sid, seed }), onNext: next ? () => startGame({ difficulty: diff, scenarioId: next }) : null });
+        menus.endScreen({ result, world: session.world, onMenu: showMain, onRestart: () => startGame({ difficulty: diff, scenarioId: sid, seed, skirmish: session.world.meta.skirmish || null }), onNext: next ? () => startGame({ difficulty: diff, scenarioId: next }) : null });
       }, 2500);
     });
     if (verify || debugApi || import.meta.env.DEV) installVerifyApi(Object.assign(session, { save: (s) => doSave(s || 'quick'), load: (s) => startGame({ slot: s || 'quick' }) }));
@@ -223,8 +223,10 @@ export async function startApp(params) {
       onSave: (slot) => { doSave(slot); togglePause(); },
       onLoad: (slot) => startGame({ slot }),
       onQuit: () => showMain(),
+      // a random valley can be played again (or shared) by its seed
+      note: session.world.meta.scenarioId === 'free-wild' ? `Valley seed: ${session.world.meta.seed}` : null,
       // (a random map restarts on the same valley)
-      onRestart: () => startGame({ difficulty: session.world.meta.difficulty, scenarioId: session.world.meta.scenarioId, seed: session.world.meta.scenarioId === 'free-wild' ? session.world.meta.seed : null }),
+      onRestart: () => startGame({ difficulty: session.world.meta.difficulty, scenarioId: session.world.meta.scenarioId, seed: session.world.meta.scenarioId === 'free-wild' ? session.world.meta.seed : null, skirmish: session.world.meta.skirmish || null }),
     });
   }
 

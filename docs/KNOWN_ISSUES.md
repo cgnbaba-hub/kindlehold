@@ -21,7 +21,8 @@ report or script that shows them.
 ## Gameplay
 
 - Six campaign chapters, four enemy factions, two heroes (Maren, Wren), diplomacy with a third
-  party, free play with random maps. No multiplayer, skirmish lobby or map editor.
+  party, free play with random maps and a setup screen (seed, lord, goods, peace). No multiplayer,
+  rival AI town or map editor.
 - Exploration shroud for the player only (explored/unexplored, no live line-of-sight fog).
   The AI reads the world directly; this is documented in `src/ai/index.js`, and the AI gains
   no resource or vision advantage beyond what the player can also see.

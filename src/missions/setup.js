@@ -11,6 +11,7 @@ import { distToPolyline } from '../world/terrain-data.js';
 import { HARROWMERE_SCENARIO } from './scenarios/harrowmere.js';
 import { enemyFaction, FACTIONS } from '../ai/factions.js';
 import { RANKS } from '../combat/index.js';
+import { SKIRMISH_GOODS, SKIRMISH_PEACE, sanitizeSkirmish } from './skirmish.js';
 
 const DIFF_RES = { story: 1.5, normal: 1, hard: 0.8 };
 
@@ -27,12 +28,15 @@ function setLevel(b, level) {
 export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   const map = terrain.map;
   const rng = worldRng(world);
-  const mult = Object.hasOwn(DIFF_RES, world.meta.difficulty) ? DIFF_RES[world.meta.difficulty] : 1;
+  // free play: the choices from the setup screen (none in the campaign)
+  const sk = scenario.free && world.meta.skirmish ? sanitizeSkirmish(world.meta.skirmish) : null;
+  const mult = (Object.hasOwn(DIFF_RES, world.meta.difficulty) ? DIFF_RES[world.meta.difficulty] : 1) * (sk ? SKIRMISH_GOODS[sk.goods].mult : 1);
   const res = {};
   for (const r in scenario.startResources) res[r] = Math.round(scenario.startResources[r] * mult);
   addPlayer(world, { id: PLAYER, name: 'Hearthbound', faction: 'hearthbound', color: '#2f6f8f', res, stability: 55 });
   // the enemy faction of this chapter (Rustfang by default)
-  if (scenario.enemy && scenario.enemy.faction === 'random') {
+  if (scenario.enemy && scenario.enemy.faction === 'random' && sk && sk.faction !== 'random') world.ai.faction = sk.faction;
+  else if (scenario.enemy && scenario.enemy.faction === 'random') {
     // drawn by lot from the seed (the same seed always meets the same lord)
     const ids = Object.keys(FACTIONS).sort();
     const h = [...String(world.meta.seed)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 11);
@@ -203,5 +207,11 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   world.ai.nextSpawnTick = cfg.spawnInterval * 20;
   world.ai.nextScoutTick = 240 * 20;
   world.mission.raidWarningTick = (scenario.raidWarningAt[world.meta.difficulty] || scenario.raidWarningAt.normal) * 20;
+  if (sk && sk.peace !== 'standard') {
+    // a longer or shorter peace moves the warning (and so the first raid) and the first plunderers
+    const pm = SKIRMISH_PEACE[sk.peace].mult;
+    world.mission.raidWarningTick = Math.round(world.mission.raidWarningTick * pm);
+    world.ai.nextHarassTick = Math.round(cfg.harassAt * 1200 * pm);
+  }
   return { keep, maren, deposits: all(world, 'deposit').length };
 }

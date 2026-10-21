@@ -12,7 +12,9 @@ const runs = (args.length ? args.map((a) => a.split(':')) : [['story', '42'], ['
   .map((r) => (r.length === 3 ? r : ['harrowmere', ...r]));
 let wins = 0;
 for (const [scenarioId, difficulty, seed] of runs) {
-  const sim = createSimulation({ seed: Number(seed), difficulty, scenarioId });
+  // KH_GOODS=lean|rich, KH_PEACE=short|long: the free-play setup choices (src/missions/skirmish.js)
+  const skirmish = process.env.KH_GOODS || process.env.KH_PEACE ? { goods: process.env.KH_GOODS, peace: process.env.KH_PEACE } : null;
+  const sim = createSimulation({ seed: Number(seed), difficulty, scenarioId, skirmish });
   // KH_TRANSPORT=1 (or roads / donkeys): the bot lays roads and keeps a Donkey Stable, to measure
   // how much they ease the game
   const tr = process.env.KH_TRANSPORT;

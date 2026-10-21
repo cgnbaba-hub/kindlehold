@@ -354,7 +354,12 @@ try {
     await page.goto(url('?debug=1&quality=low'), { waitUntil: 'load' });
     await page.getByRole('button', { name: /Free Play/ }).first().click({ timeout: 60000 });
     await page.getByRole('button', { name: /Free play: The Wildlands/ }).click({ timeout: 20000 });
-    await page.getByRole('radio', { name: /Normal/ }).click({ timeout: 20000 });
+    // the setup screen: a valley by seed, the lord and the starting goods picked by hand
+    await page.getByRole('textbox', { name: 'Valley seed' }).fill('e2e-vale', { timeout: 20000 });
+    await page.getByRole('radio', { name: 'Lord of the valley: Morrow' }).click();
+    await page.getByRole('radio', { name: 'Starting goods: Rich' }).click();
+    await page.getByRole('radio', { name: /Difficulty: Normal/ }).click();
+    await page.getByRole('button', { name: 'Start' }).click();
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__ && window.__GAME__.session.sim.terrain.map.id === 'wild', null, { timeout: 120000 });
     // skip the flight over the new valley
     if (await page.waitForSelector('.cinematic', { timeout: 30000 }).catch(() => null)) {
@@ -364,6 +369,8 @@ try {
     await page.waitForFunction(() => /enemy seat across the river/.test(document.querySelector('.objectives').textContent), null, { timeout: 30000 });
     const info = await page.evaluate(() => { const w = window.__GAME__.world(); const m = window.__GAME__.session.sim.terrain.map; return { seed: String(w.meta.seed), mapSeed: m.seed, faction: w.ai.faction, keep: Object.values(w.entities).some((e) => e.type === 'keep') }; });
     assert(info.mapSeed === info.seed && info.faction && info.keep, `a generated valley from the game's seed (${JSON.stringify(info)})`);
+    const sk = await page.evaluate(() => window.__GAME__.world().meta.skirmish);
+    assert(info.seed === 'e2e-vale' && info.faction === 'morrow' && sk && sk.goods === 'rich', `the setup choices reach the game (${JSON.stringify({ info, sk })})`);
   });
 
   await test('diplomacy-gift', async (page) => {
