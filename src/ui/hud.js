@@ -280,10 +280,11 @@ export function createHud({ root, session, input, settings, actions, tips = true
   hud.append(topbar, nightBtn, speedMenu);
 
   // --- first-time tips: the tutorial's second part, one card at a time ---------------------------
-  const tipTitle = h('h3.tut-title'), tipText = h('p.tut-text');
+  // own classes (styled like the tutorial card): '.tutorial' and '.tut-title' mean the tutorial alone
+  const tipTitle = h('h3.tip-title'), tipText = h('p.tip-text');
   const tipAction = h('button.btn', { type: 'button' });
   const tipOk = h('button.btn.btn-primary', { type: 'button' }, ['Got it']);
-  const tipCard = h('section.tutorial.tip-card.panel', { role: 'dialog', 'aria-label': 'Tip', 'aria-live': 'polite' }, [
+  const tipCard = h('section.tip-card.panel', { role: 'dialog', 'aria-label': 'Tip', 'aria-live': 'polite' }, [
     h('div.tut-head', {}, [h('span.tut-badge', { text: 'Tip' })]), tipTitle, tipText, h('div.tut-actions', {}, [tipAction, tipOk]),
   ]);
   tipCard.hidden = true;
