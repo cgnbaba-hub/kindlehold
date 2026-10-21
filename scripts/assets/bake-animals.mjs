@@ -3,7 +3,7 @@
 // (the stag's antlers) bound to their bone, and a few clips sampled at a fixed rate as skinning
 // matrices (3x4), turned so the animal faces +Z, stands on y = 0 and has a set size.
 //
-//   node scripts/assets/bake-animals.mjs <dir with deer.glb, stag.glb>
+//   node scripts/assets/bake-animals.mjs <dir with deer.glb, stag.glb, donkey.glb>
 //
 // Output: public/animals/quaternius.bin + quaternius.json (see src/environment/animals-skinned.js).
 import fs from 'node:fs';
@@ -16,7 +16,7 @@ if (!SRC) { console.error('usage: node scripts/assets/bake-animals.mjs <dir>'); 
 const OUT = path.resolve('public/animals');
 const FPS = 15; // interpolated in the view; small, distant animals need no more
 // species, file, height in metres (to the top of the head or antlers) in the game
-const SPECIES = [['deer', 'deer.glb', 1.75], ['stag', 'stag.glb', 2.35]];
+const SPECIES = [['deer', 'deer.glb', 1.75], ['stag', 'stag.glb', 2.35], ['donkey', 'donkey.glb', 1.55]];
 const CLIPS = ['Walk', 'Gallop', 'Idle', 'Idle_2', 'Eating', 'Idle_Headlow'];
 
 const chunks = [];

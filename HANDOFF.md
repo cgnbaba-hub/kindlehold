@@ -154,6 +154,31 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Transport: Steinstraßen und Eselstall (2026-10-21)
+
+Wunsch des Nutzers: Vorschläge 1 (Straßen) und 2 (Packesel), mit Preis. Einzelheiten und
+Messwerte in GAME_DESIGN, „Settler comfort“; Spieler-Sicht im PLAYER_GUIDE.
+- **Straßen** (`src/transport/roads.js`, `defs.js`): Befehle `buildRoad`/`removeRoad`
+  (Strecke A→B, höchstens 48 Felder), `world.roads.cells` sind Indizes des 2-m-Navigationsrasters
+  (Speicherschema optional, kein neues Schema). `nav-grid.js`: Straßenfelder kosten 1/1,5,
+  Heuristik und String-Pulling achten darauf, dass Wege auf der Straße bleiben; `nav.roadSpeed`
+  macht Siedler und Einheiten 1,5× schneller (Esel 1,2×), auch Angreifer. Bedienung: Baumenü →
+  „Road“, Klick Start, Klick je Knick, Rechtsklick beendet (`input.startRoad`), Vorschaukacheln in
+  `selection/view.js`. Darstellung: Kopfsteinpflaster im Gelände-Shader aus einer Textur je
+  Rasterfeld (`tRoad`), Kanten weichgezeichnet.
+- **Eselstall** (`donkeystable`, Entitätsart `donkey`): Esel nutzen die Aufgabenliste der
+  Träger (`chooseTask` mit `beast`), nur Abholen/Liefern (Baustellen nur auf Story), Futter bei
+  jeder Mahlzeit (`population:meal`), Lohn am Zahltag (`population:payday`), nachts im Stall.
+  Gezeichnet mit dem Esel aus dem Quaternius-Paket plus Packsattel und Last (`wildlife-view.js`).
+- **Messung** (`KH_TRANSPORT=1|roads|donkeys` für `scripts/balance.mjs` und `balance-seeds.mjs`,
+  der Bot legt dann Straßen entlang der Trägerwege und baut einen Stall): Die ersten Preise
+  machten Normal 3 Minuten schneller (Stadt 48 statt 33 Leute) und Hard fast sicher (20/20).
+  Nach dem Gegengewicht (Taler je Straßenfeld, 1 Esel auf Normal/Hard, keine Baustellen, Lohn):
+  Normal 27,7 → 27,6 min, Hard 13/20 → 12/20, Story 25,9 → 18,7 (gewollt leichter).
+  Achtung: Einzelvarianten schwanken auch über 16 Seeds um ±1,5 min; nur deutliche Unterschiede
+  zählen.
+- Tests: `tests/simulation/roads.test.js`, `tests/simulation/donkeys.test.js`.
+
 ## Kleinere Fixes (2026-10-21)
 
 - KayKit-Fenster leuchten nachts (siehe „Modellierte Gebäude“).
@@ -342,7 +367,7 @@ Tests: `tests/simulation/comfort.test.js`. Details in `GAME_DESIGN.md` („Settl
 
 ## Modellierte Tiere (Quaternius Ultimate Animated Animal Pack, CC0)
 
-- Quelle: Deer und Stag aus dem Paket. Die Dateien liegen (gleiche Prüfsummen wie im
+- Quelle: Deer, Stag und Donkey (Packesel, seit dem Eselstall) aus dem Paket. Die Dateien liegen (gleiche Prüfsummen wie im
   ASSET_REGISTER) im öffentlichen Repo `jpabloglez/trailpaw`, Pfad `assets/animals/<name>/<name>.glb`.
   Die Dateien sind dort in LFS, also über `https://media.githubusercontent.com/media/jpabloglez/trailpaw/main/...` laden.
   Die Lizenzdatei stammt aus der Kopie des Nutzers.
@@ -585,8 +610,11 @@ Plünderzüge der Rustfang, schönere Menüs, abwechslungsreiche Kampfgeräusche
 
 - Vollständigen e2e-Lauf wiederholen, danach `docs/STATUS.json` und `docs/KNOWN_ISSUES.md`
   aktualisieren.
-- Gameplay-Tiefe: Arbeitsprioritäten, längere und abwechslungsreichere Überfälle, mehr Rückmeldung
-  im Kampf.
+- Reihenfolge laut Nutzer (2026-10-21): Transport ist erledigt; als Nächstes Arbeitsprioritäten
+  („Vorrang“ je Werkstatt), dann Kampf-Rückmeldung (Meldung „Soldat gefallen“ mit Sprung,
+  Belagerungsgerät im Auswahlfeld) und Endstatistik, dann abwechslungsreichere Überfälle als
+  Gegengewicht (Plünderer gegen Lager/Brunnen, Angriffe aus zwei Richtungen, Nachtangriffe auf Hard).
+- Fotobasierte CC0-Texturen vergleichen, sobald ambientcg.com / polyhaven.com erreichbar sind.
 - Grafik: Nahansicht der Figuren, Gebäudevielfalt, die Nahansicht der Randberge (noch recht
   dunstig).
 - Danach neue Bewertung durch unabhängige Kritiker.

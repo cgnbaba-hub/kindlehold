@@ -6,6 +6,7 @@ import { markDirty, syncRngState } from '../world/world.js';
 import { MIGRATIONS } from './migrations.js';
 import { BUILDINGS } from '../buildings/defs.js';
 import { UNITS } from '../units/defs.js';
+import { ROADS } from '../transport/defs.js';
 import { TECHS } from '../technology/defs.js';
 import { HARROWMERE_SCENARIO } from '../missions/scenarios/harrowmere.js';
 import { GREYFEN_SCENARIO, TOLLBREAKER_SCENARIO } from '../missions/scenarios/campaign.js';
@@ -16,7 +17,7 @@ import { FREE_SCENARIOS } from '../missions/scenarios/freeplay.js';
 
 export const SAVE_FORMAT = 'kindlehold-save';
 
-const ENTITY_KINDS = ['building', 'settler', 'unit', 'deposit', 'animal', 'poi'];
+const ENTITY_KINDS = ['building', 'settler', 'unit', 'deposit', 'animal', 'poi', 'donkey'];
 
 const num = v.number();
 const stockSchema = v.object(Object.fromEntries(RESOURCES.map((r) => [r, v.number({ min: 0, max: 1e7 })])));
@@ -64,6 +65,11 @@ const KIND_SCHEMAS = {
     order: v.optional(v.object({ type: v.string({ oneOf: ['gather'] }), kind: v.string({ oneOf: ['tree', 'rock'] }), x: coord, z: coord }, { allowExtra: true })),
     path,
   }),
+  donkey: v.object({
+    stable: v.number({ min: 1, max: 1e9, int: true }),
+    carry: v.optional(v.object({ res: v.string({ oneOf: RESOURCES }), amt: nonNeg(1000) })),
+    path,
+  }),
   poi: v.object({ type: v.string({ oneOf: ['trader', 'cairn', 'ruin', 'hamlet'] }), state: v.string({ oneOf: ['hidden', 'found', 'done'] }) }),
   animal: v.object({ type: v.string({ oneOf: ['deer'] }), herd: v.number({ min: 1, max: 64, int: true }), goal: v.optional(point) }),
   deposit: v.object({ type: v.string({ oneOf: ['tree', 'rock', 'iron', 'salt'] }), amount: v.number({ min: -1000, max: 1e5 }), maxAmount: v.number({ min: 1, max: 1e5 }) }),
@@ -105,6 +111,7 @@ const worldSchema = v.object({
   }, { allowExtra: false })),
   herds: v.optional(v.array(v.object({ id: v.number({ min: 1, max: 64, int: true }), x: coord, z: coord, nextBirth: nonNeg(1e10) }, { allowExtra: false }), { max: 32 })),
   market: v.optional(v.record(v.number({ min: 0.1, max: 5 }), { max: 8, keyPattern: /^(timber|stone|iron|provisions)$/ })),
+  roads: v.optional(v.object({ cells: v.array(v.number({ min: 0, max: 1e6, int: true }), { max: ROADS.maxCells }) }, { allowExtra: false })),
   explored: v.optional(v.array(v.number({ min: 0, max: 4294967295, int: true }), { max: 128 })),
   players: v.object({ p1: playerFull, p2: playerFull, p3: v.optional(playerFull) }, { allowExtra: false }),
   diplomacy: v.optional(v.object({

@@ -1,7 +1,7 @@
 // Economy: labourers (settlers without a workplace) haul goods between the Keep store,
 // construction sites and workplaces, build, and repair. All transport is physical.
 import { EV, DT } from '../core/contracts.js';
-import { all, emit, alert } from '../world/world.js';
+import { all, emit, alert, spawn, remove } from '../world/world.js';
 import { BUILDINGS, doorOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { addRes } from './stock.js';
@@ -9,6 +9,7 @@ import { siteNeeds, applyBuildWork, MAX_BUILDERS } from '../construction/index.j
 import { isIdleLabourer, keepOf, stabilityFactor } from '../population/index.js';
 import { walkTo, stopWalking } from '../navigation/agent.js';
 import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
+import { DONKEYS, donkeysPerStable, donkeyFodder, donkeysSupplySites, donkeyWage } from '../transport/defs.js';
 
 export const SUPPLY_LOAD = 6;
 export const HAUL_LOAD = 6;
@@ -111,6 +112,9 @@ export function createEconomyModule() {
 
   function chooseTask(world, s, keep) {
     const owner = s.owner;
+    // pack donkeys only carry: no building, no repairs, but bigger loads (building sites only on Story)
+    const beast = s.kind === 'donkey';
+    const sites = !beast || donkeysSupplySites(world);
     const res = world.players[owner].res;
     let best = null, bestScore = Infinity;
     const consider = (score, task) => { if (score < bestScore) { bestScore = score; best = task; } };
@@ -122,7 +126,7 @@ export function createEconomyModule() {
         let needAny = false;
         for (const r in needs) {
           needAny = true;
-          consider(100 + d, { type: 'supply', site: b.id, res: r, amt: Math.min(SUPPLY_LOAD, needs[r]), stage: 'toKeep' });
+          if (sites) consider(100 + d, { type: 'supply', site: b.id, res: r, amt: Math.min(beast ? DONKEYS.load : SUPPLY_LOAD, needs[r]), stage: 'toKeep' });
           break;
         }
         // builders can work up to what has been supplied so far
@@ -130,7 +134,7 @@ export function createEconomyModule() {
         for (const r in b.build.required) { required += b.build.required[r]; supplied += Math.min(b.build.required[r], b.build.supplied[r] || 0); }
         const cap = required === 0 ? 1 : supplied / required;
         b.build.builders = b.build.builders.filter((id) => world.entities[id] && world.entities[id].task && world.entities[id].task.site === b.id);
-        if (cap > b.build.progress + 0.001 && b.build.builders.length < MAX_BUILDERS) {
+        if (!beast && cap > b.build.progress + 0.001 && b.build.builders.length < MAX_BUILDERS) {
           consider((needAny ? 60 : 0) + d + b.build.builders.length * 15, { type: 'build', site: b.id, stage: 'toSite' });
         }
       } else if (b.state === 'active') {
@@ -145,22 +149,23 @@ export function createEconomyModule() {
             let kind = null; for (const r in b.stock.out) if (b.stock.out[r] > 0) { kind = r; break; }
             const stock = kind ? res[kind] : 0;
             const need = stock < 30 ? -45 : stock > 250 ? 90 : stock > 120 ? 30 : 0;
-            consider((food ? 40 : 150) + need + d - Math.min(60, avail * 8), { type: 'haul', from: b.id, amt: Math.min(HAUL_LOAD, avail), stage: 'toBuilding' });
+            consider((food ? 40 : 150) + need + d - Math.min(60, avail * 8), { type: 'haul', from: b.id, amt: Math.min(beast ? DONKEYS.load : HAUL_LOAD, avail), stage: 'toBuilding' });
           }
         }
         if (def.inputs && !b.paused) {
           for (const r in def.inputs) {
             const have = (b.stock.in[r] || 0) + incomingOf(b, r);
             if (have > def.inputs[r] - DELIVER_LOAD) continue;
+            const load = beast ? Math.min(DONKEYS.deliver, def.inputs[r] - have) : DELIVER_LOAD;
             // the Windmill only grinds grain the next meal does not need
             const keepBack = (KEEP_BACK[r] || 0) + (b.type === 'mill' ? world.players[owner].pop : 0);
-            if (res[r] < DELIVER_LOAD + keepBack) continue;
+            if (res[r] < load + keepBack) continue;
             // an empty mine comes first; the Tavern's kitchen is a comfort and waits its turn
             const prio = b.type === 'mine' && have === 0 ? 70 : (DELIVER_PRIO[b.type] || 120);
-            consider(prio + d, { type: 'deliver', to: b.id, res: r, amt: DELIVER_LOAD, stage: 'toKeep' });
+            consider(prio + d, { type: 'deliver', to: b.id, res: r, amt: load, stage: 'toKeep' });
           }
         }
-        if (b.hp < b.maxHp * 0.75 && !b.repairer && world.tick - b.lastHitTick > 200 && res.timber >= 3) {
+        if (!beast && b.hp < b.maxHp * 0.75 && !b.repairer && world.tick - b.lastHitTick > 200 && res.timber >= 3) {
           consider(200 + d, { type: 'repair', target: b.id, amt: 3, stage: 'toKeep' });
         }
       }
@@ -178,7 +183,7 @@ export function createEconomyModule() {
 
   function stepLabourer(world, s, keep) {
     const nav = ctx.services.nav;
-    const speed = SETTLER.speed * (s.carry ? 0.9 : 1);
+    const speed = (s.kind === 'donkey' ? DONKEYS.speed : SETTLER.speed) * (s.carry ? 0.9 : 1);
     const t = s.task;
     const door = doorOf(keep);
     const keepSpot = [door.x + ((s.id % 7) - 3) * 0.6, door.z + 0.8];
@@ -210,7 +215,7 @@ export function createEconomyModule() {
 
     switch (t.type) {
       case 'idle': {
-        const r = walkTo(nav, s, t.spot[0], t.spot[1], SETTLER.speed * 0.6, DT, 0.8);
+        const r = walkTo(nav, s, t.spot[0], t.spot[1], (s.kind === 'donkey' ? DONKEYS.speed : SETTLER.speed) * 0.6, DT, 0.8);
         s.anim = r === 'walking' ? 'walk' : 'idle';
         if (world.tick >= t.until) s.task = null;
         break;
@@ -455,6 +460,72 @@ export function createEconomyModule() {
     return true;
   }
 
+  /** Where a donkey stands when it has nothing to carry or rests: in front of its stable. */
+  function stallSpot(stable, dn) {
+    const d = doorOf(stable);
+    const a = (dn.id * 2.399) % Math.PI - Math.PI / 2 + (stable.rot || 0);
+    return [d.x + Math.sin(a) * 2.2, d.z + Math.cos(a) * 2.2];
+  }
+
+  function stepDonkey(world, dn, gone) {
+    const stable = world.entities[dn.stable];
+    if (!stable || stable.kind !== 'building' || stable.state !== 'active' || stable.owner !== dn.owner) { gone.push(dn); return; }
+    const keep = keepOf(world, dn.owner);
+    if (!keep) return;
+    // night, or no fodder at the last meal: back to the stable
+    const h = world.time.hour;
+    const rest = h >= 22 + (dn.id % 5) * 0.2 || h < 5 + (dn.id % 4) * 0.15 || stable.hungry || stable.unpaid;
+    if (rest) {
+      if (dn.task && dn.task.type !== 'rest') abandonTask(world, dn);
+      if (!dn.task) dn.task = { type: 'rest', spot: stallSpot(stable, dn) };
+      const r = walkTo(ctx.services.nav, dn, dn.task.spot[0], dn.task.spot[1], DONKEYS.speed * 0.6, DT, 0.8);
+      dn.anim = r === 'walking' ? 'walk' : 'idle';
+      return;
+    }
+    if (dn.task && dn.task.type === 'rest') { dn.task = null; stopWalking(dn); }
+    if (!dn.task || (dn.task.type === 'idle' && (world.tick + dn.id) % 10 === 0)) {
+      const task = chooseTask(world, dn, keep);
+      if (task) { stopWalking(dn); dn.task = task; }
+      else if (!dn.task) dn.task = { type: 'idle', until: world.tick + 80, spot: stallSpot(stable, dn) };
+    }
+    if (dn.task) stepLabourer(world, dn, keep);
+  }
+
+  /** After the people have eaten, the donkeys get their fodder from the provisions. */
+  function feedDonkeys(world, owner) {
+    const p = world.players[owner];
+    if (!p) return;
+    const per = donkeyFodder(world);
+    for (const b of all(world, 'building')) {
+      if (b.owner !== owner || b.type !== 'donkeystable' || b.state !== 'active') continue;
+      const herd = all(world, 'donkey').filter((dn) => dn.stable === b.id).length;
+      if (!herd) continue;
+      const need = herd * per;
+      const eat = Math.min(need, Math.floor(p.res.provisions));
+      if (eat > 0) { addRes(world, owner, 'provisions', -eat, 'fodder'); world.stats.consumed.provisions += eat; }
+      const was = !!b.hungry;
+      b.hungry = eat < need;
+      if (b.hungry && !was) alert(world, 'warn', 'The donkeys found no fodder and stay in their stable until the next meal.', b.x, b.z, owner);
+    }
+  }
+
+  /** Payday: the drovers want their wage; unpaid, the donkeys stay in the stable until the next one. */
+  function payDrovers(world, owner) {
+    const p = world.players[owner];
+    const wage = donkeyWage(world);
+    if (!p) return;
+    for (const b of all(world, 'building')) {
+      if (b.owner !== owner || b.type !== 'donkeystable' || b.state !== 'active') continue;
+      const due = wage * all(world, 'donkey').filter((dn) => dn.stable === b.id).length;
+      if (!due) { b.unpaid = false; continue; }
+      const paid = Math.min(due, Math.floor(p.res.taler));
+      if (paid > 0) { addRes(world, owner, 'taler', -paid, 'drovers'); world.stats.consumed.taler = (world.stats.consumed.taler || 0) + paid; }
+      const was = !!b.unpaid;
+      b.unpaid = paid < due;
+      if (b.unpaid && !was) alert(world, 'warn', `The drovers want ${due} Taler: the donkeys stay in the stable until the next payday.`, b.x, b.z, owner);
+    }
+  }
+
   function onCommand(cmd) {
     const world = ctx.world;
     if (cmd.type === 'setAutoGather') {
@@ -491,6 +562,17 @@ export function createEconomyModule() {
     init(c) {
       ctx = c;
       unsub.push(c.bus.on('command', onCommand));
+      unsub.push(c.bus.on(EV.BUILDING_COMPLETED, ({ id, type }) => {
+        if (type !== 'donkeystable') return;
+        const world = ctx.world, b = world.entities[id];
+        if (!b) return;
+        const d = doorOf(b);
+        for (let i = 0; i < donkeysPerStable(world); i++) {
+          spawn(world, { kind: 'donkey', owner: b.owner, x: d.x + (i - 1) * 1.6, z: d.z + 1.2, heading: b.rot || 0, stable: b.id, task: null, carry: null, anim: 'idle' });
+        }
+      }));
+      unsub.push(c.bus.on('population:meal', ({ owner }) => feedDonkeys(ctx.world, owner)));
+      unsub.push(c.bus.on('population:payday', ({ owner }) => payDrovers(ctx.world, owner)));
       unsub.push(c.bus.on('settler:killed', ({ entity }) => {
         if (entity) { const carry = entity.carry; entity.carry = null; abandonTask(ctx.world, entity); if (carry) { /* goods are lost with the settler */ } }
       }));
@@ -516,6 +598,10 @@ export function createEconomyModule() {
         }
         if (s.task) stepLabourer(world, s, keep);
       }
+      const gone = [];
+      for (const dn of all(world, 'donkey')) { dn.px = dn.x; dn.pz = dn.z; stepDonkey(world, dn, gone); }
+      // a stable that burnt down, was taken down or moved: its donkeys run off
+      for (const dn of gone) { abandonTask(world, dn); remove(world, dn.id, 'stable gone'); }
     },
     dispose() { unsub.forEach((u) => u()); unsub.length = 0; },
   };

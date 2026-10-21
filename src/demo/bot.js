@@ -1,4 +1,4 @@
-import { UPGRADES, BUILDINGS } from '../buildings/defs.js';
+import { UPGRADES, BUILDINGS, doorOf } from '../buildings/defs.js';
 import { keepOf, HAND, handsOf, handsCap } from '../population/index.js';
 // Scripted player ("bot") that plays the scenario only through the public command API.
 // Used by the happy-path simulation test, balancing, and verification demo states.
@@ -12,6 +12,8 @@ import { UNITS } from '../units/defs.js';
 import { ABILITIES, abilityReady } from '../heroes/index.js';
 import { warhallOf } from '../ai/index.js';
 import { occupiedBy } from '../pois/index.js';
+import { checkStretch } from '../transport/roads.js';
+import { ROADS } from '../transport/defs.js';
 
 /** Spiral search for a valid building spot near (x,z). */
 export function findSpot(world, services, type, x, z, maxR = 34) {
@@ -32,7 +34,12 @@ const SITES = {
 
 const isActive = (world, id) => (world.mission.objectives.find((o) => o.id === id) || {}).state === 'active';
 
-export function createBot(sim, { aggressive = true } = {}) {
+/**
+ * `transport`: true lays stone roads from the Keep to the workshops and keeps a Donkey Stable,
+ * 'roads' or 'donkeys' only one of them (off by default, so balance runs can measure how much
+ * they ease the game).
+ */
+export function createBot(sim, { aggressive = true, transport = false } = {}) {
   const w = () => sim.world;
   const services = sim.services;
   const log = [];
@@ -82,10 +89,42 @@ export function createBot(sim, { aggressive = true } = {}) {
   const hero = () => all(w(), 'unit').find((u) => u.owner === PLAYER && u.type === 'maren');
   const wren = () => all(w(), 'unit').find((u) => u.owner === PLAYER && u.type === 'wren');
 
+  // roads: one workshop at a time, along the route its carriers walk, while stone allows
+  const roadDone = new Set();
+  const ROAD_TO = ['lodge', 'quarry', 'farm', 'mine', 'hunter', 'fisher', 'saltworks', 'mill', 'bakery', 'smithy', 'canteen', 'storehouse'];
+  function roadStep(world, p) {
+    const k = keepOf(world, PLAYER);
+    if (!k || p.res.stone < 60) return;
+    const kd = doorOf(k);
+    const b = all(world, 'building').filter((x) => x.owner === PLAYER && x.state === 'active' && ROAD_TO.includes(x.type) && !roadDone.has(x.id))
+      .sort((a, c) => Math.hypot(a.x - k.x, a.z - k.z) - Math.hypot(c.x - k.x, c.z - k.z))[0];
+    if (!b) return;
+    roadDone.add(b.id);
+    const d = doorOf(b);
+    const route = services.nav.grid().findPath(kd.x, kd.z + 1.5, d.x, d.z);
+    if (!route) return;
+    let [ax, az] = [kd.x, kd.z + 1.5];
+    const pieces = [];
+    for (const [bx, bz] of route.points) {
+      // long legs go in pieces the command accepts
+      const n = Math.ceil(Math.hypot(bx - ax, bz - az) / ((ROADS.perCommand - 4) * 2));
+      for (let i = 1; i <= n; i++) pieces.push([ax + ((bx - ax) * (i - 1)) / n, az + ((bz - az) * (i - 1)) / n, ax + ((bx - ax) * i) / n, az + ((bz - az) * i) / n]);
+      ax = bx; az = bz;
+    }
+    for (const [x0, z0, x1, z1] of pieces) {
+      const chk = checkStretch(world, services, PLAYER, x0, z0, x1, z1);
+      if (!chk.ok || p.res.stone - chk.stone < 40) continue;
+      sim.issue({ type: 'buildRoad', ax: x0, az: z0, bx: x1, bz: z1 });
+    }
+    log.push(`${world.tick}: road to ${b.type}`);
+  }
+
   function economyStep() {
     const world = w();
     const p = world.players[PLAYER];
     if (!world.mission.flags.keepLit) { sim.issue({ type: 'rekindle' }); return; }
+    if ((transport === true || transport === 'roads') && world.tick % 200 === 100) roadStep(world, p);
+    if ((transport === true || transport === 'donkeys') && count('donkeystable') < 1 && count('mine') >= 1 && count('cottage') >= 3 && p.res.taler >= 120 && place('donkeystable', [-38, 58])) return;
     // Hearthhands: a few more as the town grows, while the treasury can spare them
     if (world.tick % 400 === 7) {
       const built = all(world, 'building').filter((b) => b.owner === PLAYER && b.state === 'active').length;

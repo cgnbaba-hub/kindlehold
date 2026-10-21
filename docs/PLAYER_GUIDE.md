@@ -209,13 +209,31 @@ housing), and workshops gain a second level (one more worker, 20% faster) and a 
 +6 damage, another +6 m territory; needs the Castle and 2 tools). Soldiers improve through research at
 the Keep: **Steel Mail** (tougher) and **Veteran Drill** (faster).
 
-## Storehouses, idle hands, moving buildings
+## Storehouses, roads, donkeys, idle hands, moving buildings
 
 See also **Hearthhands and motivation** below.
 
 * **Storehouse** — a second store for all goods. Labourers bring goods to the nearest store
   (the Keep or a Storehouse) and fetch them from the best one for the trip, so outlying
   workshops and building sites are served much faster. Build one where a new quarter grows.
+* **Roads** (Build menu → Road) — click where the road starts, then each bend; right-click ends
+  the road, a second right-click leaves the mode. Everyone walks half again as fast on a road,
+  and routes keep to it — enemy raiders too, so a road to the gate also speeds the attack.
+  Roads stay inside your territory and off water, trees and rocks; a building placed on a road
+  takes the cells under it. *Lift road* takes a stretch up again (the stone is not returned).
+  Price per 2 m:
+  * **Story:** 1 stone;
+  * **Normal:** 3 stone and 1 Taler;
+  * **Hard:** 4 stone and 2 Taler.
+* **Donkey Stable** (40 timber, 20 stone, 60 Taler) — pack donkeys that only carry: workshop
+  goods to the store and a workshop's inputs from it, twice a carrier's load at a slow walk. They
+  take no house, eat provisions at every meal and rest at night; without fodder (or, on Normal
+  and Hard, without their drovers' wage at payday) they stay in the stable until the next meal or
+  payday.
+  * **Story:** three donkeys, 1 provision each per meal, no wage; they also bring building
+    materials to sites.
+  * **Normal:** one donkey, 2 provisions per meal, 3 Taler each payday.
+  * **Hard:** one donkey, 3 provisions per meal, 4 Taler each payday.
 * **Idle hands** (at the Keep): with *Gather* on, Hearthhands with nothing to do fell a tree or
   cut stone by hand near a store while timber or stone run short. They go one trip at a time and
   then look for work again; *Wait* keeps them at the Keep. They stop once the store holds enough:

@@ -210,7 +210,7 @@ export function createUnitsModule() {
     const dx = x - u.x, dz = z - u.z;
     const d = Math.hypot(dx, dz);
     if (d <= arrive) { u.moving = false; u.path = null; return true; }
-    const speed = unitSpeed(world, u);
+    const speed = unitSpeed(world, u) * nav.roadSpeed(u.x, u.z); // roads speed raiders too
     if (d < 40 && nav.grid().lineWalkable(u.x, u.z, x, z)) {
       const step = Math.min(d - arrive * 0.5, speed * DT);
       u.x += (dx / d) * step; u.z += (dz / d) * step;

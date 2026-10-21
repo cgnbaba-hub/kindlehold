@@ -127,7 +127,7 @@ DEMO_STATES.buildingLineup = (sim) => {
   const row = [['cottage', 0], ['lodge', 10], ['quarry', 21], ['farm', 33], ['mine', 46], ['barracks', 60], ['tower', 72], ['warhall', 86], ['reavertower', 100]];
   for (const [type, dx] of row) createBuildingEntity(w, { type, owner: type === 'warhall' || type === 'reavertower' ? 'p2' : 'p1', x: -20 + dx, z: 62, rot: 0.2, state: 'active' });
   // the second row: the workshops of the longer chains and the coast
-  const row2 = [['bakery', 0], ['hunter', 11], ['fisher', 22], ['saltworks', 33], ['canteen', 45], ['mill', 57], ['smithy', 68], ['storehouse', 79], ['well', 89]];
+  const row2 = [['bakery', 0], ['hunter', 11], ['fisher', 22], ['saltworks', 33], ['canteen', 45], ['mill', 57], ['smithy', 68], ['storehouse', 79], ['well', 89], ['donkeystable', 99]];
   for (const [type, dx] of row2) createBuildingEntity(w, { type, owner: 'p1', x: -20 + dx, z: 100, rot: 0.2, state: 'active' });
   const stages = [0.05, 0.35, 0.7];
   stages.forEach((p, i) => { const b = createBuildingEntity(w, { type: 'cottage', owner: 'p1', x: -10 + i * 12, z: 80, rot: 0.2 }); b.build.progress = p; b.build.supplied = { ...b.build.required }; });

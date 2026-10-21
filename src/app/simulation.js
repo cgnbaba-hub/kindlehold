@@ -9,6 +9,7 @@ import { HARROWMERE_MAP } from '../world/maps/harrowmere.js';
 import { mapById, mapKey } from '../world/maps/index.js';
 import { worldHash } from '../world/hash.js';
 import { createNavigationModule } from '../navigation/index.js';
+import { createRoadsModule } from '../transport/roads.js';
 import { createWorldServicesModule } from '../world/services-module.js';
 import { createMissionsModule, SCENARIOS } from '../missions/index.js';
 import { createAiModule } from '../ai/index.js';
@@ -46,6 +47,7 @@ export function terrainFor(map = HARROWMERE_MAP) {
 /** Sim module factories, in update order (ARCHITECTURE.md §6). */
 export const SIM_MODULE_FACTORIES = [
   createNavigationModule,
+  createRoadsModule,
   createWorldServicesModule,
   createWeatherModule,
   createMissionsModule,

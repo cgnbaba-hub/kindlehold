@@ -7,6 +7,7 @@ import { PLAYER } from '../core/contracts.js';
 import { BUILDINGS } from '../buildings/defs.js';
 import { buildingGeometries } from '../buildings/meshes.js';
 import { checkPlacement } from '../construction/index.js';
+import { checkStretch, stretchCells } from '../transport/roads.js';
 import { ABILITIES } from '../heroes/index.js';
 import { territorySources } from '../world/territory.js';
 import { shroudOverlay, SNOW } from '../render/structure-material.js';
@@ -49,6 +50,12 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   const foot = new THREE.Mesh(footGeo, footMat); foot.visible = false; foot.renderOrder = 4; scene.add(foot);
   const rangeMat = new THREE.MeshBasicMaterial({ color: '#f0d9a0', transparent: true, opacity: 0.45, depthWrite: false, fog: false });
   const range = new THREE.Mesh(new THREE.RingGeometry(0.97, 1, 72).rotateX(-Math.PI / 2), rangeMat); range.visible = false; range.renderOrder = 4; scene.add(range);
+  // road preview: a tile over every cell of the stretch under the cursor
+  const roadTileMat = shroudOverlay(new THREE.MeshBasicMaterial({ color: '#8fe08f', transparent: true, opacity: 0.45, depthWrite: false, fog: false }));
+  const roadTiles = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.8, 1.8).rotateX(-Math.PI / 2), roadTileMat, 64);
+  roadTiles.count = 0; roadTiles.frustumCulled = false; roadTiles.renderOrder = 4;
+  scene.add(roadTiles);
+  let roadCheckTimer = 0, roadCheck = null, roadKey = '';
   // ability preview
   const aoeMat = new THREE.MeshBasicMaterial({ color: '#ffd27a', transparent: true, opacity: 0.35, depthWrite: false, fog: false });
   const aoe = new THREE.Mesh(new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2), aoeMat); aoe.visible = false; aoe.renderOrder = 4; scene.add(aoe);
@@ -275,6 +282,30 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
         ghost.visible = false; foot.visible = false; range.visible = false;
         if (overlay) overlay.placementReason = '';
       }
+      // road preview
+      roadTiles.count = 0;
+      if (st.mode === 'road' && g) {
+        const grid = sim.services.nav.grid();
+        const [cx, cz] = grid.cellCentre(grid.cellIndex(g.x, g.z));
+        const a = st.roadStart || { x: cx, z: cz };
+        const key = `${a.x},${a.z},${cx},${cz},${st.roadRemove ? 1 : 0}`;
+        roadCheckTimer += frame.dt;
+        if (key !== roadKey || roadCheckTimer > 0.25) {
+          roadKey = key; roadCheckTimer = 0;
+          if (st.roadRemove) {
+            const cells = stretchCells(grid, a.x, a.z, cx, cz).filter((k) => grid.isRoadCell(k));
+            roadCheck = { ok: !st.roadStart || cells.length > 0, reason: 'No road there', cells, stone: 0 };
+          } else roadCheck = st.roadStart ? checkStretch(w, sim.services, PLAYER, a.x, a.z, cx, cz) : { ok: true, cells: [grid.cellIndex(cx, cz)], stone: 0 };
+        }
+        roadTileMat.color.set(st.roadRemove ? '#e0a040' : roadCheck.ok ? '#8fe08f' : '#e07060');
+        for (const k of roadCheck.cells.slice(0, 64)) {
+          const [x, z] = grid.cellCentre(k);
+          m4.compose(p.set(x, terrain.height(x, z) + 0.14, z), q0, s.set(1, 1, 1));
+          roadTiles.setMatrixAt(roadTiles.count++, m4);
+        }
+        if (overlay) overlay.roadInfo = st.roadStart ? roadCheck : null;
+      } else if (overlay) overlay.roadInfo = null;
+      flushInstances(roadTiles);
       // ability targeting preview
       if (st.mode === 'target' && ABILITIES[st.targetKind] && g) {
         const hero = w.entities[st.heroId];
@@ -302,10 +333,11 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
       borderMat.color.setScalar(1 - snow * 0.62); // darker dashes that read on white ground
     },
     /** Photo mode (key art, trailers): hide all overlays drawn by this module. */
-    setVisible(v) { for (const o of [rings, bars, barsBg, border, stallMarks, discs, ghost, foot, range, aoe, castRange]) o.visible = v && o !== ghost && o !== foot && o !== range && o !== aoe && o !== castRange ? true : v ? o.visible : false; },
+    setVisible(v) { roadTiles.visible = v; for (const o of [rings, bars, barsBg, border, stallMarks, discs, ghost, foot, range, aoe, castRange]) o.visible = v && o !== ghost && o !== foot && o !== range && o !== aoe && o !== castRange ? true : v ? o.visible : false; },
     getHealthStatus() { return { status: 'ok' }; },
     dispose() {
-      scene.remove(rings, bars, barsBg, ghost, foot, range, aoe, castRange, border, stallMarks, discs);
+      scene.remove(rings, bars, barsBg, ghost, foot, range, aoe, castRange, border, stallMarks, discs, roadTiles);
+      roadTiles.geometry.dispose(); roadTileMat.dispose();
       discGeo.dispose(); discMat.dispose();
       markTex.dispose(); markMat.dispose(); stallMarks.geometry.dispose();
       for (const mk of markers) { scene.remove(mk.m); mk.m.material.dispose(); }

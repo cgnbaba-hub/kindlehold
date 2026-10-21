@@ -16,7 +16,7 @@ export function walkTo(nav, e, x, z, speed, dt, arriveDist = 0.6) {
     if (r === 'fail') { e.moving = false; e.dest = null; return 'fail'; }
   }
   e.moving = true;
-  const done = followPath(e, speed, dt);
+  const done = followPath(e, nav.roadSpeed ? speed * nav.roadSpeed(e.x, e.z, e.kind) : speed, dt);
   if (done) {
     e.pathDone = true;
     const ddx = x - e.x, ddz = z - e.z;
