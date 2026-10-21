@@ -250,6 +250,10 @@ See also **Hearthhands and motivation** below.
     materials to sites.
   * **Normal:** one donkey, 2 provisions per meal, 3 Taler each payday.
   * **Hard:** one donkey, 3 provisions per meal, 4 Taler each payday.
+
+  Donkeys bolt for the stable when enemies come close. Upgraded to a **Mule Yard** (30 timber,
+  30 stone, 2 tools, 60 Taler) the stable has room for one more donkey, bought for 40 Taler —
+  the same price the stable pays to replace a donkey that plunderers drove off.
 * **Priority** (select a workshop or a building site) — workers fill it first, and carriers
   pick up, deliver and bring building materials there first. It adds no hands: everything
   else waits, so a priority left on a busy mine can starve the rest of the town. Take it away

@@ -216,6 +216,9 @@ export const UPGRADES = {
   mill: workshop('Stone Mill', 'Great Mill', { desc: 'A second miller and 20% faster grinding.' }),
   bakery: workshop("Baker's House", 'Guild Bakery', { desc: 'A second baker and 20% faster baking.' }),
   smithy: { 2: { ...WORKSHOP_L2, name: 'Forge', desc: 'A second smith and 20% faster forging.' } },
+  // one more pack donkey (bought for its price when the yard is done); tools from the Smithy
+  donkeystable: { 2: { name: 'Mule Yard', cost: { timber: 30, stone: 30, tools: 2, taler: 60 }, time: 40, donkeys: 1, hp: 150,
+    desc: 'A bigger yard: room for one more donkey (bought for 40 Taler). Needs tools from the Smithy.' } },
   // towers: damage and range add up, rate shortens the reload; each level reaches further out
   tower: {
     2: { name: 'Stone Watchtower', cost: { timber: 15, stone: 40, iron: 5, taler: 30 }, time: 35, range: 4, damage: 4, territory: 6, hp: 250,
