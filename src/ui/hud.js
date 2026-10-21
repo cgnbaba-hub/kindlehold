@@ -26,6 +26,7 @@ import { BRIGANDS, relation, stance, TRUCE, GIFT, PEACE, WAR_AT, ALLY_AT } from 
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 import { enemyFaction } from '../ai/factions.js';
 import { BUILD_TABS, buildTabOf } from './build-tabs.js';
+import { economyOverview } from '../economy/overview.js';
 import { ROADS, roadCellCost, donkeysFor, donkeyFodder, donkeyWage } from '../transport/defs.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler', flour: 'Flour', bread: 'Bread', tools: 'Tools' };
@@ -85,6 +86,7 @@ export function createHud({ root, session, input, settings, actions }) {
     const el = h('div.res', { 'data-tip': `${RES_TIPS[r] || `${RES_NAMES[r]} in the Keep store.`} Small number: change over the last minute.`, tabindex: 0 }, [icon(r), h('div.res-text', {}, [val, rate])]);
     if (CHAIN_GOODS[r]) el.hidden = true;
     resEls[r] = { val, rate, el };
+    el.addEventListener('click', () => toggleEconomy(true));
     (CHAIN_GOODS[r] ? goodsRibbon : ribbon).append(el);
   }
   const popVal = h('span.res-val', { text: '0/0' });
@@ -260,8 +262,65 @@ export function createHud({ root, session, input, settings, actions }) {
   let skipping = null;
   nightBtn.addEventListener('click', () => { if (skipping == null) { skipping = session.loop.getSpeed(); session.loop.setSpeed(8); } });
   const diploBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Diplomacy', 'data-tip': 'Diplomacy: relations with the other powers of the valley' }, [icon('banner', 'icon icon-sm')]);
-  const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, diploBtn, pauseBtn]);
+  const econBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Economy overview', 'data-tip-title': `Economy (${keyLabel(bindings().economy)})`, 'data-tip': 'What holds the town back right now, who carries, and how the stores change.' }, [icon('ledger', 'icon icon-sm')]);
+  const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, econBtn, diploBtn, pauseBtn]);
   hud.append(topbar, nightBtn, speedMenu);
+
+  // --- economy: the town at a glance — bottlenecks first, then carriers and the stores ----------
+  const econBody = h('div.econ-body');
+  const econPanel = h('section.econ-panel.panel', { 'aria-label': 'Economy overview' }, [
+    h('div.people-head', {}, [h('h2', { text: 'Economy' }), h('button.btn-ghost.econ-close', { type: 'button', 'aria-label': 'Close', text: '×' })]),
+    econBody,
+  ]);
+  econPanel.hidden = true;
+  econPanel.querySelector('.econ-close').addEventListener('click', () => { econPanel.hidden = true; });
+  let lastEcon = '', lastRates = {};
+  const showCycle = new Map(); // bottleneck text -> next building to show
+  function toggleEconomy(open = econPanel.hidden) {
+    econPanel.hidden = !open;
+    if (open) { diploPanel.hidden = true; lastEcon = ''; renderEconomy(); }
+  }
+  econBtn.addEventListener('click', () => toggleEconomy());
+  hud.append(econPanel);
+  function renderEconomy() {
+    if (econPanel.hidden) return;
+    const w = world(), p = w.players[PLAYER];
+    const o = economyOverview(w, PLAYER, lastRates);
+    const shown = RESOURCES.filter((r) => !CHAIN_GOODS[r] || p.res[r] > 0 || all(w, 'building').some((b) => b.owner === PLAYER && b.type === CHAIN_GOODS[r]));
+    // rebuild only when something shown changed (a rebuild under the pointer could swallow a click)
+    const key = JSON.stringify([o, shown.map((r) => [Math.floor(p.res[r]), Math.round(lastRates[r] || 0)])]);
+    if (key === lastEcon) return;
+    lastEcon = key;
+    clear(econBody);
+    econBody.append(h('h3', { text: 'What holds the town back' }));
+    if (!o.bottlenecks.length) econBody.append(h('p.econ-ok', { text: 'Nothing right now — the town runs smoothly.' }));
+    for (const bn of o.bottlenecks) {
+      const row = h(`div.econ-issue.econ-${bn.level}`, {}, [icon(bn.level === 'danger' ? 'alertDanger' : bn.level === 'warn' ? 'alertWarn' : 'alertInfo', 'icon icon-sm'), h('span.econ-text', { text: bn.text })]);
+      if (bn.ids.length) {
+        const go = h('button.btn-ghost.econ-show', { type: 'button', 'aria-label': 'Show', 'data-tip': bn.ids.length > 1 ? 'Show them one by one' : 'Show it', text: 'Show' });
+        go.addEventListener('click', () => {
+          const i = (showCycle.get(bn.text) || 0) % bn.ids.length;
+          showCycle.set(bn.text, i + 1);
+          const b = world().entities[bn.ids[i]];
+          if (b) { session.rc.rts.focus(b.x, b.z); input.setSelection([b.id]); }
+        });
+        row.append(go);
+      }
+      econBody.append(row);
+    }
+    const c = o.carriers;
+    econBody.append(h('h3', { text: 'Carriers' }));
+    const pct = c.awake ? Math.round((c.busy / c.awake) * 100) : 0;
+    econBody.append(h('div.people-row', { 'data-tip': 'Labourers without a workplace carry goods and build. When nearly all are busy, goods wait at the workshops.' }, [icon('settler', 'icon icon-sm'), h('span.people-label', { text: `${c.busy} of ${c.awake} awake labourers busy` }), h('span.people-n', { text: `${pct}%` }), h('div.people-bar', {}, [h('div', { style: { width: `${pct}%` } })])]));
+    econBody.append(h('p.small.muted', { text: `${c.labourers} labourers in all${c.hands ? `, ${c.hands} of them Hearthhands` : ''}${c.donkeys ? ` · ${c.donkeys} pack donkey${c.donkeys > 1 ? 's' : ''}` : ''} · ${o.waiting.pickup.length} workshop${o.waiting.pickup.length === 1 ? '' : 's'} waiting for pickup` }));
+    econBody.append(h('h3', { text: 'Stores (change over the last minute)' }));
+    const table = h('div.econ-goods');
+    for (const r of shown) {
+      const rt = Math.round(lastRates[r] || 0);
+      table.append(h('div.econ-good', { 'data-tip': RES_TIPS[r] || RES_NAMES[r] }, [icon(r, 'icon icon-sm'), h('span', { text: RES_NAMES[r] }), h('span.econ-n', { text: String(Math.floor(p.res[r])) }), h(`span.econ-rate${rt < 0 ? '.neg' : rt > 0 ? '.pos' : ''}`, { text: rt ? `${rt > 0 ? '+' : ''}${rt}/min` : '±0' })]));
+    }
+    econBody.append(table);
+  }
 
   // --- diplomacy: the factions of the valley, their mood and what can be offered -------------
   const diploBody = h('div.diplo-body');
@@ -271,7 +330,7 @@ export function createHud({ root, session, input, settings, actions }) {
   ]);
   diploPanel.hidden = true;
   diploPanel.querySelector('.diplo-close').addEventListener('click', () => { diploPanel.hidden = true; });
-  diploBtn.addEventListener('click', () => { diploPanel.hidden = !diploPanel.hidden; lastDiplo = ''; renderDiplomacy(); });
+  diploBtn.addEventListener('click', () => { diploPanel.hidden = !diploPanel.hidden; if (!diploPanel.hidden) econPanel.hidden = true; lastDiplo = ''; renderDiplomacy(); });
   // an objective about the Greyfen points at the banner
   function pulseDiplomacy(on) { diploBtn.classList.toggle('pulse', !!on); }
   hud.append(diploPanel);
@@ -981,6 +1040,8 @@ export function createHud({ root, session, input, settings, actions }) {
     { const c = censusOf(w, PLAYER); const tip = `${censusLines(c).join('\n')}\nClick for the full list.`; if (popEl.getAttribute('data-tip') !== tip) popEl.setAttribute('data-tip', tip); }
     renderPeople();
     renderDiplomacy();
+    lastRates = rates;
+    renderEconomy();
     adviceTimer += 0.25;
     // Osric blinks now and then (one quarter-second tick every few seconds)
     blinkTick = (blinkTick + 1) % 19;
@@ -1044,6 +1105,7 @@ export function createHud({ root, session, input, settings, actions }) {
     update,
     toast,
     openBuildMenu() { cmdMode = cmdMode === 'build' ? 'auto' : 'build'; dirtySel = true; },
+    toggleEconomy: () => toggleEconomy(),
     selectionChanged() { cmdMode = 'auto'; dirtySel = true; },
     dispose() { unsub.forEach((u) => u()); floaters.dispose(); hud.remove(); },
   };

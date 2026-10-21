@@ -7,7 +7,7 @@ export const DEFAULT_BINDINGS = {
   abilityFlare: 'KeyF', abilityKindle: 'KeyG',
   buildMenu: 'KeyB', focusSelection: 'Space', focusKeep: 'Home',
   quickSave: 'F5', quickLoad: 'F9', pause: 'Escape', speedUp: 'BracketRight', speedDown: 'BracketLeft',
-  diagnostics: 'F3',
+  diagnostics: 'F3', economy: 'KeyO',
 };
 
 export const BINDING_LABELS = {
@@ -17,7 +17,7 @@ export const BINDING_LABELS = {
   abilityFlare: 'Maren: Beacon Flare', abilityKindle: 'Maren: Kindle the Line',
   buildMenu: 'Open build menu', focusSelection: 'Centre on selection', focusKeep: 'Centre on the Keep',
   quickSave: 'Quick save', quickLoad: 'Quick load', pause: 'Pause / menu', speedUp: 'Faster game speed', speedDown: 'Slower game speed',
-  diagnostics: 'Diagnostics (performance log)',
+  diagnostics: 'Diagnostics (performance log)', economy: 'Economy overview',
 };
 
 export function keyLabel(code) {
