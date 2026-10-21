@@ -36,7 +36,6 @@ report or script that shows them.
   means over many seeds. Human playtesting has been informal.
 - The bot builds compactly, so the motivation strains for idle townsfolk and long walks barely
   touch it; their effect on human-built towns is untested.
-- Melee units can visually overlap while fighting in dense clumps (simple separation only).
 
 ## Presentation
 
@@ -62,6 +61,9 @@ report or script that shows them.
 - **2026-10-21: modelled buildings never lit their windows at night (fixed).** The baker
   flagged a palette cell that no model uses as glass; the glow quads were also transformed
   twice. See HANDOFF, "Modellierte Gebäude".
+- **Melee clumping (no longer seen).** Measured 2026-10-21 in 10-vs-10 and 20-vs-20 melee: no two
+  allies closer than 0.64 m over a minute of fighting (separation keeps 1.8 m between allies, 1.1 m
+  to foes).
 - **2026-10-20: soldiers stalled at shared path corners (fixed for soldiers).** A squad pushed
   itself off a common waypoint for up to 40 s. Settlers keep the old behaviour on purpose: the
   same fix eased the economy measurably (GAME_DESIGN, "a harder Hard").

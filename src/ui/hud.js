@@ -476,7 +476,12 @@ export function createHud({ root, session, input, settings, actions }) {
         h('div.obj-title', {}, [st.state === 'done' ? icon('check', 'icon icon-xs') : h('span.obj-dot'), h('span', { text: def.title })]),
         h('div.obj-text', { text: def.text }),
       ]);
-      if (st.state === 'active' && settings.tutorialHints && def.hint) li.append(h('div.obj-hint', { text: withKeys(def.hint) }));
+      // the main task's hint stays open; an optional goal keeps its hint in a tooltip, so two or
+      // three side goals do not push the list halfway down the screen
+      if (st.state === 'active' && settings.tutorialHints && def.hint) {
+        if (def.optional) { li.setAttribute('data-tip', withKeys(def.hint)); li.classList.add('has-tip'); }
+        else li.append(h('div.obj-hint', { text: withKeys(def.hint) }));
+      }
       objList.append(li);
     }
   }
