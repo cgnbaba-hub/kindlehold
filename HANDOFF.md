@@ -154,6 +154,14 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Einsteigerfreundlichkeit, Paket 4: Begriffe und Steuerung (2026-10-21)
+
+- Bevölkerungsfenster endet mit „Who is who?“ (statisches `details`, außerhalb von `peopleBody`,
+  sonst schluckt das Neuzeichnen alle 0,25 s den Klick): Townsfolk, Workers, Labourers,
+  Hearthhands, Soldiers, Pack donkeys.
+- Steuerungsübersicht: Taste F1 (Belegung `help`) oder „?“ oben; listet Maus und alle
+  `DEFAULT_BINDINGS` mit der aktuellen Belegung. Schließt Wirtschafts- und Diplomatiefenster.
+
 ## Einsteigerfreundlichkeit, Paket 3: Tipps beim ersten Mal (2026-10-21)
 
 - Tutorial Teil 2 als Tipps (`src/ui/tips.js`, reine Bedingungen; Anzeige in `hud.js` mit der

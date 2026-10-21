@@ -17,6 +17,10 @@ fort and will not share the valley.
   without a worker or waiting for goods, stores running out — with what helps and a *Show* button
   that jumps to the buildings concerned; below, how busy the carriers are and how each store
   changed over the last minute.
+* **All keys and mouse controls:** press **F1** (or the **?** button in the top bar). Keys can
+  be changed under *Settings → Controls*.
+* **Who is who?** The people panel (click the population in the top bar) ends with a short
+  glossary: townsfolk, workers, labourers, Hearthhands, soldiers and pack donkeys.
 * A guided tutorial starts with your first new game; replay it from *How to Play*. After it,
   **tips** explain each thing once, the moment it first matters — goods waiting for carriers,
   hunger, full beds, a workshop without a worker, the first raid, several building sites, long

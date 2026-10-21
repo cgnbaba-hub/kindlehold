@@ -23,7 +23,7 @@ import { scenarioOf } from '../missions/index.js';
 import { aiSettings } from '../ai/index.js';
 import { RANKS, rankOf } from '../combat/index.js';
 import { BRIGANDS, relation, stance, TRUCE, GIFT, PEACE, WAR_AT, ALLY_AT } from '../diplomacy/index.js';
-import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
+import { keyLabel, DEFAULT_BINDINGS, BINDING_LABELS } from '../input/bindings.js';
 import { enemyFaction } from '../ai/factions.js';
 import { BUILD_TABS, buildTabOf } from './build-tabs.js';
 import { economyOverview } from '../economy/overview.js';
@@ -139,6 +139,16 @@ export function createHud({ root, session, input, settings, actions, tips = true
     if (!c.soldierCount) peopleBody.append(h('p.muted', { text: 'No soldiers yet — build a Barracks.' }));
     for (const t in c.soldiers) peopleBody.append(row(t, `${UNITS[t].name}s`, c.soldiers[t]));
   }
+  const GLOSSARY = [
+    ['Townsfolk', 'Everyone who lives in your Cottages. They come when there is a free bed, food and a burning hearth.'],
+    ['Workers', 'Townsfolk with a workplace (forester, farmer, miner …). A free settler takes a job by itself.'],
+    ['Labourers', 'Everyone without a workplace. They are your carriers: they bring goods to the store and materials to building sites, and they build.'],
+    ['Hearthhands', 'Labourers you hire at the Keep for Taler. They sleep in the Keep, need no house and are paid each payday, but never take a workplace or become soldiers.'],
+    ['Soldiers', 'Trained at the Barracks, each from one free settler, who leaves the workforce for good.'],
+    ['Pack donkeys', 'Kept at a Donkey Stable: they carry goods like labourers, twice the load, but eat and want a wage.'],
+  ];
+  // who is who: the words the game uses for its people (built once: the list above it refreshes)
+  peoplePanel.append(h('details.people-gloss', {}, [h('summary', { text: 'Who is who?' }), h('dl', {}, GLOSSARY.flatMap(([k, v]) => [h('dt', { text: k }), h('dd', { text: v })]))]));
 
   // --- advisor: Osric reports the mood of the people and what is needed -------------------
   // Osric is a character, not a status line: an animated bust (breathes, blinks, talks while his
@@ -265,7 +275,8 @@ export function createHud({ root, session, input, settings, actions, tips = true
   nightBtn.addEventListener('click', () => { if (skipping == null) { skipping = session.loop.getSpeed(); session.loop.setSpeed(8); } });
   const diploBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Diplomacy', 'data-tip': 'Diplomacy: relations with the other powers of the valley' }, [icon('banner', 'icon icon-sm')]);
   const econBtn = h('button.btn-ghost', { type: 'button', 'aria-label': 'Economy overview', 'data-tip-title': `Economy (${keyLabel(bindings().economy)})`, 'data-tip': 'What holds the town back right now, who carries, and how the stores change.' }, [icon('ledger', 'icon icon-sm')]);
-  const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, econBtn, diploBtn, pauseBtn]);
+  const helpBtn = h('button.btn-ghost.help-btn', { type: 'button', 'aria-label': 'Controls overview', 'data-tip-title': `Controls (${keyLabel(bindings().help)})`, 'data-tip': 'Mouse and keys at a glance.', text: '?' });
+  const topbar = h('div.topbar.panel', {}, [clockIcon, clockText, speedBtn, econBtn, diploBtn, helpBtn, pauseBtn]);
   hud.append(topbar, nightBtn, speedMenu);
 
   // --- first-time tips: the tutorial's second part, one card at a time ---------------------------
@@ -310,6 +321,35 @@ export function createHud({ root, session, input, settings, actions, tips = true
     tipCard.hidden = false;
     root.classList.add('tip-on'); // Osric steps aside, as for the tutorial
   }
+
+  // --- controls at a glance (F1) ---------------------------------------------------------------
+  const helpBody = h('div.help-body');
+  const helpPanel = h('section.help-panel.panel', { 'aria-label': 'Controls overview' }, [
+    h('div.people-head', {}, [h('h2', { text: 'Controls' }), h('button.btn-ghost.help-close', { type: 'button', 'aria-label': 'Close', text: '×' })]),
+    helpBody,
+  ]);
+  helpPanel.hidden = true;
+  hud.append(helpPanel);
+  const MOUSE_HELP = [
+    ['Left-click', 'Select a building, settler or soldier'], ['Left-drag', 'Select soldiers in a box (labourers if there are none)'],
+    ['Right-click', 'Command: move, attack, gather, set the rally point'], ['Right-drag', 'Grab and pull the map'],
+    ['Mouse wheel', 'Zoom towards the cursor'], ['Middle-drag', 'Rotate the view'],
+    ['Right-click while placing', 'Cancel (on a road: end it, twice: stop)'], ['Shift + left-click', 'Add to the selection; keep placing the same building'],
+    ['Ctrl + 1–9 / 1–9', 'Store / recall a control group'],
+  ];
+  function toggleHelp(open = helpPanel.hidden) {
+    helpPanel.hidden = !open;
+    if (!open) return;
+    econPanel.hidden = true; diploPanel.hidden = true;
+    clear(helpBody);
+    const b = bindings();
+    const table = (rows) => h('dl.help-list', {}, rows.flatMap(([k, v]) => [h('dt', { text: k }), h('dd', { text: v })]));
+    helpBody.append(h('h3', { text: 'Mouse' }), table(MOUSE_HELP));
+    helpBody.append(h('h3', { text: 'Keys' }), table(Object.keys(DEFAULT_BINDINGS).map((a) => [keyLabel(b[a]), BINDING_LABELS[a] || a])));
+    helpBody.append(h('p.small.muted', { text: 'Keys can be changed in Settings → Controls.' }));
+  }
+  helpBtn.addEventListener('click', () => toggleHelp());
+  helpPanel.querySelector('.help-close').addEventListener('click', () => toggleHelp(false));
 
   // --- economy: the town at a glance — bottlenecks first, then carriers and the stores ----------
   const econBody = h('div.econ-body');
@@ -1158,6 +1198,7 @@ export function createHud({ root, session, input, settings, actions, tips = true
     toast,
     openBuildMenu() { cmdMode = cmdMode === 'build' ? 'auto' : 'build'; dirtySel = true; },
     toggleEconomy: () => toggleEconomy(),
+    toggleHelp: () => toggleHelp(),
     selectionChanged() { cmdMode = 'auto'; dirtySel = true; },
     dispose() { unsub.forEach((u) => u()); floaters.dispose(); hud.remove(); root.classList.remove('tip-on'); },
   };

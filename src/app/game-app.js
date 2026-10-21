@@ -111,6 +111,7 @@ export async function startApp(params) {
           onPause: () => togglePause(),
           onBuildMenu: () => hud && hud.openBuildMenu(),
           onEconomy: () => hud && hud.toggleEconomy(),
+          onHelp: () => hud && hud.toggleHelp(),
           onSelection: () => { if (hud) hud.selectionChanged(); if (session) session.audio.ui(); },
           onMarker: (k, x, z) => session && session.marker(k, x, z),
           onToast: (t) => hud && hud.toast(t),
