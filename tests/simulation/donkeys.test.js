@@ -6,6 +6,7 @@ import { newSim, keep, place, grant, all } from '../helpers/sim.js';
 import { DONKEYS, donkeysPerStable, donkeyFodder } from '../../src/transport/defs.js';
 import { completeBuilding } from '../../src/construction/index.js';
 import { serializeWorld, deserializeWorld } from '../../src/save/index.js';
+import { spawnEnemy } from '../../src/ai/index.js';
 
 function withStable(opts) {
   const sim = newSim(opts);
@@ -101,4 +102,15 @@ test('on Normal and Hard the donkeys leave building sites to the carriers, and w
   sim.bus.emit('population:payday', { owner: 'p1', taxes: 0, pay: 0, paid: 0 });
   assert.ok(!st.unpaid);
   assert.equal(p.res.taler, 100 - DONKEYS.wage.normal * donkeys(sim).length);
+});
+
+test('a donkey bolts for its stable when raiders come close', () => {
+  const { sim, st } = withStable();
+  for (let i = 0; i < 20 * 10; i++) sim.step();
+  const [d] = donkeys(sim);
+  const foe = spawnEnemy(sim.world, 'reaver', d.x + 4, d.z);
+  foe.order = { type: 'hold', ax: foe.x, az: foe.z };
+  for (let i = 0; i < 20; i++) sim.step();
+  assert.ok(d.fleeUntil > sim.world.tick && d.task && d.task.type === 'rest', 'it runs');
+  assert.ok(Math.hypot(d.x - st.x, d.z - st.z) < 30);
 });

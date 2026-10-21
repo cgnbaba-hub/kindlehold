@@ -530,9 +530,12 @@ export function createHud({ root, session, input, settings, actions }) {
       const w = world();
       const p = w.players[PLAYER];
       const idle = all(w, 'settler').filter((s) => s.owner === PLAYER && !s.job).length;
+      const donkeys = all(w, 'donkey').filter((d) => d.owner === PLAYER).length;
+      const waiting = all(w, 'building').filter((b) => b.owner === PLAYER && b.state === 'active' && b.stall === 'storageFull').length;
       selPanel.append(h('div.sel-empty', {}, [
         h('h3', { text: 'Kindlehold' }),
-        h('p', { text: `${p.housed ?? p.pop} townsfolk${p.hands ? ` and ${p.hands} Hearthhands` : ''} · ${idle} labourers · motivation ${Math.round(p.stability)}` }),
+        h('p', { text: `${p.housed ?? p.pop} townsfolk${p.hands ? ` and ${p.hands} Hearthhands` : ''} · ${idle} labourers${donkeys ? ` · ${donkeys} donkey${donkeys > 1 ? 's' : ''}` : ''} · motivation ${Math.round(p.stability)}` }),
+        waiting ? h('p.small', { text: `${waiting} workshop${waiting > 1 ? 's wait' : ' waits'} for carriers to pick up goods.` }) : null,
         h('p.muted', { text: 'Left-click to select, drag to select soldiers (or labourers), right-click to command.' }),
       ]));
       return;
