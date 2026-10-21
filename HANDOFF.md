@@ -158,6 +158,8 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 
 - KayKit-Fenster leuchten nachts (siehe „Modellierte Gebäude“).
 - Zielliste: Optionale Ziele zeigen ihren Hinweis nur noch als Tooltip.
+- Tutorial und Ratgeber Osric saßen an derselben Stelle (links unten) übereinander. Solange das
+  Tutorial läuft, tritt Osric beiseite (`.tutorial-on`); Warnungen erscheinen weiter oben links.
 - Ladezeit: Die drei Modellpakete (Figuren 2,4 MB, Gebäude 1,9 MB, Tiere 1,7 MB) werden jetzt
   gleich zu Beginn der Session gleichzeitig angefordert und laden, während Welt und Gelände
   gebaut werden (etwa 4 s Rechenzeit). Vorher kamen sie nacheinander danach.
