@@ -26,6 +26,12 @@ import { createFrameStats } from '../telemetry/frame-stats.js';
 import { log } from '../core/logger.js';
 
 export async function createSession({ container, seed, quality = 'high', verify = false, onCritical, difficulty = 'normal', demo = null, settings = {}, world: loadedWorld = null, hooks = {}, scenarioId = 'harrowmere', campaign = null }) {
+  // the model packs (about 6 MB) download while the world and the terrain are being built
+  const search = typeof location !== 'undefined' ? location.search : '';
+  const modelled = settings.modelledBuildings !== false && !/[?&]blds=classic\b/.test(search);
+  const animalsP = /[?&]animals=classic\b/.test(search) ? null : loadAnimalAssets();
+  const buildingsP = modelled ? loadBuildingAssets() : null;
+  const figuresP = /[?&]figs=classic\b/.test(search) ? null : loadFigureAssets();
   const sim = createSimulation({ seed, difficulty, onCritical, scenarioId, campaign });
   if (loadedWorld) sim.replaceWorld(loadedWorld);
   if (demo) applyDemoState(sim, demo);
@@ -45,15 +51,14 @@ export async function createSession({ container, seed, quality = 'high', verify 
   const water = views.register(createWater({ scene: rc.scene, terrain: sim.terrain }));
   views.register(createVegetation({ scene: rc.scene, terrain: sim.terrain, world, quality: rc.quality, camera: rc.camera }));
   // modelled, animated deer and stags (Quaternius); ?animals=classic keeps the simple ones
-  const animalAssets = typeof location !== 'undefined' && /[?&]animals=classic\b/.test(location.search) ? null : await loadAnimalAssets();
+  const animalAssets = await animalsP;
   views.register(createWildlifeView({ scene: rc.scene, terrain: sim.terrain, world, animalAssets, camera: rc.camera }));
   views.register(createPoisView({ scene: rc.scene, terrain: sim.terrain, world }));
   // modelled buildings (KayKit); the setting or ?blds=classic keeps the procedural ones
-  const modelled = settings.modelledBuildings !== false && !(typeof location !== 'undefined' && /[?&]blds=classic\b/.test(location.search));
-  setBuildingAssets(modelled ? await loadBuildingAssets() : null);
+  setBuildingAssets(await buildingsP);
   const buildingsView = views.register(createBuildingsView({ scene: rc.scene, terrain: sim.terrain, world, renderer: rc.renderer, sky }));
   // modelled, animated characters (KayKit); ?figs=classic keeps the procedural figures
-  const figureAssets = typeof location !== 'undefined' && /[?&]figs=classic\b/.test(location.search) ? null : await loadFigureAssets();
+  const figureAssets = await figuresP;
   const unitsView = views.register(createUnitsView({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, getZoom: () => rc.rts.state.zoom, figureAssets, camera: rc.camera }));
   const effects = views.register(createEffects({ scene: rc.scene, terrain: sim.terrain, world, bus: sim.bus, quality: rc.quality, camera: rc.camera, reducedMotion: () => !!settings.reducedMotion }));
   const winter = views.register(createWinter({

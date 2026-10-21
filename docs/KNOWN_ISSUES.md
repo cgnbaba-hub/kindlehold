@@ -52,9 +52,9 @@ report or script that shows them.
 - **Visual 7.0 / 10 and gameplay 6.8 / 10, below the 8.5 gate** after the maximum critic
   rounds (docs/FINAL_REVIEW.md, docs/critiques/). Much has changed since (modelled figures and
   buildings, lighting, longer chains, campaign); no new critic round has been run.
-- **Startup time:** 36.6 s to a playable frame for a fresh game in headless SwiftShader at the
-  stage 1 review (budget 15 s), dominated by shader compilation and CPU texture generation.
-  Not measured on a GPU and not re-measured since.
+- **Startup time:** measured 2026-10-21 in headless SwiftShader: 19–21 s to a playable frame on
+  High, 11 s on Low (budget 15 s; 36.6 s at the stage 1 review). The session is built after
+  about 5 s; the rest is shader compilation for the first frames. Not measured on a GPU.
 
 ## Fixed
 
