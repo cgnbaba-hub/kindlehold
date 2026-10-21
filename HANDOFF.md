@@ -154,6 +154,25 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Kampf-Rückmeldung, Endstatistik, abwechslungsreichere Überfälle (2026-10-21)
+
+- Verluste: eine Meldung je Gefecht, die mitzählt („3 soldiers have fallen“), Klick springt hin
+  (HUD, `EV.UNIT_DIED`). Belagerungsgerät im Auswahlfeld: Reichweite, Totzone, aktuelles Ziel.
+- Endbildschirm: größte Bevölkerung, angeheuerte Hearthhands, Ø-Motivation, gebaute/verlorene
+  Gebäude, Straßenmeter (`world.stats.peakPop`, `handsHired`, `motivationSum/Samples`,
+  `buildingsLost`).
+- Überfälle (`RAID_VARIETY`, nicht auf Story): Plünderer auch zwischen den Angriffen, auch gegen
+  Lagerhaus (stehlen Waren), Eselstall (treiben einen Esel weg, Nachkauf 40 Taler) und Brunnen;
+  Flanke aus überzähligen Leuten der Garnison auf ein zweites Ziel; auf Hard jede zweite Welle in
+  der Dämmerung (`ticksUntilHour`, `core/daytime.js`). Erste Fassung nahm Flanke und Plünderer
+  aus der Hauptmacht und machte Hard leichter (15/20 statt 13/20); jetzt zusätzlich. Gemessen
+  über 40 Hard-Seeds: 20/40 mit und ohne (der kompakte Bot bietet kaum Ziele).
+- Kapitel 4 („The Salt Road“): optionales Ziel „Pave the Salt Road“ (60 m Straße und ein
+  Eselstall; Bedingung `roads` in `missions/conditions.js`).
+- Minikarte zeigt Straßen und Esel; Angreifer tragen nach Einbruch der Dunkelheit Fackeln
+  (`torch`-Partikel in `effects/index.js`).
+- Tests: `tests/simulation/raid-variety.test.js`.
+
 ## Arbeitsprioritäten („Vorrang“, 2026-10-21)
 
 - Befehl `setPriority {id, on}` (construction), `building.priority` (gespeichert): Arbeiter
@@ -621,10 +640,8 @@ Plünderzüge der Rustfang, schönere Menüs, abwechslungsreiche Kampfgeräusche
 
 - Vollständigen e2e-Lauf wiederholen, danach `docs/STATUS.json` und `docs/KNOWN_ISSUES.md`
   aktualisieren.
-- Reihenfolge laut Nutzer (2026-10-21): Transport und Arbeitsprioritäten sind erledigt; als
-  Nächstes Kampf-Rückmeldung (Meldung „Soldat gefallen“ mit Sprung,
-  Belagerungsgerät im Auswahlfeld) und Endstatistik, dann abwechslungsreichere Überfälle als
-  Gegengewicht (Plünderer gegen Lager/Brunnen, Angriffe aus zwei Richtungen, Nachtangriffe auf Hard).
+- Die Reihenfolge des Nutzers vom 2026-10-21 (Transport, Vorrang, Kampf-Rückmeldung,
+  Überfälle) ist umgesetzt.
 - Fotobasierte CC0-Texturen vergleichen, sobald ambientcg.com / polyhaven.com erreichbar sind.
 - Grafik: Nahansicht der Figuren, Gebäudevielfalt, die Nahansicht der Randberge (noch recht
   dunstig).

@@ -4,6 +4,7 @@ import { PLAYER } from '../core/contracts.js';
 import { BUILDINGS } from '../buildings/defs.js';
 import { computeSplat } from '../terrain/terrain-view.js';
 import { EXPLORE_GRID, isExplored } from '../exploration/index.js';
+import { CELL } from '../navigation/nav-grid.js';
 import { h } from './dom.js';
 
 const SIZE = 256; // drawn at native resolution, scaled down by CSS
@@ -67,6 +68,12 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
       ctx.drawImage(shroudCanvas, 0, 0, SIZE, SIZE);
     }
     const seen = (e) => e.owner === PLAYER || isExplored(w, terrain.half, e.x, e.z);
+    // stone roads: one pale square per 2 m cell
+    if (w.roads && w.roads.cells.length) {
+      const cw = Math.floor((terrain.half * 2) / CELL), px = Math.max(1.2, (CELL / terrain.size) * SIZE);
+      ctx.fillStyle = '#cbbf9f';
+      for (const k of w.roads.cells) ctx.fillRect(toPx(-terrain.half + ((k % cw) + 0.5) * CELL) - px / 2, toPx(-terrain.half + (((k / cw) | 0) + 0.5) * CELL) - px / 2, px, px);
+    }
     for (const b of all(w, 'building')) {
       if (b.state === 'destroyed' || !seen(b)) continue;
       const r = Math.max(2.5, (BUILDINGS[b.type].radius / terrain.size) * SIZE * 1.3);
@@ -85,6 +92,7 @@ export function createMinimap({ terrain, world, rts, onMoveOrder }) {
       ctx.fillRect(toPx(d.x) - 1.5, toPx(d.z) - 1.5, 3, 3);
     }
     for (const a of all(w, 'animal')) { if (!seen(a)) continue; ctx.fillStyle = '#b07a44'; ctx.fillRect(toPx(a.x) - 1, toPx(a.z) - 1, 2, 2); }
+    for (const d of all(w, 'donkey')) { ctx.fillStyle = '#9a948c'; ctx.fillRect(toPx(d.x) - 1, toPx(d.z) - 1, 2, 2); }
     for (const s of all(w, 'settler')) { if (s.hidden) continue; ctx.fillStyle = '#efe6d2'; ctx.fillRect(toPx(s.x) - 0.8, toPx(s.z) - 0.8, 1.6, 1.6); }
     for (const u of all(w, 'unit')) {
       if (u.downed || !seen(u)) continue;

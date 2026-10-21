@@ -307,6 +307,13 @@ export function createPopulationModule() {
       else if (p.stability > target) p.stability = Math.max(target, p.stability - step);
       p.burnPenalty = Math.max(0, p.burnPenalty - 0.1);
       p.stabilityTarget = target;
+      // for the end screen: average motivation (once the hearth burns) and the largest the town grew
+      if (owner === PLAYER && world.mission.flags.keepLit) {
+        const st = world.stats;
+        st.motivationSum = (st.motivationSum || 0) + p.stability;
+        st.motivationSamples = (st.motivationSamples || 0) + 1;
+        st.peakPop = Math.max(st.peakPop || 0, p.pop);
+      }
     }
 
     // departures when stability collapses
@@ -459,6 +466,7 @@ export function createPopulationModule() {
       const s = spawnSettler(world, owner, door.x + 1, door.z + 1.5, { hand: true });
       if (!s) return;
       pay(world, owner, HAND.cost, 'hire hand');
+      if (owner === PLAYER) world.stats.handsHired = (world.stats.handsHired || 0) + 1;
       emit(world, EV.SETTLER_ARRIVED, { id: s.id, hired: true, hand: true });
     }
   }

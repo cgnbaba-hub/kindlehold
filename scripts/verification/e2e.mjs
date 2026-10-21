@@ -207,6 +207,41 @@ try {
     await game(page, () => { const g = window.__GAME__; const id = g.find('building', 'warhall')[0]; const b = g.world().entities[id]; b.hp = 0; b.state = 'destroyed'; g.runTicks(15); });
     await page.waitForSelector('.end.victory', { timeout: 15000 });
     assert(/The Toll Is Broken/.test(await page.textContent('.end')), 'victory text');
+    assert(/Largest town/.test(await page.textContent('.end')) && /Average motivation/.test(await page.textContent('.end')), 'end-of-game stats');
+  });
+
+  await test('stone-road-through-the-ui', async (page) => {
+    await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });
+    if (await page.getByRole('button', { name: 'Skip tutorial' }).count()) await page.getByRole('button', { name: 'Skip tutorial' }).click();
+    // a lit Keep, stone and silver to spare, nothing selected, the camera over the green by the Keep
+    const pts = await game(page, () => {
+      const g = window.__GAME__; const w = g.world();
+      g.issue({ type: 'rekindle' }); g.runTicks(5);
+      Object.assign(w.players.p1.res, { stone: 500, taler: 300 });
+      w.selection.ids = [];
+      const k = w.entities[g.find('building', 'keep')[0]];
+      for (const [dx, dz] of [[0, 14], [0, -14], [14, 0], [-14, 0], [8, 18], [-8, 18]]) {
+        const ax = k.x + dx - (dz ? 6 : 0), az = k.z + dz - (dx ? 6 : 0), bx = k.x + dx + (dz ? 6 : 0), bz = k.z + dz + (dx ? 6 : 0);
+        if (!g.roadStretch(ax, az, bx, bz).ok) continue;
+        g.session.rc.rts.jumpTo((ax + bx) / 2, (az + bz) / 2, 0.6, 45);
+        g.renderNow(); g.renderNow();
+        return { a: g.project(ax, az, null), b: g.project(bx, bz, null) };
+      }
+      return null;
+    });
+    assert(pts, 'an open stretch beside the Keep');
+    await page.keyboard.press('KeyB');
+    await page.getByRole('button', { name: 'Road' }).click();
+    await page.mouse.click(pts.a.x, pts.a.y);
+    await page.mouse.move(pts.b.x, pts.b.y);
+    await page.waitForTimeout(300);
+    assert(/Laying a stone road/.test(await page.textContent('.banner')), 'road banner shown');
+    await page.mouse.click(pts.b.x, pts.b.y);
+    await page.waitForFunction(() => (window.__GAME__.world().roads?.cells.length || 0) > 0, null, { timeout: 15000 });
+    await page.mouse.click(pts.b.x, pts.b.y, { button: 'right' });
+    await page.mouse.click(pts.b.x, pts.b.y, { button: 'right' });
+    await page.waitForFunction(() => window.__GAME__.session.input.state.mode === 'select', null, { timeout: 5000 });
   });
 
   await test('campaign-chapter-two', async (page) => {

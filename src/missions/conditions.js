@@ -31,6 +31,8 @@ export function evaluate(world, cond, owner = PLAYER) {
   if (cond.pop !== undefined) { const p = world.players[owner]; return p.pop - (p.hands || 0) >= cond.pop; }
   if (cond.hands !== undefined) return (world.players[owner].hands || 0) >= cond.hands;
   if (cond.motivation !== undefined) return (world.players[owner].stability || 0) >= cond.motivation;
+  // metres of stone road (2 m per cell)
+  if (cond.roads !== undefined) return ((world.roads && world.roads.cells.length) || 0) * 2 >= cond.roads;
   if (cond.stock) return (world.players[owner].res[cond.stock] || 0) >= cond.amount;
   if (cond.produced) return (world.stats.produced[cond.produced] || 0) >= cond.amount;
   if (cond.units) return all(world, 'unit').filter((u) => u.owner === owner && u.type === cond.units && !u.downed).length >= (cond.count || 1);

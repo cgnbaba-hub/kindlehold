@@ -152,6 +152,15 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
   reach from the tower (or lit Keep) guarding the target, which outranges every tower, and
   `escort` shields or blades guard it. A chapter can shift `siegeFrom` (`ai.siegeFrom`; the
   Tollbreaker chapter brings them one raid earlier). Enemy engines fly the faction colour.
+- Varied raids (`RAID_VARIETY` in `ai/index.js`; none on Story): plunder parties also between
+  raids (every `harassEvery × laterHarass`, only while the garrison could still fill the next
+  raid), aimed also at Storehouses (steal `plunder` of the most plentiful good), Donkey Stables
+  (drive off a donkey) and Wells. From wave `flankFrom` on, spare men beyond the raid size swing
+  round (a waypoint 24 m beside the second target) and strike a second target at least 25 m
+  from the first; without one they stay home. From wave `nightFrom` on (Hard), every other raid
+  is timed for dusk when dusk falls within a third of the usual pause. Measured over 40 Hard
+  seeds: 20/40 won with and without (22/40 with roads and a stable either way) — the compact bot
+  offers the plunderers little; the variety bites spread-out towns.
 
 ## Difficulty
 
@@ -163,6 +172,9 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
 | Garrison cap | 8 | 12 | 18 |
 | Fort reserves (total musters) | 22 | 32 | 48 |
 | Siege engines | never | from raid 4, 1, 1 guard | from raid 2, up to 2, 2 guards each |
+| Plunderers between raids | no | yes, Storehouses lose 15 | yes, more often, lose 25 |
+| Flank on a second target | never | from raid 4 | from raid 2 |
+| Dusk raids | never | never | every other raid from raid 3 |
 | Raid turns back at | 25% strength | 25% | 20% |
 | Raid warning (if not triggered earlier) | 18 min | 14 min | 11 min |
 | Warning → raid delay | 3:00 | 2:00 | 1:30 |

@@ -9,6 +9,7 @@ import { siteNeeds, applyBuildWork, MAX_BUILDERS, PRIORITY } from '../constructi
 import { isIdleLabourer, keepOf, stabilityFactor } from '../population/index.js';
 import { walkTo, stopWalking } from '../navigation/agent.js';
 import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
+import { hostile } from '../diplomacy/index.js';
 import { DONKEYS, donkeysPerStable, donkeyFodder, donkeysSupplySites, donkeyWage } from '../transport/defs.js';
 
 export const SUPPLY_LOAD = 6;
@@ -468,18 +469,26 @@ export function createEconomyModule() {
     return [d.x + Math.sin(a) * 2.2, d.z + Math.cos(a) * 2.2];
   }
 
+  const foes = [];
   function stepDonkey(world, dn, gone) {
     const stable = world.entities[dn.stable];
     if (!stable || stable.kind !== 'building' || stable.state !== 'active' || stable.owner !== dn.owner) { gone.push(dn); return; }
     const keep = keepOf(world, dn.owner);
     if (!keep) return;
+    // enemies close by: the donkey bolts for its stable (checked every 10 ticks)
+    const spatial = ctx.services.spatial;
+    if ((world.tick + dn.id) % 10 === 0 && spatial) {
+      spatial.query(dn.x, dn.z, 10, foes, (e) => e.kind === 'unit' && hostile(world, dn.owner, e.owner) && !e.downed);
+      if (foes.length) dn.fleeUntil = world.tick + 160;
+    }
+    const fleeing = dn.fleeUntil > world.tick;
     // night, or no fodder at the last meal: back to the stable
     const h = world.time.hour;
-    const rest = h >= 22 + (dn.id % 5) * 0.2 || h < 5 + (dn.id % 4) * 0.15 || stable.hungry || stable.unpaid;
+    const rest = fleeing || h >= 22 + (dn.id % 5) * 0.2 || h < 5 + (dn.id % 4) * 0.15 || stable.hungry || stable.unpaid;
     if (rest) {
       if (dn.task && dn.task.type !== 'rest') abandonTask(world, dn);
       if (!dn.task) dn.task = { type: 'rest', spot: stallSpot(stable, dn) };
-      const r = walkTo(ctx.services.nav, dn, dn.task.spot[0], dn.task.spot[1], DONKEYS.speed * 0.6, DT, 0.8);
+      const r = walkTo(ctx.services.nav, dn, dn.task.spot[0], dn.task.spot[1], DONKEYS.speed * (fleeing ? 1.2 : 0.6), DT, 0.8);
       dn.anim = r === 'walking' ? 'walk' : 'idle';
       return;
     }
@@ -598,6 +607,19 @@ export function createEconomyModule() {
           }
         }
         if (s.task) stepLabourer(world, s, keep);
+      }
+      // a stable that lost a donkey buys a new one while the treasury allows
+      if (world.tick % 200 === 37) {
+        for (const b of all(world, 'building')) {
+          if (b.type !== 'donkeystable' || b.state !== 'active') continue;
+          const p = world.players[b.owner];
+          const herd = all(world, 'donkey').filter((d) => d.stable === b.id).length;
+          if (herd >= donkeysPerStable(world) || !p || p.res.taler < DONKEYS.price + 20) continue;
+          addRes(world, b.owner, 'taler', -DONKEYS.price, 'donkey');
+          const d = doorOf(b);
+          spawn(world, { kind: 'donkey', owner: b.owner, x: d.x, z: d.z + 1.2, heading: b.rot || 0, stable: b.id, task: null, carry: null, anim: 'idle' });
+          alert(world, 'info', `The Donkey Stable bought a new donkey for ${DONKEYS.price} Taler.`, b.x, b.z, b.owner);
+        }
       }
       const gone = [];
       for (const dn of all(world, 'donkey')) { dn.px = dn.x; dn.pz = dn.z; stepDonkey(world, dn, gone); }

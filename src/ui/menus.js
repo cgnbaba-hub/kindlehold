@@ -291,12 +291,18 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
     const sc = SCENARIOS[world.meta.scenarioId] || HARROWMERE_SCENARIO;
     const txt = result === 'victory' ? sc.victory : sc.defeat;
     const st = world.stats;
+    const p = world.players.p1 || {};
+    const roads = (world.roads && world.roads.cells.length) || 0;
     const stats = [
       ['Time', fmtTime(world.tick / 20)],
-      ['Settlers arrived', st.settlersArrived], ['Buildings raised', st.buildingsBuilt],
+      ['Settlers arrived', st.settlersArrived], ['Largest town', `${st.peakPop || p.pop || 0} people`],
+      ['Hearthhands hired', st.handsHired || 0],
+      ['Average motivation', st.motivationSamples ? Math.round(st.motivationSum / st.motivationSamples) : '–'],
+      ['Buildings raised / lost', `${st.buildingsBuilt} / ${st.buildingsLost || 0}`],
+      roads ? ['Stone roads laid', `${roads * 2} m`] : null,
       ['Timber / stone produced', `${st.produced.timber} / ${st.produced.stone}`], ['Iron / provisions produced', `${st.produced.iron} / ${st.produced.provisions}`],
-      ['Soldiers trained', st.unitsRecruited], ['Reavers defeated', st.enemiesDefeated], ['Our losses', st.unitsLost], ['Raids faced', world.ai.wave],
-    ];
+      ['Soldiers trained', st.unitsRecruited], ['Enemies defeated', st.enemiesDefeated], ['Our losses', st.unitsLost], ['Raids faced', world.ai.wave],
+    ].filter(Boolean);
     return show(screen(`end.${result}`, [backdrop(), h('div.menu-card.wide', {}, [
       h('h1.title.small', { text: result === 'victory' ? 'Victory' : 'Defeat' }),
       h('h2', { text: txt.title }),

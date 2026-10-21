@@ -4,12 +4,15 @@
 // either side); its only non-player advantage is the documented Hard HP bonus and
 // scripted reinforcements that march in from the north-east road during raids.
 import { EV, PLAYER, ENEMY } from '../core/contracts.js';
-import { all, emit, alert, worldRng } from '../world/world.js';
+import { all, emit, alert, worldRng, remove } from '../world/world.js';
+import { addRes } from '../economy/stock.js';
+import { DONKEYS } from '../transport/defs.js';
 import { doorOf, BUILDINGS } from '../buildings/defs.js';
 import { spawnUnit, isAlive, formationOrder } from '../units/sim.js';
 import { formationSlots } from '../navigation/index.js';
 import { UNITS } from '../units/defs.js';
 import { enemyFaction } from './factions.js';
+import { isFastHour, NIGHT_PACE } from '../core/daytime.js';
 
 export const AI_DIFFICULTY = {
   // harass: first plunder party (minutes), interval between parties (minutes), party size
@@ -21,6 +24,38 @@ export const AI_DIFFICULTY = {
 };
 // an engine draws this many places from the fort's reserves
 export const ENGINE_RESERVE = 2;
+// More varied raids (the counterweight to roads, donkeys and priorities; CLAUDE.md, "Schwierigkeit"):
+// laterHarass — plunder parties also between the great raids, every `harassEvery` × this;
+// plunder — goods a party carries off from a Storehouse; flankFrom — from this raid on, a third of
+// the raid swings round and strikes a second target from the side (null = never);
+// nightFrom — from this raid on, every other raid comes at dusk (null = never).
+// Flankers come on top of the raid (spare men from the garrison), and plunder parties go out
+// between raids only while the next raid stays full, so neither weakens the main blow.
+// Measured (bot, chapter one, 40 Hard seeds): 20/40 won with and without these, 22/40 with the bot
+// using roads and a stable either way. The bot builds compactly and keeps its stores at the Keep,
+// so the plunderers find little; they are aimed at spread-out towns.
+export const RAID_VARIETY = {
+  story: { laterHarass: null, plunder: 0, flankFrom: null, nightFrom: null },
+  normal: { laterHarass: 1.6, plunder: 15, flankFrom: 3, nightFrom: null },
+  hard: { laterHarass: 1.2, plunder: 25, flankFrom: 1, nightFrom: 2 },
+};
+export function raidVariety(world) {
+  return Object.hasOwn(RAID_VARIETY, world.meta.difficulty) ? RAID_VARIETY[world.meta.difficulty] : RAID_VARIETY.normal;
+}
+/** Ticks from now until the clock next shows `hour` (the dark hours pass NIGHT_PACE times faster). */
+export function ticksUntilHour(world, hour) {
+  const D = world.time.dayLengthTicks;
+  let h = world.time.hour, t = 0;
+  for (let i = 0; i < 4000; i++) {
+    const step = 20;
+    const nh = h + (24 / D) * (isFastHour(h) ? NIGHT_PACE : 1) * step;
+    if ((h < hour && nh >= hour) || (nh >= 24 && nh - 24 >= hour)) return t + step;
+    h = nh % 24; t += step;
+  }
+  return null;
+}
+// plunder parties go for outlying workshops, and also for what a spread-out town leans on
+const PLUNDER_TARGETS = new Set(['storehouse', 'donkeystable', 'well']);
 
 const TARGET_PRIORITY = { lodge: 0, farm: 0, quarry: 0, mine: 0, cottage: 1, barracks: 1, tower: 2, keep: 3 };
 
@@ -152,6 +187,13 @@ export function createAiModule() {
     const raid = pool.slice(0, size);
     if (!raid.length) { ai.raidTick = world.tick + 60 * 20; return; }
     ai.postponed = 0;
+    // a flank comes on top of the raid, from what the garrison can spare beyond it
+    const rv = raidVariety(world);
+    for (const u of pool) delete u.flanker;
+    if (rv.flankFrom != null && ai.wave >= rv.flankFrom && raid.length >= 6) {
+      const spare = pool.slice(size).filter((u) => UNITS[u.type].cls !== 'defensive').slice(0, Math.ceil(size / 3));
+      if (spare.length >= 2) { for (const u of spare) u.flanker = true; raid.push(...spare); }
+    }
     raid.push(...rollOutEngines(world, hall, cfg));
     // gather outside the gate for 20 s, visibly, before marching
     const keep = all(world, 'building').find((b) => b.type === 'keep' && b.owner === PLAYER);
@@ -183,11 +225,14 @@ export function createAiModule() {
     const ai = world.ai;
     const pool = garrison(world).filter((u) => !u.downed && UNITS[u.type].cls !== 'defensive' && !isEngine(u));
     if (pool.length < cfg.harassSize + 3) return; // keep the fort manned
+    // between the great raids only what the next one can spare goes plundering
+    if (world.ai.wave > 0 && garrison(world).filter((u) => !u.downed && !isEngine(u)).length < cfg.firstRaid + world.ai.wave * cfg.growth + cfg.harassSize) return;
     // the least-defended workshop, farthest from the Keep
     const keep = all(world, 'building').find((b) => b.type === 'keep' && b.owner === PLAYER);
     let best = null, bs = -Infinity;
+    const later = world.ai.wave > 0;
     for (const b of all(world, 'building')) {
-      if (b.owner !== PLAYER || b.state === 'destroyed' || !(TARGET_PRIORITY[b.type] === 0)) continue;
+      if (b.owner !== PLAYER || b.state === 'destroyed' || !(TARGET_PRIORITY[b.type] === 0 || (later && PLUNDER_TARGETS.has(b.type) && b.state === 'active'))) continue;
       let guards = 0;
       for (const u of all(world, 'unit')) if (u.owner === PLAYER && !u.downed && Math.hypot(u.x - b.x, u.z - b.z) < 22) guards++;
       const s = (keep ? Math.hypot(b.x - keep.x, b.z - keep.z) : 0) - guards * 40 - Math.hypot(b.x - hall.x, b.z - hall.z) * 0.3;
@@ -201,7 +246,8 @@ export function createAiModule() {
       u.target = null; u.path = null; u.dest = null;
     });
     ai.harass = { ids: party.map((u) => u.id), target: best.id, until: world.tick + 75 * 20 }; // hit and run
-    alert(world, 'danger', `${enemyFaction(world).short} plunderers are heading for your ${BUILDINGS[best.type].name}!`, best.x, best.z);
+    const what = best.type === 'storehouse' ? ' to carry off its goods' : best.type === 'donkeystable' ? ' to drive off a donkey' : '';
+    alert(world, 'danger', `${enemyFaction(world).short} plunderers are heading for your ${BUILDINGS[best.type].name}${what}!`, best.x, best.z);
     emit(world, 'ai:harass', { size: party.length, target: best.id, x: best.x, z: best.z });
   }
 
@@ -210,11 +256,108 @@ export function createAiModule() {
     if (!h) return;
     const party = h.ids.map((id) => world.entities[id]).filter((u) => u && isAlive(u));
     const target = world.entities[h.target];
+    // at a Storehouse or a Donkey Stable they grab what they came for and run
+    if (!h.grabbed && target && target.state === 'active' && (target.type === 'storehouse' || target.type === 'donkeystable')
+      && party.some((u) => Math.hypot(u.x - target.x, u.z - target.z) < BUILDINGS[target.type].radius + 3.5)) {
+      h.grabbed = true;
+      h.until = Math.min(h.until, world.tick + 20);
+      plunder(world, target);
+    }
     const done = !party.length || !target || target.state === 'destroyed' || world.tick > h.until
       || party.reduce((s, u) => s + u.hp / u.maxHp, 0) < party.length * 0.5;
     if (!done) return;
     for (const u of party) { guard(world, u, hall); u.path = null; u.dest = null; }
     world.ai.harass = null;
+  }
+
+  function plunder(world, b) {
+    const short = enemyFaction(world).short;
+    if (b.type === 'storehouse') {
+      const p = world.players[b.owner];
+      const n = raidVariety(world).plunder;
+      let good = null;
+      for (const r of ['provisions', 'iron', 'stone', 'timber']) if (!good || p.res[r] > p.res[good]) good = r;
+      const amt = Math.min(n, Math.floor(p.res[good] || 0));
+      if (amt <= 0) return;
+      addRes(world, b.owner, good, -amt, 'plundered');
+      alert(world, 'danger', `${short} plunderers carried off ${amt} ${good} from the Storehouse!`, b.x, b.z);
+      emit(world, 'ai:plunder', { id: b.id, res: good, amt });
+    } else {
+      const dn = all(world, 'donkey').find((d) => d.stable === b.id);
+      if (!dn) return;
+      remove(world, dn.id, 'stolen');
+      alert(world, 'danger', `${short} plunderers drove off a donkey from the stable! The stable buys a new one for ${DONKEYS.price} Taler when it can.`, b.x, b.z);
+      emit(world, 'ai:plunder', { id: b.id, donkey: true });
+    }
+  }
+
+  /** From the wave the difficulty sets on, a third of the raid (no engines, no shields) breaks
+   *  away and comes at a second target from the side, so one guarded gate is not enough. */
+  function splitFlank(world, raid, target, hall) {
+    const ai = world.ai;
+    ai.flankIds = []; ai.flankTarget = null;
+    const able = raid.filter((u) => u.flanker && !isEngine(u));
+    for (const u of able) delete u.flanker;
+    // without a second target worth a detour the spare men stay at the fort
+    const stayHome = () => { for (const u of able) { guard(world, u, hall); u.path = null; u.dest = null; raid.splice(raid.indexOf(u), 1); } ai.raidIds = raid.map((u) => u.id); return null; };
+    if (able.length < 2) return stayHome();
+    let second = null, bs = Infinity;
+    for (const b of all(world, 'building')) {
+      if (b.owner !== PLAYER || b.state === 'destroyed' || b.id === target.id || (TARGET_PRIORITY[b.type] ?? 2) > 1) continue;
+      const apart = Math.hypot(b.x - target.x, b.z - target.z);
+      if (apart < 25) continue;
+      let guards = 0;
+      for (const u of all(world, 'unit')) if (u.owner === PLAYER && !u.downed && Math.hypot(u.x - b.x, u.z - b.z) < 22) guards++;
+      const sc = Math.hypot(b.x - hall.x, b.z - hall.z) + guards * 45 - Math.min(apart, 60) * 0.5;
+      if (sc < bs) { bs = sc; second = b; }
+    }
+    if (!second) return stayHome();
+    const units = able;
+    // the swing: a point beside the second target, away from the main column's road
+    const mx = target.x - hall.x, mz = target.z - hall.z, ml = Math.hypot(mx, mz) || 1;
+    const side = ((second.x - target.x) * -mz + (second.z - target.z) * mx) >= 0 ? 1 : -1;
+    const [wx, wz] = walkableNear(second.x + (-mz / ml) * side * 24, second.z + (mx / ml) * side * 24);
+    units.forEach((u, i) => {
+      u.order = { type: 'attackMove', x: wx + (i % 3) * 1.6, z: wz + Math.floor(i / 3) * 1.6, ax: u.x, az: u.z };
+      u.target = null; u.path = null; u.dest = null; u.escort = null;
+    });
+    ai.flankIds = units.map((u) => u.id);
+    ai.flankTarget = second.id;
+    ai.flankStage = 'swing';
+    return { units, target: second };
+  }
+
+  function updateFlank(world, hall, retreat) {
+    const ai = world.ai;
+    if (!ai.flankIds || !ai.flankIds.length) return;
+    const units = ai.flankIds.map((id) => world.entities[id]).filter((u) => u && isAlive(u));
+    ai.flankIds = units.map((u) => u.id);
+    if (retreat) {
+      for (const u of units) {
+        const [ax, az] = hall ? campAnchor(world, u, hall) : [u.x, u.z];
+        u.order = { type: 'move', x: ax, z: az, ax, az };
+        u.target = null; u.retreating = true; u.path = null; u.dest = null;
+      }
+      ai.flankStage = 'home';
+      return;
+    }
+    if (ai.flankStage === 'home') return;
+    let t = world.entities[ai.flankTarget];
+    if (!t || t.state === 'destroyed') {
+      if (!units.length) return;
+      t = pickRaidTarget(world, units[0].x, units[0].z);
+      if (!t) return;
+      ai.flankTarget = t.id; ai.flankStage = 'strike';
+    }
+    const swung = ai.flankStage === 'swing' && units.every((u) => u.order.type === 'idle' || u.target != null || Math.hypot(u.x - u.order.x, u.z - u.order.z) < 4);
+    if (swung) ai.flankStage = 'strike';
+    if (ai.flankStage !== 'strike') return;
+    for (const u of units) {
+      if (u.target != null || (u.order.type === 'attackMove' && u.order.targetBuilding === t.id)) continue;
+      const d = doorOf(t);
+      u.order = { type: 'attackMove', x: d.x, z: d.z, ax: u.x, az: u.z, targetBuilding: t.id };
+      u.target = null; u.path = null; u.dest = null;
+    }
   }
 
   function launchRaid(world, hall) {
@@ -225,9 +368,15 @@ export function createAiModule() {
     ai.raidTarget = target.id;
     ai.state = 'raid';
     ai.raidStartedTick = world.tick;
-    orderRaid(world, raid, target, true);
-    emit(world, EV.AI_WAVE, { wave: ai.wave + 1, size: raid.length, target: target.id, x: target.x, z: target.z });
-    alert(world, 'danger', `${enemyFaction(world).short} attack! ${raid.length} ${enemyFaction(world).fighters} are marching on your ${BUILDINGS[target.type].name}.`, target.x, target.z);
+    const flank = splitFlank(world, raid, target, hall);
+    const main = flank ? raid.filter((u) => !flank.units.includes(u)) : raid;
+    ai.raidIds = main.map((u) => u.id);
+    ai.raidStartStrength = main.reduce((s, u) => s + u.hp, 0);
+    orderRaid(world, main, target, true);
+    emit(world, EV.AI_WAVE, { wave: ai.wave + 1, size: raid.length, target: target.id, x: target.x, z: target.z, flank: flank ? flank.target.id : null });
+    const fac = enemyFaction(world);
+    alert(world, 'danger', `${ai.nightRaid ? 'Torches in the dusk! ' : ''}${fac.short} attack! ${main.length} ${fac.fighters} are marching on your ${BUILDINGS[target.type].name}.`, target.x, target.z);
+    if (flank) alert(world, 'danger', `${flank.units.length} more are swinging round to strike your ${BUILDINGS[flank.target.type].name} from the side!`, flank.target.x, flank.target.z);
   }
 
   /** March on a target in formation. On the first approach (`march`) the column keeps the pace
@@ -293,10 +442,12 @@ export function createAiModule() {
           u.order = { type: 'move', x: ax, z: az, ax, az };
           u.target = null; u.retreating = true; u.path = null; u.dest = null; u.escort = null;
         }
+        updateFlank(world, hall, true);
         if (raid.length) alert(world, 'success', `The ${enemyFaction(world).fighters} are breaking and fleeing back to the ${enemyFaction(world).fort}!`);
         emit(world, 'ai:retreat', { wave: ai.wave + 1, survivors: raid.length });
         return;
       }
+      updateFlank(world, hall, false);
       let target = world.entities[ai.raidTarget];
       if (!target || target.state === 'destroyed') {
         target = pickRaidTarget(world, raid[0].x, raid[0].z);
@@ -336,13 +487,24 @@ export function createAiModule() {
         }
       }
     } else if (ai.state === 'retreat') {
-      const home = raid.every((u) => u.order.type !== 'move') || world.tick - ai.retreatTick > 90 * 20;
+      const flankers = (ai.flankIds || []).map((id) => world.entities[id]).filter((u) => u && isAlive(u));
+      const home = [...raid, ...flankers].every((u) => u.order.type !== 'move') || world.tick - ai.retreatTick > 90 * 20;
       if (home) {
-        for (const u of raid) if (hall) guard(world, u, hall);
-        ai.raidIds = [];
+        for (const u of [...raid, ...flankers]) if (hall) guard(world, u, hall);
+        ai.raidIds = []; ai.flankIds = []; ai.flankTarget = null;
         ai.state = 'build';
         ai.wave++;
         ai.raidTick = world.tick + aiSettings(world).waveInterval * 20;
+        // night raids: every other raid from the difficulty's wave on comes at dusk, if dusk falls
+        // within a third of the usual pause either way
+        const rv = raidVariety(world), I = aiSettings(world).waveInterval * 20;
+        ai.nightRaid = false;
+        if (rv.nightFrom != null && ai.wave >= rv.nightFrom && ai.wave % 2 === 0) {
+          const dusk = ticksUntilHour(world, 20.2);
+          for (const at of [dusk, dusk + world.time.dayLengthTicks * (14 / 24 + 10 / 24 / NIGHT_PACE)]) {
+            if (at != null && Math.abs(at - I) <= I / 3) { ai.raidTick = world.tick + Math.max(0, at - 20 * 20); ai.nightRaid = true; break; }
+          }
+        }
         emit(world, 'ai:regrouped', { wave: ai.wave });
       }
     }
@@ -431,8 +593,10 @@ export function createAiModule() {
       }
       // plunder parties until the great raid is announced
       if (ai.nextHarassTick == null) ai.nextHarassTick = Math.round(cfg.harassAt * 1200);
-      if (!ai.harass && ai.state === 'build' && !world.mission.flags.raidWarned && ai.wave === 0 && world.tick >= ai.nextHarassTick) {
-        ai.nextHarassTick = world.tick + Math.round(cfg.harassEvery * 1200);
+      const rv = raidVariety(world);
+      const between = ai.wave > 0 && rv.laterHarass && ai.raidTick != null && ai.raidTick - world.tick > 60 * 20;
+      if (!ai.harass && ai.state === 'build' && ((!world.mission.flags.raidWarned && ai.wave === 0) || between) && world.tick >= ai.nextHarassTick) {
+        ai.nextHarassTick = world.tick + Math.round(cfg.harassEvery * (ai.wave > 0 ? rv.laterHarass : 1) * 1200);
         startHarass(world, hall);
       }
       if (ai.harass && world.tick % 10 === 3) updateHarass(world, hall);

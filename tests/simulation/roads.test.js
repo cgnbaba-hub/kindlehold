@@ -7,6 +7,7 @@ import { findSpot } from '../../src/demo/bot.js';
 import { ROADS, roadStone } from '../../src/transport/defs.js';
 import { checkStretch } from '../../src/transport/roads.js';
 import { walkTo } from '../../src/navigation/agent.js';
+import { evaluate } from '../../src/missions/conditions.js';
 import { serializeWorld, deserializeWorld } from '../../src/save/index.js';
 
 function lit(opts) {
@@ -133,4 +134,13 @@ test('roads survive a save and the game continues identically', () => {
   assert.equal(b.hash(), a.hash());
   for (let i = 0; i < 20 * 30; i++) { a.step(); b.step(); }
   assert.equal(b.hash(), a.hash(), 'identical 30 s later');
+});
+
+test('the Salt Road chapter asks for a paved road and a stable', () => {
+  const sim = newSim({ scenarioId: 'saltroad' });
+  sim.step();
+  const o = sim.world.mission.objectives.find((x) => x.id === 'paved');
+  assert.ok(o, 'the optional objective exists');
+  sim.world.roads = { cells: Array.from({ length: 30 }, (_, i) => i) };
+  assert.ok(evaluate(sim.world, { roads: 60 }) && !evaluate(sim.world, { roads: 62 }));
 });

@@ -34,6 +34,7 @@ const KINDS = {
   chips: { life: 0.7, size: [0.12, 0.08], color: '#c9a978', alpha: 1, rise: -9, drag: 0.5, additive: false },
   sparks: { life: 0.55, size: [0.16, 0.05], color: '#ffc46a', alpha: 1, rise: -6, drag: 0.8, additive: true },
   fire: { life: 0.9, size: [1.2, 0.3], color: '#ff8a2a', alpha: 0.85, rise: 2.6, drag: 0.8, additive: true },
+  torch: { life: 0.5, size: [0.95, 0.3], color: '#ffa040', alpha: 1, rise: 1.6, drag: 0.8, additive: true },
   ember: { life: 2.2, size: [0.12, 0.05], color: '#ffb35c', alpha: 1, rise: 1.8, drag: 0.4, additive: true },
   blood: { life: 0.5, size: [0.25, 0.1], color: '#7a2a20', alpha: 0.9, rise: -7, drag: 0.6, additive: false },
   flare: { life: 0.9, size: [1.2, 3.4], color: '#ffe0a0', alpha: 0.6, rise: 0.5, drag: 1.5, additive: true },
@@ -219,6 +220,17 @@ export function createEffects({ scene, terrain, world, bus, quality, camera, red
         if (b.state === 'active' && frac < 0.35) emit('fire', b.x + (rnd() - 0.5) * h, y + 2.5, b.z + (rnd() - 0.5) * h, Math.ceil(step * 14), 1, [0, 1.5, 0], 0.6);
       }
       if (b.state === 'destroyed' && w.tick - b.destroyedTick < 400 && rnd() < step * 4) emit('darksmoke', b.x, y + 1, b.z, 1, BUILDINGS[b.type].radius, [0, 1.2, 0], 0.5);
+    }
+    // after dark every other raider carries a torch
+    const hr = w.time.hour;
+    if (w.ai && (hr >= 19.5 || hr < 5.5)) {
+      for (const id of [...(w.ai.raidIds || []), ...(w.ai.flankIds || [])]) {
+        if (id % 2) continue;
+        const u = w.entities[id];
+        if (!u || u.downed || u.hp <= 0) continue;
+        const hx = Math.cos(u.heading || 0) * 0.45, hz = -Math.sin(u.heading || 0) * 0.45; // the right hand
+        emit('torch', u.x + hx, heightAt(u.x, u.z) + 2.4, u.z + hz, Math.ceil(step * 18), 0.06, [0, 0.8, 0], 0.1);
+      }
     }
   }
 
