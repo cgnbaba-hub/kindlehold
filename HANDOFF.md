@@ -365,6 +365,12 @@ Vom Nutzer freigegeben („Grafik-Prototyp“, externes CC0-Paket). Aufbau wie b
     blauen Paketfarben werden beim Laden umgefärbt, die Schattierung bleibt) und eigener Deko.
   - Bäckerei und Salzsiederei rauchen, solange jemand arbeitet.
 - Vergleichsansicht: `?showcase=buildings` hat eine zweite Reihe mit allen Werkstätten.
+- Fensterglühen (behoben 2026-10-21): Der Baker markierte das schwarze Palettenfeld 0,0, das kein
+  Modell benutzt. Bis dahin leuchtete nachts kein einziges KayKit-Fenster. Die Scheiben liegen auf
+  dem graubraunen Feld 6,1; Burg und Kaserne nutzen dunkles Schiefergrau 3,0, das anderswo
+  Schornstein und Stollen ist. Gefunden mit `DEBUG_CELLS=1 node scripts/assets/bake-buildings.mjs …`
+  (jedes Feld bekommt eine grelle Farbe). Dabei kam ein zweiter Fehler zutage: `kaykit.js`
+  transformierte die Fensterflächen doppelt.
 - `meshes.js` `setBuildingAssets()`; `session.js` lädt vor dem Gebäude-View. Einstellung
   „Modelled buildings“ (Standard an) oder `?blds=classic` für den Vergleich.
 

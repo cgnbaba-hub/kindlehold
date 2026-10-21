@@ -92,20 +92,19 @@ function partGeometry(assets, part, m, roof = null) {
   g.setAttribute('color', new THREE.BufferAttribute(c, 3));
   g.setAttribute('pattern', new THREE.BufferAttribute(t, 1));
   g.setIndex(new THREE.BufferAttribute(new Uint16Array(idx), 1));
-  g.applyMatrix4(m);
+  g.applyMatrix4(m); // in place: p and n are now in the building's space, in metres
   // window panes (flagged by the baker) facing sideways become the night glow, lifted off the wall
   const win = [];
   for (let k = 0; k < idx.length; k += 3) {
     const a = idx[k], b = idx[k + 1], d = idx[k + 2];
     if (!(col[a * 4 + 3] & 16 && col[b * 4 + 3] & 16 && col[d * 4 + 3] & 16)) continue;
     if (Math.abs(n[a * 3 + 1]) > 0.5) continue;
-    for (const i of [a, b, d]) win.push(p[i * 3] + n[i * 3] * 0.012, p[i * 3 + 1] + n[i * 3 + 1] * 0.012, p[i * 3 + 2] + n[i * 3 + 2] * 0.012);
+    for (const i of [a, b, d]) win.push(p[i * 3] + n[i * 3] * 0.04, p[i * 3 + 1] + n[i * 3 + 1] * 0.04, p[i * 3 + 2] + n[i * 3 + 2] * 0.04);
   }
   if (win.length) {
     const w = new THREE.BufferGeometry();
     w.setAttribute('position', new THREE.BufferAttribute(new Float32Array(win), 3));
     w.computeVertexNormals();
-    w.applyMatrix4(m);
     g.userData.windows = w;
   }
   return g;
