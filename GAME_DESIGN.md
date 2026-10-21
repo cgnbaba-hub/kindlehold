@@ -308,8 +308,11 @@ control groups Ctrl+1–9. Group moves use a formation (ranged behind melee).
     6 to a workshop's inputs, 2.6 m/s). Building sites only on Story.
   - Per stable and difficulty: Story 3 donkeys, 1 provision per meal, no wage; Normal 1 donkey,
     2 provisions, 3 Taler each payday; Hard 1 donkey, 3 provisions, 4 Taler. Without fodder or
-    wage they rest until the next meal or payday; they also rest at night and run off when the
-    stable is gone.
+    wage they rest until the next meal or payday; they also rest at night, bolt for the stable
+    when an enemy comes within 10 m, and run off when the stable is gone.
+  - Level 2, **Mule Yard** (30 timber, 30 stone, 2 tools, 60 Taler): room for one more donkey,
+    bought for `DONKEYS.price` (40 Taler) like any replacement. Not measured with the bot (it makes
+    no tools); two donkeys without site deliveries measured close to neutral on Normal (27.3 min).
   - Measured (bot with roads and a stable, `KH_TRANSPORT=1 node scripts/balance-seeds.mjs`,
     chapter one, 16 Normal and 20 Hard seeds, unfinished counted as 40 min):
 

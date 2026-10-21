@@ -212,7 +212,7 @@ export function createBot(sim, { aggressive = true, transport = false, priority 
       }
     }
     // upgrade workshops once the treasury allows (mine first: iron gates the army)
-    for (const type of ['mine', 'lodge', 'quarry']) {
+    for (const type of transport ? ['mine', 'lodge', 'quarry', 'donkeystable'] : ['mine', 'lodge', 'quarry']) {
       if (type !== 'mine' && all(world, 'building').some((x) => x.owner === PLAYER && x.type === type && (x.level || 1) > 1)) continue; // one of each is enough
       const b = all(world, 'building').find((x) => x.owner === PLAYER && x.type === type && x.state === 'active' && !x.upgrade && (x.level || 1) === 1);
       if (b && canAfford(world, PLAYER, UPGRADES[type][2].cost) && p.res.timber > 40) { sim.issue({ type: 'upgrade', id: b.id }); return; }

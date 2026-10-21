@@ -25,7 +25,7 @@ import { RANKS, rankOf } from '../combat/index.js';
 import { BRIGANDS, relation, stance, TRUCE, GIFT, PEACE, WAR_AT, ALLY_AT } from '../diplomacy/index.js';
 import { keyLabel, DEFAULT_BINDINGS } from '../input/bindings.js';
 import { enemyFaction } from '../ai/factions.js';
-import { ROADS, roadCellCost, donkeysPerStable, donkeyFodder, donkeyWage } from '../transport/defs.js';
+import { ROADS, roadCellCost, donkeysFor, donkeyFodder, donkeyWage } from '../transport/defs.js';
 
 const RES_NAMES = { timber: 'Timber', stone: 'Stone', iron: 'Iron', provisions: 'Provisions', taler: 'Taler', flour: 'Flour', bread: 'Bread', tools: 'Tools' };
 const RES_TIPS = {
@@ -580,7 +580,7 @@ export function createHud({ root, session, input, settings, actions }) {
           const herd = all(w, 'donkey').filter((d) => d.stable === e.id);
           const busy = herd.filter((d) => d.task && d.task.type !== 'idle' && d.task.type !== 'rest').length;
           const wage = donkeyWage(w);
-          selPanel.append(h('div.sel-row.small', { text: `Donkeys: ${herd.length}/${donkeysPerStable(w)} · ${busy} carrying · ${donkeyFodder(w)} provisions each per meal${wage ? ` · ${wage} Taler each payday` : ''}` }));
+          selPanel.append(h('div.sel-row.small', { text: `Donkeys: ${herd.length}/${donkeysFor(w, e)} · ${busy} carrying · ${donkeyFodder(w)} provisions each per meal${wage ? ` · ${wage} Taler each payday` : ''}` }));
           if (e.hungry) selPanel.append(h('div.sel-warn', { text: 'No fodder at the last meal: the donkeys stay in the stable until the next one.' }));
           if (e.unpaid) selPanel.append(h('div.sel-warn', { text: 'The drovers were not paid: the donkeys stay in the stable until the next payday.' }));
         }

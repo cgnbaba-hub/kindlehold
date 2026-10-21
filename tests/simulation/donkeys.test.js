@@ -114,3 +114,13 @@ test('a donkey bolts for its stable when raiders come close', () => {
   assert.ok(d.fleeUntil > sim.world.tick && d.task && d.task.type === 'rest', 'it runs');
   assert.ok(Math.hypot(d.x - st.x, d.z - st.z) < 30);
 });
+
+test('the Mule Yard makes room for one more donkey, bought for its price', () => {
+  const { sim, st } = withStable();
+  const n = donkeys(sim).length;
+  st.level = 2;
+  const taler = sim.world.players.p1.res.taler;
+  for (let i = 0; i < 220; i++) sim.step();
+  assert.equal(donkeys(sim).length, n + 1);
+  assert.equal(taler - sim.world.players.p1.res.taler, DONKEYS.price);
+});

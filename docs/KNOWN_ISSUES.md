@@ -38,7 +38,9 @@ report or script that shows them.
   (unfinished counted as 40), with some defeats. Single matches vary by ±10 minutes; compare
   means over many seeds. Human playtesting has been informal.
 - The bot builds compactly, so the motivation strains for idle townsfolk and long walks barely
-  touch it; their effect on human-built towns is untested.
+  touch it; their effect on human-built towns is untested. The same holds for the plunderers that
+  go for Storehouses, Donkey Stables and Wells, and for the flank attacks: neutral for the bot
+  over 40 Hard seeds, aimed at spread-out towns, untested with people.
 
 ## Presentation
 

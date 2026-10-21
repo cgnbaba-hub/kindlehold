@@ -169,6 +169,9 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
   über 40 Hard-Seeds: 20/40 mit und ohne (der kompakte Bot bietet kaum Ziele).
 - Kapitel 4 („The Salt Road“): optionales Ziel „Pave the Salt Road“ (60 m Straße und ein
   Eselstall; Bedingung `roads` in `missions/conditions.js`).
+- Esel fliehen bei Feinden im Umkreis von 10 m in den Stall; Stufe 2 des Stalls („Mule Yard“,
+  2 Werkzeug) bietet Platz für einen weiteren Esel (Nachkauf 40 Taler). Neuer e2e-Test
+  `stone-road-through-the-ui` (Hilfsfunktion `__GAME__.roadStretch`).
 - Minikarte zeigt Straßen und Esel; Angreifer tragen nach Einbruch der Dunkelheit Fackeln
   (`torch`-Partikel in `effects/index.js`).
 - Tests: `tests/simulation/raid-variety.test.js`.

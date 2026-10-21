@@ -10,7 +10,7 @@ import { isIdleLabourer, keepOf, stabilityFactor } from '../population/index.js'
 import { walkTo, stopWalking } from '../navigation/agent.js';
 import { TECH_EFFECTS, hasTech } from '../technology/defs.js';
 import { hostile } from '../diplomacy/index.js';
-import { DONKEYS, donkeysPerStable, donkeyFodder, donkeysSupplySites, donkeyWage } from '../transport/defs.js';
+import { DONKEYS, donkeysFor, donkeyFodder, donkeysSupplySites, donkeyWage } from '../transport/defs.js';
 
 export const SUPPLY_LOAD = 6;
 export const HAUL_LOAD = 6;
@@ -577,7 +577,7 @@ export function createEconomyModule() {
         const world = ctx.world, b = world.entities[id];
         if (!b) return;
         const d = doorOf(b);
-        for (let i = 0; i < donkeysPerStable(world); i++) {
+        for (let i = 0; i < donkeysFor(world, b); i++) {
           spawn(world, { kind: 'donkey', owner: b.owner, x: d.x + (i - 1) * 1.6, z: d.z + 1.2, heading: b.rot || 0, stable: b.id, task: null, carry: null, anim: 'idle' });
         }
       }));
@@ -614,7 +614,7 @@ export function createEconomyModule() {
           if (b.type !== 'donkeystable' || b.state !== 'active') continue;
           const p = world.players[b.owner];
           const herd = all(world, 'donkey').filter((d) => d.stable === b.id).length;
-          if (herd >= donkeysPerStable(world) || !p || p.res.taler < DONKEYS.price + 20) continue;
+          if (herd >= donkeysFor(world, b) || !p || p.res.taler < DONKEYS.price + 20) continue;
           addRes(world, b.owner, 'taler', -DONKEYS.price, 'donkey');
           const d = doorOf(b);
           spawn(world, { kind: 'donkey', owner: b.owner, x: d.x, z: d.z + 1.2, heading: b.rot || 0, stable: b.id, task: null, carry: null, anim: 'idle' });

@@ -52,6 +52,8 @@ const pick = (table, world) => {
   return Object.hasOwn(table, d) ? table[d] : table.normal;
 };
 export const donkeysPerStable = (world) => pick(DONKEYS.count, world);
+/** How many donkeys this stable keeps (its level adds room: see UPGRADES.donkeystable). */
+export const donkeysFor = (world, b) => donkeysPerStable(world) + (b.level >= 2 ? 1 : 0);
 export const donkeyFodder = (world) => pick(DONKEYS.eat, world);
 export const donkeysSupplySites = (world) => pick(DONKEYS.sites, world);
 export const donkeyWage = (world) => pick(DONKEYS.wage, world);
