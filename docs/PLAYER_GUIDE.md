@@ -25,8 +25,9 @@ fort and will not share the valley.
   goods (Lean is harder, Rich easier) and the peace before the first attack (Short is harder, Long
   easier). The opponent is either the *lord's seat* (a fortified camp that raids you, as in the
   campaign) or a *rival town*: a second Warden settles across the valley, builds, trains and marches
-  on your Keep in waves, each larger than the last. Its buildings fly purple pennants and its people
-  wear purple; it takes no gifts and pays no tolls. Take its Keep to win. On the
+  on your Keep in waves, each larger than the last. It lays roads and keeps a Donkey Stable like you;
+  on Hard it also has a Warden of its own, with a lantern like Maren's. Its buildings fly purple
+  pennants and its people wear purple; it takes no gifts and pays no tolls. Take its Keep to win. On the
   random map you also choose the valley by its seed (the same seed grows the same valley; the
   pause menu shows the seed of the running game) and the lord who holds it.
 * **Alerts on the minimap:** a warning or danger alert also rings on the minimap where it

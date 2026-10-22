@@ -101,11 +101,12 @@ export function createBot(sim, { aggressive = true, transport = false, priority 
   const can = (type) => !(S().noSpot && w().tick - (S().noSpot[type] ?? -1e9) < NO_SPOT_WAIT);
   const count = (type) => all(w(), 'building').filter((b) => b.owner === me && b.type === type && b.state !== 'destroyed').length;
   const soldiers = () => all(w(), 'unit').filter((u) => u.owner === me && !u.hero);
-  const hero = () => all(w(), 'unit').find((u) => u.owner === me && u.type === 'maren');
+  const hero = () => all(w(), 'unit').find((u) => u.owner === me && (u.type === 'maren' || u.type === 'warden'));
   const wren = () => all(w(), 'unit').find((u) => u.owner === me && u.type === 'wren');
 
   // roads: one workshop at a time, along the route its carriers walk, while stone allows
-  const roadDone = new Set();
+  // (kept with the phase, so a rival's roads continue identically after a load)
+  const roadDone = { has: (id) => (S().roadDone ||= []).includes(id), add: (id) => { (S().roadDone ||= []).push(id); } };
   const ROAD_TO = ['lodge', 'quarry', 'farm', 'mine', 'hunter', 'fisher', 'saltworks', 'mill', 'bakery', 'smithy', 'canteen', 'storehouse'];
   function roadStep(world, p) {
     const k = keepOf(world, me);

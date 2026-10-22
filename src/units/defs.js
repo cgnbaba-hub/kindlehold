@@ -33,6 +33,10 @@ export const UNITS = {
   maren: { id: 'maren', name: 'Maren Ashgrove', title: 'Lantern Warden', owner: 'p1', cls: 'hero', hp: 420, armor: 4, damage: 20, range: 2.2, cooldown: 1.3, speed: 4.2, sight: 14,
     abilities: ['flare', 'kindle'], passive: 'hearthlight',
     cost: {}, trainTime: 0, desc: 'Lamplighter of the old roads. Her lantern steadies allies and blinds foes.' },
+  // a free-play rival's Warden (src/rival): Maren's match, with the same lantern and the same gifts
+  warden: { id: 'warden', name: 'Rival Warden', title: 'Warden of the rival town', owner: 'p4', cls: 'hero', hp: 420, armor: 4, damage: 20, range: 2.2, cooldown: 1.3, speed: 4.2, sight: 14,
+    abilities: ['flare', 'kindle'], passive: 'hearthlight',
+    cost: {}, trainTime: 0, desc: 'The Warden of the rival town across the valley. Carries a lantern of their own.' },
   wren: { id: 'wren', name: 'Wren Fenmore', title: 'Scout of the March', owner: 'p1', cls: 'hero', ranged: true, hp: 320, armor: 2, damage: 18, range: 16, cooldown: 1.3, speed: 4.6, sight: 18,
     abilities: ['volley', 'mark'], passive: 'eagle',
     cost: {}, trainTime: 0, desc: 'Scout of the valley since the Long Frost. Her longbow never misses twice.' },

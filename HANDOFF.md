@@ -183,6 +183,11 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
   leicht (Hard 44/48), daher: Türme (Normal 2, Hard 2), Startwaren ×1,15 / ×1,5, auf Hard +10 %
   Leben (wie die Räuber); Story denkt nur jede zweite Sekunde.
 - Tests: `tests/simulation/rival.test.js`, e2e `free-play-rival-town`.
+- Ausbau (2026-10-22): Straßen und Eselstall (Bot-`transport`, Straßen-Merker im Zustand,
+  `roads.last` nur für den Spieler) – neutral gemessen. Eigener Held `warden` (Werte wie Maren,
+  lila, `cast.js`) nur auf Hard; er wiegt alle anderen Boni auf, daher dort ohne Türme und
+  Zusatzwaren. Neue Zahlen: Story 62/64 (~20 min), Normal 61/64 (~29), Hard 38/64 (~31).
+  Verworfen nach Messung: Plündertrupps und Angriffe von außen nach innen (machten ihn schwächer).
 
 ## Freies Spiel: Einstellungen vor dem Start (2026-10-21)
 

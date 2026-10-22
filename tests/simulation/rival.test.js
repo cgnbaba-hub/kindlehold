@@ -20,6 +20,7 @@ test('the rival founds a town with towers where the seat would stand; there is n
     assert.ok(keep && keep.lit, `${d}: a lit rival Keep`);
     assert.equal(b.filter((x) => x.type === 'cottage').length, 2, `${d}: two cottages`);
     assert.equal(b.filter((x) => x.type === 'tower').length, RIVAL_DIFFICULTY[d].towers, `${d}: towers`);
+    assert.equal(mine(sim, 'p4', 'unit').filter((u) => u.type === 'warden').length, RIVAL_DIFFICULTY[d].hero ? 1 : 0, `${d}: a Warden of its own on Hard`);
     assert.ok(mine(sim, 'p4', 'settler').length >= 9, `${d}: first families`);
     assert.equal(warhallOf(sim.world), null, `${d}: no lord's seat`);
     // wood, stone and iron in reach of the rival's Keep
@@ -68,4 +69,7 @@ test('a rival marches on a town that does not defend itself', () => {
   for (let i = 0; i < 20 * 60 * 32 && !sim.world.mission.result; i++) sim.step();
   assert.ok(sim.world.rival.waves >= 1, `the rival attacked (${JSON.stringify(sim.world.rival)})`);
   assert.ok(alerted, 'the player is warned');
+  // it lays roads like a player, and none of them is the player's to take back
+  assert.ok(sim.world.roads && sim.world.roads.cells.length > 0, 'the rival paved roads');
+  assert.ok(!sim.world.roads.last || sim.world.roads.last.owner === 'p1');
 });

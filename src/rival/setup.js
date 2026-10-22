@@ -104,6 +104,12 @@ export function setupRivalTown(world, terrain, scenario, at, { rng, clearOf, pla
     const u = rivalRecruit(world, spawnUnit(world, Array.isArray(type) ? type[0] : type, RIVAL, p.x, p.z));
     if (u) u.order = { type: 'idle', ax: u.x, az: u.z };
   });
+  // the rival's own Warden, beside the Keep (Maren's match)
+  if (cfg.hero) {
+    const hp = front(2, -1.5);
+    const w = spawnUnit(world, 'warden', RIVAL, hp.x, hp.z);
+    if (w) w.order = { type: 'idle', ax: w.x, az: w.z };
+  }
   // Watchtowers on the side facing the player (the raiders' seat has its towers as well)
   const towardX = Math.sin(at.rot), towardZ = Math.cos(at.rot);
   const pl = world.players[RIVAL];

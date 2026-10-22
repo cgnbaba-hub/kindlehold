@@ -1,6 +1,7 @@
 // Combat: target acquisition, attack cooldowns, melee hits, projectiles, armour and
 // counters, hero aura mitigation, towers, deaths and building destruction.
-import { EV, PLAYER, DT } from '../core/contracts.js';
+import { EV, PLAYER, RIVAL, DT } from '../core/contracts.js';
+import { rivalOf } from '../rival/defs.js';
 import { all, emit, remove, alert } from '../world/world.js';
 import { UNITS, COUNTERS } from '../units/defs.js';
 import { BUILDINGS, attackOf } from '../buildings/defs.js';
@@ -128,7 +129,8 @@ function kill(world, target, attacker) {
     target.path = null;
     emit(world, 'hero:downed', { id: target.id, x: target.x, z: target.z });
     const first = UNITS[target.type].name.split(' ')[0];
-    alert(world, 'danger', `${first} has fallen! She will recover at the Keep.`, target.x, target.z);
+    if (target.owner === PLAYER) alert(world, 'danger', `${first} has fallen! She will recover at the Keep.`, target.x, target.z);
+    else if (target.owner === RIVAL) { const r = rivalOf(world); alert(world, 'success', `${r ? r.lord : 'The rival Warden'} has fallen and is carried back to ${r ? r.town : 'their Keep'}.`, target.x, target.z); }
     return;
   }
   const info = { id: target.id, type: target.type, kind: target.kind, owner: target.owner, x: target.x, z: target.z, heading: target.heading || 0, by: attacker ? attacker.owner : null };
