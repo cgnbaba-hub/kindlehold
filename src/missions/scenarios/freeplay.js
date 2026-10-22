@@ -14,6 +14,8 @@ const FIELDS = [
   ['free-whitehart', 'whitehart', 'Whitehart Vale', 'stag', 'staghall', 'the Chapterhouse of the White Stag', 'A forest vale crossed by a river, with three villages and an old abbey. Stone walls: train Sappers.'],
   ['free-ironmarch', 'ironmarch', 'The Iron March', 'morrow', 'morrowhold', 'Morrow Hold across the Iceburn', 'Highlands with glacier water, rich iron veins and steep crags. Delvers tear down buildings.'],
   // a new valley every game, grown from the game's seed; the lord who holds it is drawn by lot
+  // a valley made in the map editor (src/editor): the map travels with the game in world.meta.customMap
+  ['free-custom', 'custom', 'Your own map', 'random', null, 'the enemy seat', 'A valley of your own making.'],
   ['free-wild', 'wild', 'The Wildlands (random map)', 'random', null, 'the enemy seat across the river', 'A new valley every time: hills, lakes and forests laid out by chance, a river with fords between you and a lord drawn by lot.'],
 ];
 
@@ -107,4 +109,4 @@ function rivalScenario(field) {
 
 export const FREE_SCENARIOS = Object.fromEntries(FIELDS.flatMap((f) => [[f[0], freeScenario(f)], [`${f[0]}-rival`, rivalScenario(f)]]));
 /** Free play maps in menu order. */
-export const FREE_PLAY = FIELDS.map((f) => f[0]);
+export const FREE_PLAY = FIELDS.map((f) => f[0]).filter((id) => id !== 'free-custom'); // (custom maps are listed from the player's own)

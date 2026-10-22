@@ -154,6 +154,25 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Karteneditor (2026-10-22)
+
+- Menüpunkt „Map Editor“ (Hauptmenü und Free Play). 2D-Draufsicht mit Relief aus `rawHeight`
+  (`src/editor/editor-ui.js`), Werkzeuge: Hügel/Senke, Ebene, See, Flusspunkt, Furt, Weg,
+  Wald, Fels, Eisen, Salz, Händler/Steinmal/Ruine/Weiler, beide Sitze; Auswahl/Ziehen, Mausrad
+  (Größe), Umschalt+Mausrad (Höhe/Anzahl), Entf löscht. Prüfliste (`mapProblems`): Fehler
+  (Sitz im Wasser/am Ufer, Sitze < 110 m) sperren „Play“, Warnungen (Holz/Stein/Eisen fehlt).
+- Format `src/editor/map-format.js`: dieselbe Kartensprache wie die festen Karten, `id: 'custom'`.
+  `normalizeMap` (nur bekannte Felder, Zahlen gerundet/geklemmt, Listen gedeckelt, Ebenen unter den
+  Sitzen abgeleitet, Fluss Pflicht), `validateMap` (streng, fürs Speichern), Export/Import als Text
+  (`storage.js`, `kindlehold-map-1`, `safeParse` mit Größenlimit, gefährliche Schlüssel abgelehnt).
+  Bis zu 12 Karten in `localStorage` (`kindlehold.maps.v1`).
+- Spielen: Szenarien `free-custom`/`free-custom-rival`; die Karte geht als `customMap` in
+  `createSimulation` und liegt in `world.meta.customMap` (Speicherschema `customMapSchema`), so
+  baut ein Spielstand das Gelände überall neu auf. Terrain-Cache-Schlüssel `custom:<hash>`.
+- Nebenbefund (älter, in KNOWN_ISSUES): Nach dem Laden bekommen Wanderer ihren Weg mitunter einen
+  Tick früher/später (Wegsuche-Budget pro Tick nicht im Spielstand) – betrifft alle Karten.
+- Tests: `tests/simulation/custom-map.test.js`, e2e `map-editor-to-game`.
+
 ## Freies Spiel Teil 2: Rivalenstadt (2026-10-21)
 
 - Gegnerwahl im Einstellungsbildschirm: „Lord's seat“ (wie bisher) oder „Rival town“. Jede freie

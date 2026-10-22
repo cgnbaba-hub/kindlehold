@@ -22,7 +22,11 @@ trees, farm, fish, mine, cook and carry. Written in plain JavaScript on Three.js
   and choices that carry over (win the Greyfen brigands as friends or destroy their hold).
 - **Free play:** any of the four maps against the faction that holds it, or **the Wildlands** —
   a random valley generated from the game's seed (hills, lakes, forests, a river with fords)
-  against a lord drawn by lot.
+  against a lord drawn by lot. A setup screen picks the opponent (the lord's seat or a **rival
+  town** that builds and attacks like you), starting goods and peace time.
+- **Map editor:** shape a valley of your own (hills, lakes, river and fords, roads, forests,
+  rocks, iron, salt, places of interest, both seats), check it is fair, save, share it as text and
+  play it in free play; the map travels inside every save.
 - **Battles:** nine soldier types with counters, veterans with ranks, towers, sieges of stone
   walls, heroes with abilities (Maren's lantern, Wren's arrow storm).
 - **Four enemy factions** with their own units, buildings and AI behaviour.

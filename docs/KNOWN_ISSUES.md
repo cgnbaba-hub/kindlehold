@@ -22,7 +22,7 @@ report or script that shows them.
 
 - Six campaign chapters, four enemy factions, two heroes (Maren, Wren), diplomacy with a third
   party, free play with random maps, a setup screen (seed, lord, goods, peace) and a rival AI town
-  as an opponent. No multiplayer or map editor. The rival plays the scripted balance bot's economy:
+  as an opponent, and a 2D map editor. No multiplayer. The rival plays the scripted balance bot's economy:
   it does not use heroes, research beyond the bot's list, roads or donkeys, and it settles where the
   lord's seat would stand (its home flat is topped up with trees, rock and an iron vein).
 - Exploration shroud for the player only (explored/unexplored, no live line-of-sight fog).
@@ -80,3 +80,20 @@ report or script that shows them.
   note grew exponentially. Measured output peak before the fix: 15,613,984 (linear full scale).
   The pluck is now feedback-free and the output has a limiter plus a hard ceiling (−6 dBFS).
   Measured peak after the fix: 0.332. Guarded by `npm run test:audio`.
+
+## Saves continue correctly, but not always bit for bit
+
+- A save restores the whole world, but not the pathfinder's per-tick request queue (a budget of
+  path searches per tick). Walkers that were between two paths ask again after the load and may get
+  their path a tick sooner or later than without the save, so a loaded game can drift from the run
+  that was saved by a few centimetres. Nothing in the game depends on it (there is no lockstep
+  multiplayer); the save tests check identity on quiet towns, where nobody is walking. Found 2026-10-22 while testing custom
+  maps; it predates them (the same happens on Harrowmere).
+
+## Map editor
+
+- It edits the map layout from above with a relief preview (no 3D view while editing): see a
+  map in 3D by playing it. No undo yet (Erase/Delete and dragging back instead).
+- Every map has a river (the game relies on one); put it along the edge to keep it small.
+- Custom maps live in the browser's local storage (up to twelve); export them to keep a copy.
+

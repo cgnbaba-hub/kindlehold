@@ -25,14 +25,14 @@ import { createAudio } from '../audio/index.js';
 import { createFrameStats } from '../telemetry/frame-stats.js';
 import { log } from '../core/logger.js';
 
-export async function createSession({ container, seed, quality = 'high', verify = false, onCritical, difficulty = 'normal', demo = null, settings = {}, world: loadedWorld = null, hooks = {}, scenarioId = 'harrowmere', campaign = null, skirmish = null }) {
+export async function createSession({ container, seed, quality = 'high', verify = false, onCritical, difficulty = 'normal', demo = null, settings = {}, world: loadedWorld = null, hooks = {}, scenarioId = 'harrowmere', campaign = null, skirmish = null, customMap = null }) {
   // the model packs (about 6 MB) download while the world and the terrain are being built
   const search = typeof location !== 'undefined' ? location.search : '';
   const modelled = settings.modelledBuildings !== false && !/[?&]blds=classic\b/.test(search);
   const animalsP = /[?&]animals=classic\b/.test(search) ? null : loadAnimalAssets();
   const buildingsP = modelled ? loadBuildingAssets() : null;
   const figuresP = /[?&]figs=classic\b/.test(search) ? null : loadFigureAssets();
-  const sim = createSimulation({ seed, difficulty, onCritical, scenarioId, campaign, skirmish });
+  const sim = createSimulation({ seed, difficulty, onCritical, scenarioId, campaign, skirmish, customMap });
   if (loadedWorld) sim.replaceWorld(loadedWorld);
   if (demo) applyDemoState(sim, demo);
   const rc = createRenderContext({ container, terrain: sim.terrain, quality, verify });

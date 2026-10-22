@@ -500,3 +500,32 @@ button { font: inherit; color: inherit; }
 .help-list dt { font-weight: 700; color: var(--ink); white-space: nowrap; }
 .help-list dd { margin: 0; color: var(--ink-dim); }
 .help-btn { font-weight: 700; min-width: 26px; }
+
+/* map editor (src/editor/editor-ui.js) */
+.map-editor-screen { background: var(--slate-900); }
+.map-editor { position: absolute; inset: 0; display: grid; grid-template-columns: 150px minmax(0, 1fr) 300px; gap: 12px; padding: 12px; outline: none; }
+.ed-left { overflow: auto; }
+.ed-tools { display: flex; flex-direction: column; gap: 4px; }
+.ed-group { margin: 8px 0 2px; font-size: 0.72em; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim); }
+.ed-tool { padding: 6px 10px; text-align: left; background: var(--slate-700); border: 1px solid var(--brass-dim); border-radius: 6px; color: var(--ink); font: inherit; font-size: 0.9em; cursor: pointer; }
+.ed-tool.active { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass) inset; background: var(--slate-600); }
+.ed-center { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; min-height: 0; }
+.ed-canvas { width: min(100%, calc(100vh - 70px)); aspect-ratio: 1; border: 1px solid var(--brass-dim); border-radius: 6px; cursor: crosshair; touch-action: none; }
+.ed-status { min-height: 1.3em; margin: 6px 0 0; color: var(--ink-dim); font-size: 0.9em; }
+.ed-right { overflow: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.ed-right h3 { margin: 8px 0 2px; font: 600 1em var(--serif); color: var(--brass); }
+.ed-label { font-size: 0.85em; color: var(--ink-dim); }
+.ed-name { width: 100%; box-sizing: border-box; padding: 6px 9px; background: var(--slate-700); border: 1px solid var(--brass-dim); border-radius: 6px; color: var(--ink); font: inherit; }
+.ed-slider { display: grid; grid-template-columns: 1fr 1.4fr 2.6em; align-items: center; gap: 6px; font-size: 0.85em; }
+.ed-slider output { text-align: right; color: var(--ink-dim); }
+.ed-problems p { margin: 2px 0; font-size: 0.85em; line-height: 1.35; }
+.ed-error { color: #ffb4a0; } .ed-warn { color: #ffe3a8; } .ed-ok { color: #c8eab0; }
+.ed-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ed-actions .menu-btn { flex: 1 1 100%; }
+.ed-dialog { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); z-index: 5; }
+.ed-dialog[hidden] { display: none; }
+.ed-dialog-card { width: min(460px, calc(100% - 32px)); max-height: calc(100% - 40px); overflow: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+.ed-row { display: flex; gap: 8px; align-items: center; }
+.ed-mapname { flex: 1; }
+.ed-text { width: 100%; box-sizing: border-box; font: 0.8em ui-monospace, monospace; background: var(--slate-700); color: var(--ink); border: 1px solid var(--brass-dim); border-radius: 6px; padding: 6px; }
+@media (max-width: 900px) { .map-editor { grid-template-columns: 1fr; grid-template-rows: auto auto auto; overflow: auto; } .ed-tools { flex-direction: row; flex-wrap: wrap; } }

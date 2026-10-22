@@ -395,6 +395,29 @@ try {
     assert(built >= 5, `the rival builds (${built} buildings)`);
   });
 
+  await test('map-editor-to-game', async (page) => {
+    // shape a valley in the map editor, save it, play it: the game runs on that map
+    await page.goto(url('?debug=1&quality=low'), { waitUntil: 'load' });
+    page.on('dialog', (d) => d.accept());
+    await page.getByRole('button', { name: /Map Editor/ }).first().click({ timeout: 60000 });
+    await page.waitForSelector('.ed-canvas', { timeout: 20000 });
+    const box = await page.locator('.ed-canvas').boundingBox();
+    const at = (x, z) => [box.x + ((x + 192) / 384) * box.width, box.y + ((z + 192) / 384) * box.height];
+    await page.getByRole('button', { name: 'Forest', exact: true }).click();
+    await page.mouse.click(...at(-20, 60));
+    await page.getByRole('textbox', { name: 'Map name' }).fill('E2E Vale');
+    await page.waitForFunction(() => /Playable/.test(document.querySelector('.ed-problems').textContent), null, { timeout: 20000 });
+    await page.getByRole('button', { name: 'Play this map' }).click();
+    await page.getByRole('radio', { name: /Difficulty: Normal/ }).click({ timeout: 20000 });
+    await page.getByRole('button', { name: 'Start' }).click();
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__ && window.__GAME__.world().meta.scenarioId === 'free-custom', null, { timeout: 120000 });
+    const info = await page.evaluate(() => { const w = window.__GAME__.world(); return { name: w.meta.customMap.name, forests: w.meta.customMap.forests.length, keep: Object.values(w.entities).some((e) => e.type === 'keep' && e.owner === 'p1') }; });
+    assert(info.name === 'E2E Vale' && info.forests === 3 && info.keep, `the game runs on the edited map (${JSON.stringify(info)})`);
+    // the map is kept: Free Play lists it
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('kindlehold.maps.v1')).maps.map((m) => m.map.name));
+    assert(saved.includes('E2E Vale'), `saved in the browser (${saved})`);
+  });
+
   await test('diplomacy-gift', async (page) => {
     await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });

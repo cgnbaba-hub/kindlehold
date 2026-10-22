@@ -11,6 +11,8 @@ import { ROADS, DONKEYS } from '../transport/defs.js';
 import { PRIORITY } from '../construction/index.js';
 import { SKIRMISH_GOODS, SKIRMISH_PEACE, SKIRMISH_FACTIONS, SKIRMISH_OPPONENTS, sanitizeSkirmish, cleanSeed } from '../missions/skirmish.js';
 import { FACTIONS } from '../ai/factions.js';
+import { createMapEditor } from '../editor/editor-ui.js';
+import { listMaps } from '../editor/storage.js';
 
 function focusFirst(el) { const f = el.querySelector('button:not([disabled]), [tabindex="0"], input, select'); if (f) f.focus(); }
 
@@ -50,6 +52,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
         h('nav.menu-list', { 'aria-label': 'Main menu' }, [
           menuButton('Campaign', () => campaignMenu({ onPick: onNew, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { primary: true, ic: 'rekindle', sub: `${CAMPAIGN.length} chapters: the story of Maren and the Hearthbound` }),
           menuButton('Free Play', () => freePlayMenu({ onPick: onNew, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'cottage', sub: 'Build freely on any map, no story' }),
+          menuButton('Map Editor', () => mapEditor({ onPick: onNew, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'build', sub: 'Shape a valley of your own and play it' }),
           menuButton('Continue', onContinue, { disabled: !canContinue, tip: canContinue ? 'Load your most recent save' : 'No saved games yet', ic: 'play', sub: canContinue ? 'Pick up where you left off' : 'No saved games yet' }),
           menuButton('Load Game', () => loadDialog({ onLoad, onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'save', sub: 'Quick, auto and three save slots' }),
           menuButton('Settings', () => settingsScreen({ onBack: () => mainMenu({ onNew, onContinue, onLoad, canContinue }) }), { ic: 'gear', sub: 'Graphics, sound, controls, interface' }),
@@ -102,10 +105,44 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       b.addEventListener('click', () => freePlaySetup({ scenario: sc, onPick: (d, extra) => onPick(d, extra.skirmish.opponent === 'rival' ? `${id}-rival` : id, extra), onBack: back }));
       list.append(b);
     });
+    // the player's own maps (map editor)
+    const mine = listMaps();
+    const own = h('div.chapter-list');
+    mine.forEach((e) => {
+      const b = h('button.chapter', { type: 'button', 'aria-label': `Your map: ${e.map.name}` }, [
+        h('span.chapter-no', { text: '✎' }),
+        h('span.chapter-text', {}, [h('strong', { text: e.map.name }), h('span', { text: 'A valley of your own making.' })]),
+        h('span.chapter-state', { text: 'Play' }),
+      ]);
+      b.addEventListener('click', () => customSetup({ map: e.map, onPick, onBack: back }));
+      own.append(b);
+    });
     return show(screen('sub-menu', [backdrop(), h('div.menu-card.wide', {}, [
       h('h2', { text: 'Free Play' }), h('p.lore', { text: 'Pick a land, build your settlement at your own pace and break the lord who holds it. Every building and technology is open to research.' }),
-      list, menuButton('Back', onBack),
+      list,
+      h('h3', { text: 'Your maps' }),
+      mine.length ? own : h('p.small.muted', { text: 'None yet: shape one in the Map Editor.' }),
+      menuButton('Map Editor', () => mapEditor({ onPick, onBack: back }), { ic: 'build', sub: 'Shape a valley of your own' }),
+      menuButton('Back', onBack),
     ])], { onEsc: onBack }));
+  }
+
+  /** The setup screen for a map of your own: it travels into the game as `customMap`. */
+  function customSetup({ map, onPick, onBack }) {
+    const sc = { ...SCENARIOS['free-custom'], title: `Free Play: ${map.name}` };
+    return freePlaySetup({ scenario: sc, onPick: (d, extra) => onPick(d, extra.skirmish.opponent === 'rival' ? 'free-custom-rival' : 'free-custom', { ...extra, customMap: map }), onBack });
+  }
+
+  /** The map editor (src/editor): shape a valley, save it, play it. */
+  function mapEditor({ onPick, onBack, initial = null, mapId = null }) {
+    const ed = createMapEditor({
+      initial, mapId,
+      onBack,
+      onPlay: (map, id) => customSetup({ map, onPick, onBack: () => mapEditor({ onPick, onBack, initial: map, mapId: id }) }),
+    });
+    const el = show(screen('map-editor-screen', [ed.el]));
+    ed.el.focus();
+    return el;
   }
 
   /**
