@@ -1,7 +1,7 @@
 // Economy: labourers (settlers without a workplace) haul goods between the Keep store,
 // construction sites and workplaces, build, and repair. All transport is physical.
 import { EV, DT } from '../core/contracts.js';
-import { all, emit, alert, spawn, remove } from '../world/world.js';
+import { all, emit, alert, spawn, remove, statsOf } from '../world/world.js';
 import { BUILDINGS, doorOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { addRes } from './stock.js';
@@ -304,7 +304,7 @@ export function createEconomyModule() {
             const p = world.players[s.owner];
             if (p.res.timber < t.amt) { abandonTask(world, s); break; }
             addRes(world, s.owner, 'timber', -t.amt, 'repair');
-            world.stats.consumed.timber += t.amt;
+            statsOf(world, s.owner).consumed.timber += t.amt;
             s.carry = { res: 'timber', amt: t.amt };
             t.stage = 'toTarget';
           }
@@ -418,7 +418,7 @@ export function createEconomyModule() {
         if (walk(spot[0], spot[1], 0.8) === 'arrived') {
           if (s.carry) {
             addRes(world, s.owner, s.carry.res, s.carry.amt, 'gather');
-            world.stats.produced[s.carry.res] += s.carry.amt;
+            statsOf(world, s.owner).produced[s.carry.res] += s.carry.amt;
             emit(world, 'goods:stored', { id: s.id, res: s.carry.res, amt: s.carry.amt, x: s.x, z: s.z });
             emit(world, EV.PRODUCTION_CYCLE, { id: s.id, res: s.carry.res, amount: s.carry.amt, x: s.x, z: s.z });
           }
@@ -512,7 +512,7 @@ export function createEconomyModule() {
       if (!herd) continue;
       const need = herd * per;
       const eat = Math.min(need, Math.floor(p.res.provisions));
-      if (eat > 0) { addRes(world, owner, 'provisions', -eat, 'fodder'); world.stats.consumed.provisions += eat; }
+      if (eat > 0) { addRes(world, owner, 'provisions', -eat, 'fodder'); statsOf(world, owner).consumed.provisions += eat; }
       const was = !!b.hungry;
       b.hungry = eat < need;
       if (b.hungry && !was) alert(world, 'warn', 'The donkeys found no fodder and stay in their stable until the next meal.', b.x, b.z, owner);

@@ -1,6 +1,7 @@
 // Military units (incl. hero movement): orders, recruitment, movement, separation.
-import { EV, PLAYER, DT } from '../core/contracts.js';
-import { spawn, remove, all, emit } from '../world/world.js';
+import { EV, PLAYER, RIVAL, DT } from '../core/contracts.js';
+import { rivalRecruit } from '../rival/defs.js';
+import { spawn, remove, all, emit, statsOf } from '../world/world.js';
 import { UNITS, RECRUITABLE, unitDef } from './defs.js';
 import { BUILDINGS, doorOf, workSpeedOf } from '../buildings/defs.js';
 import { pay, refund } from '../economy/stock.js';
@@ -193,10 +194,11 @@ export function createUnitsModule() {
         if (q.progress >= 1) {
           b.queue.shift();
           const u = spawnUnit(world, q.unitType, b.owner, door.x, door.z);
+          if (u && b.owner === RIVAL) rivalRecruit(world, u);
           if (u) {
             const rally = b.rally || [door.x + Math.sin(b.rot || 0) * 6, door.z + Math.cos(b.rot || 0) * 6];
             u.order = { type: 'move', x: rally[0] + ((u.id % 5) - 2) * 1.6, z: rally[1] + (Math.floor(u.id / 5) % 3) * 1.6, ax: rally[0], az: rally[1] };
-            world.stats.unitsRecruited++;
+            statsOf(world, b.owner).unitsRecruited++;
             emit(world, EV.UNIT_RECRUITED, { id: u.id, type: u.type, owner: u.owner });
           }
         }
@@ -334,10 +336,11 @@ export function createUnitsModule() {
   function healAtHome(world) {
     let homes = null;
     for (const u of all(world, 'unit')) {
-      if (u.owner !== PLAYER || u.downed || u.hp >= u.maxHp) continue;
+      // the player's soldiers, and a free-play rival's
+      if ((u.owner !== PLAYER && u.owner !== RIVAL) || u.downed || u.hp >= u.maxHp) continue;
       if (world.tick - (u.lastHitTick ?? -1e9) < 100) continue;
-      homes ||= all(world, 'building').filter((b) => b.owner === PLAYER && b.state === 'active' && HEAL_AT[b.type]);
-      if (homes.some((b) => (u.x - b.x) ** 2 + (u.z - b.z) ** 2 <= HEAL_AT[b.type] ** 2)) u.hp = Math.min(u.maxHp, u.hp + HOME_HEAL);
+      homes ||= all(world, 'building').filter((b) => (b.owner === PLAYER || b.owner === RIVAL) && b.state === 'active' && HEAL_AT[b.type]);
+      if (homes.some((b) => b.owner === u.owner && (u.x - b.x) ** 2 + (u.z - b.z) ** 2 <= HEAL_AT[b.type] ** 2)) u.hp = Math.min(u.maxHp, u.hp + HOME_HEAL);
     }
   }
 

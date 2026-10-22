@@ -9,7 +9,7 @@ import { SKIRMISH_GOODS, SKIRMISH_PEACE, sanitizeSkirmish, cleanSeed } from '../
 const free = (skirmish, extra = {}) => newSim({ scenarioId: 'free-wild', seed: 'vale-7', skirmish, ...extra });
 
 test('without choices a free game starts as before', () => {
-  const a = free(null), b = free({ goods: 'standard', peace: 'standard', faction: 'random' });
+  const a = free(null), b = free({ goods: 'standard', peace: 'standard', faction: 'random', opponent: 'seat' });
   assert.deepEqual(b.world.players.p1.res, a.world.players.p1.res);
   assert.equal(b.world.mission.raidWarningTick, a.world.mission.raidWarningTick);
   assert.equal(b.world.ai.faction, a.world.ai.faction);
@@ -39,8 +39,8 @@ test('the lord of a random valley can be picked; fixed maps and the campaign kee
 test('the choices survive a save; unknown values fall back to the defaults', () => {
   const a = free({ goods: 'rich', peace: 'short', faction: 'morrow' });
   const { world } = deserializeWorld(serializeWorld(a.world, 'sk'));
-  assert.deepEqual(world.meta.skirmish, { goods: 'rich', peace: 'short', faction: 'morrow' });
-  assert.deepEqual(sanitizeSkirmish({ goods: 'huge', peace: 1, faction: 'elves' }), { goods: 'standard', peace: 'standard', faction: 'random' });
+  assert.deepEqual(world.meta.skirmish, { goods: 'rich', peace: 'short', faction: 'morrow', opponent: 'seat' });
+  assert.deepEqual(sanitizeSkirmish({ goods: 'huge', peace: 1, faction: 'elves', opponent: 'dragons' }), { goods: 'standard', peace: 'standard', faction: 'random', opponent: 'seat' });
   assert.equal(cleanSeed('  my <valley> 42 '), 'myvalley42');
   assert.equal(cleanSeed('   '), null);
 });

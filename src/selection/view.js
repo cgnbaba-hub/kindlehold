@@ -3,7 +3,8 @@
 // range circle, hero ability targeting preview, drag box, territory border.
 import * as THREE from 'three';
 import { all, structureVersion } from '../world/world.js';
-import { PLAYER } from '../core/contracts.js';
+import { PLAYER, RIVAL } from '../core/contracts.js';
+import { RIVAL_COLOR } from '../rival/defs.js';
 import { BUILDINGS } from '../buildings/defs.js';
 import { buildingGeometries } from '../buildings/meshes.js';
 import { checkPlacement } from '../construction/index.js';
@@ -30,7 +31,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   const discs = new THREE.InstancedMesh(discGeo, discMat, 400);
   discs.count = 0; discs.frustumCulled = false; discs.renderOrder = 2;
   scene.add(discs);
-  const cDiscP = new THREE.Color('#4fb8e0'), cDiscE = new THREE.Color('#e05a3a'), cDiscB = new THREE.Color('#8fb85a'), cDiscH = new THREE.Color('#ffd27a');
+  const cDiscP = new THREE.Color('#4fb8e0'), cDiscE = new THREE.Color('#e05a3a'), cDiscB = new THREE.Color('#8fb85a'), cDiscH = new THREE.Color('#ffd27a'), cDiscR = new THREE.Color(RIVAL_COLOR);
 
   // health bars: background + fill quads, camera-facing
   const barGeo = new THREE.PlaneGeometry(1, 1);
@@ -111,10 +112,10 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   function rebuildBorder() {
     const src = territorySources(world());
     const pos = [], col = [];
-    const cP = new THREE.Color('#8fc6dc'), cE = new THREE.Color('#d88a6a'), cB = new THREE.Color('#a8c878');
+    const cP = new THREE.Color('#8fc6dc'), cE = new THREE.Color('#d88a6a'), cB = new THREE.Color('#a8c878'), cR = new THREE.Color('#b28be6');
     for (const s of src) {
       const n = Math.max(48, Math.round(s.r * 3));
-      const c = s.owner === PLAYER ? cP : s.owner === 'p3' ? cB : cE;
+      const c = s.owner === PLAYER ? cP : s.owner === 'p3' ? cB : s.owner === RIVAL ? cR : cE;
       let prev = null;
       for (let i = 0; i <= n; i++) {
         const a = (i / n) * Math.PI * 2;
@@ -147,7 +148,8 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
   const col = new THREE.Color();
   const right = new THREE.Vector3(), tmpEnt = { x: 0, z: 0, owner: null }, cWard = new THREE.Color('#8fd0ff');
   const cOwn = new THREE.Color('#7fe07f'), cEnemy = new THREE.Color('#e0604a'), cNeutral = new THREE.Color('#e8d9a0'), cHover = new THREE.Color('#ffffff'), cBrig = new THREE.Color('#b4dc78');
-  const ringFor = (ent) => ent.owner === PLAYER ? cOwn : ent.owner === 'none' ? cNeutral : ent.owner === 'p3' ? cBrig : cEnemy;
+  const cRival = new THREE.Color('#b98cf0');
+  const ringFor = (ent) => ent.owner === PLAYER ? cOwn : ent.owner === 'none' ? cNeutral : ent.owner === 'p3' ? cBrig : ent.owner === RIVAL ? cRival : cEnemy;
   let ghostType = null, placeCheckTimer = 0, lastCheck = { ok: false };
 
   function addRing(ent, color, scale) {
@@ -213,7 +215,7 @@ export function createSelectionView({ scene, terrain, world, sim, input, camera,
         const sc = u.commander ? 1.5 : u.hero ? 1.25 : 1;
         m4.compose(p.set(x, terrain.height(x, z) + 0.06, z), q.identity(), s.set(sc, 1, sc));
         discs.setMatrixAt(discs.count, m4);
-        discs.setColorAt(discs.count, u.hero ? cDiscH : u.owner === PLAYER ? cDiscP : u.owner === 'p3' ? cDiscB : cDiscE);
+        discs.setColorAt(discs.count, u.hero ? cDiscH : u.owner === PLAYER ? cDiscP : u.owner === 'p3' ? cDiscB : u.owner === RIVAL ? cDiscR : cDiscE);
         discs.count++;
       }
       flushInstances(discs);

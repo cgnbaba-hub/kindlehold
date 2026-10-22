@@ -154,6 +154,36 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Freies Spiel Teil 2: Rivalenstadt (2026-10-21)
+
+- Gegnerwahl im Einstellungsbildschirm: „Lord's seat“ (wie bisher) oder „Rival town“. Jede freie
+  Karte hat dafür ein eigenes Szenario `<id>-rival` (`freeplay.js`, `rival: true`, Ziel
+  `townFallen: 'p4'`); kein Feindsitz, keine Überfälle von p2 (KI bleibt ohne Halle untätig).
+- Rivale = Spieler `p4` (`RIVAL` in `contracts.js`, im Speicherschema). Gründung in
+  `src/rival/setup.js`: Burg am Ort des Feindsitzes, zwei Hütten, Siedler, Hearthhands, Trupp,
+  Wachtürme je Schwierigkeit; fehlen Bäume, Fels oder Eisen in Reichweite, kommen sie dazu (Eisen
+  innerhalb des Burgbezirks, sonst steht keine Mine). Neuankömmlinge über `world.townEntries`.
+- Verstand: `src/rival/index.js` steuert den Bot aus `src/demo/bot.js` als Besitzer p4 (`owner`,
+  `foe`, `state`, `assault`). Zustand in `world.rival` (Phase, letzter Befehl, Wellen,
+  `noSpot`), damit ein Spielstand identisch weiterläuft (Test). Bot-Änderungen für p1 neutral:
+  Kampagne und `npm run balance` liefern dieselben Zahlen wie vorher (gegen `main` verglichen).
+  Neu im Bot: findet `place()` keinen Platz, wird der Schritt 2,5 min übersprungen (statt ewig zu
+  warten); das ändert nur Free Play auf der Zufallskarte.
+- Getrennt vom Spieler: `statsOf(world, owner)` (eigene Zählung des Rivalen), Warnungen mit
+  `owner`, `sim.commandOwner` (Ablehnungen des Rivalen erscheinen nicht als Toast), `keepLit` nur
+  für p1, Heilung daheim je Besitzer. Diplomatie: keine Verträge mit dem Rivalen; das Fenster zeigt
+  ihn statt des Feindherrn.
+- Aussehen: Wimpel in `RIVAL_COLOR` auf seinen Gebäuden (`buildings/view.js`), Soldaten mit
+  eingefärbter Hauptkleidung (`costume(style, phase, tunic)`), Siedler in Lila, Minikarte,
+  Auswahlringe und Grenze in Lila.
+- Schwierigkeit (`RIVAL_DIFFICULTY` in `src/rival/defs.js`), gemessen mit dem Spieler-Bot
+  (`balance-seeds.mjs free-<karte>-rival:<stufe>`, 4 Karten × 16 Seeds): Story 63/64 Siege,
+  ~20 min; Normal 60/64, ~28 min; Hard 45/64, ~34 min. Zum Vergleich gegen den Sitz:
+  Normal 16/16 in 26,7 min, Hard 15/20 in 34,5 min. Ohne Wachtürme und Bonus war der Rivale zu
+  leicht (Hard 44/48), daher: Türme (Normal 2, Hard 2), Startwaren ×1,15 / ×1,5, auf Hard +10 %
+  Leben (wie die Räuber); Story denkt nur jede zweite Sekunde.
+- Tests: `tests/simulation/rival.test.js`, e2e `free-play-rival-town`.
+
 ## Freies Spiel: Einstellungen vor dem Start (2026-10-21)
 
 - Nach der Kartenwahl kommt `freePlaySetup` (`src/ui/menus.js`): Schwierigkeit, Startwaren

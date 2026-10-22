@@ -72,7 +72,13 @@ const cache = new Map();
 export function costume(style, phase = 0, tunic = null) {
   if (style !== 'settler') {
     const s = S[style] || S.shield;
-    return s.cooked || (s.cooked = { rigid: [], right: null, left: null, scale: 1, ...s });
+    const base = s.cooked || (s.cooked = { rigid: [], right: null, left: null, scale: 1, ...s });
+    if (!tunic) return base;
+    // a soldier in another town's colour (a free-play rival): the main cloth dyed, the rest kept
+    const key = `${style}|${tunic}`;
+    let c = cache.get(key);
+    if (!c) { c = { ...base, tints: { ...base.tints, clothA: tunic } }; cache.set(key, c); }
+    return c;
   }
   const key = `${phase}|${tunic}`;
   let c = cache.get(key);

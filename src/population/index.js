@@ -2,7 +2,7 @@
 // automatic worker assignment and fleeing from raiders.
 import { hostile } from '../diplomacy/index.js';
 import { EV, PLAYER, DT } from '../core/contracts.js';
-import { spawn, remove, all, emit, alert, worldRng } from '../world/world.js';
+import { spawn, remove, all, emit, alert, worldRng, statsOf } from '../world/world.js';
 import { BUILDINGS, doorOf, slotsOf, upgradeBonus, levelOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { TECH_EFFECTS } from '../technology/defs.js';
@@ -160,6 +160,11 @@ export function paydayForecast(world, owner) {
   return { taxes, pay, net: taxes - pay, settlers, soldiers, hands };
 }
 
+/** Where newcomers to a town come from (and leavers go): the player's road, or a rival town's own. */
+function entryOf(world, owner) {
+  return (owner !== PLAYER && world.townEntries && world.townEntries[owner]) || world.mapEntry || { x: -96, z: 96 };
+}
+
 const DIFF = {
   story: { arrival: 12 * 20 },
   normal: { arrival: 16 * 20 },
@@ -233,16 +238,16 @@ export function createPopulationModule() {
     if (keep && keep.lit && world.tick >= p.nextSettlerTick) {
       p.nextSettlerTick = world.tick + diff.arrival;
       if (p.housed < p.popCap && p.res.provisions >= ARRIVAL_COST + 2 && p.stability >= 30) {
-        const entry = world.mapEntry || { x: -96, z: 96 };
+        const entry = entryOf(world, owner);
         const s = spawnSettler(world, owner, entry.x, entry.z, { arriving: true });
         if (s) {
           addRes(world, owner, 'provisions', -ARRIVAL_COST, 'arrival');
-          world.stats.consumed.provisions += ARRIVAL_COST;
-          world.stats.settlersArrived++;
+          statsOf(world, owner).consumed.provisions += ARRIVAL_COST;
+          statsOf(world, owner).settlersArrived++;
           emit(world, EV.SETTLER_ARRIVED, { id: s.id });
         }
       } else if (p.housed >= p.popCap && world.tick % 1200 === 0) {
-        alert(world, 'info', 'Housing is full — build Cottages so more settlers can come.', keep.x, keep.z);
+        alert(world, 'info', 'Housing is full — build Cottages so more settlers can come.', keep.x, keep.z, owner);
       }
     }
 
@@ -256,16 +261,16 @@ export function createPopulationModule() {
       if (paid > 0) { addRes(world, owner, 'taler', -paid, 'pay'); world.stats.consumed.taler = (world.stats.consumed.taler || 0) + paid; }
       if (paid < f.pay) {
         p.stability = Math.max(0, p.stability - 6);
-        alert(world, 'warn', `Payday: the treasury cannot pay ${f.pay - paid} soldiers. Unpaid troops grumble — raise taxes or keep fewer soldiers.`, keep.x, keep.z);
+        alert(world, 'warn', `Payday: the treasury cannot pay ${f.pay - paid} soldiers. Unpaid troops grumble — raise taxes or keep fewer soldiers.`, keep.x, keep.z, owner);
       } else {
-        alert(world, 'info', `Payday: +${f.taxes} Taler in taxes${f.pay ? `, −${f.pay} soldiers' pay` : ''}.`, keep.x, keep.z);
+        alert(world, 'info', `Payday: +${f.taxes} Taler in taxes${f.pay ? `, −${f.pay} soldiers' pay` : ''}.`, keep.x, keep.z, owner);
       }
       emit(world, 'population:payday', { owner, taxes: f.taxes, pay: f.pay, paid });
     }
 
     // warn half a minute before a meal the stores cannot cover
     if (keep && p.nextMealTick - world.tick === 900 && p.res.provisions + (p.res.bread || 0) * BREAD_PORTIONS + mealsInStock(world, owner) < p.pop - asleepCount(world, owner)) {
-      alert(world, 'warn', `Provisions are running low: ${Math.floor(p.res.provisions)} left for ${p.pop} people at the next meal. Build or staff Farmsteads.`, keep.x, keep.z);
+      alert(world, 'warn', `Provisions are running low: ${Math.floor(p.res.provisions)} left for ${p.pop} people at the next meal. Build or staff Farmsteads.`, keep.x, keep.z, owner);
     }
     // meals
     if (world.tick >= p.nextMealTick) {
@@ -284,16 +289,16 @@ export function createPopulationModule() {
       const loaves = Math.min(Math.ceil((need - hot) / BREAD_PORTIONS), Math.floor(p.res.bread || 0));
       if (loaves > 0) {
         addRes(world, owner, 'bread', -loaves, 'meal');
-        world.stats.consumed.bread += loaves;
+        statsOf(world, owner).consumed.bread += loaves;
         bread = Math.min(need - hot, loaves * BREAD_PORTIONS);
       }
       const eat = Math.min(need - hot - bread, Math.floor(p.res.provisions));
-      if (eat > 0) { addRes(world, owner, 'provisions', -eat, 'meal'); world.stats.consumed.provisions += eat; }
+      if (eat > 0) { addRes(world, owner, 'provisions', -eat, 'meal'); statsOf(world, owner).consumed.provisions += eat; }
       p.lastMealFed = need > 0 ? (hot + bread + eat) / need : 1;
       if (need > 0) { p.hotMeals = hot / need; p.breadMeals = bread / need; }
       if (p.lastMealFed < 1) {
         p.stability = Math.max(0, p.stability - 8 * (1 - p.lastMealFed));
-        alert(world, 'warn', 'Your people went hungry. Build or staff Farmsteads.', keep ? keep.x : 0, keep ? keep.z : 0);
+        alert(world, 'warn', 'Your people went hungry. Build or staff Farmsteads.', keep ? keep.x : 0, keep ? keep.z : 0, owner);
       }
       emit(world, 'population:meal', { owner, need, eaten: eat });
     }
@@ -319,7 +324,7 @@ export function createPopulationModule() {
     // departures when stability collapses
     if (p.stability < 15 && world.tick % 600 === 0) {
       const leaver = all(world, 'settler').find((s) => s.owner === owner && !s.hand && isIdleLabourer(s));
-      if (leaver) { leaver.leaving = true; leaver.task = null; alert(world, 'danger', 'A settler has given up and is leaving Kindlehold.', leaver.x, leaver.z); }
+      if (leaver) { leaver.leaving = true; leaver.task = null; alert(world, 'danger', 'A settler has given up and is leaving Kindlehold.', leaver.x, leaver.z, owner); }
     }
 
     // job assignment once per second
@@ -393,7 +398,7 @@ export function createPopulationModule() {
         continue;
       }
       if (s.leaving) {
-        const entry = world.mapEntry || { x: -96, z: 96 };
+        const entry = entryOf(world, s.owner);
         const r = walkTo(nav, s, entry.x, entry.z, SETTLER.speed, DT, 2);
         s.anim = 'walk';
         if (r === 'arrived' || r === 'fail') remove(world, s.id, 'left');
@@ -443,7 +448,7 @@ export function createPopulationModule() {
       if (!canAfford(world, owner, FEAST.cost)) { emit(world, EV.COMMAND_REJECTED, { cmd, reason: 'Not enough Taler or provisions for a feast' }); return; }
       pay(world, owner, FEAST.cost, 'feast');
       p.feastUntil = world.tick + FEAST.duration;
-      alert(world, 'success', 'A feast in the great hall! Spirits are high for the next three minutes.', keep.x, keep.z);
+      alert(world, 'success', 'A feast in the great hall! Spirits are high for the next three minutes.', keep.x, keep.z, owner);
       emit(world, 'population:feast', { owner, x: keep.x, z: keep.z, until: p.feastUntil });
     } else if (cmd.type === 'hireSettler') {
       const keep = keepOf(world, owner);
@@ -456,7 +461,7 @@ export function createPopulationModule() {
       if (!s) return;
       addRes(world, owner, 'taler', -HIRE_COST, 'hire');
       world.stats.consumed.taler = (world.stats.consumed.taler || 0) + HIRE_COST;
-      world.stats.settlersArrived++;
+      statsOf(world, owner).settlersArrived++;
       emit(world, EV.SETTLER_ARRIVED, { id: s.id, hired: true });
     } else if (cmd.type === 'hireHand') {
       const keep = keepOf(world, owner);

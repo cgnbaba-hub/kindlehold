@@ -4,6 +4,7 @@
 import { createSimulation } from '../src/app/simulation.js';
 import { createBot } from '../src/demo/bot.js';
 import { log } from '../src/core/logger.js';
+import { SCENARIOS } from '../src/missions/index.js';
 
 log.setConsoleLevel('error');
 const args = process.argv.slice(2);
@@ -19,12 +20,13 @@ for (const [scenarioId, difficulty, seed] of runs) {
   // how much they ease the game
   const tr = process.env.KH_TRANSPORT;
   // KH_PRIORITY=1: the bot gives priority to the Barracks site
-  const bot = createBot(sim, { transport: tr === '1' ? true : tr === 'roads' || tr === 'donkeys' ? tr : false, priority: process.env.KH_PRIORITY === '1' });
+  // free play against a rival town (free-*-rival): the bot marches on the rival's Keep
+  const bot = createBot(sim, { transport: tr === '1' ? true : tr === 'roads' || tr === 'donkeys' ? tr : false, priority: process.env.KH_PRIORITY === '1', foe: (SCENARIOS[scenarioId] || {}).rival ? 'p4' : null });
   const result = bot.play(40 * 1200);
   const s = bot.summary();
   const p = sim.world.players.p1;
   if (result === 'victory') wins++;
   const open = s.objectives.filter((o) => !o.includes(':done')).join(' ');
-  console.log(`${scenarioId === 'harrowmere' ? '' : scenarioId + ' '}${difficulty.padEnd(6)} ${String(seed).padEnd(5)} ${String(result || 'unfinished').padEnd(10)} ${String(s.minutes).padStart(5)} min  pop ${p.pop}  stability ${Math.round(p.stability)}${process.env.KH_TRANSPORT ? `  roads ${(sim.world.roads && sim.world.roads.cells.length) || 0} donkeys ${Object.values(sim.world.entities).filter((e) => e.kind === 'donkey').length}` : ''}  ${open}`);
+  console.log(`${scenarioId === 'harrowmere' ? '' : scenarioId + ' '}${difficulty.padEnd(6)} ${String(seed).padEnd(5)} ${String(result || 'unfinished').padEnd(10)} ${String(s.minutes).padStart(5)} min  pop ${p.pop}  stability ${Math.round(p.stability)}${sim.world.rival ? `  rival waves ${sim.world.rival.waves} pop ${sim.world.players.p4.pop}` : ''}${process.env.KH_TRANSPORT ? `  roads ${(sim.world.roads && sim.world.roads.cells.length) || 0} donkeys ${Object.values(sim.world.entities).filter((e) => e.kind === 'donkey').length}` : ''}  ${open}`);
 }
 console.log(`${wins}/${runs.length} won within 40 minutes`);

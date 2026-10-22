@@ -373,6 +373,28 @@ try {
     assert(info.seed === 'e2e-vale' && info.faction === 'morrow' && sk && sk.goods === 'rich', `the setup choices reach the game (${JSON.stringify({ info, sk })})`);
   });
 
+  await test('free-play-rival-town', async (page) => {
+    // free play against a rival town: chosen on the setup screen, a second Warden's Keep stands across the valley
+    await page.goto(url('?debug=1&quality=low'), { waitUntil: 'load' });
+    await page.getByRole('button', { name: /Free Play/ }).first().click({ timeout: 60000 });
+    await page.getByRole('button', { name: /Free play: Harrowmere Valley/ }).click({ timeout: 20000 });
+    await page.getByRole('radio', { name: 'Opponent: Rival town' }).click({ timeout: 20000 });
+    await page.getByRole('radio', { name: /Difficulty: Normal/ }).click();
+    await page.getByRole('button', { name: 'Start' }).click();
+    await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__ && window.__GAME__.world().meta.scenarioId === 'free-harrowmere-rival', null, { timeout: 120000 });
+    if (await page.waitForSelector('.cinematic', { timeout: 30000 }).catch(() => null)) {
+      await page.mouse.click(640, 400);
+      await page.waitForSelector('.cinematic', { state: 'detached', timeout: 60000 });
+    }
+    await page.waitForFunction(() => /Break the rival town/.test(document.querySelector('.objectives').textContent), null, { timeout: 30000 });
+    const info = await page.evaluate(() => { const w = window.__GAME__.world(); const ents = Object.values(w.entities); return { keep: ents.some((e) => e.type === 'keep' && e.owner === 'p4' && e.lit), seat: ents.some((e) => e.kind === 'building' && e.owner === 'p2'), opponent: w.meta.skirmish && w.meta.skirmish.opponent }; });
+    assert(info.keep && !info.seat && info.opponent === 'rival', `a rival town instead of the seat (${JSON.stringify(info)})`);
+    // the rival builds through the same commands; none of its refusals reach the player
+    await page.evaluate(() => window.__GAME__.runTicks(20 * 60 * 3));
+    const built = await page.evaluate(() => Object.values(window.__GAME__.world().entities).filter((e) => e.kind === 'building' && e.owner === 'p4').length);
+    assert(built >= 5, `the rival builds (${built} buildings)`);
+  });
+
   await test('diplomacy-gift', async (page) => {
     await page.goto(url('?debug=1&start=1&quality=low'), { waitUntil: 'load' });
     await page.waitForFunction(() => window.__GAME_READY__ === true && !!window.__GAME__, null, { timeout: 120000 });

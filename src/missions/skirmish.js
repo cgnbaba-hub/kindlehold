@@ -14,16 +14,21 @@ export const SKIRMISH_GOODS = {
   standard: { name: 'Standard', mult: 1, note: '' },
   rich: { name: 'Rich', mult: 1.5, note: 'easier' },
 };
-// the time before the first warning, the first raid and the first plunderers
+// the time before the first warning, the first raid and the first plunderers (or the rival's first attack)
 export const SKIRMISH_PEACE = {
   short: { name: 'Short', mult: 0.65, note: 'harder' },
   standard: { name: 'Standard', mult: 1, note: '' },
   long: { name: 'Long', mult: 1.6, note: 'easier' },
 };
+/** Whom you face: the lord's fortified seat and its raids, or a rival town that grows as you do (src/rival). */
+export const SKIRMISH_OPPONENTS = {
+  seat: { name: "Lord's seat", note: 'raids from a fortified seat' },
+  rival: { name: 'Rival town', note: 'a second Warden builds and attacks' },
+};
 /** Who holds a random valley: drawn from the seed, or one lord picked by the player. */
 export const SKIRMISH_FACTIONS = ['random', ...Object.keys(FACTIONS).sort()];
 
-export const SKIRMISH_DEFAULT = { goods: 'standard', peace: 'standard', faction: 'random' };
+export const SKIRMISH_DEFAULT = { goods: 'standard', peace: 'standard', faction: 'random', opponent: 'seat' };
 
 /** Only known choices survive (menus, saves, URL parameters). */
 export function sanitizeSkirmish(s) {
@@ -32,6 +37,7 @@ export function sanitizeSkirmish(s) {
     goods: Object.hasOwn(SKIRMISH_GOODS, src.goods) ? src.goods : SKIRMISH_DEFAULT.goods,
     peace: Object.hasOwn(SKIRMISH_PEACE, src.peace) ? src.peace : SKIRMISH_DEFAULT.peace,
     faction: SKIRMISH_FACTIONS.includes(src.faction) ? src.faction : SKIRMISH_DEFAULT.faction,
+    opponent: Object.hasOwn(SKIRMISH_OPPONENTS, src.opponent) ? src.opponent : SKIRMISH_DEFAULT.opponent,
   };
 }
 

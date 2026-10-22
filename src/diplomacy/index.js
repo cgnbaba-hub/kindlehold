@@ -6,7 +6,7 @@
 // The Rustfang (p2) never make peace, but take a toll for a truce. The Greyfen brigands (p3)
 // start neutral: gifts win them over, trespassing and attacks turn them hostile.
 import { all, emit, alert } from '../world/world.js';
-import { EV, PLAYER, ENEMY } from '../core/contracts.js';
+import { EV, PLAYER, ENEMY, RIVAL } from '../core/contracts.js';
 import { canAfford, pay } from '../economy/stock.js';
 import { enemyFaction } from '../ai/factions.js';
 
@@ -76,6 +76,8 @@ export function createDiplomacyModule() {
     if (!['gift', 'truce', 'peace', 'declareWar'].includes(cmd.type)) return;
     if (!world.players[them] || them === me) return;
     const reject = (reason) => emit(world, EV.COMMAND_REJECTED, { type: cmd.type, reason });
+    // a free-play rival town treats with nobody: only one Keep will stand
+    if (them === RIVAL || me === RIVAL) return reject('The rival town will not treat with you');
     const k = key(me, them);
     if (cmd.type === 'gift') {
       if (them === ENEMY) return reject(`The ${enemyFaction(world).short} take tolls, not gifts`);

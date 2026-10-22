@@ -71,6 +71,40 @@ function freeScenario([id, map, title, faction, hall, seat, land]) {
   };
 }
 
-export const FREE_SCENARIOS = Object.fromEntries(FIELDS.map((f) => [f[0], freeScenario(f)]));
+/**
+ * The same land against a rival town: a second Warden settles where the lord's seat would stand,
+ * builds, trains and attacks like the player (src/rival). No raider seat, no raids from it.
+ */
+function rivalScenario(field) {
+  const base = freeScenario(field);
+  return {
+    ...base,
+    id: `${field[0]}-rival`,
+    rival: true,
+    title: `${base.title} (rival town)`,
+    blurb: `${field[6]} No story: a rival Warden settles across the valley and builds a town of their own. Win by taking their Keep before they take yours.`,
+    raidWarningAt: { story: 1e5, normal: 1e5, hard: 1e5 },
+    enemy: { faction: field[3] },
+    intro: [
+      { speaker: 'osric', text: 'The hearth burns, Warden. But smoke rises across the valley: someone else has lit a hearth there.' },
+      { speaker: 'wren', text: 'A rival town. They will grow as we grow, and sooner or later they will come for our Keep.' },
+    ],
+    objectives: [
+      ...base.objectives.filter((o) => o.id !== 'hall'),
+      {
+        id: 'rival', title: 'Break the rival town',
+        text: 'Destroy the Keep of the rival town.',
+        hint: 'They build, train and attack as you do. Scout them, keep a guard at home, and strike when your army is the stronger.',
+        highlight: 'army', activeWhen: { always: true },
+        completeWhen: { townFallen: 'p4' },
+      },
+    ],
+    warning: [],
+    winWhen: { completed: 'rival' },
+    victory: { title: 'The Valley Is Yours', text: 'The rival Keep has fallen. Their people will settle under your banner, and the valley is at peace.' },
+  };
+}
+
+export const FREE_SCENARIOS = Object.fromEntries(FIELDS.flatMap((f) => [[f[0], freeScenario(f)], [`${f[0]}-rival`, rivalScenario(f)]]));
 /** Free play maps in menu order. */
 export const FREE_PLAY = FIELDS.map((f) => f[0]);

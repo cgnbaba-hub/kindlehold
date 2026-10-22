@@ -9,7 +9,7 @@ import { loadProgress, isUnlocked } from '../app/campaign.js';
 import { HAND, FEAST } from '../population/index.js';
 import { ROADS, DONKEYS } from '../transport/defs.js';
 import { PRIORITY } from '../construction/index.js';
-import { SKIRMISH_GOODS, SKIRMISH_PEACE, SKIRMISH_FACTIONS, sanitizeSkirmish, cleanSeed } from '../missions/skirmish.js';
+import { SKIRMISH_GOODS, SKIRMISH_PEACE, SKIRMISH_FACTIONS, SKIRMISH_OPPONENTS, sanitizeSkirmish, cleanSeed } from '../missions/skirmish.js';
 import { FACTIONS } from '../ai/factions.js';
 
 function focusFirst(el) { const f = el.querySelector('button:not([disabled]), [tabindex="0"], input, select'); if (f) f.focus(); }
@@ -98,7 +98,8 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
         h('span.chapter-text', {}, [h('strong', { text: name }), h('span', { text: sc.blurb })]),
         h('span.chapter-state', { text: 'Play' }),
       ]);
-      b.addEventListener('click', () => freePlaySetup({ scenario: sc, onPick: (d, extra) => onPick(d, id, extra), onBack: back }));
+      // (against a rival town the same land is its own scenario, `<id>-rival`)
+      b.addEventListener('click', () => freePlaySetup({ scenario: sc, onPick: (d, extra) => onPick(d, extra.skirmish.opponent === 'rival' ? `${id}-rival` : id, extra), onBack: back }));
       list.append(b);
     });
     return show(screen('sub-menu', [backdrop(), h('div.menu-card.wide', {}, [
@@ -128,17 +129,20 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       return h('div.setup-row', {}, [h('h3', { text: label }), row]);
     };
     const rows = [];
-    let seedInput = null;
+    let seedInput = null, lordRow = null;
+    rows.push(group('Opponent', Object.entries(SKIRMISH_OPPONENTS).map(([k, o]) => [k, o.name, o.note]), sk.opponent, (v) => { sk.opponent = v; if (lordRow) lordRow.hidden = v === 'rival'; }));
     if (wild) {
       seedInput = h('input.setup-seed', { type: 'text', maxlength: '16', placeholder: 'drawn by chance', 'aria-label': 'Valley seed', autocomplete: 'off', spellcheck: 'false' });
       const dice = h('button.btn', { type: 'button', text: 'New valley' });
       // (a menu choice only: the simulation never draws its own randomness)
       dice.addEventListener('click', () => { seedInput.value = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000); });
       rows.push(h('div.setup-row', {}, [h('h3', { text: 'Valley' }), h('div.setup-seed-row', {}, [seedInput, dice]), h('p.small.muted', { text: 'The same seed always grows the same valley (and, by lot, the same lord): share it to play the same map.' })]));
-      rows.push(group('Lord of the valley', SKIRMISH_FACTIONS.map((f) => [f, f === 'random' ? 'By lot' : FACTIONS[f].short, f === 'random' ? '' : FACTIONS[f].name]), sk.faction, (v) => { sk.faction = v; }));
+      lordRow = group('Lord of the valley', SKIRMISH_FACTIONS.map((f) => [f, f === 'random' ? 'By lot' : FACTIONS[f].short, f === 'random' ? '' : FACTIONS[f].name]), sk.faction, (v) => { sk.faction = v; });
+      lordRow.hidden = sk.opponent === 'rival';
+      rows.push(lordRow);
     }
     rows.push(group('Starting goods', Object.entries(SKIRMISH_GOODS).map(([k, g]) => [k, g.name, g.note]), sk.goods, (v) => { sk.goods = v; }));
-    rows.push(group('Peace before the first raid', Object.entries(SKIRMISH_PEACE).map(([k, g]) => [k, g.name, g.note]), sk.peace, (v) => { sk.peace = v; }));
+    rows.push(group('Peace before the first attack', Object.entries(SKIRMISH_PEACE).map(([k, g]) => [k, g.name, g.note]), sk.peace, (v) => { sk.peace = v; }));
     rows.push(group('Difficulty', [['story', 'Story', 'smaller raids'], ['normal', 'Normal', 'the intended challenge'], ['hard', 'Hard', 'larger, faster raids']], diff, (v) => { diff = v; }));
     const start = menuButton('Start', () => {
       settings.difficulty = diff;
@@ -351,7 +355,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       ['Buildings raised / lost', `${st.buildingsBuilt} / ${st.buildingsLost || 0}`],
       roads ? ['Stone roads laid', `${roads * 2} m`] : null,
       ['Timber / stone produced', `${st.produced.timber} / ${st.produced.stone}`], ['Iron / provisions produced', `${st.produced.iron} / ${st.produced.provisions}`],
-      ['Soldiers trained', st.unitsRecruited], ['Enemies defeated', st.enemiesDefeated], ['Our losses', st.unitsLost], ['Raids faced', world.ai.wave],
+      ['Soldiers trained', st.unitsRecruited], ['Enemies defeated', st.enemiesDefeated], ['Our losses', st.unitsLost], ['Raids faced', world.rival ? world.rival.waves : world.ai.wave],
     ].filter(Boolean);
     return show(screen(`end.${result}`, [backdrop(), h('div.menu-card.wide', {}, [
       h('h1.title.small', { text: result === 'victory' ? 'Victory' : 'Defeat' }),

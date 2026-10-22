@@ -1,7 +1,7 @@
 // Production: workers at workplaces run visible work cycles against deposits,
 // fields or inputs, carry goods back, and report precise stall reasons.
 import { EV, DT } from '../core/contracts.js';
-import { all, emit, remove, alert } from '../world/world.js';
+import { all, emit, remove, alert, statsOf } from '../world/world.js';
 import { BUILDINGS, doorOf, workSpeedOf } from '../buildings/defs.js';
 import { SETTLER } from '../units/defs.js';
 import { stabilityFactor } from '../population/index.js';
@@ -190,7 +190,7 @@ export function createProductionModule() {
         case 'return': {
           if (walk(door.x, door.z, 1.0) === 'arrived') {
             b.stock.out[W.res] = (b.stock.out[W.res] || 0) + s.carry.amt;
-            world.stats.produced[W.res] += s.carry.amt;
+            statsOf(world, s.owner).produced[W.res] += s.carry.amt;
             emit(world, EV.PRODUCTION_CYCLE, { id: b.id, res: W.res, amount: s.carry.amt, x: door.x, z: door.z });
             s.carry = null;
             s.task = null;
@@ -241,7 +241,7 @@ export function createProductionModule() {
         case 'return': {
           if (walk(door.x, door.z, 1.0) === 'arrived') {
             b.stock.out.provisions = (b.stock.out.provisions || 0) + s.carry.amt;
-            world.stats.produced.provisions += s.carry.amt;
+            statsOf(world, s.owner).produced.provisions += s.carry.amt;
             emit(world, EV.PRODUCTION_CYCLE, { id: b.id, res: 'provisions', amount: s.carry.amt, x: door.x, z: door.z });
             s.carry = null; s.task = null;
           }
@@ -309,7 +309,7 @@ export function createProductionModule() {
         case 'return': {
           if (walk(door.x, door.z, 1.0) === 'arrived') {
             b.stock.out.provisions = (b.stock.out.provisions || 0) + s.carry.amt;
-            world.stats.produced.provisions += s.carry.amt;
+            statsOf(world, s.owner).produced.provisions += s.carry.amt;
             emit(world, EV.PRODUCTION_CYCLE, { id: b.id, res: 'provisions', amount: s.carry.amt, x: door.x, z: door.z });
             s.carry = null; s.task = null;
           }
@@ -345,7 +345,7 @@ export function createProductionModule() {
         case 'return': {
           if (walk(door.x, door.z, 1.0) === 'arrived') {
             b.stock.out.provisions = (b.stock.out.provisions || 0) + s.carry.amt;
-            world.stats.produced.provisions += s.carry.amt;
+            statsOf(world, s.owner).produced.provisions += s.carry.amt;
             emit(world, EV.PRODUCTION_CYCLE, { id: b.id, res: 'provisions', amount: s.carry.amt, x: door.x, z: door.z });
             s.carry = null; s.task = null;
           }
@@ -394,14 +394,14 @@ export function createProductionModule() {
             if (outCount(b) >= def.outCap) { setStall(world, b, 'storageFull'); s.anim = 'idle'; return; }
             for (const r in W.needs) if ((b.stock.in[r] || 0) < W.needs[r]) { setStall(world, b, 'noInput'); s.anim = 'idle'; return; }
             if (b.stall === 'noInput' || b.stall === 'storageFull' || b.stall === 'noAccess') setStall(world, b, null);
-            for (const r in W.needs) { b.stock.in[r] -= W.needs[r]; world.stats.consumed[r] += W.needs[r]; }
+            for (const r in W.needs) { b.stock.in[r] -= W.needs[r]; statsOf(world, b.owner).consumed[r] += W.needs[r]; }
           }
           s.anim = W.anim;
           t.timer += DT * sf;
           if (t.timer >= t.nextStrike) { t.nextStrike += W.strike; emit(world, EV.WORK_STRIKE, { id: s.id, kind: W.kind, x: door.x, z: door.z, building: b.id }); }
           if (t.timer >= W.work) {
             b.stock.out[W.res] = (b.stock.out[W.res] || 0) + W.perCycle;
-            world.stats.produced[W.res] += W.perCycle;
+            statsOf(world, b.owner).produced[W.res] += W.perCycle;
             emit(world, EV.PRODUCTION_CYCLE, { id: b.id, res: W.res, amount: W.perCycle, x: door.x, z: door.z });
             t.timer = 0; t.nextStrike = 0;
           }
@@ -422,13 +422,13 @@ export function createProductionModule() {
           if (outCount(b) >= def.outCap) { setStall(world, b, 'storageFull'); s.anim = 'idle'; return; }
           if ((b.stock.in.provisions || 0) < W.provisionsPerCycle && t.timer === 0) { setStall(world, b, 'noInput'); s.anim = 'idle'; return; }
           if (b.stall === 'noInput' || b.stall === 'storageFull' || b.stall === 'noAccess') setStall(world, b, null);
-          if (t.timer === 0) { b.stock.in.provisions -= W.provisionsPerCycle; world.stats.consumed.provisions += W.provisionsPerCycle; }
+          if (t.timer === 0) { b.stock.in.provisions -= W.provisionsPerCycle; statsOf(world, b.owner).consumed.provisions += W.provisionsPerCycle; }
           s.anim = W.anim;
           t.timer += DT * sf;
           if (t.timer >= t.nextStrike) { t.nextStrike += 1.1; emit(world, EV.WORK_STRIKE, { id: s.id, kind: 'mine', x: door.x, z: door.z, building: b.id }); }
           if (t.timer >= W.work) {
             b.stock.out.iron = (b.stock.out.iron || 0) + W.perCycle;
-            world.stats.produced.iron += W.perCycle;
+            statsOf(world, b.owner).produced.iron += W.perCycle;
             emit(world, EV.PRODUCTION_CYCLE, { id: b.id, res: 'iron', amount: W.perCycle, x: door.x, z: door.z });
             t.timer = 0; t.nextStrike = 0;
           }

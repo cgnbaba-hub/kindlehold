@@ -1,5 +1,5 @@
 // Deterministic scenario setup: players, Keep, hero, settlers, deposits, enemy camp.
-import { PLAYER, ENEMY } from '../core/contracts.js';
+import { PLAYER, ENEMY, RIVAL } from '../core/contracts.js';
 import { addPlayer, spawn, worldRng, all } from '../world/world.js';
 import { createBuildingEntity, completeBuilding } from '../construction/index.js';
 import { UPGRADES, BUILDINGS } from '../buildings/defs.js';
@@ -12,6 +12,7 @@ import { HARROWMERE_SCENARIO } from './scenarios/harrowmere.js';
 import { enemyFaction, FACTIONS } from '../ai/factions.js';
 import { RANKS } from '../combat/index.js';
 import { SKIRMISH_GOODS, SKIRMISH_PEACE, sanitizeSkirmish } from './skirmish.js';
+import { setupRivalTown } from '../rival/setup.js';
 
 const DIFF_RES = { story: 1.5, normal: 1, hard: 0.8 };
 
@@ -55,12 +56,14 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
   const keepRot = map.id === 'wild' ? Math.atan2(-ks.x, -ks.z) : 2.3;
   const keep = createBuildingEntity(world, { type: 'keep', owner: PLAYER, x: ks.x, z: ks.z, rot: keepRot, state: 'active' });
 
-  // Enemy camp
+  // Enemy camp (in free play against a rival town, the rival's Keep stands there instead)
   const ec = map.enemyCamp;
   const hallRot = Math.atan2(ks.x - ec.x, ks.z - ec.z);
-  createBuildingEntity(world, { type: fac.hall, owner: ENEMY, x: ec.x, z: ec.z, rot: hallRot, state: 'active' });
-  createBuildingEntity(world, { type: fac.tower, owner: ENEMY, x: ec.x - 16, z: ec.z + 14, rot: hallRot, state: 'active' });
-  createBuildingEntity(world, { type: fac.tower, owner: ENEMY, x: ec.x + 14, z: ec.z + 18, rot: hallRot, state: 'active' });
+  if (!scenario.rival) {
+    createBuildingEntity(world, { type: fac.hall, owner: ENEMY, x: ec.x, z: ec.z, rot: hallRot, state: 'active' });
+    createBuildingEntity(world, { type: fac.tower, owner: ENEMY, x: ec.x - 16, z: ec.z + 14, rot: hallRot, state: 'active' });
+    createBuildingEntity(world, { type: fac.tower, owner: ENEMY, x: ec.x + 14, z: ec.z + 18, rot: hallRot, state: 'active' });
+  }
 
   // Deposits — iron veins and rock outcrops first (hand-placed), then forests
   const placed = [];
@@ -95,7 +98,7 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
       if (!terrain.inBounds(x, z, 8)) continue;
       if (terrain.height(x, z) < 0.7) continue;
       if (terrain.slope(x, z) > 0.7) continue;
-      if (Math.hypot(x - ks.x, z - ks.z) < keepClear || Math.hypot(x - camp.x, z - camp.z) < 30) continue;
+      if (Math.hypot(x - ks.x, z - ks.z) < keepClear || Math.hypot(x - camp.x, z - camp.z) < (scenario.rival ? keepClear : 30)) continue;
       if (map.roads.some((rd) => distToPolyline(x, z, rd.points) < rd.width + 1.2)) continue;
       if (!clearOf(x, z, 2.4)) continue;
       spawn(world, { kind: 'deposit', type: 'tree', x, z, amount: 8, maxAmount: 8, variant: rng.next() < 0.62 ? 0 : 1, scale: rng.range(0.85, 1.25), rot: rng.range(0, Math.PI * 2), reservedBy: null });
@@ -178,6 +181,13 @@ export function setupScenario(world, terrain, scenario = HARROWMERE_SCENARIO) {
     const hp = front(3.5, -0.5);
     const hh = spawnUnit(world, type, PLAYER, hp.x, hp.z);
     if (hh) hh.order = { type: 'idle', ax: hh.x, az: hh.z };
+  }
+
+  if (scenario.rival) {
+    setupRivalTown(world, terrain, scenario, { x: ec.x, z: ec.z, rot: hallRot }, { rng, clearOf, placed });
+    world.ai.nextSpawnTick = 1e9; world.ai.nextScoutTick = 1e9; world.ai.nextHarassTick = 1e9;
+    world.mission.raidWarningTick = 1e9;
+    return { keep, maren, deposits: all(world, 'deposit').length };
   }
 
   // Enemy garrison

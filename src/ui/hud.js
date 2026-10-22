@@ -9,7 +9,8 @@ import { POI_INFO, TRADES, poiName, priceOf } from '../pois/index.js';
 import { createMinimap } from './minimap.js';
 import { createFloaters } from './floaters.js';
 import { all } from '../world/world.js';
-import { PLAYER, EV, RESOURCES } from '../core/contracts.js';
+import { PLAYER, EV, RESOURCES, RIVAL } from '../core/contracts.js';
+import { rivalOf } from '../rival/defs.js';
 import { BUILDINGS, UPGRADES, nextUpgrade, levelOf, displayName, upgradeBonus, slotsOf, attackOf } from '../buildings/defs.js';
 import { UNITS, RECRUITABLE, COUNTERS } from '../units/defs.js';
 import { TECHS, TECH_ORDER } from '../technology/defs.js';
@@ -445,7 +446,11 @@ export function createHud({ root, session, input, settings, actions, tips = true
     const fac = enemyFaction(w);
     const truceLeft = d ? Math.max(0, ((d.truceUntil['p1|p2'] || 0) - w.tick) / 20) : 0;
     const marching = w.ai.state === 'raid' || w.ai.state === 'gather';
-    rows.push({
+    const rv = rivalOf(w);
+    if (rv && w.players[RIVAL]) {
+      // free play against a rival town: no lord's seat, no tolls
+      rows.push({ id: RIVAL, name: rv.town, portrait: null, who: `Warden ${rv.lord}`, st: stance(w, PLAYER, RIVAL), rel: relation(w, PLAYER, RIVAL), note: 'A rival town across the valley. They take no gifts and pay no tolls: only one Keep will stand.', btns: [] });
+    } else rows.push({
       id: 'p2', name: w.players.p2 ? w.players.p2.name : fac.name, portrait: fac.portrait, who: fac.leader, st: rs, rel: relation(w, PLAYER, 'p2'),
       note: rs === 'truce' ? `The toll is paid. No attacks for ${fmtTime(truceLeft)}.` : fac.truceNote,
       btns: [diploButton('Pay toll', 'taler', TRUCE.cost, `A truce of ${Math.round(TRUCE.duration / 1200)} minutes: no raids, no plunderers. Not while his warband is on the march.`, { type: 'truce', to: 'p2' }, rs !== 'truce' && !marching && p.res.taler >= TRUCE.cost.taler)],
@@ -609,7 +614,7 @@ export function createHud({ root, session, input, settings, actions, tips = true
   // --- event feeds ---------------------------------------------------------------------------
   const resHistory = [];
   unsub.push(bus.on(EV.RESOURCE_CHANGED, (d) => { if (d.owner === PLAYER) resHistory.push({ tick: world().tick, res: d.res, delta: d.delta }); }));
-  unsub.push(bus.on(EV.COMMAND_REJECTED, (d) => toast(d.reason, 'warn')));
+  unsub.push(bus.on(EV.COMMAND_REJECTED, (d) => { if (!sim.commandOwner || sim.commandOwner === PLAYER) toast(d.reason, 'warn'); }));
   unsub.push(bus.on(EV.ALERT, (d) => {
     if (d.owner && d.owner !== PLAYER) return;
     const kind = d.level === 'danger' ? 'alertDanger' : d.level === 'warn' ? 'alertWarn' : d.level === 'success' ? 'alertSuccess' : 'alertInfo';

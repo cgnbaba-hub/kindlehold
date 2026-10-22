@@ -6,6 +6,27 @@ import { BUILDINGS } from './defs.js';
 import { buildingGeometries, disposeBuildingGeometries, hearthOf } from './meshes.js';
 import { createStructureMaterial, PATTERN } from '../render/structure-material.js';
 import { paint, place, merge, box, cyl, viewRng } from '../render/geometry-kit.js';
+import { RIVAL } from '../core/contracts.js';
+import { RIVAL_COLOR } from '../rival/defs.js';
+
+// a free-play rival's buildings fly its colour: a pennant on the roof (shared geometry and materials)
+let pennant = null;
+function rivalPennant(radius, height) {
+  if (!pennant) {
+    pennant = {
+      pole: new THREE.CylinderGeometry(0.07, 0.08, 3.4, 6).translate(0, 1.7, 0),
+      flag: new THREE.BoxGeometry(1.4, 0.85, 0.05).translate(0.72, 2.9, 0),
+      wood: new THREE.MeshStandardMaterial({ color: '#4a3826', roughness: 0.9 }),
+      cloth: new THREE.MeshStandardMaterial({ color: RIVAL_COLOR, roughness: 0.75 }),
+    };
+  }
+  const g = new THREE.Group();
+  const pole = new THREE.Mesh(pennant.pole, pennant.wood), flag = new THREE.Mesh(pennant.flag, pennant.cloth);
+  pole.castShadow = true; flag.castShadow = true;
+  g.add(pole, flag);
+  g.position.set(radius * 0.35, Math.max(1, height - 0.6), radius * 0.2);
+  return g;
+}
 
 const LIGHTS = 6;
 
@@ -146,8 +167,10 @@ export function createBuildingsView({ scene, terrain, world, renderer, sky }) {
     // windmill sails turn while the miller works
     const sails = geos.sails ? new THREE.Mesh(geos.sails, mat) : null;
     if (sails) { sails.position.set(...geos.sailsAt); sails.castShadow = true; sails.userData.entityId = b.id; root.add(sails); }
+    const flag = b.owner === RIVAL ? rivalPennant(def.radius, geos.height) : null;
+    if (flag) root.add(flag);
     group.add(root);
-    return { root, body, glow, site, scaffold, rubble, charter, sails, siteMat, clip, height: geos.height, state: null, lantern: geos.lantern };
+    return { root, body, glow, site, scaffold, rubble, charter, sails, flag, siteMat, clip, height: geos.height, state: null, lantern: geos.lantern };
   }
 
   function sync() {
@@ -262,6 +285,7 @@ export function createBuildingsView({ scene, terrain, world, renderer, sky }) {
           r.body.visible = stage === 'rising' || stage === 'done';
           r.body.material = stage === 'rising' ? r.siteMat : mat;
           if (r.glow) r.glow.visible = stage === 'done';
+          if (r.flag) r.flag.visible = stage === 'done';
         }
         if (stage === 'rising') {
           const k = (b.build.progress - 0.1) / 0.9;
