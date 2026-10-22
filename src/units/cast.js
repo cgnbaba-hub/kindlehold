@@ -24,6 +24,7 @@ const S = {
   halberd: { body: 'Knight', head: 'Knight_Head', rigid: ['Knight_Helmet', 'Knight_Cape'], right: 'halberd', tints: { clothA: '#2a5a7a', clothB: '#d1a54a' }, weapon: 'thrust2' },
   sapper: { body: 'Barbarian', head: 'Barbarian_Head', right: 'maul', tints: { clothA: '#6e5a40', clothB: '#4d4338', clothC: BLUE, hair: '#5a4030' }, weapon: 'heavy' },
   maren: { body: 'Rogue', head: 'Rogue_Head_Hooded', rigid: ['Rogue_Cape'], right: 'pole', tints: { clothA: '#384a5c', clothB: '#24505e', clothC: '#3a3028', skin: '#f5c6a5' }, weapon: 'slash', hero: true },
+  warden: { body: 'Knight', head: 'Knight_Head', rigid: ['Knight_Cape'], right: '1H_Sword', left: 'Badge_Shield', tints: { clothA: '#8a5bc4', clothB: '#3a2a4a', skin: '#e8bf9a' }, weapon: 'slash', scale: 1.05, hero: true },
   wren: { body: 'Rogue', head: 'Rogue_Head', rigid: ['Rogue_Cape'], right: 'bow', tints: { clothA: '#5a6a3e', clothB: '#6a5a3a', hair: '#a8622e', skin: '#e8bf9a' }, weapon: 'bow', scale: 1.08, hero: true },
   // the Rustfang reavers
   reaver: { body: 'Barbarian', head: 'Barbarian_Head', rigid: ['Barbarian_Hat'], right: '1H_Axe', tints: { clothA: '#8c3b2a', clothB: '#3a302a', hair: '#6a2e18' }, weapon: 'slash' },

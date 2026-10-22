@@ -20,6 +20,7 @@ test('the rival founds a town with towers where the seat would stand; there is n
     assert.ok(keep && keep.lit, `${d}: a lit rival Keep`);
     assert.equal(b.filter((x) => x.type === 'cottage').length, 2, `${d}: two cottages`);
     assert.equal(b.filter((x) => x.type === 'tower').length, RIVAL_DIFFICULTY[d].towers, `${d}: towers`);
+    assert.equal(mine(sim, 'p4', 'unit').filter((u) => u.type === 'warden').length, RIVAL_DIFFICULTY[d].hero ? 1 : 0, `${d}: a Warden of its own on Hard`);
     assert.ok(mine(sim, 'p4', 'settler').length >= 9, `${d}: first families`);
     assert.equal(warhallOf(sim.world), null, `${d}: no lord's seat`);
     // wood, stone and iron in reach of the rival's Keep
