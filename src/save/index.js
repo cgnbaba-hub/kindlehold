@@ -15,6 +15,7 @@ import { WHITESTAG_SCENARIO } from '../missions/scenarios/whitestag.js';
 import { IRONDEBT_SCENARIO } from '../missions/scenarios/irondebt.js';
 import { FREE_SCENARIOS } from '../missions/scenarios/freeplay.js';
 import { SKIRMISH_GOODS, SKIRMISH_PEACE, SKIRMISH_FACTIONS, SKIRMISH_OPPONENTS } from '../missions/skirmish.js';
+import { customMapSchema } from '../editor/map-format.js';
 
 export const SAVE_FORMAT = 'kindlehold-save';
 
@@ -102,6 +103,7 @@ const worldSchema = v.object({
   meta: v.object({
     scenarioId: v.string({ oneOf: ['harrowmere', 'greyfen', 'tollbreaker', 'saltroad', 'whitestag', 'irondebt', ...Object.keys(FREE_SCENARIOS)] }), difficulty: v.string({ oneOf: ['story', 'normal', 'hard'] }),
     campaign: v.optional(v.object({ greyfen: v.optional(v.string({ oneOf: ['allied', 'defeated', 'neutral'] })) }, { allowExtra: false })),
+    customMap: v.optional(customMapSchema),
     skirmish: v.optional(v.object({
       goods: v.string({ oneOf: Object.keys(SKIRMISH_GOODS) }), peace: v.string({ oneOf: Object.keys(SKIRMISH_PEACE) }), faction: v.string({ oneOf: SKIRMISH_FACTIONS }),
       opponent: v.optional(v.string({ oneOf: Object.keys(SKIRMISH_OPPONENTS) })),

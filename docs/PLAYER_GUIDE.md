@@ -156,6 +156,24 @@ handful of places to explore are laid out by chance, and the lord across the riv
 lot. Your home always has forest, rock, iron and water within reach. Restarting from the menu
 keeps the same valley; a new game from the main menu rolls a new one.
 
+**Your own maps.** *Map Editor* (main menu, or under Free Play) shows a valley from above with
+its relief. Pick a tool on the left and click on the map:
+
+* *Hill*, *Hollow*, *Flat* and *Lake* shape the land; *River point* adds a bend to the river (a
+  river is always there; put it along the edge if you want little of it), *Ford* a shallow
+  crossing, *Road* a track point by point (Esc or right-click ends it).
+* *Forest*, *Rocks*, *Iron* and *Salt pan* place the resources; *Trader*, *Cairn*, *Ruin* and
+  *Hamlet* the places to explore; *Your Keep* and *Enemy seat* move the two seats.
+* *Select* picks and drags anything; the mouse wheel changes its size, Shift + wheel its height or
+  number; the panel on the right has the same as sliders. *Erase* or Delete removes it.
+
+The *Check* list says whether the map can be played (both seats on dry land, at least 110 m
+apart) and warns when a seat lacks wood, stone or iron nearby. *Play this map* saves it and opens
+the free-play setup (lord's seat or rival town, goods, peace, difficulty). *New…* starts from a
+blank valley or a copy of a campaign map or random valley; *Export…* gives the map as text to
+share, *Import…* opens such a text. Up to twelve maps are kept in your browser; a game on one of
+them takes the map into its save, so the save works anywhere.
+
 ## If the graphics card struggles
 
 When frames stay slow for a few seconds, Kindlehold first switches off the costliest effects

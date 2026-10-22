@@ -21,11 +21,11 @@ export function emptyStock() {
 /**
  * @returns {import('../core/contracts.js').World}
  */
-export function createWorld({ seed = 1337, scenarioId = 'harrowmere', title = 'The Rekindling of Harrowmere', difficulty = 'normal', campaign = null, skirmish = null } = {}) {
+export function createWorld({ seed = 1337, scenarioId = 'harrowmere', title = 'The Rekindling of Harrowmere', difficulty = 'normal', campaign = null, skirmish = null, customMap = null } = {}) {
   const rng = createRng(seed);
   const world = {
     schemaVersion: SCHEMA_VERSION,
-    meta: { seed, scenarioId, title, difficulty, ...(campaign ? { campaign } : {}), ...(skirmish ? { skirmish } : {}) },
+    meta: { seed, scenarioId, title, difficulty, ...(campaign ? { campaign } : {}), ...(skirmish ? { skirmish } : {}), ...(customMap ? { customMap } : {}) },
     tick: 0,
     rng: rng.getState(),
     nextId: 1,

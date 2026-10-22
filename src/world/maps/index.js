@@ -8,7 +8,9 @@ import { generateWildMap } from './wild.js';
 
 export const MAPS = { harrowmere: HARROWMERE_MAP, saltmere: SALTMERE_MAP, whitehart: WHITEHART_MAP, ironmarch: IRONMARCH_MAP };
 const wild = new Map();
-export function mapById(id, seed = 1) {
+export function mapById(id, seed = 1, custom = null) {
+  // a map from the editor travels with the game (world.meta.customMap)
+  if (id === 'custom') return custom || HARROWMERE_MAP;
   if (id === 'wild') {
     const key = String(seed);
     if (!wild.has(key)) { if (wild.size > 8) wild.clear(); wild.set(key, generateWildMap(seed)); }
@@ -17,4 +19,8 @@ export function mapById(id, seed = 1) {
   return Object.hasOwn(MAPS, id) ? MAPS[id] : HARROWMERE_MAP;
 }
 /** The key a map's derived data (terrain) is cached under. */
-export function mapKey(map) { return map.id === 'wild' ? `wild:${map.seed}` : map.id; }
+export function mapKey(map) {
+  if (map.id === 'wild') return `wild:${map.seed}`;
+  if (map.id === 'custom') return `custom:${[...JSON.stringify(map)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7)}`;
+  return map.id;
+}
