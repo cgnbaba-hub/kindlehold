@@ -8,14 +8,18 @@
 //   regroup     fewer soldiers than this turn back home
 //   towers      Watchtowers by its Keep from the start (the raiders' seat has two as well)
 //   hpMult      health of its soldiers (Hard: +10%, the same documented AI advantage as the raiders')
+//   transport   it lays stone roads to its workshops and keeps a Donkey Stable, as a player would
 // Measured with the player bot against it (scripts/balance-seeds.mjs free-<map>-rival, 4 maps x 16
 // seeds): Story 63/64 won in ~20 min, Normal 60/64 in ~28, Hard 45/64 in ~34 (against the lord's
 // seat: Normal 16/16 in 26.7, Hard 15/20 in 34.5). Without towers and bonus goods it was far too easy
-// (Hard 44/48 won).
+// (Hard 44/48 won). Roads and a Donkey Stable (transport) measured neutral (Hard on four maps:
+// 47/64 won against 45/64 before). Plunder parties before the first attack and attacks that sweep
+// from the player's outskirts inward made it weaker (Hard 30/32 won on two maps against 25/32):
+// it spreads its strength, so they are not used.
 export const RIVAL_DIFFICULTY = {
-  story: { goods: 0.8, slow: 2, firstAttack: 20 * 60, size: 8, grow: 2, regroup: 3, towers: 0, hpMult: 1 },
-  normal: { goods: 1.15, slow: 1, firstAttack: 15 * 60, size: 9, grow: 3, regroup: 4, towers: 2, hpMult: 1 },
-  hard: { goods: 1.5, slow: 1, firstAttack: 11 * 60, size: 10, grow: 3, regroup: 4, towers: 2, hpMult: 1.1 },
+  story: { goods: 0.8, slow: 2, firstAttack: 20 * 60, size: 8, grow: 2, regroup: 3, towers: 0, hpMult: 1, transport: true },
+  normal: { goods: 1.15, slow: 1, firstAttack: 15 * 60, size: 9, grow: 3, regroup: 4, towers: 2, hpMult: 1, transport: true },
+  hard: { goods: 1.5, slow: 1, firstAttack: 11 * 60, size: 10, grow: 3, regroup: 4, towers: 2, hpMult: 1.1, transport: true },
 };
 
 export const RIVAL_COLOR = '#8a5bc4';

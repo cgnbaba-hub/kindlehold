@@ -68,4 +68,7 @@ test('a rival marches on a town that does not defend itself', () => {
   for (let i = 0; i < 20 * 60 * 32 && !sim.world.mission.result; i++) sim.step();
   assert.ok(sim.world.rival.waves >= 1, `the rival attacked (${JSON.stringify(sim.world.rival)})`);
   assert.ok(alerted, 'the player is warned');
+  // it lays roads like a player, and none of them is the player's to take back
+  assert.ok(sim.world.roads && sim.world.roads.cells.length > 0, 'the rival paved roads');
+  assert.ok(!sim.world.roads.last || sim.world.roads.last.owner === 'p1');
 });

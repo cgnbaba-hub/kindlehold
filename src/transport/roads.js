@@ -114,7 +114,8 @@ export function createRoadsModule() {
       if (!chk.ok) return reject(chk.reason, cmd);
       if (!pay(world, owner, chk.cost, 'road')) return reject('Not enough resources', cmd);
       roads.cells.push(...chk.cells);
-      roads.last = { owner, tick: world.tick, cells: chk.cells.slice(), cost: { ...chk.cost } };
+      // (only the player's stretch can be taken back: a rival's roads never touch the player's undo)
+      if (owner === PLAYER) roads.last = { owner, tick: world.tick, cells: chk.cells.slice(), cost: { ...chk.cost } };
       sync();
       emit(world, 'road:built', { owner, cells: chk.cells.length, cost: chk.cost, ax, az, bx, bz });
     } else {

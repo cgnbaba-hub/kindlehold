@@ -16,7 +16,7 @@ export function createRivalModule() {
     // (a load replaces the world: the bot is rebuilt for it, its memory is in world.rival)
     botWorld = world;
     bot = createBot(ctx.sim, {
-      owner: RIVAL, foe: PLAYER, state: (w) => w.rival,
+      owner: RIVAL, foe: PLAYER, state: (w) => w.rival, transport: rivalSettings(ctx.world).transport,
       assault: (w) => {
         const cfg = rivalSettings(w);
         return { size: cfg.size + w.rival.waves * cfg.grow, regroup: cfg.regroup, notBefore: w.rival.firstAttackTick };

@@ -148,6 +148,7 @@ const worldSchema = v.object({
     name: v.number({ min: 0, max: 64, int: true }), phase: v.string({ oneOf: ['economy', 'defend', 'assault'] }),
     lastAct: v.number({ min: -1e4, max: 1e10 }), waves: nonNeg(1000), firstAttackTick: nonNeg(1e10),
     noSpot: v.optional(v.record(nonNeg(1e10), { max: 32, keyPattern: /^[a-z]{2,16}$/ })),
+    roadDone: v.optional(ids(200)),
   }, { allowExtra: false })),
   townEntries: v.optional(v.record(v.object({ x: coord, z: coord }, { allowExtra: false }), { max: 4, keyPattern: /^p[1-4]$/ })),
 });
