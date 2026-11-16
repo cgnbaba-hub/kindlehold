@@ -3,6 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { newSim, all } from '../helpers/sim.js';
+import { createBot } from '../../src/demo/bot.js';
 import { serializeWorld, deserializeWorld } from '../../src/save/index.js';
 import { blankMap, mapFrom, normalizeMap, validateMap, mapProblems, LIMITS } from '../../src/editor/map-format.js';
 import { HARROWMERE_MAP } from '../../src/world/maps/harrowmere.js';
@@ -54,16 +55,19 @@ test('a game on a custom map: the seats stand where the map puts them, and the m
   assert.ok(Math.hypot(keep.x - map.playerStart.x, keep.z - map.playerStart.z) < 1);
   assert.ok(all(a.world, 'building').some((b) => b.owner === 'p2'), 'the enemy seat stands');
   assert.equal(a.world.meta.title, 'Free Play: Test vale');
-  // (bit-identical continuation is not checked: walkers mid-path ask again after a load, see
-  // docs/KNOWN_ISSUES.md; the same holds on every free map)
-  for (let i = 0; i < 20 * 60 * 2; i++) a.step();
+  const bot = createBot(a);
+  bot.play(20 * 60 * 3);
   const { world } = deserializeWorld(serializeWorld(a.world, 'custom'));
   assert.deepEqual(world.meta.customMap, a.world.meta.customMap);
-  // (as a load does: the simulation, and so the terrain, is built from the saved world)
+  // (a simulation built around the saved world is a load: the terrain comes from the saved map)
   const b = newSim({ world });
   assert.equal(b.hash(), a.hash());
   for (const [x, z] of [[0, 0], [-100, 90], [100, -90], [0, 6], [-150, 150]]) assert.equal(b.terrain.height(x, z), a.terrain.height(x, z), `terrain at ${x},${z}`);
-  for (let i = 0; i < 20 * 30; i++) b.step();
+  // (and it knows where the buildings stand: nobody walks through a wall after a load)
+  const k = all(b.world, 'building').find((e) => e.type === 'keep' && e.owner === 'p1');
+  assert.equal(b.services.nav.walkable(k.x, k.z), false, 'the Keep blocks the way in the loaded game');
+  for (let i = 0; i < 20 * 60; i++) { a.step(); b.step(); }
+  assert.equal(b.hash(), a.hash(), 'identical a minute after the load');
   assert.ok(!b.world.mission.result, 'the loaded game goes on');
 });
 

@@ -405,6 +405,31 @@ try {
     const at = (x, z) => [box.x + ((x + 192) / 384) * box.width, box.y + ((z + 192) / 384) * box.height];
     await page.getByRole('button', { name: 'Forest', exact: true }).click();
     await page.mouse.click(...at(-20, 60));
+    const undo = page.getByRole('button', { name: 'Undo', exact: true }), redo = page.getByRole('button', { name: 'Redo', exact: true });
+    assert(await undo.isEnabled() && await redo.isDisabled(), 'one step to undo, nothing to redo yet');
+    // a slider stays in hand while it moves, and the whole move is one step back
+    const trees = () => page.evaluate(() => window.__EDITOR__.map.forests.at(-1).count);
+    const before = await trees();
+    await page.getByRole('slider', { name: 'Trees' }).focus();
+    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight');
+    assert(await trees() === before + 3, `the slider keeps the focus while it moves (${await trees()})`);
+    await page.keyboard.press('Control+z');
+    assert(await trees() === before, 'one Ctrl+Z takes the whole move back');
+    // a second forest, taken back again: Undo, Redo, then Ctrl+Z
+    const count = () => page.evaluate(() => window.__EDITOR__.map.forests.length);
+    await page.mouse.click(...at(40, 80));
+    assert(await count() === 4, 'a second forest stands');
+    await undo.click();
+    assert(await count() === 3 && await redo.isEnabled(), 'Undo takes the forest back');
+    await redo.click();
+    assert(await count() === 4, 'Redo plants it again');
+    await page.locator('.map-editor').focus();
+    await page.keyboard.press('Control+z');
+    assert(await count() === 3, 'Ctrl+Z takes it back');
+    await page.keyboard.press('Control+z');
+    assert(await count() === 2 && await undo.isDisabled(), 'and the first one: back at the blank valley');
+    await page.keyboard.press('Control+Shift+z');
+    assert(await count() === 3, 'Ctrl+Shift+Z plants the first again');
     await page.getByRole('textbox', { name: 'Map name' }).fill('E2E Vale');
     await page.waitForFunction(() => /Playable/.test(document.querySelector('.ed-problems').textContent), null, { timeout: 20000 });
     await page.getByRole('button', { name: 'Play this map' }).click();

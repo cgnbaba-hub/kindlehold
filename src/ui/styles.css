@@ -511,7 +511,8 @@ button { font: inherit; color: inherit; }
 .ed-tool.active { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass) inset; background: var(--slate-600); }
 .ed-center { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; min-height: 0; }
 .ed-canvas { width: min(100%, calc(100vh - 70px)); aspect-ratio: 1; border: 1px solid var(--brass-dim); border-radius: 6px; cursor: crosshair; touch-action: none; }
-.ed-status { min-height: 1.3em; margin: 6px 0 0; color: var(--ink-dim); font-size: 0.9em; }
+.ed-under { display: flex; align-items: center; gap: 6px; margin-top: 6px; min-height: 2em; max-width: 100%; }
+.ed-status { min-height: 1.3em; margin: 0 0 0 6px; color: var(--ink-dim); font-size: 0.9em; }
 .ed-right { overflow: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
 .ed-right h3 { margin: 8px 0 2px; font: 600 1em var(--serif); color: var(--brass); }
 .ed-label { font-size: 0.85em; color: var(--ink-dim); }

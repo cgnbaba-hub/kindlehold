@@ -143,5 +143,8 @@ export function createSimulation({ seed = 1337, difficulty = 'normal', scenarioI
   host.initAll(sim.context());
   if (setup && !world) bus.emit('world:setup', {});
   host.startAll();
+  // a simulation built around a saved world is a load: modules rebuild what they derive from it
+  // (building footprints in the path grid, roads, weather), exactly as replaceWorld does
+  if (world) { host.deserializeAll({}); bus.emit('world:loaded', {}); }
   return sim;
 }
