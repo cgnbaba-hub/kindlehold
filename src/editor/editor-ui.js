@@ -8,6 +8,7 @@ import { MAPS } from '../world/maps/index.js';
 import { generateWildMap } from '../world/maps/wild.js';
 import { normalizeMap, validateMap, mapProblems, blankMap, mapFrom, LIMITS, MAP_HALF, MAP_LIMIT } from './map-format.js';
 import { listMaps, saveMap, deleteMap, exportMap, importMap, MAX_MAPS } from './storage.js';
+import { createHistory } from './history.js';
 
 const SIZE = 640; // canvas pixels for the whole map (2 * MAP_HALF metres)
 const RELIEF = 192; // relief samples per side (2 m each)
@@ -17,7 +18,7 @@ const clampC = (v) => Math.round(Math.max(-MAP_LIMIT, Math.min(MAP_LIMIT, v)) * 
 
 // tools: [id, label, group, hint]
 const TOOLS = [
-  ['select', 'Select', 'Edit', 'Click something to select it, drag to move it. Mouse wheel: size; Shift + wheel: height or number. Delete removes it.'],
+  ['select', 'Select', 'Edit', 'Click something to select it, drag to move it. Mouse wheel: size; Shift + wheel: height or number. Delete removes it. Ctrl+Z takes a step back.'],
   ['erase', 'Erase', 'Edit', 'Click something to remove it.'],
   ['hill', 'Hill', 'Land', 'Click to raise a hill.'],
   ['dip', 'Hollow', 'Land', 'Click to sink a hollow.'],
@@ -52,8 +53,12 @@ export function createMapEditor({ initial = null, mapId = null, onPlay, onBack }
   let id = mapId;
   let tool = 'select';
   let sel = null; // { list, i } | { river: i } | { road, i } | { seat: 'playerStart'|'enemyCamp' }
-  let drag = null, activeRoad = null, dirty = false;
+  let drag = null, dragMarked = false, activeRoad = null, dirty = false;
   const full = () => normalizeMap(draft);
+  // undo: the draft as it was before each change (see history.js)
+  const history = createHistory();
+  const snap = () => JSON.stringify(draft);
+  const mark = (key = null) => history.mark(snap(), key, Date.now());
 
   const canvas = h('canvas.ed-canvas', { width: SIZE, height: SIZE, 'aria-label': 'Map. Click to place with the chosen tool.' });
   const ctx = canvas.getContext('2d');
@@ -156,6 +161,7 @@ export function createMapEditor({ initial = null, mapId = null, onPlay, onBack }
   function itemOf(s) { return s && s.list ? listOf(s.list)[s.i] : null; }
   function remove(s) {
     if (!s) return;
+    mark();
     if (s.list) listOf(s.list).splice(s.i, 1);
     else if (s.river != null) { if (draft.river.points.length > 2) draft.river.points.splice(s.river, 1); }
     else if (s.road != null) { draft.roads.splice(s.road, 1); activeRoad = null; }
@@ -221,19 +227,22 @@ export function createMapEditor({ initial = null, mapId = null, onPlay, onBack }
   canvas.addEventListener('pointerdown', (ev) => {
     if (ev.button !== 0) return;
     const [x, z] = pos(ev);
-    if (tool === 'select') { sel = pick(x, z); if (sel) { drag = sel; canvas.setPointerCapture(ev.pointerId); } renderPanel(); draw(); return; }
+    if (tool === 'select') { sel = pick(x, z); if (sel) { drag = sel; dragMarked = false; canvas.setPointerCapture(ev.pointerId); } renderPanel(); draw(); return; }
     if (tool === 'erase') { remove(pick(x, z)); return; }
     if (tool !== 'road') endRoad();
+    mark();
     const s = place(x, z);
-    if (s) { sel = s; drag = tool === 'road' ? null : s; changed(true); }
+    // (placing and dragging the new thing into place is one step)
+    if (s) { sel = s; drag = tool === 'road' ? null : s; dragMarked = true; changed(true); }
     canvas.setPointerCapture(ev.pointerId);
   });
-  canvas.addEventListener('pointermove', (ev) => { if (!drag) return; const [x, z] = pos(ev); moveTo(drag, x, z); changed(drag.seat || drag.river != null || drag.list === 'hills' || drag.list === 'flats' || drag.list === 'lakes' || drag.list === 'fords'); });
+  canvas.addEventListener('pointermove', (ev) => { if (!drag) return; if (!dragMarked) { mark(); dragMarked = true; } const [x, z] = pos(ev); moveTo(drag, x, z); changed(drag.seat || drag.river != null || drag.list === 'hills' || drag.list === 'flats' || drag.list === 'lakes' || drag.list === 'fords'); });
   canvas.addEventListener('pointerup', () => { drag = null; });
   canvas.addEventListener('wheel', (ev) => {
     const it = itemOf(sel);
     if (!it) return;
     ev.preventDefault();
+    mark(`wheel:${JSON.stringify(sel)}`);
     const up = ev.deltaY < 0 ? 1 : -1;
     if (ev.shiftKey) { if ('h' in it) it.h = Math.round((it.h + up * 0.5) * 10) / 10; else if ('count' in it) it.count = Math.max(1, it.count + up * (sel.list === 'forests' ? 4 : 1)); }
     else if ('r' in it) it.r = Math.max(4, it.r + up * 2);
@@ -247,22 +256,26 @@ export function createMapEditor({ initial = null, mapId = null, onPlay, onBack }
   const problemsEl = h('div.ed-problems');
   const propsEl = h('div.ed-props');
   const nameIn = h('input.ed-name', { type: 'text', maxlength: '32', 'aria-label': 'Map name', value: draft.name || '' });
-  nameIn.addEventListener('input', () => { draft.name = nameIn.value; dirty = true; });
+  nameIn.addEventListener('input', () => { mark('name'); draft.name = nameIn.value; dirty = true; syncHistory(); });
   function status(t) { statusEl.textContent = t; }
   function slider(labelText, value, min, max, step, onInput) {
     const out = h('output', { text: String(value) });
     const inp = h('input', { type: 'range', min, max, step, value, 'aria-label': labelText });
-    inp.addEventListener('input', () => { out.textContent = inp.value; onInput(Number(inp.value)); });
+    inp.addEventListener('input', () => { mark(`slider:${labelText}:${JSON.stringify(sel)}`); out.textContent = inp.value; onInput(Number(inp.value)); });
     return h('label.ed-slider', {}, [h('span', { text: labelText }), inp, out]);
   }
   function renderPanel() {
+    const focused = propsEl.contains(document.activeElement);
     clear(propsEl);
+    if (focused) el.focus(); // (keys like Delete and Ctrl+Z keep working when the panel is drawn again)
     const it = itemOf(sel);
-    const terrainEdit = (fn) => (v) => { fn(v); changed(true); };
-    const plainEdit = (fn) => (v) => { fn(v); changed(false); };
+    // (a slider being dragged must stay: only its heading follows, the panel is not drawn again)
+    const edited = (terrain) => (fn) => (v) => { fn(v); head.textContent = kindOf(); changed(terrain, false); };
+    const terrainEdit = edited(true), plainEdit = edited(false);
     if (!sel) { propsEl.append(h('p.small.muted', { text: TOOLS.find((t) => t[0] === tool)[3] })); return; }
-    const kind = sel.seat ? (sel.seat === 'playerStart' ? 'Your Keep' : 'Enemy seat') : sel.river != null ? 'River point' : sel.road != null ? 'Road' : sel.list === 'pois' ? it.type[0].toUpperCase() + it.type.slice(1) : sel.list === 'hills' ? (it.h >= 0 ? 'Hill' : 'Hollow') : (TOOLS.find((t) => t[0] === KIND_OF[sel.list]) || [0, sel.list])[1];
-    propsEl.append(h('h3', { text: kind }));
+    const kindOf = () => (sel.seat ? (sel.seat === 'playerStart' ? 'Your Keep' : 'Enemy seat') : sel.river != null ? 'River point' : sel.road != null ? 'Road' : sel.list === 'pois' ? it.type[0].toUpperCase() + it.type.slice(1) : sel.list === 'hills' ? (it.h >= 0 ? 'Hill' : 'Hollow') : (TOOLS.find((t) => t[0] === KIND_OF[sel.list]) || [0, sel.list])[1]);
+    const head = h('h3', { text: kindOf() });
+    propsEl.append(head);
     if (it && 'h' in it && sel.list === 'hills') propsEl.append(slider('Height', it.h, -6, 18, 0.5, terrainEdit((v) => { it.h = v; })));
     if (it && 'h' in it && sel.list === 'flats') propsEl.append(slider('Level', it.h, 1, 8, 0.1, terrainEdit((v) => { it.h = v; })));
     if (it && 'r' in it) propsEl.append(slider('Radius', it.r, sel.list === 'fords' ? 6 : 4, sel.list === 'hills' ? 60 : sel.list === 'flats' ? 40 : sel.list === 'fords' ? 14 : 30, 1, (sel.list === 'forests' ? plainEdit : terrainEdit)((v) => { it.r = v; })));
@@ -271,7 +284,7 @@ export function createMapEditor({ initial = null, mapId = null, onPlay, onBack }
     if (it && 'spread' in it) propsEl.append(slider('Spread', it.spread, 2, 10, 0.5, plainEdit((v) => { it.spread = v; })));
     if (it && sel.list === 'pois') {
       const inp = h('input.ed-name', { type: 'text', maxlength: '32', value: it.label || '', placeholder: 'Name (optional)', 'aria-label': 'Place name' });
-      inp.addEventListener('input', () => { it.label = inp.value; dirty = true; });
+      inp.addEventListener('input', () => { mark(`label:${JSON.stringify(sel)}`); it.label = inp.value; dirty = true; syncHistory(); });
       propsEl.append(inp);
     }
     if (sel.road != null) propsEl.append(h('p.small.muted', { text: activeRoad === sel.road ? 'Click to add points; Esc or right-click ends the road.' : 'Drag a point to move it.' }));
@@ -286,17 +299,48 @@ export function createMapEditor({ initial = null, mapId = null, onPlay, onBack }
     for (const w of warnings) problemsEl.append(h('p.ed-warn', { text: w }));
     return errors;
   }
-  function changed(terrain) {
+  function changed(terrain, panel = true) {
     dirty = true;
-    renderPanel();
+    if (panel) renderPanel();
     if (terrain) soon(); else { checkProblems(); }
     draw();
+    syncHistory();
+  }
+
+  // --- undo and redo ----------------------------------------------------------------------------
+  const undoBtn = h('button.btn', { type: 'button', text: 'Undo', title: 'Take the last change back (Ctrl+Z)', onclick: () => step('undo') });
+  const redoBtn = h('button.btn', { type: 'button', text: 'Redo', title: 'Do it again (Ctrl+Shift+Z or Ctrl+Y)', onclick: () => step('redo') });
+  function syncHistory() { const cur = snap(); undoBtn.disabled = !history.canUndo(cur); redoBtn.disabled = !history.canRedo(cur); }
+  function step(dir) {
+    endRoad();
+    const back = history[dir](snap());
+    if (back == null) return;
+    draft = JSON.parse(back);
+    // (a road cut back to its first point is no road)
+    draft.roads = draft.roads.filter((r) => r.points.length >= 2);
+    sel = null; drag = null;
+    nameIn.value = draft.name || '';
+    renderTerrain();
+    status(dir === 'undo' ? 'Step taken back.' : 'Step done again.');
+    changed(true);
+  }
+
+  // the land's own settings (drawn again when another map is loaded or a step is taken back)
+  const terrainBox = h('div.ed-terrain');
+  function renderTerrain() {
+    clear(terrainBox);
+    terrainBox.append(
+      h('h3', { text: 'Land' }),
+      slider('Base height', draft.baseHeight, 1.5, 6, 0.1, (v) => { draft.baseHeight = v; changed(true); }),
+      slider('Roughness', draft.noiseAmp, 0, 9, 0.5, (v) => { draft.noiseAmp = v; changed(true); }),
+      h('button.btn', { type: 'button', text: 'New ground pattern', onclick: () => { mark(); draft.noiseSeed = 1 + ((draft.noiseSeed * 7919 + 13) % 99998); changed(true); } }),
+    );
   }
 
   // --- actions ----------------------------------------------------------------------------------
   const dialog = h('div.ed-dialog', { hidden: true, role: 'dialog' });
   function openDialog(title, body) { clear(dialog); dialog.append(h('div.ed-dialog-card.panel', {}, [h('h3', { text: title }), ...body, h('button.btn', { type: 'button', text: 'Close', onclick: () => { dialog.hidden = true; } })])); dialog.hidden = false; }
-  function load(map, newId = null) { draft = toDraft(map); id = newId; sel = null; activeRoad = null; nameIn.value = draft.name || ''; reliefKey = ''; dirty = false; buildRelief(); renderPanel(); draw(); }
+  function load(map, newId = null) { draft = toDraft(map); id = newId; sel = null; activeRoad = null; nameIn.value = draft.name || ''; reliefKey = ''; dirty = false; history.clear(); syncHistory(); renderTerrain(); buildRelief(); renderPanel(); draw(); }
   function doSave() {
     const errors = checkProblems();
     try { id = saveMap(full(), id); dirty = false; status(errors.length ? 'Saved (not yet playable: see the list).' : 'Saved.'); return true; }
@@ -349,15 +393,10 @@ export function createMapEditor({ initial = null, mapId = null, onPlay, onBack }
     });
     toolBtns.append(b);
   }
-  const terrainBox = h('div.ed-terrain', {}, [
-    h('h3', { text: 'Land' }),
-    slider('Base height', draft.baseHeight, 1.5, 6, 0.1, (v) => { draft.baseHeight = v; changed(true); }),
-    slider('Roughness', draft.noiseAmp, 0, 9, 0.5, (v) => { draft.noiseAmp = v; changed(true); }),
-    h('button.btn', { type: 'button', text: 'New ground pattern', onclick: () => { draft.noiseSeed = 1 + ((draft.noiseSeed * 7919 + 13) % 99998); changed(true); } }),
-  ]);
+  renderTerrain();
   const el = h('div.map-editor', {}, [
     h('div.ed-left', {}, [toolBtns]),
-    h('div.ed-center', {}, [canvas, statusEl]),
+    h('div.ed-center', {}, [canvas, h('div.ed-under', {}, [undoBtn, redoBtn, statusEl])]),
     h('div.ed-right.panel', {}, [
       h('label.ed-label', { text: 'Name' }), nameIn,
       propsEl, terrainBox,
@@ -375,12 +414,18 @@ export function createMapEditor({ initial = null, mapId = null, onPlay, onBack }
     dialog,
   ]);
   el.addEventListener('keydown', (ev) => {
+    // (text fields keep their own undo)
+    const typing = ev.target && (ev.target.tagName === 'TEXTAREA' || (ev.target.tagName === 'INPUT' && ev.target.type !== 'range'));
+    if (!typing && (ev.ctrlKey || ev.metaKey) && !ev.altKey && dialog.hidden) {
+      const k = ev.key.toLowerCase();
+      if (k === 'z' || k === 'y') { ev.preventDefault(); step(k === 'y' || ev.shiftKey ? 'redo' : 'undo'); return; }
+    }
     if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA')) return;
     if ((ev.key === 'Delete' || ev.key === 'Backspace') && sel && !sel.seat) { ev.preventDefault(); remove(sel); }
     if (ev.key === 'Escape') { ev.stopPropagation(); if (!dialog.hidden) dialog.hidden = true; else { endRoad(); sel = null; renderPanel(); draw(); } }
   });
   el.tabIndex = -1;
 
-  buildRelief(); renderPanel(); draw();
+  buildRelief(); renderPanel(); draw(); syncHistory();
   return { el, get map() { return full(); }, load };
 }

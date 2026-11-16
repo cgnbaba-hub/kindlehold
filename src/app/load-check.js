@@ -7,7 +7,6 @@ import { ValidationError } from '../core/validate.js';
 export function smokeTestWorld(world, ticks = 40) {
   const copy = JSON.parse(JSON.stringify(world));
   const sim = createSimulation({ seed: world.meta.seed, difficulty: world.meta.difficulty, setup: false, world: copy });
-  sim.replaceWorld(copy);
   try {
     for (let i = 0; i < ticks; i++) sim.step();
   } catch (err) {

@@ -141,6 +141,7 @@ export function createMenus({ root, settings, onSettingsChange, graphicsInfo = (
       onPlay: (map, id) => customSetup({ map, onPick, onBack: () => mapEditor({ onPick, onBack, initial: map, mapId: id }) }),
     });
     const el = show(screen('map-editor-screen', [ed.el]));
+    if (/[?&]debug=1\b/.test(location.search)) window.__EDITOR__ = ed; // for e2e tests, like window.__GAME__
     ed.el.focus();
     return el;
   }

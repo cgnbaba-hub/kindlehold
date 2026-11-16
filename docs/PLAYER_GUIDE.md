@@ -166,6 +166,8 @@ its relief. Pick a tool on the left and click on the map:
   *Hamlet* the places to explore; *Your Keep* and *Enemy seat* move the two seats.
 * *Select* picks and drags anything; the mouse wheel changes its size, Shift + wheel its height or
   number; the panel on the right has the same as sliders. *Erase* or Delete removes it.
+* *Undo* and *Redo* under the map (Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y) take your last changes back
+  step by step, or do them again; moving a slider or turning the wheel counts as one step.
 
 The *Check* list says whether the map can be played (both seats on dry land, at least 110 m
 apart) and warns when a seat lacks wood, stone or iron nearby. *Play this map* saves it and opens

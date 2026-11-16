@@ -154,6 +154,24 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - HUD: Mehl/Brot/Werkzeug erscheinen in der Leiste erst mit dem passenden Gebäude; Stillstand nennt
   die fehlende Ware. Showcase `?showcase=chains`. Tests: `tests/simulation/chains.test.js`.
 
+## Karteneditor: Rückgängig/Wiederholen, Laden geprüft (2026-11-16)
+
+- `src/editor/history.js` (rein, getestet in `tests/unit/editor-history.test.js`): Schnappschüsse
+  des Entwurfs als Text, je Geste einer. Der Editor ruft `mark()` **vor** jeder Änderung; gleiche
+  Art in schneller Folge (Regler ziehen, Mausrad, Tippen im Namen: Schlüssel + `GROUP_MS`) ist ein
+  Schritt. Schritte ohne Änderung werden übersprungen, höchstens 80 Schritte, `load()` leert.
+- Bedienung: Knöpfe „Undo“/„Redo“ unter der Karte, Strg+Z, Strg+Umschalt+Z, Strg+Y (Textfelder
+  behalten ihr eigenes Rückgängig). Nach einem Schritt werden Name und „Land“-Regler neu gezeichnet
+  (`renderTerrain`; vorher zeigte der Regler nach „Your maps…“ den alten Wert).
+- Mitbehoben: Die Regler im Eigenschaften-Feld wurden bei jeder Bewegung neu aufgebaut und verloren
+  Fokus bzw. Griff. Jetzt folgt nur die Überschrift (`changed(terrain, false)`).
+- Laden: siehe „Korrektur 2026-11-16“ unten und KNOWN_ISSUES „Saves“. `createSimulation({ world })`
+  meldet `world:loaded` selbst; `load-check.js` ruft deshalb kein `replaceWorld` mehr.
+- e2e `map-editor-to-game` prüft Regler, Undo/Redo per Knopf und Taste; dafür `window.__EDITOR__`
+  bei `?debug=1`.
+- Lokale Browser-Tests in Cloud-Sessions: `CHROMIUM_PATH=/opt/pw-browsers/chromium-*/chrome-linux64/chrome`
+  setzen, wenn Playwrights eigene Browser-Version fehlt.
+
 ## Karteneditor (2026-10-22)
 
 - Menüpunkt „Map Editor“ (Hauptmenü und Free Play). 2D-Draufsicht mit Relief aus `rawHeight`
@@ -169,8 +187,12 @@ Mehr Siedler-Tiefe, ohne die Kapitel zu verändern (Details in `GAME_DESIGN.md`,
 - Spielen: Szenarien `free-custom`/`free-custom-rival`; die Karte geht als `customMap` in
   `createSimulation` und liegt in `world.meta.customMap` (Speicherschema `customMapSchema`), so
   baut ein Spielstand das Gelände überall neu auf. Terrain-Cache-Schlüssel `custom:<hash>`.
-- Nebenbefund (älter, in KNOWN_ISSUES): Nach dem Laden bekommen Wanderer ihren Weg mitunter einen
-  Tick früher/später (Wegsuche-Budget pro Tick nicht im Spielstand) – betrifft alle Karten.
+- Korrektur 2026-11-16: Der hier zuerst notierte „Nebenbefund“ (Abweichung nach dem Laden) war
+  ein Testfehler, kein Spielfehler. Der Test baute die Simulation direkt um die gespeicherte Welt
+  (`createSimulation({ world })`), ohne `replaceWorld`: Dann fehlten im Wegegitter die
+  Gebäudegrundrisse. Der Ladeweg des Spiels läuft bitgenau weiter (gemessen: Harrowmere und eigene
+  Karte, mit/ohne Rivale, je 2400 Ticks). `createSimulation({ world })` gilt jetzt selbst als Laden
+  (`world:loaded`), und der Test prüft die Gleichheit. Siehe KNOWN_ISSUES, „Saves“.
 - Tests: `tests/simulation/custom-map.test.js`, e2e `map-editor-to-game`.
 
 ## Freies Spiel Teil 2: Rivalenstadt (2026-10-21)
